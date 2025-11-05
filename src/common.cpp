@@ -8,22 +8,29 @@
 #include <windows.h>
 #endif
 
-std::string getBasePath() noexcept {
+
+
+namespace df {
+
+	std::string getBasePath() noexcept {
 #if defined(PACKAGE)
-	std::filesystem::path binpath;
+		std::filesystem::path binpath;
+
 #if defined(__linux__)
-	binpath = std::filesystem::read_symlink("/proc/self/exe");
+		binpath = std::filesystem::read_symlink("/proc/self/exe");
 #elif defined(_WIN32)
-	char buf[512] = {0}; // this should be plenty...
-	size_t buflen = 512;
-	GetModuleFileNameA(NULL, buf, buflen);
-	binpath = std::filesystem::path(buf);
+		char buf[512] = {0}; // this should be plenty...
+		size_t buflen = 512;
+		GetModuleFileNameA(NULL, buf, buflen);
+		binpath = std::filesystem::path(buf);
+		
 #elif defined(__APPLE__)
 #error Not implemented yet
 #endif
 
-	return std::filesystem::path(binpath).parent_path().string();
+		return std::filesystem::path(binpath).parent_path().string();
 #else
-	return BASE_PATH;
+		return BASE_PATH;
 #endif
-}
+	}
+} // namespace df

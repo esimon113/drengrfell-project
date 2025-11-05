@@ -8,46 +8,50 @@
 #include <utils/texture.h>
 #include <utils/framebuffer.h>
 
-class RenderSystem {
-	public:
-		RenderSystem() = default;
-		~RenderSystem() = default;
 
-		static RenderSystem init(Window* window, Registry* registry) noexcept;
-		void deinit() noexcept;
 
-		void step(const float delta) noexcept;
-		void reset() noexcept;
+namespace df {
+	class RenderSystem {
+		public:
+			RenderSystem() = default;
+			~RenderSystem() = default;
 
-		void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
+			static RenderSystem init(Window* window, Registry* registry) noexcept;
+			void deinit() noexcept;
 
-	private:
-		Registry* m_registry;
-		Window* m_window;
+			void step(const float delta) noexcept;
+			void reset() noexcept;
 
-		Framebuffer m_intermediate_framebuffer;
-		Mesh m_chicken_mesh;
-		Shader m_chicken_shader;
-		Shader m_sprite_shader;
-		Shader m_wind_shader;
-		Shader m_egg_shader;
+			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
-		Texture m_eagle_texture;
-		Texture m_bug_texture;
+		private:
+			Registry* m_registry;
+			Window* m_window;
 
-		GLuint m_quad_vao;
-		GLuint m_quad_ebo;
+			Framebuffer m_intermediate_framebuffer;
+			Mesh m_chicken_mesh;
+			Shader m_chicken_shader;
+			Shader m_sprite_shader;
+			Shader m_wind_shader;
+			Shader m_egg_shader;
 
-		struct Egg {
-			glm::vec2 m_position;
-			float m_radius;
-			glm::vec3 m_color;
-		};
-		GLuint m_egg_vao;
-		GLuint m_egg_vbo;
+			Texture m_eagle_texture;
+			Texture m_bug_texture;
 
-		struct {
-			glm::uvec2 m_origin;
-			glm::uvec2 m_size;
-		} m_viewport;
-};
+			GLuint m_quad_vao;
+			GLuint m_quad_ebo;
+
+			struct Egg {
+				glm::vec2 m_position;
+				float m_radius;
+				glm::vec3 m_color;
+			};
+			GLuint m_egg_vao;
+			GLuint m_egg_vbo;
+
+			struct {
+				glm::uvec2 m_origin;
+				glm::uvec2 m_size;
+			} m_viewport;
+	};
+}
