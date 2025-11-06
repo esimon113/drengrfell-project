@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_set>
 #include <queue>
+#include <stack>
 
 #include "graph.h"
 
@@ -154,4 +155,126 @@ namespace df {
 
 
 
+
+
+    /**
+     * Gets ids of *all* neighbors, regardless of node-type. 
+     * This means that ids must be unique over all node-types
+     */
+    std::vector<size_t> Graph::getNeighborIds(size_t id) const {
+        std::vector<size_t> neighbors;
+
+        // Check for id being of a Tile:
+        if (auto it = this->tileEdges.find(id); it != this->tileEdges.end()) {
+            for (const auto& edge : it->second) {
+                if (edge.id != SIZE_MAX) {
+                    neighbors.push_back(edge.id);
+                }
+            }
+        }
+        if (auto it = this->tileVertices.find(id); it != this->tileVertices.end()) {
+            for (const auto& vertex : it->second) {
+                if (vertex.id != SIZE_MAX) {
+                    neighbors.push_back(vertex.id);
+                }
+            }
+        }
+
+        // Check for id being of an edge:
+        if (auto it = this->edgeVertices.find(id); it != this->edgeVertices.end()) {
+            for (const auto& vertex : it->second) {
+                if (vertex.id != SIZE_MAX) {
+                    neighbors.push_back(vertex.id);
+                }
+            }
+        }
+
+        // Check for id being of a vertex:
+        if (auto it = this->vertexEdges.find(id); it != this->vertexEdges.end()) {
+            for (const auto& edge : it->second) {
+                if (edge.id != SIZE_MAX) {
+                    neighbors.push_back(edge.id);
+                }
+            }
+        }
+        if (auto it = this->vertexTiles.find(id); it != this->vertexTiles.end()) {
+            for (const auto& tile : it->second) {
+                if (tile.id != SIZE_MAX) {
+                    neighbors.push_back(tile.id);
+                }
+            }
+        }
+
+        return neighbors;
+    }
+
+
+    // TODO: make sure that T has attribute "id"
+    /**
+     * BFS finds shortest number of hops between nodes. 
+     * This can be used for checking road distances etc. 
+     * Search the graph into the breadth first -> first all nodes with distance 1, 
+     * then all with distance 2, etc.
+     */
+    template <typename T>
+    std::vector<T> Graph::breadthFirstSearch(const T& start) const {
+        std::vector<T> sequence;
+        std::unordered_set<size_t> visitedIds;
+        std::queue<size_t> q;
+
+        q.push(start.id);
+        visitedIds.insert(id);
+
+        while (!q.empty()) {
+            size_t currentId = q.front();
+            q.pop();
+            sequence.push_back(T{currentId});
+
+            for (size_t neighbor : this->getNeighborIds(currentId)) {
+                if (!visitedIds.count(neighbor)) {
+                    visitedIds.insert(neighbor);
+                    q.push(neighbor);
+                }
+            }
+        }
+
+        return sequence;
+    }
+
+
+    // same as with BFS: make sure that T has "id"
+    template <typename T>
+    std::vector<T> Graph::depthFirstSearch(const T& start) const {
+        std::vector<T> sequence;
+        std::unordered_set<size_t> visited;
+        std::stack<size_t> s;
+
+        s.push(start.id);
+
+        while (!s.empty()) {
+            size_t currentId = s.top();
+            s.pop();
+
+            if (visited.count(currentId)) {
+                continue;
+            }
+
+            visited.insert(currentId);
+            sequence.push_back(T{currentId});
+
+            auto neighbors = this->getNeighborIds(currentId);
+            std::reverse(neighbors.begin(), neighbors.end());
+
+            for (size_t neighbor : neighbors) {
+                if (!visited.count(neighbor)) {
+                    s.push(neighbor);
+                }
+            }
+        }
+    
+        return sequence;
+    }
+
+
+    
 }
