@@ -6,7 +6,7 @@ namespace df {
 	Texture Texture::init(const GLsizei width, const GLsizei height) noexcept {
 		Texture self;
 
-		glGenTextures(1, &self.m_handle);
+		glGenTextures(1, &self.handle);
 		glBindTexture(GL_TEXTURE_2D, self);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -18,21 +18,21 @@ namespace df {
 
 
 	Texture Texture::init(const assets::Texture asset) noexcept {
-		const std::string asset_path = assets::getAssetPath(asset);
-		return init(asset_path.c_str());
+		const std::string assetPath = assets::getAssetPath(asset);
+		return init(assetPath.c_str());
 	}
 
 
 	Texture Texture::init(const char* path) noexcept {
-		int w, h, c;
+		int w, h, c; // assuming these stand for: width, height, channels ?!
 		stbi_set_flip_vertically_on_load(true);
 		stbi_uc* data = stbi_load(path, &w, &h, &c, 4);
 
 		Texture self;
-		glGenTextures(1, &self.m_handle);
-		glBindTexture(GL_TEXTURE_2D, self.m_handle);
+		glGenTextures(1, &self.handle);
+		glBindTexture(GL_TEXTURE_2D, self.handle);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -46,12 +46,12 @@ namespace df {
 
 
 	void Texture::deinit() noexcept {
-		glDeleteTextures(1, &m_handle);
+		glDeleteTextures(1, &handle);
 	}
 
 
 	void Texture::bind(const GLuint sampler) const noexcept {
 		glActiveTexture(GL_TEXTURE0 + sampler);
-		glBindTexture(GL_TEXTURE_2D, m_handle);
+		glBindTexture(GL_TEXTURE_2D, handle);
 	}
 }

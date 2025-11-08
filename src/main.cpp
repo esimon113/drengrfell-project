@@ -1,13 +1,18 @@
 #include <application.h>
-#include <utils/command_line_options.h>
+#include <utils/commandLineOptions.h>
+
+
 
 int main(int argc, char** argv) {
-	CommandLineOptions options = CommandLineOptions::parse(argc, argv);
-	std::optional<Application> app = Application::init(options);
+	df::CommandLineOptions options = df::CommandLineOptions::parse(argc, argv);
+	std::optional<df::Application> app = df::Application::init(options);
+
 	if (!app) {
 		return EXIT_FAILURE;
 	}
+
 	app->run();
 	app->deinit();
+
 	return EXIT_SUCCESS;
 }

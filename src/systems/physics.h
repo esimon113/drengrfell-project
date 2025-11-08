@@ -9,24 +9,28 @@
 namespace df {
 	class PhysicsSystem {
 		public:
-			static PhysicsSystem init(Registry* registry, AudioSystem* audio_engine) noexcept;
+			static PhysicsSystem init(Registry* registry, AudioSystem* audioEngine) noexcept;
 			void deinit() noexcept;
 
 			void step(const float delta) noexcept;
 			void handleCollisions(const float delta) noexcept;
 			void reset() noexcept;
 
+
 		private:
-			Registry* m_registry;
-			AudioSystem* m_audio_engine;
+			Registry* registry;
+			AudioSystem* audioEngine;
+
 
 			struct Collision {
-				Entity m_first; Entity m_second;
+				Entity first;
+				Entity second;
+
 				bool operator==(const Collision& other) const {
-					return (m_first == other.m_first && m_second == other.m_second)
-						|| (m_first == other.m_second && m_second == other.m_first);
+					return (first == other.first && second == other.second) || (first == other.second && second == other.first);
 				}
 			};
-			std::vector<Collision> m_collisions;
+
+			std::vector<Collision> collisions;
 	};
 }

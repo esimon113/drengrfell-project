@@ -16,38 +16,40 @@ namespace df {
 			static std::optional<Window*> init(const size_t width, const size_t height, const char* title) noexcept;
 			void deinit() noexcept;
 
-			inline GLFWwindow* handle() noexcept { return m_handle; }
-			inline void makeContextCurrent() noexcept { glfwMakeContextCurrent(m_handle); }
+			inline GLFWwindow* getHandle() noexcept { return handle; }
+			inline void makeContextCurrent() noexcept { glfwMakeContextCurrent(handle); }
 			inline void unsetCurrentContext() noexcept { glfwMakeContextCurrent(nullptr); }
-			inline bool shouldClose() noexcept { return glfwWindowShouldClose(m_handle); }
-			inline void close() noexcept { glfwSetWindowShouldClose(m_handle, GLFW_TRUE); }
-			inline void swapBuffers() noexcept { glfwSwapBuffers(m_handle); }
-			inline void setTitle(const char* title) noexcept { glfwSetWindowTitle(m_handle, title); }
+			inline bool shouldClose() noexcept { return glfwWindowShouldClose(handle); }
+			inline void close() noexcept { glfwSetWindowShouldClose(handle, GLFW_TRUE); }
+			inline void swapBuffers() noexcept { glfwSwapBuffers(handle); }
+			inline void setTitle(const char* title) noexcept { glfwSetWindowTitle(handle, title); }
 
-			inline void setKeyCallback(KeyFunction key_function) noexcept { m_key_callback = key_function; }
-			inline void setResizeCallback(ResizeFunction resize_function) noexcept { m_resize_callback = resize_function; }
+			inline void setKeyCallback(KeyFunction keyFunction) noexcept { this->keyFunction = keyFunction; }
+			inline void setResizeCallback(ResizeFunction resizeFunction) noexcept { this->resizeFunction = resizeFunction; }
 
-			inline glm::vec2 cursorPosition() const noexcept { return m_cursor_position; }
-			inline glm::uvec2 windowExtent() const noexcept { return m_window_extent; }
-			
-			inline glm::vec2 contentScale() const noexcept {
+			inline glm::vec2 getCursorPosition() const noexcept { return cursorPosition; }
+			inline glm::uvec2 getWindowExtent() const noexcept { return windowExtent; }
+
+
+			inline glm::vec2 getContentScale() const noexcept {
 				glm::vec2 scale;
-				glfwGetWindowContentScale(m_handle, &scale.x, &scale.y);
+				glfwGetWindowContentScale(handle, &scale.x, &scale.y);
+
 				return scale;
 			}
 
 
 		private:
-			GLFWwindow* m_handle;
+			GLFWwindow* handle;
 
-			glm::uvec2 m_window_extent;
-			ResizeFunction m_resize_callback;
+			glm::uvec2 windowExtent;
+			ResizeFunction resizeFunction;
 			static void resizeCallback(GLFWwindow*, int width, int height) noexcept;
 
-			glm::vec2 m_cursor_position;
+			glm::vec2 cursorPosition;
 			static void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) noexcept;
 
-			KeyFunction m_key_callback;
+			KeyFunction keyFunction;
 			static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
 	};
 } // namespace df

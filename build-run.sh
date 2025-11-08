@@ -11,9 +11,11 @@ mkdir build
 cd build
 
 
+echo "Running cmake commands..."
 cmake ..
 make
+echo "Running cmake completed..."
 
 
-echo "Running program..."
-./vgp-template
+echo "Starting program..."
+./drengrfell

@@ -5,19 +5,19 @@
 
 
 namespace df {
-	std::optional<Mesh> Mesh::init(const assets::Mesh asset) noexcept {
+	::std::optional<Mesh> Mesh::init(const assets::Mesh asset) noexcept {
 		Mesh self;
 
-		const std::string asset_path = assets::getAssetPath(asset);
-		const std::string base_path = std::filesystem::path(asset_path).parent_path().string();
-		tinyobj::ObjReaderConfig reader_config;
-		reader_config.mtl_search_path = base_path;
+		const ::std::string assetPath = assets::getAssetPath(asset);
+		const ::std::string basePath = ::std::filesystem::path(assetPath).parent_path().string();
+		tinyobj::ObjReaderConfig readerConfig;
+		readerConfig.mtl_search_path = basePath;
 
 		tinyobj::ObjReader reader;
 
-		if (!reader.ParseFromFile(asset_path, reader_config)) {
+		if (!reader.ParseFromFile(assetPath, readerConfig)) {
 			fmt::println(stderr, "Failed to read mesh: {}", reader.Error());
-			return std::nullopt;
+			return ::std::nullopt;
 		}
 
 		if (!reader.Warning().empty()) {
@@ -27,52 +27,54 @@ namespace df {
 		const auto& attrib = reader.GetAttrib();
 		const auto& shapes = reader.GetShapes();
 
-		size_t index_count = 0;
+		size_t indexCount = 0;
 		for (auto shape : shapes) {
-			index_count += shape.mesh.indices.size();
+			indexCount += shape.mesh.indices.size();
 		}
-		self.m_index_count = (uint32_t)index_count;
+		self.indexCount = (uint32_t)indexCount;
 
-		const size_t index_size = sizeof(uint32_t) * index_count;
-		std::vector<uint32_t> indices;
-		indices.reserve(index_count);
+		const size_t index_size = sizeof(uint32_t) * indexCount;
+		::std::vector<uint32_t> indices;
+		indices.reserve(indexCount);
 
-		std::vector<ColoredVertex> vertices;
-		std::unordered_map<ColoredVertex, uint32_t> unique_vertices;
-		vertices.reserve(index_count);
+		::std::vector<ColoredVertex> vertices;
+		::std::unordered_map<ColoredVertex, uint32_t> uniqueVertices;
+		vertices.reserve(indexCount);
 
 		for (const auto& shape : shapes) {
 			for (const auto& index : shape.mesh.indices) {
 				ColoredVertex vertex{};
-				vertex.m_position = {
+
+				vertex.position = {
 					attrib.vertices[3 * index.vertex_index + 0],
 					attrib.vertices[3 * index.vertex_index + 1],
 					attrib.vertices[3 * index.vertex_index + 2]
 				};
-				vertex.m_color = {
+
+				vertex.color = {
 					attrib.colors[3 * index.vertex_index + 0],
 					attrib.colors[3 * index.vertex_index + 1],
 					attrib.colors[3 * index.vertex_index + 2]
 				};
 
-				if (!unique_vertices.contains(vertex)) {
-					unique_vertices.emplace(vertex, static_cast<uint32_t>(vertices.size()));
+				if (!uniqueVertices.contains(vertex)) {
+					uniqueVertices.emplace(vertex, static_cast<uint32_t>(vertices.size()));
 					vertices.emplace_back(vertex);
 				}
 
-				indices.emplace_back(unique_vertices[vertex]);
+				indices.emplace_back(uniqueVertices[vertex]);
 			}
 		}
 		const size_t vertex_size = sizeof(ColoredVertex) * vertices.size();
 
-		glGenVertexArrays(1, &self.m_vao);
-		glBindVertexArray(self.m_vao);
+		glGenVertexArrays(1, &self.vao);
+		glBindVertexArray(self.vao);
 
-		glGenBuffers(2, &self.m_vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, self.m_vbo);
+		glGenBuffers(2, &self.vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, self.vbo);
 		glBufferData(GL_ARRAY_BUFFER, vertex_size, vertices.data(), GL_STATIC_DRAW);
 
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.m_ebo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_size, indices.data(), GL_STATIC_DRAW);
 
 		glEnableVertexAttribArray(0);
@@ -85,12 +87,12 @@ namespace df {
 
 
 	void Mesh::deinit() noexcept {
-		glDeleteBuffers(2, &m_vbo);
-		glDeleteVertexArrays(1, &m_vao);
+		glDeleteBuffers(2, &vbo);
+		glDeleteVertexArrays(1, &vao);
 	}
 
 
 	void Mesh::bind() const noexcept {
-		glBindVertexArray(m_vao);
+		glBindVertexArray(vao);
 	}
 }

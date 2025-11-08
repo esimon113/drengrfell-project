@@ -4,7 +4,7 @@ include(FetchContent)
 # propagate variables set in this project to fetched dependencies
 cmake_policy(SET CMP0077 NEW)
 
-project(vgp-template VERSION 0.0 LANGUAGES CXX C)
+project(drengrfell VERSION 0.0 LANGUAGES CXX C)
 
 # Set the build type to Debug if no other build type was selected.
 if (NOT CMAKE_BUILD_TYPE)

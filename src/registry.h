@@ -7,9 +7,6 @@
 
 namespace df {
 	struct Player {};
-	struct Eagle {};
-	struct Egg {};
-	struct Bug {};
 
 
 
@@ -21,29 +18,25 @@ namespace df {
 			void clear() noexcept;
 			void clear(const Entity entity) noexcept;
 
-			ComponentContainer<glm::vec2> m_positions;
-			ComponentContainer<glm::vec2> m_velocities;
-			ComponentContainer<glm::vec2> m_scales;
-			ComponentContainer<float> m_angles;
+			ComponentContainer<glm::vec2> positions;
+			ComponentContainer<glm::vec2> velocities;
+			ComponentContainer<glm::vec2> scales;
+			ComponentContainer<float> angles;
 
-			ComponentContainer<Player> m_players;
-			ComponentContainer<Eagle> m_eagles;
-			ComponentContainer<Egg> m_eggs;
-			ComponentContainer<Bug> m_bugs;
+			ComponentContainer<Player> players;
 
-			ComponentContainer<float> m_death_timers;
-			ComponentContainer<float> m_collision_radius;
+			ComponentContainer<float> collisionRadius;
 
-			ComponentContainer<glm::vec3> m_colors;
+			ComponentContainer<glm::vec3> colors;
 
-			inline Entity player() noexcept { return m_player; }
-			inline float& screenDarkness() noexcept { return m_screen_darkness; }
+			inline Entity getPlayer() noexcept { return player; }
+			inline float& getScreenDarkness() noexcept { return screenDarkness; }
 
 
 		private:
-			std::array<ContainerInterface*, 11> m_containers;
+			std::array<ContainerInterface*, 11> containers;
 
-			Entity m_player;
-			float m_screen_darkness;
+			Entity player;
+			float screenDarkness;
 	};
 } // namespace df

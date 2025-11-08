@@ -1,7 +1,7 @@
 #pragma once
 
 #include <common.h>
-#include <utils/command_line_options.h>
+#include <utils/commandLineOptions.h>
 
 #include <miniaudio.h>
 #include <utils/mesh.h>
@@ -22,18 +22,18 @@ namespace df {
 			// NOTE: You may want to use the constructor and destructor for initialization
 			//       and deinitialization of objects. For the template we opted to use explicit
 			//       initialization and deinitialization to avoid hidden control flow.
-			static std::optional<Application> init(const CommandLineOptions& options) noexcept;
+			static ::std::optional<Application> init(const CommandLineOptions& options) noexcept;
 			void deinit() noexcept;
 			void run() noexcept;
 
 		private:
-			Window* m_window;
-			Registry* m_registry;
-			AudioSystem* m_audio_engine;
+			Window* window;
+			Registry* registry;
+			AudioSystem* audioEngine;
 
-			WorldSystem m_world;
-			PhysicsSystem m_physics;
-			RenderSystem m_render;
+			WorldSystem world;
+			PhysicsSystem physics;
+			RenderSystem render;
 
 			void reset() noexcept;
 
