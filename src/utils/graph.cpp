@@ -1,8 +1,15 @@
+#include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
+#include <unordered_map>
 #include <unordered_set>
 #include <queue>
 #include <stack>
+#include <utility>
+#include <vector>
 
 #include "graph.h"
 
@@ -61,7 +68,7 @@ namespace df {
         if (auto it = std::find(this->edges.begin(), this->edges.end(), edge); it != this->edges.end()) {
             this->edges.erase(it);
             this->edgeVertices.erase(it->id);
-        }        
+        }
     }
 
 
@@ -70,7 +77,7 @@ namespace df {
             this->vertices.erase(it);
             this->vertexEdges.erase(it->id);
             this->vertexTiles.erase(it->id);
-        }        
+        }
     }
 
 
@@ -158,7 +165,7 @@ namespace df {
 
 
     /**
-     * Gets ids of *all* neighbors, regardless of node-type. 
+     * Gets ids of *all* neighbors, regardless of node-type.
      * This means that ids must be unique over all node-types
      */
     std::vector<size_t> Graph::getNeighborIds(size_t id) const {
@@ -211,22 +218,22 @@ namespace df {
 
     // TODO: make sure that T has attribute "id"
     /**
-     * BFS finds shortest number of hops between nodes. 
-     * This can be used for checking road distances etc. 
-     * Search the graph into the breadth first -> first all nodes with distance 1, 
+     * BFS finds shortest number of hops between nodes.
+     * This can be used for checking road distances etc.
+     * Search the graph into the breadth first -> first all nodes with distance 1,
      * then all with distance 2, etc.
      */
-    template <typename T>
+    template <HasIdProperty T>
     std::vector<T> Graph::breadthFirstSearch(const T& start) const {
         std::vector<T> sequence;
         std::unordered_set<size_t> visitedIds;
         std::queue<size_t> q;
 
         q.push(start.id);
-        visitedIds.insert(id);
+        visitedIds.insert(start.id);
 
         while (!q.empty()) {
-            size_t currentId = q.front();
+            const size_t currentId = q.front();
             q.pop();
             sequence.push_back(T{currentId});
 
@@ -243,7 +250,7 @@ namespace df {
 
 
     // same as with BFS: make sure that T has "id"
-    template <typename T>
+    template <HasIdProperty T>
     std::vector<T> Graph::depthFirstSearch(const T& start) const {
         std::vector<T> sequence;
         std::unordered_set<size_t> visited;
@@ -252,7 +259,7 @@ namespace df {
         s.push(start.id);
 
         while (!s.empty()) {
-            size_t currentId = s.top();
+            const size_t currentId = s.top();
             s.pop();
 
             if (visited.count(currentId)) {
@@ -271,10 +278,76 @@ namespace df {
                 }
             }
         }
-    
+
         return sequence;
     }
 
 
-    
+    // works for weighted graphs -> could be useful later when different terrain yields different
+    // difficulties for travel. Also rule-based AI might use this for building roads and stuff...
+    // Algorithm calculates shortest paths to nodes *of same type*; TODO: need to think about this more
+    template<HasIdProperty T>
+    std::vector<T> Graph::dijkstra(const T& start) const {
+   		constexpr double INF = std::numeric_limits<double>::infinity();
+
+     	// map nodeId -> current best distance
+     	std::unordered_map<size_t, double> distance;
+      	std::unordered_map<size_t, size_t> previous;
+
+		// regard only certain type of nodes -> decide what T actually is
+		const std::vector<T>& nodes = []() -> const std::vector<T>& {
+			if constexpr (std::is_same_v<T, Tile>) {
+				return this->tiles;
+			}
+			else if constexpr (std::is_same_v<T, Edge>) {
+				return this->edges;
+			}
+			else {
+				return this->vertices;
+			}
+		}
+
+		for (const auto& node : nodes) {
+			distance[node.id] = INF; // make sure T has id
+			previous[node.id] = SIZE_MAX;
+		}
+
+		distance[start.id] = 0.0; // distance with itfelf
+
+		auto cmp = [](const std::pair<double, size_t>& a, const std::pair<double, size_t>& b) {
+			return a.first > b.first;
+		};
+
+		std::priority_queue<std::pair<double, size_t>, std::vector<std::pair<double, size_t>>, decltype(cmp)> q(cmp);
+		q.emplace(0.0, start.id);
+
+		while (!q.empty()) {
+			auto [dist, currentId] = q.top();
+			q.pop();
+
+			if (dist > distance[currentId]) {
+				continue;
+			}
+
+			for (size_t neighbourId : this->getNeighborIds(currentId)) {
+				double alternative = dist + 1.0; // fixed weight
+
+				if (alternative < distance[neighbourId]) {
+					distance[neighbourId] = alternative;
+					previous[neighbourId] = currentId;
+					q.emplace(alternative, neighbourId);
+				}
+			}
+		}
+
+		std::vector<T> reachableNodes;
+
+		for (const auto& node : nodes) {
+			if (distance[node.id] < INF) {
+				reachableNodes.push_back(node);
+			}
+		}
+
+		return reachableNodes;
+    }
 }

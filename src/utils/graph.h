@@ -1,38 +1,39 @@
 #pragma once
 
 #include <common.h>
+#include <cstddef>
 #include <vector>
 #include <unordered_map>
 #include <array>
-#include <algorithm>
+#include <concepts>
 
 
 
 namespace df {
 
     // structs are just placeholders for now:
-    struct Tile { 
-        size_t id; 
+    struct Tile {
+        size_t id;
         bool operator==(const Tile& other) const { return id == other.id; }
     };
 
-    struct Edge { 
-        size_t id; 
+    struct Edge {
+        size_t id;
 
         Edge() : id(SIZE_MAX){} // init id
         bool isBuildable(size_t playerId) { return false; }
         bool operator==(const Edge& other) const { return id == other.id; }
     };
 
-    struct Vertex { 
-        size_t id; 
+    struct Vertex {
+        size_t id;
 
         Vertex() : id(SIZE_MAX) {}
         bool isBuildable(size_t playerId) { return false; }
         bool operator==(const Vertex& other) const { return id == other.id; }
     };
 
-    
+
     // Go counter-clockwise from north:
     enum class TileDirection {
         NORTH = 0,
@@ -54,6 +55,14 @@ namespace df {
             default: return { 0, 0 };
         }
     }
+
+
+
+    // make sure T has id
+    template<typename T>
+    concept HasIdProperty = requires (T t) {
+    	{ t.id } -> std::convertible_to<size_t>;
+    };
 
 
 
@@ -105,19 +114,16 @@ namespace df {
             std::unordered_map<size_t, std::array<Edge, 3>> vertexEdges;
             std::unordered_map<size_t, std::array<Tile, 3>> vertexTiles;
 
-            
-            // Algorithms that might come in handy; some points to consicder:
-            // movable / copy_constructible?!
-            // operator== impelmented?!
-            // hashable?!
-            template<typename T>
+
+            // Algorithms that might come in handy;
+            template<HasIdProperty T>
             std::vector<T> breadthFirstSearch(const T& start) const;
-            template<typename T>
+            template<HasIdProperty T>
             std::vector<T> depthFirstSearch(const T& start) const;
-            template<typename T>
+            template<HasIdProperty T>
             std::vector<T> dijkstra(const T& start) const;
 
             std::vector<size_t> getNeighborIds(size_t id) const;
-            
+
     };
 }
