@@ -38,9 +38,9 @@ namespace df {
     enum class TileDirection {
         NORTH = 0,
         NORTH_WEST,
-        SOUTH_EAST,
-        SOUTH,
         SOUTH_WEST,
+        SOUTH,
+        SOUTH_EAST,
         NORTH_EAST
     };
 
