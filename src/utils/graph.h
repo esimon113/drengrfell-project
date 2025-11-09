@@ -21,6 +21,7 @@ namespace df {
         size_t id;
 
         Edge() : id(SIZE_MAX){} // init id
+        Edge(size_t id) : id(id) {}
         bool isBuildable(size_t playerId) { return false; }
         bool operator==(const Edge& other) const { return id == other.id; }
     };
@@ -29,6 +30,7 @@ namespace df {
         size_t id;
 
         Vertex() : id(SIZE_MAX) {}
+        Vertex(size_t id) : id(id) {}
         bool isBuildable(size_t playerId) { return false; }
         bool operator==(const Vertex& other) const { return id == other.id; }
     };
@@ -76,6 +78,10 @@ namespace df {
             void addEdge(const Edge& edge);
             void addVertex(const Vertex& vertex);
 
+            Tile& getTile(size_t index);
+            Edge& getEdge(size_t index);
+            Vertex& getVertex(size_t index);
+
             void removeTile(const Tile& tile);
             void removeEdge(const Edge& edge);
             void removeVertex(const Vertex& vertex);
@@ -90,10 +96,13 @@ namespace df {
             std::array<Edge, 3> getVertexEdges(const Vertex& vertex) const;
             std::array<Tile, 3> getVertexTiles(const Vertex& vertex) const;
 
-            const std::vector<Tile>& getTiles() const { return tiles; }
-            const std::vector<Edge>& getEdges() const { return edges; }
-            const std::vector<Vertex>& getVertices() const { return vertices; }
+            const std::vector<Tile>& getTiles() const { return this->tiles; }
+            const std::vector<Edge>& getEdges() const { return this->edges; }
+            const std::vector<Vertex>& getVertices() const { return this->vertices; }
 
+            size_t getTileCount() const { return this->tiles.size(); }
+            size_t getEdgeCount() const { return this->edges.size(); }
+            size_t getVertexCount() const { return this->vertices.size(); }
 
             // Allow for storing and loading:
             std::string serialize() const;
@@ -114,6 +123,9 @@ namespace df {
             std::unordered_map<size_t, std::array<Edge, 3>> vertexEdges;
             std::unordered_map<size_t, std::array<Tile, 3>> vertexTiles;
 
+            bool doesTileExist(const Tile& tile);
+            bool doesEdgeExist(const Edge& edge);
+            bool doesVertexExist(const Vertex& vertex);
 
             // Algorithms that might come in handy;
             template<HasIdProperty T>

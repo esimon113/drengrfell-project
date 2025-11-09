@@ -3,13 +3,13 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
-#include <unordered_set>
-#include <queue>
-#include <stack>
 #include <utility>
 #include <vector>
+#include <algorithm>
+#include <queue>
+#include <stack>
+#include <unordered_set>
 
 #include "graph.h"
 
@@ -55,6 +55,48 @@ namespace df {
     }
 
 
+    Tile& Graph::getTile(size_t index) {
+    	if (index >= this->tiles.size()) {
+    		throw std::out_of_range("Tile index out of range");
+    	}
+
+    	return this->tiles[index];
+    }
+
+
+    Edge& Graph::getEdge(size_t index) {
+    	if (index >= this->edges.size()) {
+    		throw std::out_of_range("Edge index out of range");
+    	}
+
+    	return this->edges[index];
+    }
+
+
+    Vertex& Graph::getVertex(size_t index) {
+    	if (index >= this->vertices.size()) {
+     		throw std::out_of_range("Vertex index out of range");
+     	}
+
+    	return this->vertices[index];
+    }
+
+
+    bool Graph::doesTileExist(const Tile& tile) {
+        return std::find(this->tiles.begin(), this->tiles.end(), tile) != this->tiles.end();
+    }
+
+
+    bool Graph::doesEdgeExist(const Edge& edge) {
+        return std::find(this->edges.begin(), this->edges.end(), edge) != this->edges.end();
+    }
+
+
+    bool Graph::doesVertexExist(const Vertex& vertex) {
+        return std::find(this->vertices.begin(), this->vertices.end(), vertex) != this->vertices.end();
+    }
+
+
     void Graph::removeTile(const Tile& tile) {
         if (auto it = std::find(this->tiles.begin(), this->tiles.end(), tile); it != this->tiles.end()) {
             this->tiles.erase(it);
@@ -82,17 +124,45 @@ namespace df {
 
 
     void Graph::connectEdgeToTile(const Tile& tile, const Edge& edge) {
-        throw std::runtime_error(std::string("NOT IMPLEMENTED: ") + __PRETTY_FUNCTION__);
+    	if (!this->doesTileExist(tile)) { throw std::invalid_argument("Tile not found"); }
+    	if (!this->doesEdgeExist(edge)) { throw std::invalid_argument("Edge not found"); }
+
+  		auto& localEdges = this->tileEdges[tile.id];
+    	for (size_t i = 0; i < 6; ++i) {
+     		if (localEdges[i].id == SIZE_MAX) {
+    			localEdges[i] = edge;
+    			break;
+       		}
+     	}
+
     }
 
 
     void Graph::connectVertexToEdge(const Edge& edge, const Vertex& vertex) {
-        throw std::runtime_error(std::string("NOT IMPLEMENTED: ") + __PRETTY_FUNCTION__);
+    	if (!this->doesEdgeExist(edge)) { throw std::invalid_argument("Edge not found"); }
+    	if (!this->doesVertexExist(vertex)) { throw std::invalid_argument("Vertex not found"); }
+
+  		auto& localVertices = this->edgeVertices[edge.id];
+    	for (size_t i = 0; i < 2; ++i) {
+     		if (localVertices[i].id == SIZE_MAX) {
+    			localVertices[i] = vertex;
+       			break;
+       		}
+     	}
     }
 
 
     void Graph::connectVertexToTile(const Vertex& vertex, const Tile& tile) {
-        throw std::runtime_error(std::string("NOT IMPLEMENTED: ") + __PRETTY_FUNCTION__);
+    	if (!this->doesVertexExist(vertex)) { throw std::invalid_argument("Vertex not found"); }
+    	if (!this->doesTileExist(tile)) { throw std::invalid_argument("Tile not found"); }
+
+  		auto& localVertices = this->tileVertices[tile.id];
+        for (size_t i = 0; i < 6; ++i) {
+      		if (localVertices[i].id == SIZE_MAX) {
+     			localVertices[i] = vertex;
+        		break;
+        	}
+        }
     }
 
 
@@ -295,7 +365,7 @@ namespace df {
       	std::unordered_map<size_t, size_t> previous;
 
 		// regard only certain type of nodes -> decide what T actually is
-		const std::vector<T>& nodes = []() -> const std::vector<T>& {
+		const std::vector<T>& nodes = [this]() -> const std::vector<T>& {
 			if constexpr (std::is_same_v<T, Tile>) {
 				return this->tiles;
 			}
@@ -305,7 +375,7 @@ namespace df {
 			else {
 				return this->vertices;
 			}
-		}
+		}(); //directly call lambda
 
 		for (const auto& node : nodes) {
 			distance[node.id] = INF; // make sure T has id
