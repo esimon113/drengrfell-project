@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.24)
 include(FetchContent)
 
 # propagate variables set in this project to fetched dependencies
@@ -83,7 +83,20 @@ FetchContent_Declare(
 	GIT_PROGRESS TRUE
 	EXCLUDE_FROM_ALL
 )
-FetchContent_MakeAvailable(fmt tinyobj stb)
+FetchContent_Declare(
+    nlohmann_json # MIT Licence
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.12.0
+	GIT_SHALLOW TRUE
+	GIT_PROGRESS TRUE
+	EXCLUDE_FROM_ALL
+)
+FetchContent_MakeAvailable(
+	fmt
+	tinyobj
+	stb
+	nlohmann_json
+)
 
 # Configure compiler flags as an interface library
 add_library(compiler_flags INTERFACE)
@@ -107,6 +120,8 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/application.cpp
 	${PROJECT_SOURCE_DIR}/src/registry.cpp
 	${PROJECT_SOURCE_DIR}/src/window.cpp
+
+	${PROJECT_SOURCE_DIR}/src/core/graph.cpp
 
 	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
@@ -134,5 +149,13 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-	compiler_flags glfw glm::glm miniaudio tinyobjloader gl3w fmt tinyECS
+	compiler_flags
+	glfw
+	glm::glm
+	miniaudio
+	tinyobjloader
+	gl3w
+	fmt
+	tinyECS
+	nlohmann_json::nlohmann_json
 )

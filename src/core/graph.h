@@ -2,10 +2,16 @@
 
 #include <common.h>
 #include <cstddef>
+#include <filesystem>
 #include <vector>
 #include <unordered_map>
 #include <array>
 #include <concepts>
+
+
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 
 
@@ -15,22 +21,47 @@ namespace df {
     struct Tile {
         size_t id;
         bool operator==(const Tile& other) const { return id == other.id; }
+
+        // continue for other properties (if necessary):
+        void to_json(json& j) { j = json{{"id", this->id}}; }
+        void from_json(const json& j) { j.at("id").get_to(this->id); }
+
+        const json getMetaInfoJson() const {
+        	json j;
+         	j = json{{"id", this->id}};
+
+       		return j;
+        }
+
+        void setMetaInfoFromJson(const json& j) { this->id = j["id"]; }
     };
+
 
     struct Edge {
         size_t id;
 
         Edge() : id(SIZE_MAX){} // init id
-        bool isBuildable(size_t playerId) { return false; }
+        Edge(size_t id) : id(id) {}
+        bool isBuildable(size_t playerId) { return playerId != 0; }
         bool operator==(const Edge& other) const { return id == other.id; }
+
+        // continue for other properties (if necessary):
+        void to_json(json& j) { j = json{{"id", this->id}}; }
+        void from_json(const json& j) { j.at("id").get_to(this->id); }
     };
+
 
     struct Vertex {
         size_t id;
 
         Vertex() : id(SIZE_MAX) {}
-        bool isBuildable(size_t playerId) { return false; }
+        Vertex(size_t id) : id(id) {}
+        bool isBuildable(size_t playerId) { return playerId != 0; }
         bool operator==(const Vertex& other) const { return id == other.id; }
+
+        // continue for other properties (if necessary):
+        void to_json(json& j) { j = json{{"id", this->id}}; }
+        void from_json(const json& j) { j.at("id").get_to(this->id); }
     };
 
 
@@ -76,6 +107,10 @@ namespace df {
             void addEdge(const Edge& edge);
             void addVertex(const Vertex& vertex);
 
+            Tile& getTile(size_t index);
+            Edge& getEdge(size_t index);
+            Vertex& getVertex(size_t index);
+
             void removeTile(const Tile& tile);
             void removeEdge(const Edge& edge);
             void removeVertex(const Vertex& vertex);
@@ -90,14 +125,21 @@ namespace df {
             std::array<Edge, 3> getVertexEdges(const Vertex& vertex) const;
             std::array<Tile, 3> getVertexTiles(const Vertex& vertex) const;
 
-            const std::vector<Tile>& getTiles() const { return tiles; }
-            const std::vector<Edge>& getEdges() const { return edges; }
-            const std::vector<Vertex>& getVertices() const { return vertices; }
+            const std::vector<Tile>& getTiles() const { return this->tiles; }
+            const std::vector<Edge>& getEdges() const { return this->edges; }
+            const std::vector<Vertex>& getVertices() const { return this->vertices; }
 
+            size_t getTileCount() const { return this->tiles.size(); }
+            size_t getEdgeCount() const { return this->edges.size(); }
+            size_t getVertexCount() const { return this->vertices.size(); }
 
             // Allow for storing and loading:
-            std::string serialize() const;
-            void deserialize(const std::string& data) const;
+            json serialize() const;
+            void deserialize(const std::string& data);
+
+            // no game state included, only map topology...
+            void save(std::filesystem::path& to);
+            void load(std::filesystem::path& from);
 
 
         private:
@@ -114,6 +156,9 @@ namespace df {
             std::unordered_map<size_t, std::array<Edge, 3>> vertexEdges;
             std::unordered_map<size_t, std::array<Tile, 3>> vertexTiles;
 
+            bool doesTileExist(const Tile& tile);
+            bool doesEdgeExist(const Edge& edge);
+            bool doesVertexExist(const Vertex& vertex);
 
             // Algorithms that might come in handy;
             template<HasIdProperty T>

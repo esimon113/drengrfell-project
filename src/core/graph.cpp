@@ -1,17 +1,20 @@
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
-#include <unordered_set>
-#include <queue>
-#include <stack>
 #include <utility>
 #include <vector>
+#include <algorithm>
+#include <queue>
+#include <stack>
+#include <unordered_set>
+#include <fstream>
 
 #include "graph.h"
+
 
 
 
@@ -55,6 +58,48 @@ namespace df {
     }
 
 
+    Tile& Graph::getTile(size_t index) {
+    	if (index >= this->tiles.size()) {
+    		throw std::out_of_range("Tile index out of range");
+    	}
+
+    	return this->tiles[index];
+    }
+
+
+    Edge& Graph::getEdge(size_t index) {
+    	if (index >= this->edges.size()) {
+    		throw std::out_of_range("Edge index out of range");
+    	}
+
+    	return this->edges[index];
+    }
+
+
+    Vertex& Graph::getVertex(size_t index) {
+    	if (index >= this->vertices.size()) {
+     		throw std::out_of_range("Vertex index out of range");
+     	}
+
+    	return this->vertices[index];
+    }
+
+
+    bool Graph::doesTileExist(const Tile& tile) {
+        return std::find(this->tiles.begin(), this->tiles.end(), tile) != this->tiles.end();
+    }
+
+
+    bool Graph::doesEdgeExist(const Edge& edge) {
+        return std::find(this->edges.begin(), this->edges.end(), edge) != this->edges.end();
+    }
+
+
+    bool Graph::doesVertexExist(const Vertex& vertex) {
+        return std::find(this->vertices.begin(), this->vertices.end(), vertex) != this->vertices.end();
+    }
+
+
     void Graph::removeTile(const Tile& tile) {
         if (auto it = std::find(this->tiles.begin(), this->tiles.end(), tile); it != this->tiles.end()) {
             this->tiles.erase(it);
@@ -82,17 +127,44 @@ namespace df {
 
 
     void Graph::connectEdgeToTile(const Tile& tile, const Edge& edge) {
-        throw std::runtime_error(std::string("NOT IMPLEMENTED: ") + __PRETTY_FUNCTION__);
+    	if (!this->doesTileExist(tile)) { throw std::invalid_argument("Tile not found"); }
+    	if (!this->doesEdgeExist(edge)) { throw std::invalid_argument("Edge not found"); }
+
+  		auto& localEdges = this->tileEdges[tile.id];
+    	for (size_t i = 0; i < 6; ++i) {
+     		if (localEdges[i].id == SIZE_MAX) {
+    			localEdges[i] = edge;
+    			break;
+       		}
+     	}
     }
 
 
     void Graph::connectVertexToEdge(const Edge& edge, const Vertex& vertex) {
-        throw std::runtime_error(std::string("NOT IMPLEMENTED: ") + __PRETTY_FUNCTION__);
+    	if (!this->doesEdgeExist(edge)) { throw std::invalid_argument("Edge not found"); }
+    	if (!this->doesVertexExist(vertex)) { throw std::invalid_argument("Vertex not found"); }
+
+  		auto& localVertices = this->edgeVertices[edge.id];
+    	for (size_t i = 0; i < 2; ++i) {
+     		if (localVertices[i].id == SIZE_MAX) {
+    			localVertices[i] = vertex;
+       			break;
+       		}
+     	}
     }
 
 
     void Graph::connectVertexToTile(const Vertex& vertex, const Tile& tile) {
-        throw std::runtime_error(std::string("NOT IMPLEMENTED: ") + __PRETTY_FUNCTION__);
+    	if (!this->doesVertexExist(vertex)) { throw std::invalid_argument("Vertex not found"); }
+    	if (!this->doesTileExist(tile)) { throw std::invalid_argument("Tile not found"); }
+
+  		auto& localVertices = this->tileVertices[tile.id];
+        for (size_t i = 0; i < 6; ++i) {
+      		if (localVertices[i].id == SIZE_MAX) {
+     			localVertices[i] = vertex;
+        		break;
+        	}
+        }
     }
 
 
@@ -151,15 +223,121 @@ namespace df {
     }
 
 
-    std::string Graph::serialize() const {
-        throw std::runtime_error(std::string("NOT IMPLEMENTED: ") + __PRETTY_FUNCTION__);
+    json Graph::serialize() const {
+    	json j;
+
+     	for (const auto& tile : this->tiles) {
+      		json tileJson;
+        	tileJson["id"] = tile.id;
+			tileJson["meta"] = tile.getMetaInfoJson();
+
+			json edgesJson;
+			for (const auto& edge : this->tileEdges.at(tile.id)) {
+				const auto& v = this->edgeVertices.at(edge.id);
+				edgesJson[std::to_string(edge.id)] = { v.at(0).id, v.at(1).id };
+			}
+
+			tileJson["edges"] = edgesJson;
+			j[std::to_string(tile.id)] = tileJson;
+      	}
+
+      	return j;
     }
 
 
-    void Graph::deserialize(const std::string& data) const {
-        throw std::runtime_error(std::string("NOT IMPLEMENTED: ") + __PRETTY_FUNCTION__);
+    // TODO: add error handling + sanity checks
+    // -> currently assumes correct JSON structure
+    void Graph::deserialize(const std::string& data) {
+    	json j = json::parse(data);
+
+		auto& self = *this; // be able to modify members
+		self.tiles.clear();
+		self.edges.clear();
+		self.vertices.clear();
+		self.tileEdges.clear();
+		self.edgeVertices.clear();
+
+        std::unordered_map<size_t, Vertex> verticesMap;
+        std::unordered_map<size_t, Edge> edgesMap;
+
+        for (auto it = j.begin(); it != j.end(); ++it) {
+       		size_t tileId = std::stoul(it.key());
+         	const json& tileJson = it.value();
+
+          	// TODO: add robust input validation
+          	if (!tileJson.contains("edges") || !tileJson["edges"].is_object()) {
+           		throw std::runtime_error("Invalid JSON structure");
+           	}
+
+          	Tile tile{tileId};
+
+           	tile.setMetaInfoFromJson(tileJson["meta"]);
+           	self.tiles.push_back(tile);
+
+            const auto& edgesJson = tileJson["edges"];
+
+            std::array<Edge, 6> tileEdgesArray;
+            size_t edgeIndex = 0;
+
+            for (auto edgeIt = edgesJson.begin(); edgeIt != edgesJson.end(); ++edgeIt) {
+            	if (!edgeIt.value().is_array() || edgeIt.value().size() != 2) {
+           			throw std::runtime_error("Invalid JSON structure");
+             	}
+
+           		size_t edgeId = std::stoul(edgeIt.key());
+             	const json& verticesJson = edgeIt.value();
+
+              	Edge edge{edgeId};
+               	edgesMap.emplace(edgeId, edge);
+
+                size_t vId0 = verticesJson.at(0).get<size_t>();
+                size_t vId1 = verticesJson.at(1).get<size_t>();
+
+                Vertex v0{vId0};
+                Vertex v1{vId1};
+
+                verticesMap.emplace(vId0, v0);
+                verticesMap.emplace(vId1, v1);
+
+                self.edgeVertices[edgeId] = { verticesMap[vId0], verticesMap[vId1] };
+
+                if (edgeIndex < 6) { tileEdgesArray[edgeIndex++] = edgesMap.at(edgeId); }
+            }
+
+            self.tileEdges[tileId] = tileEdgesArray;
+        }
+
+        for (auto& [id, vertex] : verticesMap) { self.vertices.push_back(vertex); }
+        for (auto& [id, edge] : edgesMap) { self.edges.push_back(edge); }
     }
 
+
+    /**
+     * Serialized the graph topology and stores it in json format into the specified file location.
+     */
+    void Graph::save(std::filesystem::path& to) {
+        std::ofstream file(to);
+
+        if (!file.is_open()) { throw std::runtime_error("Failed to open file for writing"); }
+
+        file << this->serialize().dump(4);
+        file.close();
+    }
+
+
+    /**
+     * Reads data from the specified file and deserializes it into the graph data type.
+     */
+    void Graph::load(std::filesystem::path& from) {
+        std::ifstream file(from);
+
+        if (!file.is_open()) { throw std::runtime_error("Failed to open file for reading"); }
+
+        std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        file.close();
+
+        this->deserialize(data);
+    }
 
 
 
@@ -295,7 +473,7 @@ namespace df {
       	std::unordered_map<size_t, size_t> previous;
 
 		// regard only certain type of nodes -> decide what T actually is
-		const std::vector<T>& nodes = []() -> const std::vector<T>& {
+		const std::vector<T>& nodes = [this]() -> const std::vector<T>& {
 			if constexpr (std::is_same_v<T, Tile>) {
 				return this->tiles;
 			}
@@ -305,7 +483,7 @@ namespace df {
 			else {
 				return this->vertices;
 			}
-		}
+		}(); //directly call lambda
 
 		for (const auto& node : nodes) {
 			distance[node.id] = INF; // make sure T has id
