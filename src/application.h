@@ -29,10 +29,10 @@ namespace df {
 		private:
 			Window* window;
 			Registry* registry;
-			AudioSystem* audioEngine;
+			// AudioSystem* audioEngine;
 
-			WorldSystem world;
-			PhysicsSystem physics;
+			// WorldSystem world;
+			// PhysicsSystem physics;
 			RenderSystem render;
 
 			void reset() noexcept;
