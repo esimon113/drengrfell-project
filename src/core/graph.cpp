@@ -1,3 +1,4 @@
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -10,8 +11,10 @@
 #include <queue>
 #include <stack>
 #include <unordered_set>
+#include <fstream>
 
 #include "graph.h"
+
 
 
 
@@ -134,7 +137,6 @@ namespace df {
     			break;
        		}
      	}
-
     }
 
 
@@ -221,15 +223,121 @@ namespace df {
     }
 
 
-    std::string Graph::serialize() const {
-        throw std::runtime_error(std::string("NOT IMPLEMENTED: ") + __PRETTY_FUNCTION__);
+    json Graph::serialize() const {
+    	json j;
+
+     	for (const auto& tile : this->tiles) {
+      		json tileJson;
+        	tileJson["id"] = tile.id;
+			tileJson["meta"] = tile.getMetaInfoJson();
+
+			json edgesJson;
+			for (const auto& edge : this->tileEdges.at(tile.id)) {
+				const auto& v = this->edgeVertices.at(edge.id);
+				edgesJson[std::to_string(edge.id)] = { v.at(0).id, v.at(1).id };
+			}
+
+			tileJson["edges"] = edgesJson;
+			j[std::to_string(tile.id)] = tileJson;
+      	}
+
+      	return j;
     }
 
 
-    void Graph::deserialize(const std::string& data) const {
-        throw std::runtime_error(std::string("NOT IMPLEMENTED: ") + __PRETTY_FUNCTION__);
+    // TODO: add error handling + sanity checks
+    // -> currently assumes correct JSON structure
+    void Graph::deserialize(const std::string& data) {
+    	json j = json::parse(data);
+
+		auto& self = *this; // be able to modify members
+		self.tiles.clear();
+		self.edges.clear();
+		self.vertices.clear();
+		self.tileEdges.clear();
+		self.edgeVertices.clear();
+
+        std::unordered_map<size_t, Vertex> verticesMap;
+        std::unordered_map<size_t, Edge> edgesMap;
+
+        for (auto it = j.begin(); it != j.end(); ++it) {
+       		size_t tileId = std::stoul(it.key());
+         	const json& tileJson = it.value();
+
+          	// TODO: add robust input validation
+          	if (!tileJson.contains("edges") || !tileJson["edges"].is_object()) {
+           		throw std::runtime_error("Invalid JSON structure");
+           	}
+
+          	Tile tile{tileId};
+
+           	tile.setMetaInfoFromJson(tileJson["meta"]);
+           	self.tiles.push_back(tile);
+
+            const auto& edgesJson = tileJson["edges"];
+
+            std::array<Edge, 6> tileEdgesArray;
+            size_t edgeIndex = 0;
+
+            for (auto edgeIt = edgesJson.begin(); edgeIt != edgesJson.end(); ++edgeIt) {
+            	if (!edgeIt.value().is_array() || edgeIt.value().size() != 2) {
+           			throw std::runtime_error("Invalid JSON structure");
+             	}
+
+           		size_t edgeId = std::stoul(edgeIt.key());
+             	const json& verticesJson = edgeIt.value();
+
+              	Edge edge{edgeId};
+               	edgesMap.emplace(edgeId, edge);
+
+                size_t vId0 = verticesJson.at(0).get<size_t>();
+                size_t vId1 = verticesJson.at(1).get<size_t>();
+
+                Vertex v0{vId0};
+                Vertex v1{vId1};
+
+                verticesMap.emplace(vId0, v0);
+                verticesMap.emplace(vId1, v1);
+
+                self.edgeVertices[edgeId] = { verticesMap[vId0], verticesMap[vId1] };
+
+                if (edgeIndex < 6) { tileEdgesArray[edgeIndex++] = edgesMap.at(edgeId); }
+            }
+
+            self.tileEdges[tileId] = tileEdgesArray;
+        }
+
+        for (auto& [id, vertex] : verticesMap) { self.vertices.push_back(vertex); }
+        for (auto& [id, edge] : edgesMap) { self.edges.push_back(edge); }
     }
 
+
+    /**
+     * Serialized the graph topology and stores it in json format into the specified file location.
+     */
+    void Graph::save(std::filesystem::path& to) {
+        std::ofstream file(to);
+
+        if (!file.is_open()) { throw std::runtime_error("Failed to open file for writing"); }
+
+        file << this->serialize().dump(4);
+        file.close();
+    }
+
+
+    /**
+     * Reads data from the specified file and deserializes it into the graph data type.
+     */
+    void Graph::load(std::filesystem::path& from) {
+        std::ifstream file(from);
+
+        if (!file.is_open()) { throw std::runtime_error("Failed to open file for reading"); }
+
+        std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        file.close();
+
+        this->deserialize(data);
+    }
 
 
 

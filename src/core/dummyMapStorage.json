@@ -1,0 +1,25 @@
+{
+	"tile_id_0": {
+		"id": 0,
+		"meta": {
+			"type": "forest",
+			"potency": "low"
+		},
+		"edges": {
+			"edge_id_0": ["vertex_id_0", "vertex_id_1"],
+			"1": [1, 2],
+			"2": [2, 3],
+			"3": [3, 4]
+		}
+	},
+	"1": {
+		"id": 1,
+		"meta": {
+			"type": "water"
+		},
+		"edges": {
+			"3": [6, 7],
+			"4": [8, 9]
+		}
+	}
+}
