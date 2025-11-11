@@ -10,27 +10,23 @@ void print(std::string s) {
 
 
 int main(int argc, char** argv) {
-	print("Starting...");
+	print("Starting and trying to initialize app...");
 
 	df::CommandLineOptions options = df::CommandLineOptions::parse(argc, argv);
 	std::optional<df::Application> app = df::Application::init(options);
 
-	print("Initialized app");
 
 	if (!app) {
 		return EXIT_FAILURE;
 	}
 
-	print("App exists");
-	print("Try running app");
-
+	print("Try running app...");
 	app->run();
-	print("App runs");
 
-	print("Try deinit app");
+	print("Try deinitialize app...");
 	app->deinit();
 
-	print("success");
+	print("Done.");
 
 	return EXIT_SUCCESS;
 }

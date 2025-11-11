@@ -87,7 +87,6 @@ namespace df {
 		// ma_sound_set_looping(music, MA_TRUE);
 		// ma_sound_start(music);
 
-		std::cout << "Starting Application::run()" << std::endl;
 
 		if (!this->window || !this->window->getHandle()) {
 			std::cerr << "Invalid window or GLFWwindow handle!" << std::endl;
@@ -105,9 +104,10 @@ namespace df {
 		float delta_time = 0;
 		float last_time = static_cast<float>(glfwGetTime());
 
-		std::cout << "	- Set windows->Callbacks" << std::endl;
+		std::cout << "	- Try setting clear color" << std::endl;
 		glClearColor(0, 0, 0, 1);
-		std::cout << "	- Entered loop" << std::endl;
+
+		std::cout << "	- Enter loop: setting background to gray..." << std::endl;
 		while (!window->shouldClose()) {
 
 			glClearColor(0.5, 0.5, 0.5, 1);
@@ -127,8 +127,6 @@ namespace df {
 
 			window->swapBuffers();
 		}
-
-		std::cout << "End of Application::run()" << std::endl;
 	}
 
 
