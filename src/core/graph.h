@@ -10,83 +10,15 @@
 
 
 #include <nlohmann/json.hpp>
-
 using json = nlohmann::json;
 
 
+#include "tile.h"
+#include "edge.h"
+#include "vertex.h"
+
 
 namespace df {
-
-    // structs are just placeholders for now:
-    struct Tile {
-        size_t id;
-        bool operator==(const Tile& other) const { return id == other.id; }
-
-        // continue for other properties (if necessary):
-        void to_json(json& j) { j = json{{"id", this->id}}; }
-        void from_json(const json& j) { j.at("id").get_to(this->id); }
-
-        const json getMetaInfoJson() const {
-        	json j;
-         	j = json{{"id", this->id}};
-
-       		return j;
-        }
-
-        void setMetaInfoFromJson(const json& j) { this->id = j["id"]; }
-    };
-
-
-    struct Edge {
-        size_t id;
-
-        Edge() : id(SIZE_MAX){} // init id
-        Edge(size_t id) : id(id) {}
-        bool isBuildable(size_t playerId) { return playerId != 0; }
-        bool operator==(const Edge& other) const { return id == other.id; }
-
-        // continue for other properties (if necessary):
-        void to_json(json& j) { j = json{{"id", this->id}}; }
-        void from_json(const json& j) { j.at("id").get_to(this->id); }
-    };
-
-
-    struct Vertex {
-        size_t id;
-
-        Vertex() : id(SIZE_MAX) {}
-        Vertex(size_t id) : id(id) {}
-        bool isBuildable(size_t playerId) { return playerId != 0; }
-        bool operator==(const Vertex& other) const { return id == other.id; }
-
-        // continue for other properties (if necessary):
-        void to_json(json& j) { j = json{{"id", this->id}}; }
-        void from_json(const json& j) { j.at("id").get_to(this->id); }
-    };
-
-
-    // Go counter-clockwise from north:
-    enum class TileDirection {
-        NORTH = 0,
-        NORTH_WEST,
-        SOUTH_WEST,
-        SOUTH,
-        SOUTH_EAST,
-        NORTH_EAST
-    };
-
-    inline std::tuple<size_t, size_t> getTileDirectionCoordinates(TileDirection direction) {
-        switch (direction) {
-            case TileDirection::NORTH:       return { 0, 1 };
-            case TileDirection::SOUTH:       return { 0, -1 };
-            case TileDirection::NORTH_EAST:  return { 1, 1 };
-            case TileDirection::NORTH_WEST:  return { -1, 1 };
-            case TileDirection::SOUTH_EAST:  return { 1, -1 };
-            case TileDirection::SOUTH_WEST:  return { -1, -1 };
-            default: return { 0, 0 };
-        }
-    }
-
 
 
     // make sure T has id

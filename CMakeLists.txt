@@ -84,9 +84,9 @@ FetchContent_Declare(
 	EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
-    nlohmann_json # MIT Licence
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.12.0
+				nlohmann_json # MIT Licence
+				GIT_REPOSITORY https://github.com/nlohmann/json.git
+				GIT_TAG v3.12.0
 	GIT_SHALLOW TRUE
 	GIT_PROGRESS TRUE
 	EXCLUDE_FROM_ALL
@@ -122,6 +122,9 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/window.cpp
 
 	${PROJECT_SOURCE_DIR}/src/core/graph.cpp
+	${PROJECT_SOURCE_DIR}/src/core/tile.cpp
+	${PROJECT_SOURCE_DIR}/src/core/edge.cpp
+	${PROJECT_SOURCE_DIR}/src/core/vertex.cpp
 
 	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
