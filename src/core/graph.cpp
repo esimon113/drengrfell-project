@@ -28,8 +28,8 @@ namespace df {
             std::array<Vertex, 6> vertices;
 
             // added with default values (from constructors)
-            this->tileEdges[tile.id] = edges;
-            this->tileVertices[tile.id] = vertices;
+            this->tileEdges[tile.getId()] = edges;
+            this->tileVertices[tile.getId()] = vertices;
         }
     }
 
@@ -40,7 +40,7 @@ namespace df {
 
             std::array<Vertex, 2> vertices;
 
-            this->edgeVertices[edge.id] = vertices;
+            this->edgeVertices[edge.getId()] = vertices;
         }
     }
 
@@ -52,8 +52,8 @@ namespace df {
             std::array<Edge, 3> edges;
             std::array<Tile, 3> tiles;
 
-            this->vertexEdges[vertex.id] = edges;
-            this->vertexTiles[vertex.id] = tiles;
+            this->vertexEdges[vertex.getId()] = edges;
+            this->vertexTiles[vertex.getId()] = tiles;
         }
     }
 
@@ -103,8 +103,8 @@ namespace df {
     void Graph::removeTile(const Tile& tile) {
         if (auto it = std::find(this->tiles.begin(), this->tiles.end(), tile); it != this->tiles.end()) {
             this->tiles.erase(it);
-            this->tileEdges.erase(it->id);
-            this->tileVertices.erase(it->id);
+            this->tileEdges.erase(it->getId());
+            this->tileVertices.erase(it->getId());
         }
     }
 
@@ -112,7 +112,7 @@ namespace df {
     void Graph::removeEdge(const Edge& edge) {
         if (auto it = std::find(this->edges.begin(), this->edges.end(), edge); it != this->edges.end()) {
             this->edges.erase(it);
-            this->edgeVertices.erase(it->id);
+            this->edgeVertices.erase(it->getId());
         }
     }
 
@@ -120,8 +120,8 @@ namespace df {
     void Graph::removeVertex(const Vertex& vertex) {
         if (auto it = std::find(this->vertices.begin(), this->vertices.end(), vertex); it != this->vertices.end()) {
             this->vertices.erase(it);
-            this->vertexEdges.erase(it->id);
-            this->vertexTiles.erase(it->id);
+            this->vertexEdges.erase(it->getId());
+            this->vertexTiles.erase(it->getId());
         }
     }
 
@@ -130,9 +130,9 @@ namespace df {
     	if (!this->doesTileExist(tile)) { throw std::invalid_argument("Tile not found"); }
     	if (!this->doesEdgeExist(edge)) { throw std::invalid_argument("Edge not found"); }
 
-  		auto& localEdges = this->tileEdges[tile.id];
+  		auto& localEdges = this->tileEdges[tile.getId()];
     	for (size_t i = 0; i < 6; ++i) {
-     		if (localEdges[i].id == SIZE_MAX) {
+     		if (localEdges[i].getId() == SIZE_MAX) {
     			localEdges[i] = edge;
     			break;
        		}
@@ -144,9 +144,9 @@ namespace df {
     	if (!this->doesEdgeExist(edge)) { throw std::invalid_argument("Edge not found"); }
     	if (!this->doesVertexExist(vertex)) { throw std::invalid_argument("Vertex not found"); }
 
-  		auto& localVertices = this->edgeVertices[edge.id];
+  		auto& localVertices = this->edgeVertices[edge.getId()];
     	for (size_t i = 0; i < 2; ++i) {
-     		if (localVertices[i].id == SIZE_MAX) {
+     		if (localVertices[i].getId() == SIZE_MAX) {
     			localVertices[i] = vertex;
        			break;
        		}
@@ -158,9 +158,9 @@ namespace df {
     	if (!this->doesVertexExist(vertex)) { throw std::invalid_argument("Vertex not found"); }
     	if (!this->doesTileExist(tile)) { throw std::invalid_argument("Tile not found"); }
 
-  		auto& localVertices = this->tileVertices[tile.id];
+  		auto& localVertices = this->tileVertices[tile.getId()];
         for (size_t i = 0; i < 6; ++i) {
-      		if (localVertices[i].id == SIZE_MAX) {
+      		if (localVertices[i].getId() == SIZE_MAX) {
      			localVertices[i] = vertex;
         		break;
         	}
@@ -172,7 +172,7 @@ namespace df {
      * Returns an empty array {} if the tile is not found.
      */
     std::array<Edge, 6> Graph::getTileEdges(const Tile& tile) const {
-        if (auto it = this->tileEdges.find(tile.id); it != this->tileEdges.end()) {
+        if (auto it = this->tileEdges.find(tile.getId()); it != this->tileEdges.end()) {
             return it->second;
         }
         return {};
@@ -183,7 +183,7 @@ namespace df {
      * Returns an empty array {} if the tile is not found.
      */
     std::array<Vertex, 6> Graph::getTileVertices(const Tile& tile) const {
-        if (auto it = this->tileVertices.find(tile.id); it != this->tileVertices.end()) {
+        if (auto it = this->tileVertices.find(tile.getId()); it != this->tileVertices.end()) {
             return it->second;
         }
         return {};
@@ -194,7 +194,7 @@ namespace df {
      * Returns an empty array {} if the edge is not found.
      */
     std::array<Vertex, 2> Graph::getEdgeVertices(const Edge& edge) const {
-        if (auto it = this->edgeVertices.find(edge.id); it != this->edgeVertices.end()) {
+        if (auto it = this->edgeVertices.find(edge.getId()); it != this->edgeVertices.end()) {
             return it->second;
         }
         return {};
@@ -205,7 +205,7 @@ namespace df {
      * Returns an empty array {} if the vertex is not found.
      */
     std::array<Edge, 3> Graph::getVertexEdges(const Vertex& vertex) const {
-        if (auto it = this->vertexEdges.find(vertex.id); it != this->vertexEdges.end()) {
+        if (auto it = this->vertexEdges.find(vertex.getId()); it != this->vertexEdges.end()) {
             return it->second;
         }
         return {};
@@ -216,7 +216,7 @@ namespace df {
      * Returns an empty array {} if the vertex is not found.
      */
     std::array<Tile, 3> Graph::getVertexTiles(const Vertex& vertex) const {
-        if (auto it = this->vertexTiles.find(vertex.id); it != this->vertexTiles.end()) {
+        if (auto it = this->vertexTiles.find(vertex.getId()); it != this->vertexTiles.end()) {
             return it->second;
         }
         return {};
@@ -228,17 +228,17 @@ namespace df {
 
      	for (const auto& tile : this->tiles) {
       		json tileJson;
-        	tileJson["id"] = tile.id;
-			tileJson["meta"] = tile.getMetaInfoJson();
+        	tileJson["id"] = tile.getId();
+			tileJson["meta"] = tile.serialize();
 
 			json edgesJson;
-			for (const auto& edge : this->tileEdges.at(tile.id)) {
-				const auto& v = this->edgeVertices.at(edge.id);
-				edgesJson[std::to_string(edge.id)] = { v.at(0).id, v.at(1).id };
+			for (const auto& edge : this->tileEdges.at(tile.getId())) {
+				const auto& v = this->edgeVertices.at(edge.getId());
+				edgesJson[std::to_string(edge.getId())] = { v.at(0).getId(), v.at(1).getId() };
 			}
 
 			tileJson["edges"] = edgesJson;
-			j[std::to_string(tile.id)] = tileJson;
+			j[std::to_string(tile.getId())] = tileJson;
       	}
 
       	return j;
@@ -269,9 +269,10 @@ namespace df {
            		throw std::runtime_error("Invalid JSON structure");
            	}
 
-          	Tile tile{tileId};
+          	Tile tile;
+          	tile.setId(tileId);
 
-           	tile.setMetaInfoFromJson(tileJson["meta"]);
+           	tile.deserialize(tileJson["meta"]);
            	self.tiles.push_back(tile);
 
             const auto& edgesJson = tileJson["edges"];
@@ -352,15 +353,15 @@ namespace df {
         // Check for id being of a Tile:
         if (auto it = this->tileEdges.find(id); it != this->tileEdges.end()) {
             for (const auto& edge : it->second) {
-                if (edge.id != SIZE_MAX) {
-                    neighbors.push_back(edge.id);
+                if (edge.getId() != SIZE_MAX) {
+                	neighbors.push_back(edge.getId());
                 }
             }
         }
         if (auto it = this->tileVertices.find(id); it != this->tileVertices.end()) {
             for (const auto& vertex : it->second) {
-                if (vertex.id != SIZE_MAX) {
-                    neighbors.push_back(vertex.id);
+                if (vertex.getId() != SIZE_MAX) {
+                	neighbors.push_back(vertex.getId());
                 }
             }
         }
@@ -368,8 +369,8 @@ namespace df {
         // Check for id being of an edge:
         if (auto it = this->edgeVertices.find(id); it != this->edgeVertices.end()) {
             for (const auto& vertex : it->second) {
-                if (vertex.id != SIZE_MAX) {
-                    neighbors.push_back(vertex.id);
+                if (vertex.getId() != SIZE_MAX) {
+                	neighbors.push_back(vertex.getId());
                 }
             }
         }
@@ -377,15 +378,15 @@ namespace df {
         // Check for id being of a vertex:
         if (auto it = this->vertexEdges.find(id); it != this->vertexEdges.end()) {
             for (const auto& edge : it->second) {
-                if (edge.id != SIZE_MAX) {
-                    neighbors.push_back(edge.id);
+                if (edge.getId() != SIZE_MAX) {
+                	neighbors.push_back(edge.getId());
                 }
             }
         }
         if (auto it = this->vertexTiles.find(id); it != this->vertexTiles.end()) {
             for (const auto& tile : it->second) {
-                if (tile.id != SIZE_MAX) {
-                    neighbors.push_back(tile.id);
+                if (tile.getId() != SIZE_MAX) {
+                	neighbors.push_back(tile.getId());
                 }
             }
         }
@@ -407,8 +408,8 @@ namespace df {
         std::unordered_set<size_t> visitedIds;
         std::queue<size_t> q;
 
-        q.push(start.id);
-        visitedIds.insert(start.id);
+        q.push(start.getId());
+        visitedIds.insert(start.getId());
 
         while (!q.empty()) {
             const size_t currentId = q.front();
@@ -434,7 +435,7 @@ namespace df {
         std::unordered_set<size_t> visited;
         std::stack<size_t> s;
 
-        s.push(start.id);
+        s.push(start.getId());
 
         while (!s.empty()) {
             const size_t currentId = s.top();
@@ -486,18 +487,18 @@ namespace df {
 		}(); //directly call lambda
 
 		for (const auto& node : nodes) {
-			distance[node.id] = INF; // make sure T has id
-			previous[node.id] = SIZE_MAX;
+			distance[node.getId()] = INF; // make sure T has id
+			previous[node.getId()] = SIZE_MAX;
 		}
 
-		distance[start.id] = 0.0; // distance with itfelf
+		distance[start.getId()] = 0.0; // distance with itfelf
 
 		auto cmp = [](const std::pair<double, size_t>& a, const std::pair<double, size_t>& b) {
 			return a.first > b.first;
 		};
 
 		std::priority_queue<std::pair<double, size_t>, std::vector<std::pair<double, size_t>>, decltype(cmp)> q(cmp);
-		q.emplace(0.0, start.id);
+		q.emplace(0.0, start.getId());
 
 		while (!q.empty()) {
 			auto [dist, currentId] = q.top();
@@ -521,7 +522,7 @@ namespace df {
 		std::vector<T> reachableNodes;
 
 		for (const auto& node : nodes) {
-			if (distance[node.id] < INF) {
+			if (distance[node.getId()] < INF) {
 				reachableNodes.push_back(node);
 			}
 		}
