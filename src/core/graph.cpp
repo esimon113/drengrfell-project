@@ -24,12 +24,12 @@ namespace df {
         if (std::find(this->tiles.begin(), this->tiles.end(), tile) == this->tiles.end()) {
             this->tiles.push_back(tile);
 
-            std::array<Edge, 6> edges;
-            std::array<Vertex, 6> vertices;
+            std::array<Edge, 6> edgesToAdd{};
+            std::array<Vertex, 6> verticesToAdd{};
 
             // added with default values (from constructors)
-            this->tileEdges[tile.getId()] = edges;
-            this->tileVertices[tile.getId()] = vertices;
+            this->tileEdges[tile.getId()] = edgesToAdd;
+            this->tileVertices[tile.getId()] = verticesToAdd;
         }
     }
 
@@ -38,9 +38,9 @@ namespace df {
         if (std::find(this->edges.begin(), this->edges.end(), edge) == this->edges.end()) {
             this->edges.push_back(edge);
 
-            std::array<Vertex, 2> vertices;
+            std::array<Vertex, 2> verticesToAdd{};
 
-            this->edgeVertices[edge.getId()] = vertices;
+            this->edgeVertices[edge.getId()] = verticesToAdd;
         }
     }
 
@@ -49,11 +49,11 @@ namespace df {
         if (std::find(this->vertices.begin(), this->vertices.end(), vertex) == this->vertices.end()) {
             this->vertices.push_back(vertex);
 
-            std::array<Edge, 3> edges;
-            std::array<Tile, 3> tiles;
+            std::array<Edge, 3> edgesToAdd{};
+            std::array<Tile, 3> tilesToAdd{};
 
-            this->vertexEdges[vertex.getId()] = edges;
-            this->vertexTiles[vertex.getId()] = tiles;
+            this->vertexEdges[vertex.getId()] = edgesToAdd;
+            this->vertexTiles[vertex.getId()] = tilesToAdd;
         }
     }
 
@@ -277,7 +277,7 @@ namespace df {
 
             const auto& edgesJson = tileJson["edges"];
 
-            std::array<Edge, 6> tileEdgesArray;
+            std::array<Edge, 6> tileEdgesArray{};
             size_t edgeIndex = 0;
 
             for (auto edgeIt = edgesJson.begin(); edgeIt != edgesJson.end(); ++edgeIt) {

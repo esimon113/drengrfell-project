@@ -24,8 +24,8 @@ namespace df {
 			inline void swapBuffers() noexcept { glfwSwapBuffers(handle); }
 			inline void setTitle(const char* title) noexcept { glfwSetWindowTitle(handle, title); }
 
-			inline void setKeyCallback(KeyFunction keyFunction) noexcept { this->keyFunction = keyFunction; }
-			inline void setResizeCallback(ResizeFunction resizeFunction) noexcept { this->resizeFunction = resizeFunction; }
+			inline void setKeyCallback(KeyFunction keyFunc) noexcept { this->keyFunction = keyFunc; }
+			inline void setResizeCallback(ResizeFunction resizeFunc) noexcept { this->resizeFunction = resizeFunc; }
 
 			inline glm::vec2 getCursorPosition() const noexcept { return cursorPosition; }
 			inline glm::uvec2 getWindowExtent() const noexcept { return windowExtent; }

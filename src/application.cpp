@@ -156,7 +156,7 @@ namespace df {
 	// }
 
 
-	void Application::onResizeCallback(GLFWwindow* window, int width, int height) noexcept {
-		render.onResizeCallback(window, width, height);
+	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
+		render.onResizeCallback(windowParam, width, height);
 	}
 }
