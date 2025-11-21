@@ -1,13 +1,14 @@
 #pragma once
 
 #include <cstddef>
+#include <vector>
+#include <optional>
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
 
 #include "types.h"
-
 
 
 namespace df {
@@ -29,6 +30,17 @@ namespace df {
 			types::TilePotency getPotency() const { return this->potency; }
 			void setPotency(types::TilePotency newPotency) { this->potency = newPotency; }
 
+			bool hasBuilding() const { return this->buildingId.has_value(); }
+			std::optional<size_t> getBuildingId() const { return this->buildingId; }
+			void setBuildingId(std::optional<size_t> newBuildingId) { this->buildingId = newBuildingId; }
+
+			const std::vector<size_t>& getVisibleForPlayers() const { return this->visibleForPlayers; }
+			void setVisibleForPlayers(const std::vector<size_t>& playerIds) { this->visibleForPlayers = playerIds; }
+			void addVisibleForPlayers(size_t playerId) { this->visibleForPlayers.push_back(playerId); }
+
+			float getRangeFactor() const { return this->rangeFactor; }
+			void setRangeFactor(float range) { this->rangeFactor = range; }
+
 
 			bool operator==(const Tile& other) const { return this->id == other.id; }
 
@@ -43,8 +55,10 @@ namespace df {
 
 		private:
 			size_t id;
-			types::TileType type;
+			types::TileType type;	// Also acts as resource type (?)
 			types::TilePotency potency;
-			// ...
+			std::optional<size_t> buildingId;
+			std::vector<size_t> visibleForPlayers;
+			float rangeFactor = 1.0f;
 	};
 }
