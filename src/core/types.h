@@ -12,7 +12,7 @@ namespace df::types {
 		WATER,
 		FOREST,
 		GRASS,
-		MOUNBTAIN,
+		MOUNTAIN,
 		FIELD,
 		CLAY,
 		ICE
