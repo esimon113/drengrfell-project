@@ -6,15 +6,15 @@
 
 #include "tile.h"
 #include "types.h"
+#include "settlement.h"
+//#include "hero.h"
+//#include "road.h"
 
 
 
 namespace df{
-    class Settlement;
-    class ResourceType;
-    class Road;
-    class Tile;
     class Hero;
+    class Road;
 
     class Player {
         private:
@@ -33,30 +33,29 @@ namespace df{
             size_t getId() const;
 
             int getHeroPoints() const;
-            void addHeroPoints(int points);
-            void setHeroPoints(int points);
+            void addHeroPoints(int );
+            void setHeroPoints(int );
 
-            int getSettlementCount() const;
             const std::vector<Settlement*>& getSettlement() const;
-            void addSettlement(Settlement* settlement);
-            void removeSettlement(Settlement* settlement);
+            void addSettlement(Settlement* );
+            void removeSettlement(Settlement* );
 
-            void addResources(types::TileType, int amount);
-            void removeResources(types::TileType, int amount);
-            int getResources(types::TileType, int amount) const;
-            bool hasResources(const std::map<types::TileType, int>& amountRequired);
+            void addResources(types::TileType , int );
+            void removeResources(types::TileType , int );
+            int getResources(types::TileType type) const;            
+            bool hasResources(const std::map<types::TileType, int>& );
             const std::map<types::TileType, int>& getResources() const;
 
-            void setHero(Hero* hero);
+            void setHero(Hero* );
             Hero* getHero() const;
 
-            void addRoad(Road* road);
+            void addRoad(Road* );
             const std::vector<Road*>& getRoads() const;
             int getRoadCount() const;
 
-            void exploreTile(Tile* tile);
-            bool isTileExplored(const Tile* tile) const;
-            bool isTileExplored(size_t tileId) const;
+            void exploreTile(Tile* );
+            bool isTileExplored(const Tile* ) const;
+            bool isTileExplored(size_t ) const;
             const std::vector<Tile*>& getExploredTiles() const;
 
 

@@ -1,99 +1,130 @@
 #include "player.h"
 #include "types.h"
 
+#include <algorithm>
+
 
 namespace df{
+
+    Player::Player(size_t id)
+        : playerId(id), heroPoints(0), heroReference(nullptr)
+    {
+    }
 
     size_t Player::getId() const{
         return this->playerId;
     }
 
     int Player::getHeroPoints() const{
-        return 0;
+        return heroPoints;
     }
 
     void Player::addHeroPoints(int points){
-        
+        heroPoints += points;
     }
 
     void Player::setHeroPoints(int points){
-
-    }
-
-
-
-    int Player::getSettlementCount() const
-    {
-        return 0;
+        heroPoints = points;
     }
 
     const std::vector<Settlement *> &Player::getSettlement() const
     {
-        // TODO: insert return statement here
-        return  this->settlements;
+        return  settlements;
     }
 
     void Player::addSettlement(Settlement *settlement){
-
+        settlements.push_back(settlement);
     }
 
     void Player::removeSettlement(Settlement *settlement){
+        if(settlement == nullptr) return;
+        // Could the user have the possibillity of removing a settlement that he does not own? If yes we should implement a check here
+        settlements.erase(std::remove(settlements.begin(), settlements.end(), settlement), settlements.end());
     }
 
-
-
-    void Player::addResources(types::TileType, int amount){
+    void Player::addResources(types::TileType type, int amount){
+        resources[type] += amount;
     }
 
-    void Player::removeResources(types::TileType, int amount){
+    void Player::removeResources(types::TileType type, int amount){
+        // no check is we call first the hasResources function
+        resources[type] -= amount;
     }
 
-    int Player::getResources(types::TileType, int amount) const{
-        return ;
-    }
-
-    bool Player::hasResources(const std::map<types::TileType, int>& amountRequired){
-        return false;
-    }
-
-    const std::map<types::TileType, int> &Player::getResources() const{
-        // TODO: insert return statement here
-    }
-
-    void Player::setHero(Hero *hero){
-    }
-
-    Hero *Player::getHero() const{
-        return nullptr;
-    }
-
-    void Player::addRoad(Road *road){
-    }
-
-    const std::vector<Road *> &Player::getRoads() const{
-        // TODO: insert return statement here
-    }
-
-    int Player::getRoadCount() const{
+    int Player::getResources(types::TileType type) const{
+        auto it = resources.find(type);
+        if(it != resources.end()){
+            return it->second;
+        }
         return 0;
     }
 
+    bool Player::hasResources(const std::map<types::TileType, int>& amountRequired){
+        for(const auto& [type,amount ]: amountRequired){
+            if(getResources(type) < amount){
+                return false;
+            } 
+        }
+        return true;
+    }
+
+    const std::map<types::TileType, int> &Player::getResources() const{
+        return resources;
+    }
+
+    void Player::setHero(Hero *hero){
+        heroReference = hero;
+    }
+
+    Hero *Player::getHero() const{
+        return heroReference;
+    }
+
+    void Player::addRoad(Road *road){
+        roads.push_back(road);
+    }
+
+    const std::vector<Road *> &Player::getRoads() const{
+        return roads;
+    }
+
+    int Player::getRoadCount() const{
+        return roads.size();
+    }
+
     void Player::exploreTile(Tile *tile){
+        if(tile == nullptr) return;
+        if(!isTileExplored(tile)){
+            exploredTiles.push_back(tile);
+        }
+        
     }
 
     bool Player::isTileExplored(const Tile *tile) const{
-        return false;
+        if(tile == nullptr) return false;
+        return std::find(exploredTiles.begin(), exploredTiles.end(), tile) != exploredTiles.end();
     }
 
-    bool Player::isTileExplored(size_t tileId) const{
+    bool Player::isTileExplored(size_t tileId) const{ 
+        for(const auto& tile : exploredTiles){
+            if(tile != nullptr && tile->getId() == tileId){
+                return true;
+            }
+        }
         return false;
     }
 
     const std::vector<Tile *> &Player::getExploredTiles() const{
-        // TODO: insert return statement here
+        return exploredTiles;
     }
 
     void Player::reset(){
+        heroPoints = 0;
+        settlements.clear();
+        resources.clear();
+        heroReference = nullptr;
+        roads.clear();
+        exploredTiles.clear();
     }
 
 }
