@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstddef>
-
+#include <optional>
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
@@ -19,6 +19,10 @@ namespace df {
 			size_t getId() const { return this->id; }
 			void setId(size_t newId) { this->id = newId; }
 
+			bool hasSettlement() const { return this->settlementId.has_value(); }
+			std::optional<size_t> getSettlementId() const { return this->settlementId; }
+			void setSettlementId(std::optional<size_t> newSettlementId) { this->settlementId = newSettlementId; }
+
 
 			bool operator==(const Vertex& other) const { return this->id == other.id; }
 
@@ -33,5 +37,6 @@ namespace df {
 
 		private:
 			size_t id;
+			std::optional<size_t> settlementId;
 	};
 }
