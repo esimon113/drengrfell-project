@@ -7,7 +7,7 @@ namespace df {
     class Settlement {
     public:
         Settlement();
-        Settlement(size_t newId, size_t newPlayerId, std::vector<int> newBuildingCost);
+        Settlement(size_t newId, size_t newPlayerId, size_t vertexId, std::vector<int> newBuildingCost);
 
         ~Settlement();
 

@@ -4,8 +4,8 @@ namespace df {
 
     Settlement::Settlement() = default;
 
-    Settlement::Settlement(size_t id, size_t playerId, std::vector<int> buildingCost)
-        : id(id), playerId(playerId), buildingCost(buildingCost) {
+    Settlement::Settlement(size_t id, size_t playerId, size_t vertexId, std::vector<int> buildingCost)
+        : id(id), playerId(playerId), vertexId(vertexId), buildingCost(buildingCost) {
     }
 
     Settlement::~Settlement() = default;
