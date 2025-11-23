@@ -48,4 +48,10 @@ namespace df::types {
             default: return { 0, 0 };
         }
     }
+
+	enum class EdgeDirection {
+		VERTICAL = 0,
+		DIAGONAL_DOWN,	// NORTH - NORTH_EAST or SOUTH_WEST - SOUTH
+		DIAGONAL_UP		// NORTH_WEST - NORTH or SOUTH - SOUTH_EAST
+	};
 }
