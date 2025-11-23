@@ -78,4 +78,84 @@ namespace df {
 		intermediateFramebuffer.deinit();
 		intermediateFramebuffer = Framebuffer::init({ (GLsizei)size.x, (GLsizei)size.y, 1, true });
 	}
+
+
+	/**
+	 * Initializes a mesh of one tile.
+	 */
+	std::vector<float> RenderSystem::createTileMesh(const float tileScale = 1.0f) noexcept {
+		// Appends the hexagons corners counter-clockwise to the vertices array.
+		// The center of the hexagon is at the origin.
+		// It is rotated by 30 degrees in order to have a corner at the top,
+		// as the tile textures already created have also the corner at the top.
+		std::vector<glm::vec2> vertices;
+		for (int vertex = 0; vertex < 6; vertex++) {
+			const float angle = M_PI / 180.0f * (60.0f * static_cast<float>(vertex) - 30.0f);
+			float x = tileScale * std::cos(angle);
+			float y = tileScale * std::sin(angle);
+			vertices.emplace_back(x, y);
+		}
+
+		// This is a triangulation I've come up with on my ipad.
+		// The triangles are counter-clockwise as the vertices above
+		// are counter-clockwise around the origin.
+
+		std::vector<float> triangles;
+
+		// Big center triangle
+		for (int i = 0; i < 6; i += 2) {
+			triangles.push_back(vertices[i].x);
+			triangles.push_back(vertices[i].y);
+		}
+
+		// Three side triangles
+		for (int i = 0; i < 3; i++) {
+			triangles.push_back(vertices[2 * i + 0].x);
+			triangles.push_back(vertices[2 * i + 0].y);
+			triangles.push_back(vertices[2 * i + 1].x);
+			triangles.push_back(vertices[2 * i + 1].y);
+			triangles.push_back(vertices[2 * i + 2].x);
+			triangles.push_back(vertices[2 * i + 2].y);
+		}
+
+		return triangles;
+	}
+
+	/**
+	 * Creates a vector of the tile-specific data for the whole map arranged in a "rectangle".
+	 * The tile specific data is the position and tile type, yet.
+	 */
+	std::vector<RenderSystem::TileInstance> RenderSystem::createTileInstances(const int columns = 10.0f, const int rows = 10.0f, const float tileScale = 1.0f) noexcept {
+		std::vector<TileInstance> instances;
+		for (int column = 0; column < columns; column++) {
+			for (int row = 0; row < rows; row++) {
+				glm::vec2 position;
+				position.x = tileScale * sqrt(3.0f) * (column + 0.5f * (row & 1));
+				position.y = tileScale * row * 1.5f;
+				const int type = (column + row) % static_cast<int>(df::types::TileType::COUNT);
+
+				instances.push_back({position, type});
+			}
+		}
+		return instances;
+	}
+
+	/**
+	 * For testing purposes. At first, we want to see differently colored hexagons.
+	 * After that, we can implement textured hexagons.
+	 * Yet, it is also undecided in the group what resolution and size the hexagons have.
+	 */
+	glm::vec3 RenderSystem::getTileColor(const types::TileType type) noexcept {
+		switch (type) {
+			case types::TileType::WATER: return {0.0f, 0.0f, 1.0f};
+			case types::TileType::FOREST: return {0.0f, 0.5f, 0.0f};
+			case types::TileType::GRASS: return {0.0f, 1.0f, 0.0f};
+			case types::TileType::MOUNTAIN: return {0.75f, 0.75f, 0.75f};
+			case types::TileType::FIELD: return {0.5f, 1.0f, 0.0f};
+			case types::TileType::CLAY: return {0.5f, 0.5f, 0.5f};
+			case types::TileType::ICE: return {0.75f, 0.75f, 1.0f};
+			default: return {0.0f, 0.0f, 0.0f};
+		}
+	}
+
 }

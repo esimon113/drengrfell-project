@@ -7,7 +7,7 @@
 namespace df::types {
 
 	// maybe add more custom tile types in the future?!
-	enum class TileType {
+	enum class TileType: int {
 		EMPTY = 0,
 		WATER,
 		FOREST,
@@ -15,7 +15,8 @@ namespace df::types {
 		MOUNTAIN,
 		FIELD,
 		CLAY,
-		ICE
+		ICE,
+		COUNT
 	};
 
 
