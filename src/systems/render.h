@@ -1,5 +1,7 @@
 #pragma once
 
+#include <core/types.h>
+
 #include <registry.h>
 #include <window.h>
 
@@ -24,7 +26,6 @@ namespace df {
 
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
-
 		private:
 			Registry* registry;
 			Window* window;
@@ -40,5 +41,14 @@ namespace df {
 				glm::uvec2 m_origin;
 				glm::uvec2 m_size;
 			} m_viewport;
+
+			struct TileInstance {
+				glm::vec2 position;
+				int type;
+			};
+
+			static std::vector<float> createTileMesh(float tileScale) noexcept;
+			static std::vector<TileInstance> createTileInstances(int columns, int rows, float tileScale) noexcept;
+			static glm::vec3 getTileColor(types::TileType type) noexcept;
 	};
 }
