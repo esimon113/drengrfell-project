@@ -137,7 +137,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/framebuffer.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/texture.cpp
-)
+ "src/core/hero.cpp" "src/utils/animations.cpp" "src/core/hero.h" "src/utils/animations.h")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 20
@@ -150,6 +150,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} PUBLIC
 	${PROJECT_BINARY_DIR} # location of the configured header
 	${PROJECT_SOURCE_DIR}/src # location of our own headers
+	${PROJECT_SOURCE_DIR}/src/systems # location of systems
+	${PROJECT_SOURCE_DIR}/src/utils # location of utils
 	${stb_SOURCE_DIR} # location of the `stb_image` header
 )
 
