@@ -19,7 +19,7 @@ vec4 getTileColor(int type) {
 }
 
 void main() {
-    color = texture(tileAtlas, vec3(uv.x, uv.y, vertType));
+    color = texture(tileAtlas, vec3(uv.x, uv.y, 7 - vertType));
 
     //color = getTileColor(vertType);
 }

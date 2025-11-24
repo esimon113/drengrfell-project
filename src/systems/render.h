@@ -16,9 +16,6 @@
 namespace df {
 	class RenderSystem {
 		public:
-			static constexpr int TILE_WIDTH = 64;
-			static constexpr int TILE_HEIGHT = 64;
-
 			RenderSystem() = default;
 			~RenderSystem() = default;
 
@@ -65,11 +62,11 @@ namespace df {
 			std::vector<float> tileMesh;
 			std::vector<TileInstance> tileInstances;
 
-			static std::vector<float> createTileMesh(float tileScale = 1.0f) noexcept;
-			static std::vector<TileInstance> createTileInstances(int columns = 10.0f, int rows = 10.0f, float tileScale = 1.0f) noexcept;
+			static std::vector<float> createTileMesh(float tileScale = 10.0f) noexcept;
+			static std::vector<TileInstance> createTileInstances(int columns = 10.0f, int rows = 10.0f, float tileScale = 10.0f) noexcept;
 			static glm::vec3 getTileColor(types::TileType type) noexcept;
 			void initMap() noexcept;
 			void renderMap() const noexcept;
-			static glm::vec2 calculateWorldDimensions(int columns = 10.0f, int rows = 10.0f, float tileScale = 1.0f) noexcept;
+			static glm::vec2 calculateWorldDimensions(int columns = 10.0f, int rows = 10.0f, float tileScale = 10.0f) noexcept;
 	};
 }
