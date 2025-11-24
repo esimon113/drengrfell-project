@@ -10,11 +10,15 @@
 #include <utils/texture.h>
 #include <utils/framebuffer.h>
 
+#include "utils/textureArray.h"
 
 
 namespace df {
 	class RenderSystem {
 		public:
+			static constexpr int TILE_WIDTH = 64;
+			static constexpr int TILE_HEIGHT = 64;
+
 			RenderSystem() = default;
 			~RenderSystem() = default;
 
@@ -41,6 +45,7 @@ namespace df {
 			GLuint tileVao;
 			GLuint tileVbo;
 			GLuint tileInstanceVbo;
+			TextureArray tileAtlas;
 
 			struct {
 				glm::uvec2 m_origin;

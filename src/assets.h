@@ -26,6 +26,7 @@ namespace df {
 
 
 		enum struct Texture {
+			TILE_ATLAS,
 			count
 		};
 
