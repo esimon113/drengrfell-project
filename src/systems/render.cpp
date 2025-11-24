@@ -17,7 +17,7 @@ namespace df {
 		self.spriteShader = Shader::init(assets::Shader::sprite).value();
 		self.windShader = Shader::init(assets::Shader::wind).value();
 		self.tileShader = Shader::init(assets::Shader::tile).value();
-		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
+		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS, static_cast<int>(df::types::TileType::COUNT), 60, 59);
 
 		glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
@@ -93,37 +93,50 @@ namespace df {
 		// The center of the hexagon is at the origin.
 		// It is rotated by 30 degrees in order to have a corner at the top,
 		// as the tile textures already created have also the corner at the top.
-		std::vector<glm::vec2> vertices;
+
+		std::vector<TileVertex> vertices;
 		for (int vertex = 0; vertex < 6; vertex++) {
 			const float angle = M_PI / 180.0f * (60.0f * static_cast<float>(vertex) - 30.0f);
 			float x = tileScale * std::cos(angle);
 			float y = tileScale * std::sin(angle);
-			vertices.emplace_back(x, y);
+			float u = 0.5f;
+			float v = 0.5f;
+			vertices.emplace_back(glm::vec2(x, y), glm::vec2(u, v));
 		}
 
 		// This is a triangulation I've come up with on my ipad.
 		// The triangles are counter-clockwise as the vertices above
 		// are counter-clockwise around the origin.
 
-		std::vector<float> triangles;
+		std::vector<float> meshData;
 
 		// Big center triangle
 		for (int i = 0; i < 6; i += 2) {
-			triangles.push_back(vertices[i].x);
-			triangles.push_back(vertices[i].y);
+			meshData.push_back(vertices[i].position.x);
+			meshData.push_back(vertices[i].position.y);
+			meshData.push_back(vertices[i].uv.x);
+			meshData.push_back(vertices[i].uv.y);
 		}
 
 		// Three side triangles
 		for (int i = 0; i < 3; i++) {
-			triangles.push_back(vertices[2 * i + 0].x);
-			triangles.push_back(vertices[2 * i + 0].y);
-			triangles.push_back(vertices[2 * i + 1].x);
-			triangles.push_back(vertices[2 * i + 1].y);
-			triangles.push_back(vertices[(2 * i + 2) % 6].x);
-			triangles.push_back(vertices[(2 * i + 2) % 6].y);
+			meshData.push_back(vertices[2 * i + 0].position.x);
+			meshData.push_back(vertices[2 * i + 0].position.y);
+			meshData.push_back(vertices[2 * i + 0].uv.x);
+			meshData.push_back(vertices[2 * i + 0].uv.y);
+
+			meshData.push_back(vertices[2 * i + 1].position.x);
+			meshData.push_back(vertices[2 * i + 1].position.y);
+			meshData.push_back(vertices[2 * i + 1].uv.x);
+			meshData.push_back(vertices[2 * i + 1].uv.y);
+
+			meshData.push_back(vertices[(2 * i + 2) % 6].position.x);
+			meshData.push_back(vertices[(2 * i + 2) % 6].position.y);
+			meshData.push_back(vertices[(2 * i + 2) % 6].uv.x);
+			meshData.push_back(vertices[(2 * i + 2) % 6].uv.y);
 		}
 
-		return triangles;
+		return meshData;
 	}
 
 	/**
@@ -163,21 +176,25 @@ namespace df {
 
 			// layout(location = 0) in vec2 position;
 			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, position));
+
+			// layout(location = 1) in vec2 vertexUv;
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, uv));
 
 			// Define instance attributes
 			glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
 			glBufferData(GL_ARRAY_BUFFER, this->tileInstances.size() * sizeof(TileInstance), this->tileInstances.data(), GL_STATIC_DRAW);
 
-			// layout(location = 1) in vec2 instancePosition;
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void*)offsetof(TileInstance, position));
-			glVertexAttribDivisor(1, 1);
-
-			// layout(location = 2) in int type;
+			// layout(location = 2) in vec2 instancePosition;
 			glEnableVertexAttribArray(2);
-			glVertexAttribIPointer(2, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void*)offsetof(TileInstance, position));
 			glVertexAttribDivisor(2, 1);
+
+			// layout(location = 3) in int type;
+			glEnableVertexAttribArray(3);
+			glVertexAttribIPointer(3, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
+			glVertexAttribDivisor(3, 1);
 
 			glBindVertexArray(0);
 		}
@@ -195,8 +212,10 @@ namespace df {
 		const glm::vec2 worldDimensions = calculateWorldDimensions();
 		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
 
+		tileAtlas.bind(0);
 		tileShader.use()
-			.setMat4("projection", projection);
+			.setMat4("projection", projection)
+			.setSampler("tileAtlas", 0);
 
 		glBindVertexArray(tileVao);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / 2, this->tileInstances.size());

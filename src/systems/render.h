@@ -52,6 +52,10 @@ namespace df {
 				glm::uvec2 m_size;
 			} m_viewport;
 
+			struct TileVertex {
+				glm::vec2 position;
+				glm::vec2 uv;
+			};
 			struct TileInstance {
 				glm::vec2 position;
 				int type;
