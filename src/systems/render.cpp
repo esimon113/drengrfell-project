@@ -15,6 +15,7 @@ namespace df {
 		// load resources for rendering
 		self.spriteShader = Shader::init(assets::Shader::sprite).value();
 		self.windShader = Shader::init(assets::Shader::wind).value();
+		self.tileShader = Shader::init(assets::Shader::tile).value();
 		// ...
 
 		glm::uvec2 extent = self.window->getWindowExtent();
@@ -28,6 +29,7 @@ namespace df {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.m_quad_ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
+		self.initMap();
 
 		return self;
 	}
@@ -36,11 +38,12 @@ namespace df {
 	void RenderSystem::deinit() noexcept {
 		spriteShader.deinit();
 		windShader.deinit();
+		tileShader.deinit();
 	}
 
 
 	void RenderSystem::step(const float) noexcept {
-		// ...
+		renderMap();
 	}
 
 
@@ -83,7 +86,7 @@ namespace df {
 	/**
 	 * Initializes a mesh of one tile.
 	 */
-	std::vector<float> RenderSystem::createTileMesh(const float tileScale = 1.0f) noexcept {
+	std::vector<float> RenderSystem::createTileMesh(const float tileScale) noexcept {
 		// Appends the hexagons corners counter-clockwise to the vertices array.
 		// The center of the hexagon is at the origin.
 		// It is rotated by 30 degrees in order to have a corner at the top,
@@ -114,8 +117,8 @@ namespace df {
 			triangles.push_back(vertices[2 * i + 0].y);
 			triangles.push_back(vertices[2 * i + 1].x);
 			triangles.push_back(vertices[2 * i + 1].y);
-			triangles.push_back(vertices[2 * i + 2].x);
-			triangles.push_back(vertices[2 * i + 2].y);
+			triangles.push_back(vertices[(2 * i + 2) % 6].x);
+			triangles.push_back(vertices[(2 * i + 2) % 6].y);
 		}
 
 		return triangles;
@@ -125,7 +128,7 @@ namespace df {
 	 * Creates a vector of the tile-specific data for the whole map arranged in a "rectangle".
 	 * The tile specific data is the position and tile type, yet.
 	 */
-	std::vector<RenderSystem::TileInstance> RenderSystem::createTileInstances(const int columns = 10.0f, const int rows = 10.0f, const float tileScale = 1.0f) noexcept {
+	std::vector<RenderSystem::TileInstance> RenderSystem::createTileInstances(const int columns, const int rows, const float tileScale) noexcept {
 		std::vector<TileInstance> instances;
 		for (int column = 0; column < columns; column++) {
 			for (int row = 0; row < rows; row++) {
@@ -134,28 +137,68 @@ namespace df {
 				position.y = tileScale * row * 1.5f;
 				const int type = (column + row) % static_cast<int>(df::types::TileType::COUNT);
 
-				instances.push_back({position, type});
+				instances.push_back({position, type, 0});
 			}
 		}
 		return instances;
 	}
 
 	/**
-	 * For testing purposes. At first, we want to see differently colored hexagons.
-	 * After that, we can implement textured hexagons.
-	 * Yet, it is also undecided in the group what resolution and size the hexagons have.
+	 * Initializes the map data
 	 */
-	glm::vec3 RenderSystem::getTileColor(const types::TileType type) noexcept {
-		switch (type) {
-			case types::TileType::WATER: return {0.0f, 0.0f, 1.0f};
-			case types::TileType::FOREST: return {0.0f, 0.5f, 0.0f};
-			case types::TileType::GRASS: return {0.0f, 1.0f, 0.0f};
-			case types::TileType::MOUNTAIN: return {0.75f, 0.75f, 0.75f};
-			case types::TileType::FIELD: return {0.5f, 1.0f, 0.0f};
-			case types::TileType::CLAY: return {0.5f, 0.5f, 0.5f};
-			case types::TileType::ICE: return {0.75f, 0.75f, 1.0f};
-			default: return {0.0f, 0.0f, 0.0f};
+	void RenderSystem::initMap() noexcept {
+		this->tileMesh = createTileMesh();
+		this->tileInstances = createTileInstances();
+
+		glGenVertexArrays(1, &tileVao);
+		glGenBuffers(1, &tileVbo);
+		glGenBuffers(1, &tileInstanceVbo);
+
+		{
+			glBindVertexArray(tileVao);
+			glBindBuffer(GL_ARRAY_BUFFER, tileVbo);
+			glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(float), this->tileMesh.data(), GL_STATIC_DRAW);
+
+			// layout(location = 0) in vec2 position;
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
+
+			// Define instance attributes
+			glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
+			glBufferData(GL_ARRAY_BUFFER, this->tileInstances.size() * sizeof(TileInstance), this->tileInstances.data(), GL_STATIC_DRAW);
+
+			// layout(location = 1) in vec2 instancePosition;
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void*)offsetof(TileInstance, position));
+			glVertexAttribDivisor(1, 1);
+
+			// layout(location = 2) in int type;
+			glEnableVertexAttribArray(2);
+			glVertexAttribIPointer(2, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
+			glVertexAttribDivisor(2, 1);
+
+			glBindVertexArray(0);
 		}
+	}
+
+
+	glm::vec2 RenderSystem::calculateWorldDimensions(const int columns, const int rows, const float tileScale) noexcept {
+		return {
+			tileScale * sqrt(3.0f) * (columns + 0.5f),
+			tileScale * 1.5f * (rows + 1.0f)
+		};
+	}
+
+	void RenderSystem::renderMap() const noexcept {
+		const glm::vec2 worldDimensions = calculateWorldDimensions();
+		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
+
+		tileShader.use()
+			.setMat4("projection", projection);
+
+		glBindVertexArray(tileVao);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size(), this->tileInstances.size());
+		glBindVertexArray(0);
 	}
 
 }
