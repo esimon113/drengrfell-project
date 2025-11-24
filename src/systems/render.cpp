@@ -197,7 +197,7 @@ namespace df {
 			.setMat4("projection", projection);
 
 		glBindVertexArray(tileVao);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size(), this->tileInstances.size());
+		glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / 2, this->tileInstances.size());
 		glBindVertexArray(0);
 	}
 
