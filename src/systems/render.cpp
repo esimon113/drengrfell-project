@@ -1,5 +1,6 @@
 #include "render.h"
 
+#include "utils/textureArray.h"
 
 
 namespace df {
@@ -16,7 +17,7 @@ namespace df {
 		self.spriteShader = Shader::init(assets::Shader::sprite).value();
 		self.windShader = Shader::init(assets::Shader::wind).value();
 		self.tileShader = Shader::init(assets::Shader::tile).value();
-		// ...
+		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
 
 		glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
@@ -39,6 +40,7 @@ namespace df {
 		spriteShader.deinit();
 		windShader.deinit();
 		tileShader.deinit();
+		tileAtlas.deinit();
 	}
 
 
