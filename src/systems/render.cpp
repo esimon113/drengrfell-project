@@ -94,13 +94,14 @@ namespace df {
 		// It is rotated by 30 degrees in order to have a corner at the top,
 		// as the tile textures already created have also the corner at the top.
 
+		constexpr float SQRT_3_DIV_2 = 0.866025404f; //sqrt(3.0) / 2.0f;
 		std::vector<TileVertex> vertices;
 		for (int vertex = 0; vertex < 6; vertex++) {
 			const float angle = M_PI / 180.0f * (60.0f * static_cast<float>(vertex) - 30.0f);
 			float x = tileScale * std::cos(angle);
 			float y = tileScale * std::sin(angle);
-			float u = 0.5f;
-			float v = 0.5f;
+			float u = (x + SQRT_3_DIV_2 * tileScale) / (2.0f * SQRT_3_DIV_2 * tileScale);
+			float v = (y + tileScale) / (2.0f * tileScale);
 			vertices.emplace_back(glm::vec2(x, y), glm::vec2(u, v));
 		}
 
@@ -150,7 +151,7 @@ namespace df {
 				glm::vec2 position;
 				position.x = tileScale * sqrt(3.0f) * (column + 0.5f * (row & 1));
 				position.y = tileScale * row * 1.5f;
-				const int type = (column + row) % static_cast<int>(df::types::TileType::COUNT);
+				const int type = (column + row) % (static_cast<int>(df::types::TileType::COUNT) - 1) + 1;
 
 				instances.push_back({position, type, 0});
 			}
@@ -162,8 +163,8 @@ namespace df {
 	 * Initializes the map data
 	 */
 	void RenderSystem::initMap() noexcept {
-		this->tileMesh = createTileMesh();
-		this->tileInstances = createTileInstances();
+		this->tileMesh = createTileMesh(10);
+		this->tileInstances = createTileInstances(10, 10, 10);
 
 		glGenVertexArrays(1, &tileVao);
 		glGenBuffers(1, &tileVbo);
@@ -209,7 +210,7 @@ namespace df {
 	}
 
 	void RenderSystem::renderMap() const noexcept {
-		const glm::vec2 worldDimensions = calculateWorldDimensions();
+		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10, 10);
 		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
 
 		tileAtlas.bind(0);
