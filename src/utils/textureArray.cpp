@@ -4,6 +4,9 @@
 
 #include "textureArray.h"
 
+#include <iostream>
+#include <ostream>
+
 namespace df {
     TextureArray TextureArray::init(const GLsizei width, const GLsizei height) noexcept {
         TextureArray self;
@@ -27,22 +30,29 @@ namespace df {
     /**
      * Assumes a vertical stripe of quadratical tile textures
      */
-    TextureArray TextureArray::init(const assets::Texture asset) noexcept {
+    TextureArray TextureArray::init(const assets::Texture asset, int tiles, int tile_height, int tile_width) noexcept {
         const std::string assetPath = assets::getAssetPath(asset);
-        return init(assetPath.c_str());
+        return init(assetPath.c_str(), tiles, tile_height, tile_width);
     }
 
     /**
      * Assumes a vertical stripe of quadratical tile textures
      */
-    TextureArray TextureArray::init(const char* path) noexcept {
+    TextureArray TextureArray::init(const char* path, int tiles, int tile_height, int tile_width) noexcept {
         int width, height, channels;
         stbi_set_flip_vertically_on_load(true);
         stbi_uc* pixels = stbi_load(path, &width, &height, &channels, 4);
 
-        const int tile_width = width;
-        const int tile_height = width;
-        const int tiles = height / tile_height;
+        // TODO: Calculate this based on what is a 'default' value
+        if (tile_width <= 0 || tile_height <= 0 || tiles <= 0) {
+            tile_width = width;
+            tile_height = width;
+            tiles = height / tile_height;
+        }
+        // Sanity check. Maybe throw exception?
+        if (tile_width != width) {
+            std::cout << "Warning: Tile width of " << tile_width << " isn't equal to atlas width of " << width << std::endl;
+        }
 
         TextureArray self;
         glGenTextures(1, &self.handle);
