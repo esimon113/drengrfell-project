@@ -37,6 +37,7 @@ namespace df {
 
 			GLuint m_quad_vao;
 			GLuint m_quad_ebo;
+
 			GLuint tileVao;
 			GLuint tileVbo;
 			GLuint tileInstanceVbo;
