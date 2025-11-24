@@ -33,9 +33,13 @@ namespace df {
 			Framebuffer intermediateFramebuffer;
 			Shader spriteShader;
 			Shader windShader;
+			Shader tileShader;
 
 			GLuint m_quad_vao;
 			GLuint m_quad_ebo;
+			GLuint tileVao;
+			GLuint tileVbo;
+			GLuint tileInstanceVbo;
 
 			struct {
 				glm::uvec2 m_origin;
@@ -45,10 +49,17 @@ namespace df {
 			struct TileInstance {
 				glm::vec2 position;
 				int type;
+				int padding;
 			};
 
-			static std::vector<float> createTileMesh(float tileScale) noexcept;
-			static std::vector<TileInstance> createTileInstances(int columns, int rows, float tileScale) noexcept;
+			std::vector<float> tileMesh;
+			std::vector<TileInstance> tileInstances;
+
+			static std::vector<float> createTileMesh(float tileScale = 1.0f) noexcept;
+			static std::vector<TileInstance> createTileInstances(int columns = 10.0f, int rows = 10.0f, float tileScale = 1.0f) noexcept;
 			static glm::vec3 getTileColor(types::TileType type) noexcept;
+			void initMap() noexcept;
+			void renderMap() const noexcept;
+			static glm::vec2 calculateWorldDimensions(int columns = 10.0f, int rows = 10.0f, float tileScale = 1.0f) noexcept;
 	};
 }
