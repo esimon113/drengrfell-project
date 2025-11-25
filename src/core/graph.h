@@ -74,6 +74,16 @@ namespace df {
             void load(std::filesystem::path& from);
 
 
+            // Algorithms that might come in handy;
+            template<HasIdProperty T>
+            std::vector<T> breadthFirstSearch(const T& start) const;
+            template<HasIdProperty T>
+            std::vector<T> depthFirstSearch(const T& start) const;
+            template<HasIdProperty T>
+            std::vector<T> dijkstra(const T& start) const;
+
+
+
         private:
             std::vector<Tile> tiles;
             std::vector<Edge> edges;
@@ -92,15 +102,6 @@ namespace df {
             bool doesEdgeExist(const Edge& edge);
             bool doesVertexExist(const Vertex& vertex);
 
-            // Algorithms that might come in handy;
-            template<HasIdProperty T>
-            std::vector<T> breadthFirstSearch(const T& start) const;
-            template<HasIdProperty T>
-            std::vector<T> depthFirstSearch(const T& start) const;
-            template<HasIdProperty T>
-            std::vector<T> dijkstra(const T& start) const;
-
             std::vector<size_t> getNeighborIds(size_t id) const;
-
     };
 }
