@@ -21,6 +21,9 @@ namespace df {
         void setLoop(bool l);
         bool isLooping() const;
 
+        int getCurrentFrameIndex() const noexcept;
+
+
     private:
         std::vector<std::string> frames; 
         // reference to texture/path

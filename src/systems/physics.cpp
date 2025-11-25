@@ -18,10 +18,7 @@ namespace df {
 
 	void PhysicsSystem::step(const float /*delta*/) noexcept {
 		// TODO: (A2) Update the angle of the player based on the current cursor position here.
-		for (Entity e : registry->velocities.entities) {
-			(void)e;
-			// TODO: (A2) Handle updates to position here.
-		}
+		
 
 		collisions.clear();
 

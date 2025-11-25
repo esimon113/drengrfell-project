@@ -1,5 +1,5 @@
 #include "world.h"
-
+#include "hero.h"
 
 
 namespace df {
@@ -14,6 +14,7 @@ namespace df {
 
 		self.m_reset = true;
 
+	
 		return self;
 	}
 
@@ -31,22 +32,7 @@ namespace df {
 		std::string title = fmt::format("Score: {} - FPS: {:.2f} ({:.2f} ms)", score, 1/delta, 1000 * delta);
 		window->setTitle(title.c_str());
 
-		// remove entites that leave the screen on the bottom side
-		for (Entity e : registry->velocities.entities) {
-			glm::vec2 position = registry->positions.get(e);
-			glm::vec2 scale = glm::vec2(0);
-
-			if (registry->scales.has(e)) {
-				scale = registry->scales.get(e);
-			}
-			else if (registry->collisionRadius.has(e)) {
-				scale = glm::vec2(registry->collisionRadius.get(e));
-			}
-
-			if (!registry->players.has(e) && position.y + fabs(scale.x/2) < -1) {
-				registry->clear(e);
-			}
-		}
+		
 	}
 
 

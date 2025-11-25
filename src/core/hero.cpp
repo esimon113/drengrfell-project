@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include <unordered_map>
+#include <vector>
 #include <glm/vec2.hpp>
 #include "animations.h"
 #include "tile.h"
@@ -10,7 +12,7 @@ namespace df {
     public:
         Hero() = default;
 
-        Hero(int tileID, const glm::vec2& coords, const std::string& textureRef, int baseRange)
+        Hero(int tileID, const glm::vec2& coords, const std::string& textureRef = "", int baseRange = 3)
             : tileID(tileID),
             coords(coords),
             textureRef(textureRef),
@@ -19,49 +21,53 @@ namespace df {
         {
         }
 
-        // position on map
-        void setTileID(int id) { this->tileID = id; }
-        int getTileID() const { return this->tileID; }
+        // Position
+        void setTileID(int id) { tileID = id; }
+        int getTileID() const { return tileID; }
 
-        void setCoords(const glm::vec2& pos) { this->coords = pos; }
-        const glm::vec2& getCoords() const { return this->coords; }
+        void setCoords(const glm::vec2& pos) { coords = pos; }
+        const glm::vec2& getCoords() const { return coords; }
 
-        // texture reference
-        void setTextureRef(const std::string& ref) { this->textureRef = ref; }
-        const std::string& getTextureRef() const { return this->textureRef; }
+        // Texture reference (optional)
+        void setTextureRef(const std::string& ref) { textureRef = ref; }
+        const std::string& getTextureRef() const { return textureRef; }
 
-        // basis range to move
-        void setBaseRange(int range) { this->baseRange = range; }
-        int getBaseRange() const { return this->baseRange; }
+        void setBaseRange(int range) { baseRange = range; }
+        int getBaseRange() const { return baseRange; }
 
-        // animation change
-        void setIdleAnimation(const Animation& anim) { this->idleAnim = anim; }
-        void setWalkAnimation(const Animation& anim) { this->walkAnim = anim; }
+        // Animationen verwalten
+        void setAnimation(const std::string& name, const std::vector<std::string>& frames, float frameDuration, bool loop = true) {
+            Animation anim(frames, frameDuration, loop);
+            animations[name] = anim;
+        }
 
-        void startIdleAnimation() { this->currentAnim = &this->idleAnim; }
-        void startWalkAnimation() { this->currentAnim = &this->walkAnim; }
-
-        void updateAnimation(float deltaTime) {
-            if (this->currentAnim) {
-                this->currentAnim->step(deltaTime);
+        void startAnimation(const std::string& name) {
+            auto it = animations.find(name);
+            if (it != animations.end()) {
+                currentAnim = &it->second;
             }
         }
 
-    private:
-        int tileID = -1;                 
-        // current Tile-ID
-        glm::vec2 coords{ 0.f, 0.f };    
-        // Position on Tile
-        std::string textureRef;          
-        // Referenz for texture
-        int baseRange = 3;               
-        // maxi tile range
+        void updateAnimation(float deltaTime) {
+            if (currentAnim) {
+                currentAnim->step(deltaTime);
+            }
+        }
 
-        // Animationen
-        Animation idleAnim;
-        Animation walkAnim;
-        Animation* currentAnim;          
-        // Pointer on current running Animation
+        const std::string& getCurrentFrame() const {
+            if (currentAnim) return currentAnim->getCurrentFrame();
+            static const std::string empty = "";
+            return empty;
+        }
+
+    private:
+        int tileID = -1;
+        glm::vec2 coords{ 0.f, 0.f };
+        std::string textureRef;
+        int baseRange = 3;
+
+        std::unordered_map<std::string, Animation> animations;
+        Animation* currentAnim = nullptr;
     };
 
-} 
+}

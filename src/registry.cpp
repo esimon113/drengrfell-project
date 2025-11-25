@@ -7,15 +7,12 @@ namespace df {
 		Registry* self = new Registry;
 
 		self->containers[0] = &self->positions;
-		self->containers[1] = &self->velocities;
-		self->containers[2] = &self->scales;
-		self->containers[3] = &self->angles;
-
-		self->containers[4] = &self->players;
-
-		self->containers[9] = &self->collisionRadius;
-
-		self->containers[10] = &self->colors;
+		self->containers[1] = &self->scales;
+		self->containers[2] = &self->angles;
+		self->containers[3] = &self->players;
+		self->containers[4] = &self->collisionRadius;
+		self->containers[5] = &self->colors;
+		self->containers[6] = &self->animations;
 
 		return self;
 	}

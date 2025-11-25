@@ -40,5 +40,6 @@ namespace df {
 				glm::uvec2 m_origin;
 				glm::uvec2 m_size;
 			} m_viewport;
+			std::vector<Texture> heroIdleTextures;
 	};
 }

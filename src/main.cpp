@@ -19,9 +19,10 @@ int main(int argc, char** argv) {
 	if (!app) {
 		return EXIT_FAILURE;
 	}
-
+	std::cout << "Test0!" << std::endl;
 	print("Try running app...");
 	app->run();
+	std::cout << "Test1" << std::endl;
 
 	print("Try deinitialize app...");
 	app->deinit();
