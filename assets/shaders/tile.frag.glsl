@@ -2,6 +2,7 @@
 in vec2 uv;
 flat in int vertType;
 out vec4 color;
+flat in int fragExplored;
 
 uniform sampler2DArray tileAtlas;
 
@@ -19,7 +20,12 @@ vec4 getTileColor(int type) {
 }
 
 void main() {
-    color = texture(tileAtlas, vec3(uv.x, uv.y, 7 - vertType));
+    if(fragExplored == int(0)){
+        color = texture(tileAtlas, vec3(uv.x, uv.y, 7 ));
+    } else {
+        color = texture(tileAtlas, vec3(uv.x, uv.y, 7 - vertType));
+    }
+    
 
     //color = getTileColor(vertType);
 }
