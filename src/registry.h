@@ -5,10 +5,13 @@
 #include <core/road.h>
 #include <core/settlement.h>
 
+#include "core/player.h"
+
 
 
 namespace df {
-	struct Player {};
+
+	class Player;
 
 
 
