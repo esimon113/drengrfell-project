@@ -82,6 +82,8 @@ namespace df {
             template<HasIdProperty T>
             std::vector<T> dijkstra(const T& start) const;
 
+            template<HasIdProperty T>
+            size_t getDistanceBetween(const T& start, const T& end) const;
 
 
         private:
