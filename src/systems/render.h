@@ -14,6 +14,7 @@
 
 
 namespace df {
+	class Player;
 	class RenderSystem {
 		public:
 			RenderSystem() = default;
@@ -26,6 +27,8 @@ namespace df {
 			void reset() noexcept;
 
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
+
+			void updateFogOfWar(const Player*player) noexcept;
 
 		private:
 			Registry* registry;
@@ -57,6 +60,7 @@ namespace df {
 				glm::vec2 position;
 				int type;
 				int padding;
+				int explored; // 0 = unexplored, 1 = explored, maybe 2 for a second player 
 			};
 
 			std::vector<float> tileMesh;

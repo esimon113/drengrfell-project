@@ -1,5 +1,6 @@
 #include "render.h"
-
+#include "../core/player.h"
+#include "../core/tile.h"
 #include "utils/textureArray.h"
 
 
@@ -153,7 +154,7 @@ namespace df {
 				position.y = tileScale * row * 1.5f;
 				const int type = (column + row) % (static_cast<int>(df::types::TileType::COUNT) - 1) + 1;
 
-				instances.push_back({position, type, 0});
+				instances.push_back({position, type, 0, 0});
 			}
 		}
 		return instances;
@@ -197,6 +198,11 @@ namespace df {
 			glVertexAttribIPointer(3, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
 			glVertexAttribDivisor(3, 1);
 
+			// layout(location = 4) in int explored;
+			glEnableVertexAttribArray(4);
+			glVertexAttribIPointer(4, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, explored));
+			glVertexAttribDivisor(4, 1);
+
 			glBindVertexArray(0);
 		}
 	}
@@ -221,6 +227,34 @@ namespace df {
 		glBindVertexArray(tileVao);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / 2, this->tileInstances.size());
 		glBindVertexArray(0);
+	}
+
+	void RenderSystem::updateFogOfWar(const Player* player) noexcept {
+		if (player == nullptr) return;
+
+		for(auto& instance : tileInstances) {
+			instance.explored = 0;
+		}
+
+		const auto& exploredTiles = player->getExploredTiles();
+    	for (const Tile* tile : exploredTiles) {
+        	if (tile == nullptr) continue;
+        
+        	size_t tileId = tile->getId();
+        
+        	// Assuming tile IDs correspond to indices in tileInstances
+        	// You might need to adjust this based on your actual tile ID system
+        	if (tileId < tileInstances.size()) {
+        	    tileInstances[tileId].explored = 1;
+        	}
+    	}
+
+		// Update the GPU buffer
+		glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, 
+						tileInstances.size() * sizeof(TileInstance), 
+						tileInstances.data());
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 }
