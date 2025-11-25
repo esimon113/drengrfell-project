@@ -173,6 +173,10 @@ namespace df {
 
 		{
 			glBindVertexArray(tileVao);
+
+			tileInstances[0].explored = 1; // for testing
+			tileInstances[10].explored = 1; // for testing
+
 			glBindBuffer(GL_ARRAY_BUFFER, tileVbo);
 			glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(float), this->tileMesh.data(), GL_STATIC_DRAW);
 
@@ -241,15 +245,11 @@ namespace df {
         	if (tile == nullptr) continue;
         
         	size_t tileId = tile->getId();
-        
-        	// Assuming tile IDs correspond to indices in tileInstances
-        	// You might need to adjust this based on your actual tile ID system
         	if (tileId < tileInstances.size()) {
         	    tileInstances[tileId].explored = 1;
         	}
     	}
 
-		// Update the GPU buffer
 		glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, 
 						tileInstances.size() * sizeof(TileInstance), 
