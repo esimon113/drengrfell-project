@@ -29,6 +29,7 @@ namespace df{
         
         
         public:
+            Player();
             Player(size_t id);
             size_t getId() const;
 

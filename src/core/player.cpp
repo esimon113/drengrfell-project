@@ -6,6 +6,11 @@
 
 namespace df{
 
+    Player::Player()
+        : playerId(0), heroPoints(0), heroReference(nullptr)
+    {
+    }
+
     Player::Player(size_t id)
         : playerId(id), heroPoints(0), heroReference(nullptr)
     {
