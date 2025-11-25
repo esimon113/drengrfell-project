@@ -57,4 +57,11 @@ namespace df::types {
 		DIAGONAL_DOWN,	// NORTH - NORTH_EAST or SOUTH_WEST - SOUTH
 		DIAGONAL_UP		// NORTH_WEST - NORTH or SOUTH - SOUTH_EAST
 	};
+
+
+    enum class GamePhase {
+        SETUP,
+        PLAY,
+        END
+    };
 }
