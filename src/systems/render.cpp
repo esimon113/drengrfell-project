@@ -89,7 +89,7 @@ namespace df {
 	/**
 	 * Initializes a mesh of one tile.
 	 */
-	std::vector<float> RenderSystem::createTileMesh(const float tileScale) noexcept {
+	std::vector<float> RenderSystem::createTileMesh() noexcept {
 		// Appends the hexagons corners counter-clockwise to the vertices array.
 		// The center of the hexagon is at the origin.
 		// It is rotated by 30 degrees in order to have a corner at the top,
@@ -99,10 +99,10 @@ namespace df {
 		std::vector<TileVertex> vertices;
 		for (int vertex = 0; vertex < 6; vertex++) {
 			const float angle = M_PI / 180.0f * (60.0f * static_cast<float>(vertex) - 30.0f);
-			float x = tileScale * std::cos(angle);
-			float y = tileScale * std::sin(angle);
-			float u = (x + SQRT_3_DIV_2 * tileScale) / (2.0f * SQRT_3_DIV_2 * tileScale);
-			float v = (y + tileScale) / (2.0f * tileScale);
+			float x = std::cos(angle);
+			float y = std::sin(angle);
+			float u = (x + SQRT_3_DIV_2) / (2.0f * SQRT_3_DIV_2);
+			float v = (y + 1.0f) / 2.0f;
 			vertices.emplace_back(glm::vec2(x, y), glm::vec2(u, v));
 		}
 
@@ -145,13 +145,13 @@ namespace df {
 	 * Creates a vector of the tile-specific data for the whole map arranged in a "rectangle".
 	 * The tile specific data is the position and tile type, yet.
 	 */
-	std::vector<RenderSystem::TileInstance> RenderSystem::createTileInstances(const int columns, const int rows, const float tileScale) noexcept {
+	std::vector<RenderSystem::TileInstance> RenderSystem::createTileInstances(const int columns, const int rows) noexcept {
 		std::vector<TileInstance> instances;
 		for (int column = 0; column < columns; column++) {
 			for (int row = 0; row < rows; row++) {
 				glm::vec2 position;
-				position.x = tileScale * sqrt(3.0f) * (column + 0.5f * (row & 1));
-				position.y = tileScale * row * 1.5f;
+				position.x = sqrt(3.0f) * (column + 0.5f * (row & 1));
+				position.y = row * 1.5f;
 				const int type = (column + row) % (static_cast<int>(df::types::TileType::COUNT) - 1) + 1;
 
 				instances.push_back({position, type, 0, 0});
@@ -164,8 +164,8 @@ namespace df {
 	 * Initializes the map data
 	 */
 	void RenderSystem::initMap() noexcept {
-		this->tileMesh = createTileMesh(10);
-		this->tileInstances = createTileInstances(10, 10, 10);
+		this->tileMesh = createTileMesh();
+		this->tileInstances = createTileInstances(10, 10);
 
 		glGenVertexArrays(1, &tileVao);
 		glGenBuffers(1, &tileVbo);
@@ -212,19 +212,23 @@ namespace df {
 	}
 
 
-	glm::vec2 RenderSystem::calculateWorldDimensions(const int columns, const int rows, const float tileScale) noexcept {
+	glm::vec2 RenderSystem::calculateWorldDimensions(const int columns, const int rows) noexcept {
 		return {
-			tileScale * sqrt(3.0f) * (columns + 0.5f),
-			tileScale * 1.5f * (rows + 1.0f)
+			sqrt(3.0f) * (columns + 0.5f),
+			1.5f * (rows + 1.0f)
 		};
 	}
 
-	void RenderSystem::renderMap() const noexcept {
-		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10, 10);
+	void RenderSystem::renderMap(const glm::vec2 scale) const noexcept {
+		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
 		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
+
+		glm::mat4 model = glm::identity<glm::mat4>();
+		model = glm::scale(model, glm::vec3(scale, 1));
 
 		tileAtlas.bind(0);
 		tileShader.use()
+			.setMat4("model", model)
 			.setMat4("projection", projection)
 			.setSampler("tileAtlas", 0);
 
