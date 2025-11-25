@@ -13,9 +13,11 @@ namespace df {
 
 		self->containers[4] = &self->players;
 
-		self->containers[9] = &self->collisionRadius;
+		self->containers[5] = &self->collisionRadius;
 
-		self->containers[10] = &self->colors;
+		self->containers[6] = &self->colors;
+		self->containers[7] = &self->roads;
+		self->containers[8] = &self->settlements;
 
 		return self;
 	}
