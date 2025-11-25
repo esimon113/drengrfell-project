@@ -2,6 +2,8 @@
 
 #include <common.h>
 #include <tiny_ecs.hpp>
+#include <core/road.h>
+#include <core/settlement.h>
 
 
 
@@ -28,13 +30,15 @@ namespace df {
 			ComponentContainer<float> collisionRadius;
 
 			ComponentContainer<glm::vec3> colors;
+			ComponentContainer<Road> roads;
+			ComponentContainer<Settlement> settlements;
 
 			inline Entity getPlayer() noexcept { return player; }
 			inline float& getScreenDarkness() noexcept { return screenDarkness; }
 
 
 		private:
-			std::array<ContainerInterface*, 11> containers;
+			std::array<ContainerInterface*, 9> containers;
 
 			Entity player;
 			float screenDarkness;
