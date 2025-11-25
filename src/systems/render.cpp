@@ -1,5 +1,6 @@
 #include "render.h"
 
+#include "utils/textureArray.h"
 
 
 namespace df {
@@ -15,7 +16,8 @@ namespace df {
 		// load resources for rendering
 		self.spriteShader = Shader::init(assets::Shader::sprite).value();
 		self.windShader = Shader::init(assets::Shader::wind).value();
-		// ...
+		self.tileShader = Shader::init(assets::Shader::tile).value();
+		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS, static_cast<int>(df::types::TileType::COUNT), 60, 59);
 
 		glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
@@ -28,6 +30,7 @@ namespace df {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.m_quad_ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
+		self.initMap();
 
 		return self;
 	}
@@ -36,11 +39,13 @@ namespace df {
 	void RenderSystem::deinit() noexcept {
 		spriteShader.deinit();
 		windShader.deinit();
+		tileShader.deinit();
+		tileAtlas.deinit();
 	}
 
 
 	void RenderSystem::step(const float) noexcept {
-		// ...
+		renderMap();
 	}
 
 
@@ -78,4 +83,144 @@ namespace df {
 		intermediateFramebuffer.deinit();
 		intermediateFramebuffer = Framebuffer::init({ (GLsizei)size.x, (GLsizei)size.y, 1, true });
 	}
+
+
+	/**
+	 * Initializes a mesh of one tile.
+	 */
+	std::vector<float> RenderSystem::createTileMesh(const float tileScale) noexcept {
+		// Appends the hexagons corners counter-clockwise to the vertices array.
+		// The center of the hexagon is at the origin.
+		// It is rotated by 30 degrees in order to have a corner at the top,
+		// as the tile textures already created have also the corner at the top.
+
+		constexpr float SQRT_3_DIV_2 = 0.866025404f; //sqrt(3.0) / 2.0f;
+		std::vector<TileVertex> vertices;
+		for (int vertex = 0; vertex < 6; vertex++) {
+			const float angle = M_PI / 180.0f * (60.0f * static_cast<float>(vertex) - 30.0f);
+			float x = tileScale * std::cos(angle);
+			float y = tileScale * std::sin(angle);
+			float u = (x + SQRT_3_DIV_2 * tileScale) / (2.0f * SQRT_3_DIV_2 * tileScale);
+			float v = (y + tileScale) / (2.0f * tileScale);
+			vertices.emplace_back(glm::vec2(x, y), glm::vec2(u, v));
+		}
+
+		// This is a triangulation I've come up with on my ipad.
+		// The triangles are counter-clockwise as the vertices above
+		// are counter-clockwise around the origin.
+
+		std::vector<float> meshData;
+
+		// Big center triangle
+		for (int i = 0; i < 6; i += 2) {
+			meshData.push_back(vertices[i].position.x);
+			meshData.push_back(vertices[i].position.y);
+			meshData.push_back(vertices[i].uv.x);
+			meshData.push_back(vertices[i].uv.y);
+		}
+
+		// Three side triangles
+		for (int i = 0; i < 3; i++) {
+			meshData.push_back(vertices[2 * i + 0].position.x);
+			meshData.push_back(vertices[2 * i + 0].position.y);
+			meshData.push_back(vertices[2 * i + 0].uv.x);
+			meshData.push_back(vertices[2 * i + 0].uv.y);
+
+			meshData.push_back(vertices[2 * i + 1].position.x);
+			meshData.push_back(vertices[2 * i + 1].position.y);
+			meshData.push_back(vertices[2 * i + 1].uv.x);
+			meshData.push_back(vertices[2 * i + 1].uv.y);
+
+			meshData.push_back(vertices[(2 * i + 2) % 6].position.x);
+			meshData.push_back(vertices[(2 * i + 2) % 6].position.y);
+			meshData.push_back(vertices[(2 * i + 2) % 6].uv.x);
+			meshData.push_back(vertices[(2 * i + 2) % 6].uv.y);
+		}
+
+		return meshData;
+	}
+
+	/**
+	 * Creates a vector of the tile-specific data for the whole map arranged in a "rectangle".
+	 * The tile specific data is the position and tile type, yet.
+	 */
+	std::vector<RenderSystem::TileInstance> RenderSystem::createTileInstances(const int columns, const int rows, const float tileScale) noexcept {
+		std::vector<TileInstance> instances;
+		for (int column = 0; column < columns; column++) {
+			for (int row = 0; row < rows; row++) {
+				glm::vec2 position;
+				position.x = tileScale * sqrt(3.0f) * (column + 0.5f * (row & 1));
+				position.y = tileScale * row * 1.5f;
+				const int type = (column + row) % (static_cast<int>(df::types::TileType::COUNT) - 1) + 1;
+
+				instances.push_back({position, type, 0});
+			}
+		}
+		return instances;
+	}
+
+	/**
+	 * Initializes the map data
+	 */
+	void RenderSystem::initMap() noexcept {
+		this->tileMesh = createTileMesh(10);
+		this->tileInstances = createTileInstances(10, 10, 10);
+
+		glGenVertexArrays(1, &tileVao);
+		glGenBuffers(1, &tileVbo);
+		glGenBuffers(1, &tileInstanceVbo);
+
+		{
+			glBindVertexArray(tileVao);
+			glBindBuffer(GL_ARRAY_BUFFER, tileVbo);
+			glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(float), this->tileMesh.data(), GL_STATIC_DRAW);
+
+			// layout(location = 0) in vec2 position;
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, position));
+
+			// layout(location = 1) in vec2 vertexUv;
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, uv));
+
+			// Define instance attributes
+			glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
+			glBufferData(GL_ARRAY_BUFFER, this->tileInstances.size() * sizeof(TileInstance), this->tileInstances.data(), GL_STATIC_DRAW);
+
+			// layout(location = 2) in vec2 instancePosition;
+			glEnableVertexAttribArray(2);
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void*)offsetof(TileInstance, position));
+			glVertexAttribDivisor(2, 1);
+
+			// layout(location = 3) in int type;
+			glEnableVertexAttribArray(3);
+			glVertexAttribIPointer(3, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
+			glVertexAttribDivisor(3, 1);
+
+			glBindVertexArray(0);
+		}
+	}
+
+
+	glm::vec2 RenderSystem::calculateWorldDimensions(const int columns, const int rows, const float tileScale) noexcept {
+		return {
+			tileScale * sqrt(3.0f) * (columns + 0.5f),
+			tileScale * 1.5f * (rows + 1.0f)
+		};
+	}
+
+	void RenderSystem::renderMap() const noexcept {
+		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10, 10);
+		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
+
+		tileAtlas.bind(0);
+		tileShader.use()
+			.setMat4("projection", projection)
+			.setSampler("tileAtlas", 0);
+
+		glBindVertexArray(tileVao);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / 2, this->tileInstances.size());
+		glBindVertexArray(0);
+	}
+
 }

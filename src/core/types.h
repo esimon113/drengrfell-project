@@ -7,7 +7,9 @@
 namespace df::types {
 
 	// maybe add more custom tile types in the future?!
-	enum class TileType {
+	// Attention, dear traveller:
+	//     render.cpp, tile.frag.glsl and the tileAtlas.png have to be updated when adding tiles
+	enum class TileType: int {
 		EMPTY = 0,
 		WATER,
 		FOREST,
@@ -15,7 +17,8 @@ namespace df::types {
 		MOUNTAIN,
 		FIELD,
 		CLAY,
-		ICE
+		ICE,
+		COUNT
 	};
 
 
