@@ -221,9 +221,22 @@ namespace df {
 
 	void RenderSystem::renderMap(const glm::vec2 scale) const noexcept {
 		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
-		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
+
+		
+		Camera& cam = registry->cameras.get(registry->getCamera());
+		glm::vec2 camPos = cam.position;
+		float camZoom = cam.zoom;
+
+		const glm::mat4 projection = glm::ortho(
+			camPos.x, camPos.x + worldDimensions.x / camZoom,
+			camPos.y, camPos.y + worldDimensions.y / camZoom,
+			-1.0f, 1.0f
+		);
 
 		glm::mat4 model = glm::identity<glm::mat4>();
+		// camera translation: move the world around the camera position
+		model = glm::translate(model, glm::vec3(-camPos, 0.0f));
+
 		model = glm::scale(model, glm::vec3(scale, 1));
 
 		tileAtlas.bind(0);

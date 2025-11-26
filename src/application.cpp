@@ -61,7 +61,7 @@ namespace df {
 
 		self.registry = Registry::init();
 
-		// self.world = WorldSystem::init(self.window, self.registry, self.audioEngine);
+		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry);
 
@@ -96,9 +96,9 @@ namespace df {
 		window->setResizeCallback([&](GLFWwindow* window, int width, int height) -> void {
 				onResizeCallback(window, width, height);
 				});
-		// window->setKeyCallback([&](GLFWwindow* window, int key, int scancode, int action, int mods) -> void {
-		// 		onKeyCallback(window, key, scancode, action, mods);
-		// 		});
+		window->setKeyCallback([&](GLFWwindow* window, int key, int scancode, int action, int mods) -> void {
+		 		onKeyCallback(window, key, scancode, action, mods);
+		 		});
 
 		std::cout << "	- Set windows->Callbacks" << std::endl;
 		float delta_time = 0;
@@ -120,7 +120,7 @@ namespace df {
 			delta_time = time - last_time;
 			last_time = time;
 
-			// world.step(delta_time);
+			world.step(delta_time);
 			// physics.step(delta_time);
 			// physics.handleCollisions(delta_time);
 			render.step(delta_time);
@@ -145,15 +145,15 @@ namespace df {
 		registry->getScreenDarkness() = 1.f;
 
 		// reset systems
-		// world.reset();
+		world.reset();
 		// physics.reset();
 		render.reset();
 	}
 
 
-	// void Application::onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept {
-	// 	world.onKeyCallback(window, key, scancode, action, mods);
-	// }
+	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
+		world.onKeyCallback(windowParam, key, scancode, action, mods);
+	}
 
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {

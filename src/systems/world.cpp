@@ -28,43 +28,65 @@ namespace df {
 
 
 	void WorldSystem::step(const float delta) noexcept {
-		std::string title = fmt::format("Score: {} - FPS: {:.2f} ({:.2f} ms)", score, 1/delta, 1000 * delta);
-		window->setTitle(title.c_str());
+		//std::string title = fmt::format("Score: {} - FPS: {:.2f} ({:.2f} ms)", score, 1/delta, 1000 * delta);
+		//window->setTitle(title.c_str());
 
-		// remove entites that leave the screen on the bottom side
-		for (Entity e : registry->velocities.entities) {
-			glm::vec2 position = registry->positions.get(e);
-			glm::vec2 scale = glm::vec2(0);
+		Camera& cam = registry->cameras.get(registry->getCamera());
+		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
 
-			if (registry->scales.has(e)) {
-				scale = registry->scales.get(e);
-			}
-			else if (registry->collisionRadius.has(e)) {
-				scale = glm::vec2(registry->collisionRadius.get(e));
-			}
+		if (input.up)    cam.position.y += cam.scrollSpeed * delta;
+		if (input.down)  cam.position.y -= cam.scrollSpeed * delta;
+		if (input.left)  cam.position.x -= cam.scrollSpeed * delta;
+		if (input.right) cam.position.x += cam.scrollSpeed * delta;
 
-			if (!registry->players.has(e) && position.y + fabs(scale.x/2) < -1) {
-				registry->clear(e);
-			}
-		}
 	}
 
 
 	void WorldSystem::onKeyCallback(GLFWwindow* /* window */, int key, int /* scancode */, int action, int /* mods */) noexcept {
+		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
 		switch (action) {
 			case GLFW_PRESS:
 				switch (key) {
 					case GLFW_KEY_R: // pressing the 'r' key triggers a reset of the game
 						m_reset = true;
 						break;
-					// TODO: (A2) Handle player movement here
+					case GLFW_KEY_W:
+						fmt::println("W pressed");
+						input.up = true;
+						break;
+					case GLFW_KEY_A:
+						fmt::println("A pressed");
+						input.left = true;
+						break;
+					case GLFW_KEY_S:
+						fmt::println("S pressed");
+						input.down = true;
+						break;
+					case GLFW_KEY_D:
+						fmt::println("D pressed");
+						input.right = true;
+						break;
 					default:
 						break;
 				}
 				break;
 
 			case GLFW_RELEASE:
-				{} break;
+				switch (key) {
+					case GLFW_KEY_W:
+						input.up = false;
+						break;
+					case GLFW_KEY_A:
+						input.left = false;
+						break;
+					case GLFW_KEY_S:
+						input.down = false;
+						break;
+					case GLFW_KEY_D:
+						input.right = false;
+						break;
+				}
+				break;
 
 			case GLFW_REPEAT:
 			default:

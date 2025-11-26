@@ -31,7 +31,7 @@ namespace df {
 			Registry* registry;
 			// AudioSystem* audioEngine;
 
-			// WorldSystem world;
+			WorldSystem world;
 			// PhysicsSystem physics;
 			RenderSystem render;
 
