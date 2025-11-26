@@ -24,7 +24,7 @@ namespace df {
     // make sure T has id
     template<typename T>
     concept HasIdProperty = requires (T t) {
-    	{ t.id } -> std::convertible_to<size_t>;
+    	{ t.getId() } -> std::convertible_to<size_t>;
     };
 
 
