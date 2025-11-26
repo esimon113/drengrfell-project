@@ -41,22 +41,25 @@ namespace df {
 
         // players
         json playersJson = json::array();
-        for (const auto& player : this->players) {
-            playersJson.push_back(player.serialize());
+        for (const auto& player : this->players) { // TODO
+            // playersJson.push_back(player.serialize());
+            playersJson.push_back(player.getId());
         }
         j["players"] = playersJson;
 
         // settlements
         json settlementsJson = json::array();
-        for (const auto& settlement : this->settlements) {
-            settlementsJson.push_back(settlement->serialize());
+        for (const auto& settlement : this->settlements) { // TODO
+            // settlementsJson.push_back(settlement->serialize());
+            settlementsJson.push_back(settlement->getId());
         }
         j["settlements"] = settlementsJson;
 
         // roads
         json roadsJson = json::array();
-        for (const auto& road : this->roads) {
-            roadsJson.push_back(road->serialize());
+        for (const auto& road : this->roads) { // TODO
+            // roadsJson.push_back(road->serialize());
+            roadsJson.push_back(road->getId());
         }
         j["roads"] = roadsJson;
 
@@ -94,8 +97,8 @@ namespace df {
                     playerId = playerJson["id"].get<size_t>();
                 }
 
-                Player player(playerId);
-                player.deserialize(playerJson);
+                Player player(playerId); // TODO
+                // player.deserialize(playerJson);
                 this->players.push_back(player);
             }
         }
@@ -103,17 +106,20 @@ namespace df {
         // settlements
         if (j.contains("settlements") && j["settlements"].is_array()) {
             for (const auto& settlementJson : j["settlements"]) {
-                auto settlement = std::make_unique<Settlement>();
-                settlement->deserialize(settlementJson);
+                auto settlement = std::make_unique<Settlement>(); // TODO
+                // settlement->deserialize(settlementJson);
+                settlement->setId(settlementJson["id"]);
                 this->settlements.push_back(std::move(settlement));
+
             }
         }
 
         // roads
         if (j.contains("roads") && j["roads"].is_array()) {
             for (const auto& roadJson : j["roads"]) {
-                auto road = std::make_unique<Road>();
-                road->deserialize(roadJson);
+                auto road = std::make_unique<Road>(); // TODO
+                // road->deserialize(roadJson);
+                road->setId(roadJson["id"]);
                 this->roads.push_back(std::move(road));
             }
         }
