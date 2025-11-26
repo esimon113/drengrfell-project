@@ -22,4 +22,23 @@ namespace df {
     const std::vector<int>& Settlement::getBuildingCost() const { return buildingCost; }
     void Settlement::setBuildingCost(std::vector<int> newBuildingCost) { buildingCost = newBuildingCost; }
 
+
+	const json Settlement::serialize() const {
+		json j;
+
+		j["id"] = id;
+		j["playerId"] = playerId;
+		j["vertexId"] = vertexId;
+		j["buildingCost"] = buildingCost;
+
+		return j;
+	}
+
+    void Settlement::deserialize(const json& j) {
+        this->setId(j.at("id").get<size_t>());
+        this->setPlayerId(j.at("playerId").get<size_t>());
+        this->setVertexId(j.at("vertexId").get<size_t>());
+        this->setBuildingCost(j.at("buildingCost").get<std::vector<int>>());
+    }
+
 }

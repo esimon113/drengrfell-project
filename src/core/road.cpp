@@ -46,4 +46,24 @@ namespace df {
         // fallback
         return 0;
     }
+
+    const json Road::serialize() const {
+        json j;
+
+        j["id"] = id;
+        j["playerId"] = playerId;
+        j["edgeId"] = edgeId;
+        j["roadLevel"] = static_cast<size_t>(roadLevel);
+        j["buildingCost"] = buildingCost;
+
+        return j;
+    }
+
+    void Road::deserialize(const json& j) {
+        this->setId(j.at("id").get<size_t>());
+        this->setPlayerId(j.at("playerId").get<size_t>());
+        this->setEdgeId(j.at("edgeId").get<size_t>());
+        this->setRoadLevel(static_cast<RoadLevel>(j.at("roadLevel").get<size_t>()));
+        this->setBuildingCost(j.at("buildingCost").get<std::vector<int>>());
+    }
 }

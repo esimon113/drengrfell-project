@@ -61,6 +61,10 @@ namespace df {
 
 		self.registry = Registry::init();
 
+		// Create GameState
+		GameState newGameState(self.registry);
+		self.gameState = std::move(newGameState);
+
 		// self.world = WorldSystem::init(self.window, self.registry, self.audioEngine);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry);
