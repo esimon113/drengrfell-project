@@ -31,6 +31,9 @@ namespace df {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.m_quad_ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		self.initMap();
 
 		return self;
@@ -141,6 +144,35 @@ namespace df {
 		return meshData;
 	}
 
+	std::vector<float> RenderSystem::createRectangularTileMesh() noexcept {
+		std::vector<TileVertex> vertices;
+		vertices.push_back({{1, -1}, {1, 0}});
+		vertices.push_back({{1, 1}, {1, 1}});
+		vertices.push_back({{-1, 1}, {0, 1}});
+		vertices.push_back({{-1, -1}, {0, 0}});
+
+		std::vector<float> meshData;
+		for (int i = 0; i < 2; i++) {
+			meshData.push_back(vertices[2 * i + 0].position.x);
+			meshData.push_back(vertices[2 * i + 0].position.y);
+			meshData.push_back(vertices[2 * i + 0].uv.x);
+			meshData.push_back(vertices[2 * i + 0].uv.y);
+
+			meshData.push_back(vertices[2 * i + 1].position.x);
+			meshData.push_back(vertices[2 * i + 1].position.y);
+			meshData.push_back(vertices[2 * i + 1].uv.x);
+			meshData.push_back(vertices[2 * i + 1].uv.y);
+
+			meshData.push_back(vertices[(2 * i + 2) % 4].position.x);
+			meshData.push_back(vertices[(2 * i + 2) % 4].position.y);
+			meshData.push_back(vertices[(2 * i + 2) % 4].uv.x);
+			meshData.push_back(vertices[(2 * i + 2) % 4].uv.y);
+		}
+
+
+		return meshData;
+	}
+
 	/**
 	 * Creates a vector of the tile-specific data for the whole map arranged in a "rectangle".
 	 * The tile specific data is the position and tile type, yet.
@@ -151,10 +183,10 @@ namespace df {
 		auto uniformTileTypeDistribution = std::uniform_int_distribution(1, static_cast<int>(df::types::TileType::COUNT) - 1);
 
 		std::vector<TileInstance> instances;
-		for (int column = 0; column < columns; column++) {
-			for (int row = 0; row < rows; row++) {
+		for (int row = rows - 1; row >= 0; row--) {
+			for (int column = 0; column < columns; column++) {
 				glm::vec2 position;
-				position.x = sqrt(3.0f) * (column + 0.5f * (row & 1));
+				position.x = 2.0f * (column + 0.5f * (row & 1));
 				position.y = row * 1.5f;
 				const int type = uniformTileTypeDistribution(randomEngine);
 
@@ -168,7 +200,7 @@ namespace df {
 	 * Initializes the map data
 	 */
 	void RenderSystem::initMap() noexcept {
-		this->tileMesh = createTileMesh();
+		this->tileMesh = createRectangularTileMesh();
 		this->tileInstances = createTileInstances(10, 10);
 
 		glGenVertexArrays(1, &tileVao);
@@ -237,7 +269,7 @@ namespace df {
 			.setSampler("tileAtlas", 0);
 
 		glBindVertexArray(tileVao);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / 2, this->tileInstances.size());
+		glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / FLOATS_PER_TILE_VERTEX, this->tileInstances.size());
 		glBindVertexArray(0);
 	}
 
