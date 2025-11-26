@@ -140,13 +140,14 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/framebuffer.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/texture.cpp
-<<<<<<< HEAD
 	${PROJECT_SOURCE_DIR}/src/utils/textureArray.h
 	${PROJECT_SOURCE_DIR}/src/utils/textureArray.cpp
+
+	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
+    ${PROJECT_SOURCE_DIR}/src/core/hero.h
+    ${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
+    ${PROJECT_SOURCE_DIR}/src/utils/animations.h
 )
-=======
- "src/core/hero.cpp" "src/utils/animations.cpp" "src/core/hero.h" "src/utils/animations.h")
->>>>>>> feature/Hero-implementation
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 20
