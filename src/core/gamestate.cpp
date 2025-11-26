@@ -1,5 +1,4 @@
 #include "gamestate.h"
-
 #include <fstream>
 #include <stdexcept>
 
@@ -40,15 +39,17 @@ namespace df {
 
         // settlements
         json settlementsJson = json::array();
-        for (const auto& settlement : this->settlements) {
-            settlementsJson.push_back(settlement->serialize());
+        for (Entity e : registry->settlements.entities) {
+            const Settlement& s = registry->settlements.get(e);
+            settlementsJson.push_back(s.serialize());
         }
         j["settlements"] = settlementsJson;
 
         // roads
         json roadsJson = json::array();
-        for (const auto& road : this->roads) {
-            roadsJson.push_back(road->serialize());
+        for (Entity e : registry->roads.entities) {
+            const Road& r = registry->roads.get(e);
+            roadsJson.push_back(r.serialize());
         }
         j["roads"] = roadsJson;
         
@@ -68,9 +69,6 @@ namespace df {
     void GameState::deserialize(const json &j) {
         // clear current state
         this->players.clear();
-        this->settlements.clear();
-        this->roads.clear();
-
 
         // map
         if (j.contains("map") && j["map"].is_object() && !j["map"].empty()) {
@@ -95,18 +93,18 @@ namespace df {
         // settlements
         if (j.contains("settlements") && j["settlements"].is_array()) {
             for (const auto& settlementJson : j["settlements"]) {
-                auto settlement = std::make_unique<Settlement>();
-                settlement->deserialize(settlementJson);
-                this->settlements.push_back(std::move(settlement));
+                Entity e;
+                Settlement& s = registry->settlements.emplace(e);
+                s.deserialize(settlementJson);  // store data in ecs
             }
         }
 
         // roads
         if (j.contains("roads") && j["roads"].is_array()) {
             for (const auto& roadJson : j["roads"]) {
-                auto road = std::make_unique<Road>();
-                road->deserialize(roadJson);
-                this->roads.push_back(std::move(road));
+                Entity e;
+                Road& r = registry->roads.emplace(e);
+                r.deserialize(roadJson);
             }
         }
 
@@ -148,6 +146,37 @@ namespace df {
 
         json j = json::parse(data);
         this->deserialize(j);
+    }
+
+    // settlements
+    std::vector<Settlement*> GameState::getSettlements() {
+        std::vector<Settlement*> settlementsVector;
+        for (Entity e : registry->settlements.entities) {
+            settlementsVector.push_back(&registry->settlements.get(e));
+        }
+        return settlementsVector;
+    }
+
+    void GameState::addSettlement(const Settlement& settlementData) {
+        Entity e;
+        Settlement& s = registry->settlements.emplace(e);
+        s = settlementData;
+    }
+
+
+    // roads
+    void GameState::addRoad(const Road& roadData) {
+        Entity e;
+        Road& r = registry->roads.emplace(e);
+        r = roadData;
+    }
+
+    std::vector<Road*> GameState::getRoads() {
+        std::vector<Road*> roadVector;
+        for (Entity e : registry->roads.entities) {
+            roadVector.push_back(&registry->roads.get(e));
+        }
+        return roadVector;
     }
 
 } // namespace df
