@@ -6,6 +6,17 @@ namespace df {
 	Registry* Registry::init() noexcept {
 		Registry* self = new Registry;
 
+		// Unsure, if this is the right place to initialize this
+		Entity camera;
+		self->camera = camera;
+		self->cameras.emplace(camera);
+		Camera& cam = self->cameras.get(self->camera);
+		cam.isActive = true;
+
+		CameraInput& input = self->cameraInputs.emplace(camera);
+		input = {};
+		//
+
 		self->containers[0] = &self->positions;
 		self->containers[1] = &self->velocities;
 		self->containers[2] = &self->scales;
@@ -18,6 +29,9 @@ namespace df {
 		self->containers[6] = &self->colors;
 		self->containers[7] = &self->roads;
 		self->containers[8] = &self->settlements;
+
+		self->containers[9] = &self->cameras;
+		self->containers[10] = &self->cameraInputs;
 
 		return self;
 	}

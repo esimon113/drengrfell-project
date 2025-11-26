@@ -52,8 +52,8 @@ namespace df {
 	}
 
 
-	float Tile::getPotencyProbability(types::TilePotency potency) const {
-		switch (potency) { // TODO: make probabilities configurable
+	float Tile::getPotencyProbability(types::TilePotency currPotency) const {
+		switch (currPotency) { // TODO: make probabilities configurable
 			case types::TilePotency::LOW:    return 0.10f;
 			case types::TilePotency::MEDIUM: return 0.25f;
 			case types::TilePotency::HIGH:   return 0.50f;

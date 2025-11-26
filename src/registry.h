@@ -6,6 +6,8 @@
 #include <core/settlement.h>
 
 #include "core/player.h"
+#include <core/camera.h>
+#include <core/cameraInput.h>
 
 
 
@@ -36,14 +38,21 @@ namespace df {
 			ComponentContainer<Road> roads;
 			ComponentContainer<Settlement> settlements;
 
+			ComponentContainer<Camera> cameras;
+			ComponentContainer<CameraInput> cameraInputs;
+
+
+
 			inline Entity getPlayer() noexcept { return player; }
+			inline Entity getCamera() noexcept { return camera; }
 			inline float& getScreenDarkness() noexcept { return screenDarkness; }
 
 
 		private:
-			std::array<ContainerInterface*, 9> containers;
+			std::array<ContainerInterface*, 11> containers;
 
 			Entity player;
+			Entity camera;
 			float screenDarkness;
 	};
 } // namespace df

@@ -60,12 +60,10 @@ namespace df {
 		// *self.audioEngine = AudioSystem::init();
 
 		self.registry = Registry::init();
-
 		// Create GameState
 		GameState newGameState(self.registry);
 		self.gameState = std::move(newGameState);
-
-		// self.world = WorldSystem::init(self.window, self.registry, self.audioEngine);
+		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry);
 
@@ -100,9 +98,19 @@ namespace df {
 		window->setResizeCallback([&](GLFWwindow* window, int width, int height) -> void {
 				onResizeCallback(window, width, height);
 				});
-		// window->setKeyCallback([&](GLFWwindow* window, int key, int scancode, int action, int mods) -> void {
-		// 		onKeyCallback(window, key, scancode, action, mods);
-		// 		});
+		window->setKeyCallback([&](GLFWwindow* window, int key, int scancode, int action, int mods) -> void {
+		 		onKeyCallback(window, key, scancode, action, mods);
+		 		});
+
+		window->setMouseButtonCallback([&](GLFWwindow* window, int button, int action, int mods) {
+			onMouseButtonCallback(window, button, action, mods);
+			});
+
+		window->setScrollCallback([&](GLFWwindow* window, double xoffset, double yoffset) {
+			onScrollCallback(window, xoffset, yoffset);
+			});
+
+
 
 		std::cout << "	- Set windows->Callbacks" << std::endl;
 		float delta_time = 0;
@@ -124,7 +132,7 @@ namespace df {
 			delta_time = time - last_time;
 			last_time = time;
 
-			// world.step(delta_time);
+			world.step(delta_time);
 			// physics.step(delta_time);
 			// physics.handleCollisions(delta_time);
 			render.step(delta_time);
@@ -149,15 +157,23 @@ namespace df {
 		registry->getScreenDarkness() = 1.f;
 
 		// reset systems
-		// world.reset();
+		world.reset();
 		// physics.reset();
 		render.reset();
 	}
 
 
-	// void Application::onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept {
-	// 	world.onKeyCallback(window, key, scancode, action, mods);
-	// }
+	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
+		world.onKeyCallback(windowParam, key, scancode, action, mods);
+	}
+
+	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
+		world.onMouseButtonCallback(windowParam, button, action, mods);
+	}
+
+	void Application::onScrollCallback(GLFWwindow* windowParam, double xoffset, double yoffset) noexcept {
+		world.onScrollCallback(windowParam, xoffset, yoffset);
+	}
 
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
