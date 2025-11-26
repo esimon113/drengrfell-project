@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <vector>
 #include <optional>
+#include <random>
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
@@ -41,6 +42,8 @@ namespace df {
 			float getRangeFactor() const { return this->rangeFactor; }
 			void setRangeFactor(float range) { this->rangeFactor = range; }
 
+			// Determines if this tile gives a resource this turn, based on the tile's type and potency.
+			bool givesResourceThisTurn(std::mt19937& rng) const;
 
 			bool operator==(const Tile& other) const { return this->id == other.id; }
 
@@ -60,5 +63,8 @@ namespace df {
 			std::optional<size_t> buildingId;
 			std::vector<size_t> visibleForPlayers;
 			float rangeFactor = 1.0f;
+
+			bool isResourceTile() const;
+			float getPotencyProbability(types::TilePotency potency) const;
 	};
 }
