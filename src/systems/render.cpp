@@ -146,15 +146,19 @@ namespace df {
 	 * The tile specific data is the position and tile type, yet.
 	 */
 	std::vector<RenderSystem::TileInstance> RenderSystem::createTileInstances(const int columns, const int rows) noexcept {
+		// TODO: Add dedicated world generator.
+		auto randomEngine = std::default_random_engine(std::random_device()());
+		auto uniformTileTypeDistribution = std::uniform_int_distribution(1, static_cast<int>(df::types::TileType::COUNT) - 1);
+
 		std::vector<TileInstance> instances;
 		for (int column = 0; column < columns; column++) {
 			for (int row = 0; row < rows; row++) {
 				glm::vec2 position;
 				position.x = sqrt(3.0f) * (column + 0.5f * (row & 1));
 				position.y = row * 1.5f;
-				const int type = (column + row) % (static_cast<int>(df::types::TileType::COUNT) - 1) + 1;
+				const int type = uniformTileTypeDistribution(randomEngine);
 
-				instances.push_back({position, type, 0, 0});
+				instances.push_back({position, type, 0, uniformTileTypeDistribution(randomEngine) % 6 > 2});
 			}
 		}
 		return instances;
