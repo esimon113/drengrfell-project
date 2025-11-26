@@ -7,6 +7,8 @@
 #include "tile.h"
 #include "types.h"
 #include "settlement.h"
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 //#include "hero.h"
 //#include "road.h"
 
@@ -59,6 +61,12 @@ namespace df{
             bool isTileExplored(size_t ) const;
             const std::vector<Tile*>& getExploredTiles() const;
 
+            size_t getPlayerId() const;
+            void setPlayerId(size_t newPlayerId);
+
+            const json serialize() const;
+
+            void deserialize(const json& j);
 
             void reset();
 

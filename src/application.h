@@ -2,6 +2,7 @@
 
 #include <common.h>
 #include <utils/commandLineOptions.h>
+#include "core/gamestate.h"
 
 #include <miniaudio.h>
 #include <utils/mesh.h>
@@ -42,5 +43,7 @@ namespace df {
 			void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
+			// GameState
+			GameState gameState;
 	};
 }

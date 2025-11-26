@@ -60,7 +60,9 @@ namespace df {
 		// *self.audioEngine = AudioSystem::init();
 
 		self.registry = Registry::init();
-
+		// Create GameState
+		GameState newGameState(self.registry);
+		self.gameState = std::move(newGameState);
 		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry);

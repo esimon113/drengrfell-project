@@ -1,8 +1,9 @@
 #pragma once
 
 #include <filesystem>
-#include <memory>
 #include <vector>
+#include <memory>
+#include "registry.h"
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
@@ -25,31 +26,40 @@ namespace df {
     class GameState {
     public:
         GameState() = default;
-        ~GameState() = default;
+        GameState(Registry* reg) : registry(reg) {};
 
 
-        Graph getMap() { return this->map; }
+        Graph& getMap() { return this->map; }
+        const Graph& getMap() const { return this->map; }
         void setMap(Graph newMap) { this->map = newMap; }
 
 
         // players
         size_t getPlayerCount() const { return this->players.size(); }
         Player *getPlayer(size_t playerId);
+        const Player *getPlayer(size_t playerId) const;
         std::vector<Player> &getPlayers() { return this->players; }
+        const std::vector<Player> &getPlayers() const { return this->players; }
         void addPlayer(const Player &player) { this->players.push_back(player); }
         void clearPlayers() { this->players.clear(); }
 
 
         // settlements
-        std::vector<std::unique_ptr<Settlement>> &getSettlements() { return this->settlements; }
-        void addSettlement(std::unique_ptr<Settlement> settlement) { this->settlements.push_back(std::move(settlement)); }
-        void clearSettlements() { this->settlements.clear(); }
+        std::vector<std::shared_ptr<Settlement>> getSettlements();
+        void addSettlement(std::shared_ptr<Settlement> settlement);
+        void clearSettlements() { 
+            settlements.clear(); 
+            registry->settlements.clear(); 
+        }
 
 
         // roads
-        std::vector<std::unique_ptr<Road>> &getRoads() { return this->roads; }
-        void addRoad(std::unique_ptr<Road> road) { this->roads.push_back(std::move(road)); }
-        void clearRoads() { this->roads.clear(); }
+        std::vector<std::shared_ptr<Road>> getRoads();
+        void addRoad(std::shared_ptr<Road> road);
+        void clearRoads() { 
+            roads.clear(); 
+            registry->roads.clear(); 
+        }
 
 
         // turns
@@ -79,17 +89,17 @@ namespace df {
         Graph map;
 
         std::vector<Player> players;
-        std::vector<std::unique_ptr<Settlement>> settlements;
-        std::vector<std::unique_ptr<Road>> roads;
 
+        // Smart pointer storage for safe ownership
+        std::vector<std::shared_ptr<Settlement>> settlements;
+        std::vector<std::shared_ptr<Road>> roads;
 
         // turns
         size_t currentPlayerId = 0;
         size_t turnCount = 0;
         size_t roundNumber = 0;
         types::GamePhase phase = types::GamePhase::SETUP;
+        Registry* registry = nullptr;
     };
 
 }
-
-

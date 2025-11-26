@@ -57,6 +57,8 @@ namespace df {
 				glm::vec2 position;
 				glm::vec2 uv;
 			};
+			static constexpr int FLOATS_PER_TILE_VERTEX = 4;
+
 			struct TileInstance {
 				glm::vec2 position;
 				int type;
@@ -68,6 +70,7 @@ namespace df {
 			std::vector<TileInstance> tileInstances;
 
 			static std::vector<float> createTileMesh() noexcept;
+			static std::vector<float> createRectangularTileMesh() noexcept;
 			static std::vector<TileInstance> createTileInstances(int columns = 10.0f, int rows = 10.0f) noexcept;
 			static glm::vec3 getTileColor(types::TileType type) noexcept;
 			void initMap() noexcept;

@@ -22,15 +22,15 @@ namespace df {
         bool isLooping() const;
 
     private:
-        std::vector<std::string> frames; 
+        std::vector<std::string> frames;
         // reference to texture/path
-        float frameDuration;              
+        float frameDuration;
         // duration of frames in seconds
         bool loop;
 
-        size_t currentFrameIndex;        
+        size_t currentFrameIndex;
         // current Frame
-        float elapsedTime;               
+        float elapsedTime;
         // time since last frame change
     };
 

@@ -1,5 +1,4 @@
 #include "gamestate.h"
-
 #include <fstream>
 #include <stdexcept>
 
@@ -22,6 +21,14 @@ namespace df {
     }
 
 
+    const Player *GameState::getPlayer(size_t playerId) const {
+        if (playerId >= this->players.size()) {
+            return nullptr;
+        }
+        return &this->players[playerId];
+    }
+
+
     /**
      * Serialize the game state and return it as a json object.
      */
@@ -33,25 +40,30 @@ namespace df {
 
         // players
         json playersJson = json::array();
-        for (const auto& player : this->players) {
-            playersJson.push_back(player.serialize());
+        for (const auto& player : this->players) { // TODO
+            // playersJson.push_back(player.serialize());
+            playersJson.push_back(player.getId());
         }
         j["players"] = playersJson;
 
         // settlements
         json settlementsJson = json::array();
         for (const auto& settlement : this->settlements) {
-            settlementsJson.push_back(settlement->serialize());
+            if (settlement) {
+                settlementsJson.push_back(settlement->serialize());
+            }
         }
         j["settlements"] = settlementsJson;
 
         // roads
         json roadsJson = json::array();
         for (const auto& road : this->roads) {
-            roadsJson.push_back(road->serialize());
+            if (road) {
+                roadsJson.push_back(road->serialize());
+            }
         }
         j["roads"] = roadsJson;
-        
+
         // turns
         j["currentPlayerId"] = this->currentPlayerId;
         j["turnCount"] = this->turnCount;
@@ -68,9 +80,6 @@ namespace df {
     void GameState::deserialize(const json &j) {
         // clear current state
         this->players.clear();
-        this->settlements.clear();
-        this->roads.clear();
-
 
         // map
         if (j.contains("map") && j["map"].is_object() && !j["map"].empty()) {
@@ -85,9 +94,9 @@ namespace df {
                 if (playerJson.contains("id") && playerJson["id"].is_number()) {
                     playerId = playerJson["id"].get<size_t>();
                 }
-                
-                Player player(playerId);
-                player.deserialize(playerJson);
+
+                Player player(playerId); // TODO
+                // player.deserialize(playerJson);
                 this->players.push_back(player);
             }
         }
@@ -95,18 +104,18 @@ namespace df {
         // settlements
         if (j.contains("settlements") && j["settlements"].is_array()) {
             for (const auto& settlementJson : j["settlements"]) {
-                auto settlement = std::make_unique<Settlement>();
+                auto settlement = std::make_shared<Settlement>();
                 settlement->deserialize(settlementJson);
-                this->settlements.push_back(std::move(settlement));
+                this->addSettlement(settlement);
             }
         }
 
         // roads
         if (j.contains("roads") && j["roads"].is_array()) {
             for (const auto& roadJson : j["roads"]) {
-                auto road = std::make_unique<Road>();
+                auto road = std::make_shared<Road>();
                 road->deserialize(roadJson);
-                this->roads.push_back(std::move(road));
+                this->addRoad(road);
             }
         }
 
@@ -148,6 +157,39 @@ namespace df {
 
         json j = json::parse(data);
         this->deserialize(j);
+    }
+
+    // settlements
+    std::vector<std::shared_ptr<Settlement>> GameState::getSettlements() {
+        return settlements;
+    }
+
+    void GameState::addSettlement(std::shared_ptr<Settlement> settlement) {
+        if (!settlement) { return; }
+        
+        // Also add to ECS registry for rendering/systems
+        Entity e;
+        Settlement& s = registry->settlements.emplace(e);
+        s = *settlement; // Copy data to ECS
+        
+        settlements.push_back(settlement);
+    }
+
+
+    // roads
+    void GameState::addRoad(std::shared_ptr<Road> road) {
+        if (!road) { return; }
+        
+        // Also add to ECS registry for rendering/systems
+        Entity e;
+        Road& r = registry->roads.emplace(e);
+        r = *road; // Copy data to ECS
+        
+        roads.push_back(road);
+    }
+
+    std::vector<std::shared_ptr<Road>> GameState::getRoads() {
+        return roads;
     }
 
 } // namespace df
