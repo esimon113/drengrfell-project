@@ -1,12 +1,14 @@
 #pragma once
+
 #include <string>
 #include <glm/vec2.hpp>
-#include "animations.h"
-#include "tile.h"
+
+#include "utils/animations.h"
+
+
 
 namespace df {
-
-    class Animation; 
+    class Animation;
 
     class Hero {
     public:
@@ -38,19 +40,19 @@ namespace df {
         void updateAnimation(float deltaTime);
 
     private:
-        int tileID = -1;                
+        int tileID = -1;
         // current Tile-ID
-        glm::vec2 coords{ 0.f, 0.f };      
+        glm::vec2 coords{ 0.f, 0.f };
         // Position on Tile
-        std::string textureRef;          
+        std::string textureRef;
         // reference on texture
-        int baseRange = 3;               
+        int baseRange = 3;
         // maxi tile range
 
         // Animations
         Animation idleAnim;
         Animation walkAnim;
-        Animation* currentAnim;          
+        Animation* currentAnim;
         // Pointer on current Animation
     };
 

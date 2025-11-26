@@ -1,4 +1,5 @@
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -66,6 +67,14 @@ namespace df {
     	return this->tiles[index];
     }
 
+    const Tile& Graph::getTile(size_t index) const {
+    	if (index >= this->tiles.size()) {
+    		throw std::out_of_range("Tile index out of range");
+    	}
+
+    	return this->tiles[index];
+    }
+
 
     Edge& Graph::getEdge(size_t index) {
     	if (index >= this->edges.size()) {
@@ -75,8 +84,24 @@ namespace df {
     	return this->edges[index];
     }
 
+    const Edge& Graph::getEdge(size_t index) const {
+    	if (index >= this->edges.size()) {
+    		throw std::out_of_range("Edge index out of range");
+    	}
+
+    	return this->edges[index];
+    }
+
 
     Vertex& Graph::getVertex(size_t index) {
+    	if (index >= this->vertices.size()) {
+     		throw std::out_of_range("Vertex index out of range");
+     	}
+
+    	return this->vertices[index];
+    }
+
+    const Vertex& Graph::getVertex(size_t index) const {
     	if (index >= this->vertices.size()) {
      		throw std::out_of_range("Vertex index out of range");
      	}
@@ -529,4 +554,44 @@ namespace df {
 
 		return reachableNodes;
     }
+
+    // Get the distance between two nodes (of same type) using basic BFS implementaiton
+    template<HasIdProperty T>
+    size_t Graph::getDistanceBetween(const T& start, const T& end) const {
+        const size_t startId = start.getId();
+        const size_t endId = end.getId();
+
+        if (startId == endId) return 0;
+
+        std::queue<size_t> q;
+        std::unordered_map<size_t, size_t> distances;
+        std::unordered_set<size_t> visited;
+
+        q.push(startId);
+        visited.insert(startId);
+        distances[startId] = 0;
+
+        while (!q.empty()) {
+            size_t currentId = q.front();
+            q.pop();
+
+            for (size_t neighbourId : this->getNeighborIds(currentId)) {
+                if (visited.find(neighbourId) == visited.end()) {
+                    visited.insert(neighbourId);
+                    distances[neighbourId] = distances[currentId] + 1;
+
+                    if (neighbourId == endId) {
+                        return distances[neighbourId];
+                    }
+
+                    q.push(neighbourId);
+                }
+            }
+        }
+
+        return SIZE_MAX; // no path
+    }
+
+    // Explicit template instantiation for Tile (currently only used for Tile)
+    template size_t Graph::getDistanceBetween<Tile>(const Tile& start, const Tile& end) const;
 }

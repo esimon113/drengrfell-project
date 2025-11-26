@@ -1,5 +1,6 @@
 #include "tile.h"
 
+#include <random>
 
 namespace df {
 	const json Tile::serialize() const {
@@ -48,5 +49,36 @@ namespace df {
 		std::vector<size_t> newVisibleForPlayers = j["visibleForPlayers"];
 		this->setVisibleForPlayers(newVisibleForPlayers);
 
+	}
+
+
+	float Tile::getPotencyProbability(types::TilePotency potency) const {
+		switch (potency) { // TODO: make probabilities configurable
+			case types::TilePotency::LOW:    return 0.10f;
+			case types::TilePotency::MEDIUM: return 0.25f;
+			case types::TilePotency::HIGH:   return 0.50f;
+			default:                         return 0.0f;
+		}
+	}
+
+
+	bool Tile::isResourceTile() const {
+		switch (this->type) {
+			case types::TileType::EMPTY:
+			case types::TileType::WATER: // TODO: discuss: maybe use water to get resource fish?!
+			case types::TileType::ICE:
+			case types::TileType::COUNT:
+				return false;
+			default:
+				return true;
+		}
+	}
+
+
+	bool Tile::givesResourceThisTurn(std::mt19937& rng) const {
+		if (!this->isResourceTile()) { return false; }
+
+		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+		return distribution(rng) <= this->getPotencyProbability(this->potency);
 	}
 }

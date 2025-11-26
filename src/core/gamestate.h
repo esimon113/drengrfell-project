@@ -1,8 +1,8 @@
 #pragma once
 
 #include <filesystem>
-#include <memory>
 #include <vector>
+#include <memory>
 #include "registry.h"
 
 #include <nlohmann/json.hpp>
@@ -29,29 +29,37 @@ namespace df {
         GameState(Registry* reg) : registry(reg) {};
 
 
-        Graph getMap() { return this->map; }
+        Graph& getMap() { return this->map; }
+        const Graph& getMap() const { return this->map; }
         void setMap(Graph newMap) { this->map = newMap; }
 
 
         // players
         size_t getPlayerCount() const { return this->players.size(); }
         Player *getPlayer(size_t playerId);
+        const Player *getPlayer(size_t playerId) const;
         std::vector<Player> &getPlayers() { return this->players; }
+        const std::vector<Player> &getPlayers() const { return this->players; }
         void addPlayer(const Player &player) { this->players.push_back(player); }
         void clearPlayers() { this->players.clear(); }
 
 
         // settlements
-        std::vector<Settlement*> getSettlements();
-        void addSettlement(const Settlement& settlementData);
-        void clearSettlements() { registry->settlements.clear(); }
+        std::vector<std::shared_ptr<Settlement>> getSettlements();
+        void addSettlement(std::shared_ptr<Settlement> settlement);
+        void clearSettlements() { 
+            settlements.clear(); 
+            registry->settlements.clear(); 
+        }
 
 
         // roads
-        std::vector<Road*> getRoads();
-        void addRoad(const Road& roadData);
-        void clearRoads() { registry->roads.clear(); }
-
+        std::vector<std::shared_ptr<Road>> getRoads();
+        void addRoad(std::shared_ptr<Road> road);
+        void clearRoads() { 
+            roads.clear(); 
+            registry->roads.clear(); 
+        }
 
 
         // turns
@@ -82,14 +90,16 @@ namespace df {
 
         std::vector<Player> players;
 
+        // Smart pointer storage for safe ownership
+        std::vector<std::shared_ptr<Settlement>> settlements;
+        std::vector<std::shared_ptr<Road>> roads;
+
         // turns
         size_t currentPlayerId = 0;
         size_t turnCount = 0;
         size_t roundNumber = 0;
         types::GamePhase phase = types::GamePhase::SETUP;
-        Registry* registry = nullptr;;
+        Registry* registry = nullptr;
     };
 
 }
-
-
