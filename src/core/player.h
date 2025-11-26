@@ -8,26 +8,25 @@
 #include "types.h"
 #include "settlement.h"
 #include <nlohmann/json.hpp>
+#include "hero.h"
+#include "road.h"
+
 using json = nlohmann::json;
-//#include "hero.h"
-//#include "road.h"
 
 
+#include "hero.h"
 
 namespace df{
-    class Hero;
-    class Road;
 
     class Player {
         private:
             size_t playerId;
-            int heroPoints;
-            int settlementCount;
-            std::vector<Settlement*> settlements;
+            int playerPoints;
+            std::vector<size_t> settlements;
             std::map<types::TileType, int> resources;
-            Hero* heroReference;
-            std::vector<Road*> roads;
-            std::vector<Tile*> exploredTiles;
+            size_t heroReference;
+            std::vector<size_t> roads;
+            std::vector<size_t> exploredTiles;
         
         
         public:
@@ -35,13 +34,15 @@ namespace df{
             Player(size_t id);
             size_t getId() const;
 
-            int getHeroPoints() const;
-            void addHeroPoints(int );
-            void setHeroPoints(int );
+            int getPlayerPoints() const;
+            void addPlayerPoints(int );
+            void setPlayerPoints(int );
 
-            const std::vector<Settlement*>& getSettlement() const;
-            void addSettlement(Settlement* );
-            void removeSettlement(Settlement* );
+            void setHero(size_t);
+            size_t getHero() const;
+
+            const std::vector<size_t>& getSettlement() const;
+            void addSettlement(size_t );
 
             void addResources(types::TileType , int );
             void removeResources(types::TileType , int );
@@ -49,20 +50,12 @@ namespace df{
             bool hasResources(const std::map<types::TileType, int>& );
             const std::map<types::TileType, int>& getResources() const;
 
-            void setHero(Hero* );
-            Hero* getHero() const;
+            void addRoad(size_t );
+            const std::vector<size_t>& getRoads() const;
 
-            void addRoad(Road* );
-            const std::vector<Road*>& getRoads() const;
-            int getRoadCount() const;
-
-            void exploreTile(Tile* );
-            bool isTileExplored(const Tile* ) const;
+            void exploreTile(size_t );
             bool isTileExplored(size_t ) const;
-            const std::vector<Tile*>& getExploredTiles() const;
-
-            size_t getPlayerId() const;
-            void setPlayerId(size_t newPlayerId);
+            const std::vector<size_t>& getExploredTiles() const;
 
             const json serialize() const;
 

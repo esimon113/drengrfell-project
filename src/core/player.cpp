@@ -6,46 +6,34 @@
 
 namespace df{
 
-    Player::Player()
-        : playerId(0), heroPoints(0), heroReference(nullptr)
-    {
+    Player::Player(): playerId(0), playerPoints(0), heroReference(0){}
+    Player::Player(size_t id): playerId(id), playerPoints(0), heroReference(0){}
+
+    size_t Player::getId() const{return this->playerId;}
+
+    
+    int Player::getPlayerPoints() const{return playerPoints;}
+    void Player::addPlayerPoints(int points ){playerPoints += points;}
+    void Player::setPlayerPoints(int points){playerPoints = points;}
+    
+    // HERO 
+
+    void Player::setHero(size_t hero){heroReference = hero;}
+    size_t Player::getHero() const{return heroReference;}
+
+    
+
+    // SETTLEMENTS
+
+    const std::vector<size_t> &Player::getSettlement() const{return  settlements;} // change settlement to settlements 
+
+    void Player::addSettlement(size_t settlement){
+        if(std::find(settlements.begin(), settlements.end(), settlement) == settlements.end()){
+            settlements.push_back(settlement);
+        }
     }
 
-    Player::Player(size_t id)
-        : playerId(id), heroPoints(0), heroReference(nullptr)
-    {
-    }
-
-    size_t Player::getId() const{
-        return this->playerId;
-    }
-
-    int Player::getHeroPoints() const{
-        return heroPoints;
-    }
-
-    void Player::addHeroPoints(int points){
-        heroPoints += points;
-    }
-
-    void Player::setHeroPoints(int points){
-        heroPoints = points;
-    }
-
-    const std::vector<Settlement *> &Player::getSettlement() const
-    {
-        return  settlements;
-    }
-
-    void Player::addSettlement(Settlement *settlement){
-        settlements.push_back(settlement);
-    }
-
-    void Player::removeSettlement(Settlement *settlement){
-        if(settlement == nullptr) return;
-        // Could the user have the possibillity of removing a settlement that he does not own? If yes we should implement a check here
-        settlements.erase(std::remove(settlements.begin(), settlements.end(), settlement), settlements.end());
-    }
+    // RESOURCES
 
     void Player::addResources(types::TileType type, int amount){
         resources[type] += amount;
@@ -76,88 +64,95 @@ namespace df{
     const std::map<types::TileType, int> &Player::getResources() const{
         return resources;
     }
+    
+    // ROADS
 
-    void Player::setHero(Hero *hero){
-        heroReference = hero;
+    void Player::addRoad(size_t road){
+        if(std::find(roads.begin(), roads.end(), road) == roads.end()){
+            roads.push_back(road);
+        }
     }
 
-    Hero *Player::getHero() const{
-        return heroReference;
-    }
-
-    void Player::addRoad(Road *road){
-        roads.push_back(road);
-    }
-
-    const std::vector<Road *> &Player::getRoads() const{
+    const std::vector<size_t> &Player::getRoads() const{
         return roads;
     }
 
-    int Player::getRoadCount() const{
-        return roads.size();
-    }
+    // EXPLORED TILES
 
-    void Player::exploreTile(Tile *tile){
-        if(tile == nullptr) return;
+    void Player::exploreTile(size_t tile){
         if(!isTileExplored(tile)){
             exploredTiles.push_back(tile);
         }
         
     }
 
-    bool Player::isTileExplored(const Tile *tile) const{
-        if(tile == nullptr) return false;
-        return std::find(exploredTiles.begin(), exploredTiles.end(), tile) != exploredTiles.end();
-    }
-
     bool Player::isTileExplored(size_t tileId) const{ 
-        for(const auto& tile : exploredTiles){
-            if(tile != nullptr && tile->getId() == tileId){
-                return true;
-            }
-        }
-        return false;
+        return std::find(exploredTiles.begin(), exploredTiles.end(), tileId) != exploredTiles.end();
     }
 
-    const std::vector<Tile *> &Player::getExploredTiles() const{
+    const std::vector<size_t> &Player::getExploredTiles() const{
         return exploredTiles;
     }
 
+    // RESET
+
     void Player::reset(){
-        heroPoints = 0;
+        playerPoints = 0;
         settlements.clear();
         resources.clear();
-        heroReference = nullptr;
+        heroReference = 0;
         roads.clear();
         exploredTiles.clear();
     }
 
-    size_t Player::getPlayerId() const { return playerId; }
-    void Player::setPlayerId(size_t newPlayerId) { playerId = newPlayerId; }
+    
 
     const json Player::serialize() const {
-        /* TODO: dont know how to store references in json.we should use registry for data instead
-        this data left:
-        Hero* heroReference;
-        std::vector<Road*> roads;
-        std::vector<Tile*> exploredTiles;
-        std::vector<Settlement*> settlements;
-        std::map<types::TileType, int> resources;
-        */
         json j;
 
         j["playerId"] = playerId;
-        j["heroPoints"] = heroPoints;
-        j["settlementCount"] = settlementCount;
+        j["playerPoints"] = playerPoints;
+        j["settlements"] = settlements;
+
+        json resourcesJson = json::object();
+        for (const auto& [type, amount] : resources) {
+            resourcesJson[std::to_string(static_cast<int>(type))] = amount;
+        }
+        j["resources"] = resourcesJson;
+
+        j["heroReference"] = heroReference;
+        j["roads"] = roads;
+        j["exploredTiles"] = exploredTiles;
 
         return j;
     }
 
     void Player::deserialize(const json& j) {
-        // TODO: deserialize from json. see comment on serialize
-        this->setPlayerId(j.at("playerId").get<size_t>());
-        this->setHeroPoints(j.at("heroPoints").get<int>());
-        this->settlementCount = (j.at("settlementCount").get<int>());
+
+        playerId = j.at("playerId").get<size_t>();
+        playerPoints = j.at("playerPoints").get<int>();
+        settlements = j.at("settlements").get<std::vector<size_t>>();
+
+        resources.clear();
+        if(j.contains("resources")){
+            for (auto& [key, value] : j.at("resources").items()) {
+                types::TileType type = static_cast<types::TileType>(std::stoi(key));
+                int amount = value.get<int>();
+                resources[type] = amount;
+            }
+        }
+        if(j.contains("heroReference")){
+            heroReference = j.at("heroReference").get<size_t>();
+        }
+
+        if(j.contains("roads")){
+            roads = j.at("roads").get<std::vector<size_t>>();
+        }
+
+        if(j.contains("exploredTiles")){
+            exploredTiles = j.at("exploredTiles").get<std::vector<size_t>>();
+        }
+        
     }
 
 }
