@@ -22,6 +22,14 @@ namespace df {
     }
 
 
+    const Player *GameState::getPlayer(size_t playerId) const {
+        if (playerId >= this->players.size()) {
+            return nullptr;
+        }
+        return &this->players[playerId];
+    }
+
+
     /**
      * Serialize the game state and return it as a json object.
      */
@@ -51,7 +59,7 @@ namespace df {
             roadsJson.push_back(road->serialize());
         }
         j["roads"] = roadsJson;
-        
+
         // turns
         j["currentPlayerId"] = this->currentPlayerId;
         j["turnCount"] = this->turnCount;
@@ -85,7 +93,7 @@ namespace df {
                 if (playerJson.contains("id") && playerJson["id"].is_number()) {
                     playerId = playerJson["id"].get<size_t>();
                 }
-                
+
                 Player player(playerId);
                 player.deserialize(playerJson);
                 this->players.push_back(player);

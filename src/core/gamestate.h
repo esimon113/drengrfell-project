@@ -28,26 +28,31 @@ namespace df {
         ~GameState() = default;
 
 
-        Graph getMap() { return this->map; }
+        Graph& getMap() { return this->map; }
+        const Graph& getMap() const { return this->map; }
         void setMap(Graph newMap) { this->map = newMap; }
 
 
         // players
         size_t getPlayerCount() const { return this->players.size(); }
         Player *getPlayer(size_t playerId);
+        const Player *getPlayer(size_t playerId) const;
         std::vector<Player> &getPlayers() { return this->players; }
+        const std::vector<Player> &getPlayers() const { return this->players; }
         void addPlayer(const Player &player) { this->players.push_back(player); }
         void clearPlayers() { this->players.clear(); }
 
 
         // settlements
         std::vector<std::unique_ptr<Settlement>> &getSettlements() { return this->settlements; }
+        const std::vector<std::unique_ptr<Settlement>> &getSettlements() const { return this->settlements; }
         void addSettlement(std::unique_ptr<Settlement> settlement) { this->settlements.push_back(std::move(settlement)); }
         void clearSettlements() { this->settlements.clear(); }
 
 
         // roads
         std::vector<std::unique_ptr<Road>> &getRoads() { return this->roads; }
+        const std::vector<std::unique_ptr<Road>> &getRoads() const { return this->roads; }
         void addRoad(std::unique_ptr<Road> road) { this->roads.push_back(std::move(road)); }
         void clearRoads() { this->roads.clear(); }
 
