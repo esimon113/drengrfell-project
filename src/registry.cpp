@@ -11,10 +11,7 @@ namespace df {
 		self->camera = camera;
 		self->cameras.emplace(camera);
 		Camera& cam = self->cameras.get(self->camera);
-		cam.position = glm::vec2(0.0f, 0.0f);
-		cam.zoom = 1.0f;
 		cam.isActive = true;
-		cam.scrollSpeed = 5.0f;
 
 		CameraInput& input = self->cameraInputs.emplace(camera);
 		input = {};

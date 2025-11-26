@@ -9,6 +9,9 @@ namespace df {
 		public:
 			using ResizeFunction = std::function<void(GLFWwindow*, int, int)>;
 			using KeyFunction = std::function<void(GLFWwindow*, int, int, int, int)>;
+			using MouseButtonFunction = std::function<void(GLFWwindow*, int, int, int)>;
+			using ScrollFunction = std::function<void(GLFWwindow*, double, double)>;
+
 
 			Window() = default;
 			~Window() = default;
@@ -25,6 +28,9 @@ namespace df {
 			inline void setTitle(const char* title) noexcept { glfwSetWindowTitle(handle, title); }
 
 			inline void setKeyCallback(KeyFunction keyFunc) noexcept { this->keyFunction = keyFunc; }
+			inline void setMouseButtonCallback(MouseButtonFunction mbFunc) noexcept { this->mouseButtonFunction = mbFunc; }
+			inline void setScrollCallback(ScrollFunction scrollFunc) noexcept { this->scrollFunction = scrollFunc; }
+
 			inline void setResizeCallback(ResizeFunction resizeFunc) noexcept { this->resizeFunction = resizeFunc; }
 
 			inline glm::vec2 getCursorPosition() const noexcept { return cursorPosition; }
@@ -51,5 +57,12 @@ namespace df {
 
 			KeyFunction keyFunction;
 			static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+
+			MouseButtonFunction mouseButtonFunction;
+			static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
+
+			ScrollFunction scrollFunction;
+			static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
+
 	};
 } // namespace df

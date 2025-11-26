@@ -221,8 +221,8 @@ namespace df {
 
 	void RenderSystem::renderMap(const glm::vec2 scale) const noexcept {
 		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
-
 		
+
 		Camera& cam = registry->cameras.get(registry->getCamera());
 		glm::vec2 camPos = cam.position;
 		float camZoom = cam.zoom;

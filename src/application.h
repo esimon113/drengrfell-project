@@ -38,6 +38,8 @@ namespace df {
 			void reset() noexcept;
 
 			void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+			void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
+			void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
 	};

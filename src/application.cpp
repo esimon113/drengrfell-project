@@ -100,6 +100,16 @@ namespace df {
 		 		onKeyCallback(window, key, scancode, action, mods);
 		 		});
 
+		window->setMouseButtonCallback([&](GLFWwindow* window, int button, int action, int mods) {
+			onMouseButtonCallback(window, button, action, mods);
+			});
+
+		window->setScrollCallback([&](GLFWwindow* window, double xoffset, double yoffset) {
+			onScrollCallback(window, xoffset, yoffset);
+			});
+
+
+
 		std::cout << "	- Set windows->Callbacks" << std::endl;
 		float delta_time = 0;
 		float last_time = static_cast<float>(glfwGetTime());
@@ -153,6 +163,14 @@ namespace df {
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
 		world.onKeyCallback(windowParam, key, scancode, action, mods);
+	}
+
+	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
+		world.onMouseButtonCallback(windowParam, button, action, mods);
+	}
+
+	void Application::onScrollCallback(GLFWwindow* windowParam, double xoffset, double yoffset) noexcept {
+		world.onScrollCallback(windowParam, xoffset, yoffset);
 	}
 
 
