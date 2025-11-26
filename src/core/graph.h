@@ -40,8 +40,11 @@ namespace df {
             void addVertex(const Vertex& vertex);
 
             Tile& getTile(size_t index);
+            const Tile& getTile(size_t index) const;
             Edge& getEdge(size_t index);
+            const Edge& getEdge(size_t index) const;
             Vertex& getVertex(size_t index);
+            const Vertex& getVertex(size_t index) const;
 
             void removeTile(const Tile& tile);
             void removeEdge(const Edge& edge);

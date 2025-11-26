@@ -3,12 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
-#include <variant>
 #include <vector>
 #include <algorithm>
 #include <queue>
@@ -69,6 +67,14 @@ namespace df {
     	return this->tiles[index];
     }
 
+    const Tile& Graph::getTile(size_t index) const {
+    	if (index >= this->tiles.size()) {
+    		throw std::out_of_range("Tile index out of range");
+    	}
+
+    	return this->tiles[index];
+    }
+
 
     Edge& Graph::getEdge(size_t index) {
     	if (index >= this->edges.size()) {
@@ -78,8 +84,24 @@ namespace df {
     	return this->edges[index];
     }
 
+    const Edge& Graph::getEdge(size_t index) const {
+    	if (index >= this->edges.size()) {
+    		throw std::out_of_range("Edge index out of range");
+    	}
+
+    	return this->edges[index];
+    }
+
 
     Vertex& Graph::getVertex(size_t index) {
+    	if (index >= this->vertices.size()) {
+     		throw std::out_of_range("Vertex index out of range");
+     	}
+
+    	return this->vertices[index];
+    }
+
+    const Vertex& Graph::getVertex(size_t index) const {
     	if (index >= this->vertices.size()) {
      		throw std::out_of_range("Vertex index out of range");
      	}
