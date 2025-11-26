@@ -589,6 +589,9 @@ namespace df {
             }
         }
 
-        return INFINITY; // no path
+        return SIZE_MAX; // no path
     }
+
+    // Explicit template instantiation for Tile (currently only used for Tile)
+    template size_t Graph::getDistanceBetween<Tile>(const Tile& start, const Tile& end) const;
 }

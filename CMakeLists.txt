@@ -131,6 +131,8 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/gamestate.cpp
 	${PROJECT_SOURCE_DIR}/src/core/gamecontroller.cpp
 
+	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
 
 	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
