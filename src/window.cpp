@@ -41,9 +41,13 @@ namespace df {
 		glfwSetWindowUserPointer(self->getHandle(), self);
 		glfwSetCursorPosCallback(self->getHandle(), Window::cursorPositionCallback);
 		glfwSetKeyCallback(self->getHandle(), Window::keyCallback);
+		glfwSetMouseButtonCallback(self->getHandle(), Window::mouseButtonCallback);
+		glfwSetScrollCallback(self->getHandle(), Window::scrollCallback);
 		glfwSetFramebufferSizeCallback(self->getHandle(), Window::resizeCallback);
 
 		self->setKeyCallback([](GLFWwindow*, int, int, int, int) -> void {});
+		self->setMouseButtonCallback([](GLFWwindow*, int, int, int) {});
+		self->setScrollCallback([](GLFWwindow*, double, double) {});
 		self->setResizeCallback([](GLFWwindow*, int, int) -> void {});
 
 		return self;
@@ -64,6 +68,16 @@ namespace df {
 	void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept {
 		Window* win = (Window*)glfwGetWindowUserPointer(window);
 		win->keyFunction(window, key, scancode, action, mods);
+	}
+
+	void Window::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept {
+		Window* win = (Window*)glfwGetWindowUserPointer(window);
+		win->mouseButtonFunction(window, button, action, mods);
+	}
+
+	void Window::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept {
+		Window* win = (Window*)glfwGetWindowUserPointer(window);
+		win->scrollFunction(window, xoffset, yoffset);
 	}
 
 

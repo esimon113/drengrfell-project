@@ -2,6 +2,9 @@
 
 #include <vector>
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 namespace df {
     enum class RoadLevel : size_t {
         Path = 0,
@@ -34,6 +37,10 @@ namespace df {
 
         const std::vector<int>& getBuildingCost() const;
         void setBuildingCost(std::vector<int> newBuildingCost);
+
+        const json serialize() const;
+
+        void deserialize(const json& j);
 
     private:
         size_t id{ 0 };

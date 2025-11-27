@@ -6,6 +6,11 @@
 
 namespace df{
 
+    Player::Player()
+        : playerId(0), heroPoints(0), heroReference(nullptr)
+    {
+    }
+
     Player::Player(size_t id)
         : playerId(id), heroPoints(0), heroReference(nullptr)
     {
@@ -125,6 +130,34 @@ namespace df{
         heroReference = nullptr;
         roads.clear();
         exploredTiles.clear();
+    }
+
+    size_t Player::getPlayerId() const { return playerId; }
+    void Player::setPlayerId(size_t newPlayerId) { playerId = newPlayerId; }
+
+    const json Player::serialize() const {
+        /* TODO: dont know how to store references in json.we should use registry for data instead
+        this data left:
+        Hero* heroReference;
+        std::vector<Road*> roads;
+        std::vector<Tile*> exploredTiles;
+        std::vector<Settlement*> settlements;
+        std::map<types::TileType, int> resources;
+        */
+        json j;
+
+        j["playerId"] = playerId;
+        j["heroPoints"] = heroPoints;
+        j["settlementCount"] = settlementCount;
+
+        return j;
+    }
+
+    void Player::deserialize(const json& j) {
+        // TODO: deserialize from json. see comment on serialize
+        this->setPlayerId(j.at("playerId").get<size_t>());
+        this->setHeroPoints(j.at("heroPoints").get<int>());
+        this->settlementCount = (j.at("settlementCount").get<int>());
     }
 
 }

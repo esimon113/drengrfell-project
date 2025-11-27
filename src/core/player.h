@@ -7,14 +7,14 @@
 #include "tile.h"
 #include "types.h"
 #include "settlement.h"
-//#include "hero.h"
-//#include "road.h"
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+#include "hero.h"
+#include "road.h"
 
 
 
 namespace df{
-    class Hero;
-    class Road;
 
     class Player {
         private:
@@ -29,6 +29,7 @@ namespace df{
         
         
         public:
+            Player();
             Player(size_t id);
             size_t getId() const;
 
@@ -58,6 +59,12 @@ namespace df{
             bool isTileExplored(size_t ) const;
             const std::vector<Tile*>& getExploredTiles() const;
 
+            size_t getPlayerId() const;
+            void setPlayerId(size_t newPlayerId);
+
+            const json serialize() const;
+
+            void deserialize(const json& j);
 
             void reset();
 

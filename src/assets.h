@@ -20,12 +20,18 @@ namespace df {
 		enum struct Shader {
 			sprite,
 			wind,
+			tile,
+			buildingHover,
+			buildingShadow,
 			hero,
 			count
 		};
 
 
 		enum struct Texture {
+			TILE_ATLAS,
+			VIKING_WOOD_SETTLEMENT1,
+			DIRT_ROAD_DIAGONAL_UP,
 			count
 		};
 

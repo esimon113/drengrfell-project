@@ -2,6 +2,7 @@
 
 #include <common.h>
 #include <utils/commandLineOptions.h>
+#include "core/gamestate.h"
 
 #include <miniaudio.h>
 #include <utils/mesh.h>
@@ -31,7 +32,7 @@ namespace df {
 			Registry* registry;
 			// AudioSystem* audioEngine;
 
-			// WorldSystem world;
+			WorldSystem world;
 			// PhysicsSystem physics;
 
 			RenderSystem render;
@@ -39,7 +40,11 @@ namespace df {
 			void reset() noexcept;
 
 			void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+			void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
+			void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
+			// GameState
+			GameState gameState;
 	};
 }

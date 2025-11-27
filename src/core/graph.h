@@ -24,7 +24,7 @@ namespace df {
     // make sure T has id
     template<typename T>
     concept HasIdProperty = requires (T t) {
-    	{ t.id } -> std::convertible_to<size_t>;
+    	{ t.getId() } -> std::convertible_to<size_t>;
     };
 
 
@@ -40,8 +40,11 @@ namespace df {
             void addVertex(const Vertex& vertex);
 
             Tile& getTile(size_t index);
+            const Tile& getTile(size_t index) const;
             Edge& getEdge(size_t index);
+            const Edge& getEdge(size_t index) const;
             Vertex& getVertex(size_t index);
+            const Vertex& getVertex(size_t index) const;
 
             void removeTile(const Tile& tile);
             void removeEdge(const Edge& edge);
@@ -74,6 +77,18 @@ namespace df {
             void load(std::filesystem::path& from);
 
 
+            // Algorithms that might come in handy;
+            template<HasIdProperty T>
+            std::vector<T> breadthFirstSearch(const T& start) const;
+            template<HasIdProperty T>
+            std::vector<T> depthFirstSearch(const T& start) const;
+            template<HasIdProperty T>
+            std::vector<T> dijkstra(const T& start) const;
+
+            template<HasIdProperty T>
+            size_t getDistanceBetween(const T& start, const T& end) const;
+
+
         private:
             std::vector<Tile> tiles;
             std::vector<Edge> edges;
@@ -92,15 +107,6 @@ namespace df {
             bool doesEdgeExist(const Edge& edge);
             bool doesVertexExist(const Vertex& vertex);
 
-            // Algorithms that might come in handy;
-            template<HasIdProperty T>
-            std::vector<T> breadthFirstSearch(const T& start) const;
-            template<HasIdProperty T>
-            std::vector<T> depthFirstSearch(const T& start) const;
-            template<HasIdProperty T>
-            std::vector<T> dijkstra(const T& start) const;
-
             std::vector<size_t> getNeighborIds(size_t id) const;
-
     };
 }

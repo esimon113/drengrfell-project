@@ -2,13 +2,19 @@
 
 #include <common.h>
 #include <tiny_ecs.hpp>
+#include <core/road.h>
+#include <core/settlement.h>
 #include "components.h"
 
+#include "core/player.h"
+#include <core/camera.h>
+#include <core/cameraInput.h>
 
 
 
 namespace df {
-	struct Player {};
+
+	class Player;
 
 
 
@@ -21,21 +27,35 @@ namespace df {
         void clear() noexcept;
         void clear(Entity e) noexcept;
 
-        ComponentContainer<glm::vec2> positions;
-        ComponentContainer<glm::vec2> scales;
-        ComponentContainer<float> angles;
-        ComponentContainer<Player> players;
-        ComponentContainer<float> collisionRadius;
-        ComponentContainer<glm::vec3> colors;
-        ComponentContainer<AnimationComponent> animations;
+			ComponentContainer<glm::vec2> positions;
+			ComponentContainer<glm::vec2> velocities;
+			ComponentContainer<glm::vec2> scales;
+			ComponentContainer<float> angles;
 
-        inline Entity getPlayer() noexcept { return player; }
-        inline float& getScreenDarkness() noexcept { return screenDarkness; }
+			ComponentContainer<Player> players;
 
-    private:
-        std::array<ContainerInterface*, 7> containers;
-        Entity player;
-        float screenDarkness = 0.f;
-    };
+			ComponentContainer<float> collisionRadius;
 
+			ComponentContainer<glm::vec3> colors;
+			ComponentContainer<Road> roads;
+			ComponentContainer<Settlement> settlements;
+
+			ComponentContainer<Camera> cameras;
+			ComponentContainer<CameraInput> cameraInputs;
+			ComponentContainer<AnimationComponent> animations;
+
+
+			inline Entity getPlayer() noexcept { return player; }
+			inline Entity getCamera() noexcept { return camera; }
+			inline float& getScreenDarkness() noexcept { return screenDarkness; }
+
+
+		private:
+			std::array<ContainerInterface*, 12> containers;
+
+			Entity player;
+			float screenDarkness = 0.f;
+			Entity camera;
+			float screenDarkness;
+	};
 } // namespace df

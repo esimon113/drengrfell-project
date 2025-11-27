@@ -7,7 +7,9 @@
 namespace df::types {
 
 	// maybe add more custom tile types in the future?!
-	enum class TileType {
+	// Attention, dear traveller:
+	//     render.cpp, tile.frag.glsl and the tileAtlas.png have to be updated when adding tiles
+	enum class TileType: int {
 		EMPTY = 0,
 		WATER,
 		FOREST,
@@ -15,7 +17,8 @@ namespace df::types {
 		MOUNTAIN,
 		FIELD,
 		CLAY,
-		ICE
+		ICE,
+		COUNT
 	};
 
 
@@ -54,4 +57,11 @@ namespace df::types {
 		DIAGONAL_DOWN,	// NORTH - NORTH_EAST or SOUTH_WEST - SOUTH
 		DIAGONAL_UP		// NORTH_WEST - NORTH or SOUTH - SOUTH_EAST
 	};
+
+
+    enum class GamePhase {
+        SETUP,
+        PLAY,
+        END
+    };
 }

@@ -1,12 +1,14 @@
 #pragma once
+
 #include <string>
 #include <glm/vec2.hpp>
-#include "animations.h"
-#include "tile.h"
+
+#include "utils/animations.h"
+
+
 
 namespace df {
-
-    class Animation; 
+    class Animation;
 
     class Hero {
     public:

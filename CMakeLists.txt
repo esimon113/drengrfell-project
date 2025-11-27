@@ -84,9 +84,9 @@ FetchContent_Declare(
 	EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
-				nlohmann_json # MIT Licence
-				GIT_REPOSITORY https://github.com/nlohmann/json.git
-				GIT_TAG v3.12.0
+	nlohmann_json # MIT Licence
+	GIT_REPOSITORY https://github.com/nlohmann/json.git
+	GIT_TAG v3.12.0
 	GIT_SHALLOW TRUE
 	GIT_PROGRESS TRUE
 	EXCLUDE_FROM_ALL
@@ -127,6 +127,12 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/vertex.cpp
 	${PROJECT_SOURCE_DIR}/src/core/settlement.cpp
 	${PROJECT_SOURCE_DIR}/src/core/road.cpp
+	${PROJECT_SOURCE_DIR}/src/core/player.cpp
+	${PROJECT_SOURCE_DIR}/src/core/gamestate.cpp
+	${PROJECT_SOURCE_DIR}/src/core/gamecontroller.cpp
+
+	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
 
 	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
@@ -137,6 +143,14 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/framebuffer.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/texture.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/textureArray.h
+	${PROJECT_SOURCE_DIR}/src/utils/textureArray.cpp
+
+	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
+    ${PROJECT_SOURCE_DIR}/src/core/hero.h
+    ${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
+    ${PROJECT_SOURCE_DIR}/src/utils/animations.h
+)
  "src/core/hero.cpp" "src/utils/animations.cpp" "src/core/hero.h" "src/utils/animations.h" "src/core/components.h" "src/systems/animationSystem.h" "src/systems/animationSystem.cpp")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
