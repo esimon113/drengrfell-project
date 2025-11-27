@@ -1,4 +1,5 @@
 #include "world.h"
+#include "fmt/base.h"
 
 
 
@@ -87,6 +88,20 @@ namespace df {
 						fmt::println("D pressed");
 						input.right = true;
 						break;
+					case GLFW_KEY_N:
+    					this->isSettlementPreviewActive = !this->isSettlementPreviewActive;
+                        fmt::println("Toggled Settlement Preview: {}", this->isSettlementPreviewActive);
+    					if (this->isSettlementPreviewActive) {
+    						this->isRoadPreviewActive = false;
+    					}
+    					break;
+    				case GLFW_KEY_B:
+    					this->isRoadPreviewActive = !this->isRoadPreviewActive;
+                        fmt::println("Toggled Road Preview: {}", this->isRoadPreviewActive);
+    					if (this->isRoadPreviewActive) {
+    						this->isSettlementPreviewActive = false;
+    					}
+    					break;
 					default:
 						break;
 				}

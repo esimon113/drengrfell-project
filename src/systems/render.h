@@ -31,6 +31,11 @@ namespace df {
 
 			void updateFogOfWar(const Player*player) noexcept;
 
+			void renderSettlementPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
+			void renderRoadPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
+			glm::vec2 screenToWorldCoordinates(const glm::vec2& screenPos) const noexcept;
+
+
 		private:
 			Registry* registry;
 			Window* window;
@@ -39,6 +44,11 @@ namespace df {
 			Shader spriteShader;
 			Shader windShader;
 			Shader tileShader;
+
+			Shader buildingHoverShader;
+			Shader buildingShadowShader;
+			Texture settlementTexture;
+			Texture roadPreviewTexture;
 
 			GLuint m_quad_vao;
 			GLuint m_quad_ebo;

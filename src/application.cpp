@@ -98,6 +98,7 @@ namespace df {
 		window->setResizeCallback([&](GLFWwindow* window, int width, int height) -> void {
 				onResizeCallback(window, width, height);
 				});
+
 		window->setKeyCallback([&](GLFWwindow* window, int key, int scancode, int action, int mods) -> void {
 		 		onKeyCallback(window, key, scancode, action, mods);
 		 		});
@@ -136,6 +137,18 @@ namespace df {
 			// physics.step(delta_time);
 			// physics.handleCollisions(delta_time);
 			render.step(delta_time);
+
+			// Render previews (only one at a time)
+			if (this->world.isSettlementPreviewActive) {
+				glm::vec2 cursorPos = window->getCursorPosition();
+				glm::vec2 worldPos = render.screenToWorldCoordinates(cursorPos);
+				this->render.renderSettlementPreview(worldPos, true, time);
+			}
+			else if (this->world.isRoadPreviewActive) {
+				glm::vec2 cursorPos = window->getCursorPosition();
+				glm::vec2 worldPos = render.screenToWorldCoordinates(cursorPos);
+				this->render.renderRoadPreview(worldPos, true, time);
+			}
 
 			window->swapBuffers();
 		}
