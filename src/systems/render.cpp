@@ -20,9 +20,10 @@ namespace df {
 		self.tileShader = Shader::init(assets::Shader::tile).value();
 		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS, static_cast<int>(df::types::TileType::COUNT), 60, 59);
 
-		self.settlementHoverShader = Shader::init(assets::Shader::settlementHover).value();
-		self.settlementShadowShader = Shader::init(assets::Shader::settlementShadow).value();
+		self.buildingHoverShader = Shader::init(assets::Shader::buildingHover).value();
+		self.buildingShadowShader = Shader::init(assets::Shader::buildingShadow).value();
 		self.settlementTexture = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT1);
+		self.roadPreviewTexture = Texture::init(assets::Texture::DIRT_ROAD_DIAGONAL_UP);
 
 		glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
@@ -50,9 +51,10 @@ namespace df {
 		tileShader.deinit();
 		tileAtlas.deinit();
 
-		settlementHoverShader.deinit();
-		settlementShadowShader.deinit();
+		buildingHoverShader.deinit();
+		buildingShadowShader.deinit();
 		settlementTexture.deinit();
+		roadPreviewTexture.deinit();
 	}
 
 
@@ -291,7 +293,7 @@ namespace df {
 		const auto& exploredTiles = player->getExploredTiles();
     	for (const Tile* tile : exploredTiles) {
         	if (tile == nullptr) continue;
-        
+
         	size_t tileId = tile->getId();
         	if (tileId < tileInstances.size()) {
         	    tileInstances[tileId].explored = 1;
@@ -299,8 +301,8 @@ namespace df {
     	}
 
 		glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, 
-						tileInstances.size() * sizeof(TileInstance), 
+		glBufferSubData(GL_ARRAY_BUFFER, 0,
+						tileInstances.size() * sizeof(TileInstance),
 						tileInstances.data());
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
@@ -317,6 +319,10 @@ namespace df {
 		return normalizedPos * worldDimensions;
 	}
 
+
+	// TODO: combine into one function if there are more builting types to preview
+	// Then pass some kind of building descriptor as parameter to the new function
+	// -> beware NOT to create a gigantic switch statement
 
 	void RenderSystem::renderSettlementPreview(const glm::vec2& worldPosition, bool active, float time) noexcept {
 		if (!active) return;
@@ -338,7 +344,7 @@ namespace df {
 		shadowModel = glm::scale(shadowModel, glm::vec3(settlementSize * shadowScale, settlementSize * shadowScale, 1.0f));
 
 		this->settlementTexture.bind(0);
-		this->settlementShadowShader.use()
+		this->buildingShadowShader.use()
 			.setMat4("view", view)
 			.setMat4("projection", projection)
 			.setMat4("model[0]", shadowModel)
@@ -353,12 +359,60 @@ namespace df {
 		hoverModel = glm::scale(hoverModel, glm::vec3(settlementSize, settlementSize, 1.0f));
 
 		this->settlementTexture.bind(0);
-		this->settlementHoverShader.use()
+		this->buildingHoverShader.use()
 			.setMat4("view", view)
 			.setMat4("projection", projection)
 			.setMat4("model[0]", hoverModel)
 			.setSampler("sprite", 0)
 			.setVec3("fcolor", glm::vec3(1.0f, 1.0f, 1.0f))
+			.setFloat("time", time);
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		glBindVertexArray(0);
+	}
+
+
+	void RenderSystem::renderRoadPreview(const glm::vec2& worldPosition, bool active, float time) noexcept {
+		if (!active) return;
+
+		glViewport(this->m_viewport.m_origin.x, this->m_viewport.m_origin.y, this->m_viewport.m_size.x, this->m_viewport.m_size.y);
+
+		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
+		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
+		const glm::mat4 view = glm::identity<glm::mat4>();
+
+		const glm::vec2 baseRoadScale = glm::vec2(1.0f, 0.5f);
+		const glm::vec2 roadScale = baseRoadScale * 2.5f;
+		const float roadShadowOffsetY = -0.2f;
+		const float roadShadowScale = 1.1f;
+
+		// TODO: get shadow gradient to work (and look good, similar to settlement) -> wasted to much time on this for now
+		glm::mat4 shadowModel = glm::identity<glm::mat4>();
+		shadowModel = glm::translate(shadowModel, glm::vec3(worldPosition.x, worldPosition.y + roadShadowOffsetY, -0.01f));
+		shadowModel = glm::scale(shadowModel, glm::vec3(roadScale * roadShadowScale, 1.0f));
+
+		this->roadPreviewTexture.bind(0);
+		this->buildingShadowShader.use()
+			.setMat4("view", view)
+			.setMat4("projection", projection)
+			.setMat4("model[0]", shadowModel)
+			.setSampler("sprite", 0);
+
+		glBindVertexArray(this->m_quad_vao);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+		// Road sprite pass
+		glm::mat4 model = glm::identity<glm::mat4>();
+		model = glm::translate(model, glm::vec3(worldPosition, 0.0f));
+		model = glm::scale(model, glm::vec3(roadScale, 1.0f));
+
+		this->roadPreviewTexture.bind(0);
+		this->buildingHoverShader.use()
+			.setMat4("view", view)
+			.setMat4("projection", projection)
+			.setMat4("model[0]", model)
+			.setSampler("sprite", 0)
+			.setVec3("fcolor", glm::vec3(1.0f))
 			.setFloat("time", time);
 
 		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
