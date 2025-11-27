@@ -1,10 +1,8 @@
-#pragma once
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <glm/vec2.hpp>
 #include "animations.h"
-#include "tile.h"
 #include "hero.h"
 
 namespace df {

@@ -22,8 +22,8 @@ namespace df {
         while (elapsedTime >= frameDuration) {
             elapsedTime -= frameDuration;
             currentFrameIndex++;
-            if (currentFrameIndex >= static_cast<int>(frames.size())) {
-                currentFrameIndex = loop ? 0 : static_cast<int>(frames.size()) - 1;
+            if (currentFrameIndex >= frames.size()) {
+                currentFrameIndex = loop ? 0 : frames.size() - 1;
             }
         }
     }
