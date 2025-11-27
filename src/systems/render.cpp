@@ -204,9 +204,9 @@ namespace df {
 				position.x = 2.0f * (column + 0.5f * (row & 1));
 				position.y = row * 1.5f;
 				// Creating an island with two water wide borders
-				if(row<2 || column <2 || row > rows -3 || column > columns -3){
+				if(row<1 || column <1 || row > rows -2 || column > columns -2){
 				    // make border tiles water
-				    instances.push_back({position, static_cast<int>(df::types::TileType::WATER), 0, uniformTileTypeDistribution(randomEngine) % 6 > 2});
+				    instances.push_back({position, static_cast<int>(df::types::TileType::WATER), 0, 1});
 				    continue;
 				}
 				int type = uniformTileTypeDistribution(randomEngine);
