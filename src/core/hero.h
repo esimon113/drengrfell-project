@@ -28,14 +28,12 @@ namespace df {
         void setBaseRange(int range);
         int getBaseRange() const;
 
-        // Animations (suspect of change)
-        void setIdleAnimation(const Animation& anim);
-        void setWalkAnimation(const Animation& anim);
-
-        void startIdleAnimation();
-        void startWalkAnimation();
-
+        void setAnimation(const std::string& name, const std::vector<int>& frames, float frameDuration, bool loop);
+        void startAnimation(const std::string& name);
         void updateAnimation(float deltaTime);
+
+
+
 
         enum class AnimationType {
             Idle,
@@ -52,15 +50,13 @@ namespace df {
         };
 
     private:
-        int tileID = -1;                
-        // current Tile-ID
-        glm::vec2 coords{ 0.f, 0.f };      
-        // Position on Tile
-        std::string textureRef;          
-        // reference on texture
-        int baseRange = 3;               
-        // maxi tile range
+        int tileID = -1;
+        glm::vec2 coords{ 0.f, 0.f };
+        std::string textureRef;
+        int baseRange = 3;
 
+        std::unordered_map<std::string, Animation> animations;
+        Animation* currentAnim = nullptr;
 
     };
 
