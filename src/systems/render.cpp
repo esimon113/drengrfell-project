@@ -180,15 +180,36 @@ namespace df {
 	std::vector<RenderSystem::TileInstance> RenderSystem::createTileInstances(const int columns, const int rows) noexcept {
 		// TODO: Add dedicated world generator.
 		auto randomEngine = std::default_random_engine(std::random_device()());
-		auto uniformTileTypeDistribution = std::uniform_int_distribution(1, static_cast<int>(df::types::TileType::COUNT) - 1);
+		auto uniformTileTypeDistribution = std::uniform_int_distribution(2, static_cast<int>(df::types::TileType::COUNT) - 1);
 
 		std::vector<TileInstance> instances;
+
+		// Only one ice-desert tile -> like in catan game
+		std::unordered_map<int, int> tileCount;
+    	std::unordered_map<int, int> tileMax = {{ (int)df::types::TileType::ICE,    1 }};
+
 		for (int row = rows - 1; row >= 0; row--) {
 			for (int column = 0; column < columns; column++) {
 				glm::vec2 position;
 				position.x = 2.0f * (column + 0.5f * (row & 1));
 				position.y = row * 1.5f;
-				const int type = uniformTileTypeDistribution(randomEngine);
+				// Creating an island with two water wide borders
+				if(row<2 || column <2 || row > rows -3 || column > columns -3){
+				    // make border tiles water
+				    instances.push_back({position, static_cast<int>(df::types::TileType::WATER), 0, uniformTileTypeDistribution(randomEngine) % 6 > 2});
+				    continue;
+				}
+				int type = uniformTileTypeDistribution(randomEngine);
+				
+				if(tileMax.contains(type)){
+				    if(tileCount[type] >= tileMax[type]){
+						do {
+							type = uniformTileTypeDistribution(randomEngine); // TODO: look for a more optimal solution 
+						} while (type == (int)df::types::TileType::ICE);
+					} else {
+				        tileCount[type]++;
+				    }
+				}
 
 				instances.push_back({position, type, 0, uniformTileTypeDistribution(randomEngine) % 6 > 2});
 			}
