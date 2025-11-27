@@ -9,14 +9,12 @@
 #include "settlement.h"
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
-//#include "hero.h"
-//#include "road.h"
+#include "hero.h"
+#include "road.h"
 
 
 
 namespace df{
-    class Hero;
-    class Road;
 
     class Player {
         private:
