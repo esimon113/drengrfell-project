@@ -1,6 +1,7 @@
 ﻿#include "render.h"
 #include <iostream>
 #include "hero.h"
+#include "common.h"
 
 
 namespace df {
@@ -56,10 +57,11 @@ namespace df {
         // the texture buffer should be moved to another class, not in render::init but we leave it here for the
         // first milestone and change it later on when we have the logic to change between states (idling, swiming etc.)
         // maybe own class textureManager 
+        std::string basePath = getBasePath();
         std::vector<std::string> heroAttackTexturePaths = {
-            "../../../assets/textures/hero/attack/attack_0.png",
-            "../../../assets/textures/hero/attack/attack_1.png",
-            //"../../../assets/textures/hero/attack/attack_2.png", weird animation
+            basePath + "/assets/textures/hero/attack/attack_0.png",
+            basePath + "/assets/textures/hero/attack/attack_1.png",
+            //basePath + "/assets/textures/hero/attack/attack_2.png", weird animation
         };
 
         for (const auto& path : heroAttackTexturePaths) {
@@ -68,12 +70,12 @@ namespace df {
         }
 
         std::vector<std::string> heroSwimTexturePaths = {
-            "../../../assets/textures/hero/swim/swim_0.png",
-            "../../../assets/textures/hero/swim/swim_1.png",
-            "../../../assets/textures/hero/swim/swim_2.png",
-            "../../../assets/textures/hero/swim/swim_3.png",
-            "../../../assets/textures/hero/swim/swim_4.png",
-            "../../../assets/textures/hero/swim/swim_5.png",
+            basePath + "/assets/textures/hero/swim/swim_0.png",
+            basePath + "/assets/textures/hero/swim/swim_1.png",
+            basePath + "/assets/textures/hero/swim/swim_2.png",
+            basePath + "/assets/textures/hero/swim/swim_3.png",
+            basePath + "/assets/textures/hero/swim/swim_4.png",
+            basePath + "/assets/textures/hero/swim/swim_5.png",
 
         };
 
@@ -83,9 +85,9 @@ namespace df {
         }
        
         std::vector<std::string> heroIdleTexturePaths = {
-            "../../../assets/textures/hero/idle/idle_0.png",
-            "../../../assets/textures/hero/idle/idle_1.png",
-            "../../../assets/textures/hero/idle/idle_2.png",
+            basePath + "/assets/textures/hero/idle/idle_0.png",
+            basePath + "/assets/textures/hero/idle/idle_1.png",
+            basePath + "/assets/textures/hero/idle/idle_2.png",
         };
 
         for (const auto& path : heroIdleTexturePaths) {
@@ -94,12 +96,12 @@ namespace df {
         }
 
         std::vector<std::string> heroJumpTexturesPath = {
-            "../../../assets/textures/hero/jump/jump_0.png",
-            "../../../assets/textures/hero/jump/jump_1.png",
-            "../../../assets/textures/hero/jump/jump_2.png",
-            "../../../assets/textures/hero/jump/jump_3.png",
-            "../../../assets/textures/hero/jump/jump_4.png",
-            "../../../assets/textures/hero/jump/jump_5.png",
+            basePath + "/assets/textures/hero/jump/jump_0.png",
+            basePath + "/assets/textures/hero/jump/jump_1.png",
+            basePath + "/assets/textures/hero/jump/jump_2.png",
+            basePath + "/assets/textures/hero/jump/jump_3.png",
+            basePath + "/assets/textures/hero/jump/jump_4.png",
+            basePath + "/assets/textures/hero/jump/jump_5.png",
         };
 
         for (const auto& path : heroJumpTexturesPath) {

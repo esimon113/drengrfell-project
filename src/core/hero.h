@@ -1,12 +1,13 @@
 #pragma once
 #include <string>
 #include <glm/vec2.hpp>
+#include <unordered_map>
+
 #include "animations.h"
-#include "tile.h"
 
 namespace df {
 
-    class Animation; 
+    class Animation;
 
     class Hero {
     public:
