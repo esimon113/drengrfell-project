@@ -10,6 +10,7 @@
 #include <utils/shader.h>
 #include <utils/texture.h>
 #include <utils/framebuffer.h>
+#include "hero.h"
 
 #include "utils/textureArray.h"
 
@@ -28,6 +29,7 @@ namespace df {
 			void reset() noexcept;
 
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
+			Texture& getCurrentTexture(AnimationComponent& animComp, int frameIndex);
 
 			void updateFogOfWar(const Player*player) noexcept;
 
@@ -43,6 +45,7 @@ namespace df {
 			Framebuffer intermediateFramebuffer;
 			Shader spriteShader;
 			Shader windShader;
+			Shader heroShader;
 			Shader tileShader;
 
 			Shader buildingHoverShader;
@@ -86,5 +89,9 @@ namespace df {
 			void initMap() noexcept;
 			void renderMap(glm::vec2 scale = {1.5f, 1.5f}) const noexcept;
 			static glm::vec2 calculateWorldDimensions(int columns = 10.0f, int rows = 10.0f) noexcept;
+			std::vector<Texture> heroIdleTextures;
+			std::vector<Texture> heroSwimTextures;
+			std::vector<Texture> heroAttackTextures;
+			std::vector<Texture> heroJumpTextures;
 	};
 }

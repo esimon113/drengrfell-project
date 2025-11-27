@@ -1,4 +1,4 @@
-#include "texture.h"
+﻿#include "texture.h"
 
 
 
@@ -43,6 +43,23 @@ namespace df {
 
 		return self;
 	}
+
+	Texture Texture::createDummy() noexcept {
+    GLuint texId;
+    glGenTextures(1, &texId);
+    glBindTexture(GL_TEXTURE_2D, texId);
+
+    unsigned char whitePixel[4] = { 255, 255, 255, 255 };
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixel);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    Texture dummy;
+    dummy.handle = texId; // ❌ vorher war 'id'
+    return dummy;
+}
+
 
 
 	void Texture::deinit() noexcept {

@@ -32,6 +32,7 @@ namespace df {
 
 		self->containers[9] = &self->cameras;
 		self->containers[10] = &self->cameraInputs;
+		self->containers[11] = &self->animations;
 
 		return self;
 	}

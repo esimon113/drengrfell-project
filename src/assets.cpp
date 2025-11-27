@@ -28,7 +28,8 @@ namespace df {
 		"wind",
 		"tile",
 		"building-hover",
-		"building-shadow"
+		"building-shadow",
+		"hero"
 	};
 
 

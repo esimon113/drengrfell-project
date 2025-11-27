@@ -4,6 +4,7 @@
 #include <tiny_ecs.hpp>
 #include <core/road.h>
 #include <core/settlement.h>
+#include "components.h"
 
 #include "core/player.h"
 #include <core/camera.h>
@@ -19,11 +20,12 @@ namespace df {
 
 	// NOTE: For your own project you may want to move the registry to a different file, as it grows in size.
 	//	 Depending on the requirements of your projects it may also make sense to have multiple registries.
-	class Registry {
-		public:
-			static Registry* init() noexcept;
-			void clear() noexcept;
-			void clear(const Entity entity) noexcept;
+    class Registry {
+    public:
+        static Registry* init() noexcept;
+
+        void clear() noexcept;
+        void clear(Entity e) noexcept;
 
 			ComponentContainer<glm::vec2> positions;
 			ComponentContainer<glm::vec2> velocities;
@@ -40,7 +42,7 @@ namespace df {
 
 			ComponentContainer<Camera> cameras;
 			ComponentContainer<CameraInput> cameraInputs;
-
+			ComponentContainer<AnimationComponent> animations;
 
 
 			inline Entity getPlayer() noexcept { return player; }
@@ -49,7 +51,7 @@ namespace df {
 
 
 		private:
-			std::array<ContainerInterface*, 11> containers;
+			std::array<ContainerInterface*, 12> containers;
 
 			Entity player;
 			Entity camera;

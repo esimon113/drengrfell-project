@@ -1,6 +1,7 @@
 #include "world.h"
+#include "hero.h"
+#include <iostream>
 #include "fmt/base.h"
-
 
 
 namespace df {
@@ -14,6 +15,8 @@ namespace df {
 		self.randomEngine = std::default_random_engine(std::random_device()());
 
 		self.m_reset = true;
+		std::cout << "[Debug] WorldSystem::init aufgerufen\n";
+		
 
 		return self;
 	}

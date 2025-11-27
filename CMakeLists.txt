@@ -130,6 +130,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/player.cpp
 	${PROJECT_SOURCE_DIR}/src/core/gamestate.cpp
 	${PROJECT_SOURCE_DIR}/src/core/gamecontroller.cpp
+	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
 
 	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
@@ -138,6 +139,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/render.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/audio.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/animationSystem.cpp
 
 	${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
@@ -145,6 +147,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/utils/texture.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/textureArray.h
 	${PROJECT_SOURCE_DIR}/src/utils/textureArray.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
 
 	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
     ${PROJECT_SOURCE_DIR}/src/core/hero.h
@@ -163,6 +166,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} PUBLIC
 	${PROJECT_BINARY_DIR} # location of the configured header
 	${PROJECT_SOURCE_DIR}/src # location of our own headers
+	${PROJECT_SOURCE_DIR}/src/core # location of core
 	${PROJECT_SOURCE_DIR}/src/systems # location of systems
 	${PROJECT_SOURCE_DIR}/src/utils # location of utils
 	${stb_SOURCE_DIR} # location of the `stb_image` header

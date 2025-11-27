@@ -23,6 +23,7 @@ namespace df {
 			tile,
 			buildingHover,
 			buildingShadow,
+			hero,
 			count
 		};
 
