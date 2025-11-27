@@ -20,6 +20,10 @@ namespace df {
 		self.tileShader = Shader::init(assets::Shader::tile).value();
 		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS, static_cast<int>(df::types::TileType::COUNT), 60, 59);
 
+		self.settlementHoverShader = Shader::init(assets::Shader::settlementHover).value();
+		self.settlementShadowShader = Shader::init(assets::Shader::settlementShadow).value();
+		self.settlementTexture = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT1);
+
 		glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
@@ -45,6 +49,10 @@ namespace df {
 		windShader.deinit();
 		tileShader.deinit();
 		tileAtlas.deinit();
+
+		settlementHoverShader.deinit();
+		settlementShadowShader.deinit();
+		settlementTexture.deinit();
 	}
 
 
@@ -295,6 +303,66 @@ namespace df {
 						tileInstances.size() * sizeof(TileInstance), 
 						tileInstances.data());
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
+
+	// Converts screen coordinates to world coordinates
+	glm::vec2 RenderSystem::screenToWorldCoordinates(const glm::vec2& screenPos) const noexcept {
+	    const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
+
+		glm::vec2 viewportPos = screenPos - glm::vec2(this->m_viewport.m_origin);
+		glm::vec2 normalizedPos = viewportPos / glm::vec2(this->m_viewport.m_size);
+		normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
+
+		return normalizedPos * worldDimensions;
+	}
+
+
+	void RenderSystem::renderSettlementPreview(const glm::vec2& worldPosition, bool active, float time) noexcept {
+		if (!active) return;
+
+		// Set viewport = game viewport
+		glViewport(this->m_viewport.m_origin.x, this->m_viewport.m_origin.y, this->m_viewport.m_size.x, this->m_viewport.m_size.y);
+
+		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
+		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
+		const glm::mat4 view = glm::identity<glm::mat4>();
+
+		const float settlementSize = 0.5f;
+		const float shadowOffsetY = -0.15f;
+		const float shadowScale = 1.4f; // shadow is a bit larger than actual settlement
+
+		// render shadow first = below settlement-textrue
+		glm::mat4 shadowModel = glm::identity<glm::mat4>();
+		shadowModel = glm::translate(shadowModel, glm::vec3(worldPosition.x, worldPosition.y + shadowOffsetY, -0.01f)); // Slightly behind
+		shadowModel = glm::scale(shadowModel, glm::vec3(settlementSize * shadowScale, settlementSize * shadowScale, 1.0f));
+
+		this->settlementTexture.bind(0);
+		this->settlementShadowShader.use()
+			.setMat4("view", view)
+			.setMat4("projection", projection)
+			.setMat4("model[0]", shadowModel)
+			.setSampler("sprite", 0);
+
+		glBindVertexArray(this->m_quad_vao);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+		// render settlement on top of shadow
+		glm::mat4 hoverModel = glm::identity<glm::mat4>();
+		hoverModel = glm::translate(hoverModel, glm::vec3(worldPosition, 0.0f));
+		hoverModel = glm::scale(hoverModel, glm::vec3(settlementSize, settlementSize, 1.0f));
+
+		this->settlementTexture.bind(0);
+		this->settlementHoverShader.use()
+			.setMat4("view", view)
+			.setMat4("projection", projection)
+			.setMat4("model[0]", hoverModel)
+			.setSampler("sprite", 0)
+			.setVec3("fcolor", glm::vec3(1.0f, 1.0f, 1.0f))
+			.setFloat("time", time);
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		glBindVertexArray(0);
 	}
 
 }
