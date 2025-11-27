@@ -54,7 +54,6 @@ namespace df {
 			std::array<ContainerInterface*, 12> containers;
 
 			Entity player;
-			float screenDarkness = 0.f;
 			Entity camera;
 			float screenDarkness;
 	};

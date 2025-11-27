@@ -65,7 +65,7 @@ namespace df {
             // TODO: something like this needs to be implemented in hero class:
             // reset the available movement points, hero also needs to keep track of used range per turn
             // hero->resetMovementPoints();
-            hero->startIdleAnimation();
+            //hero->startIdleAnimation();   
         }
     }
 

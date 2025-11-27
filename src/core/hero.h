@@ -2,6 +2,7 @@
 
 #include <string>
 #include <glm/vec2.hpp>
+#include <unordered_map>
 
 #include "utils/animations.h"
 

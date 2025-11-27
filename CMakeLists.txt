@@ -130,6 +130,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/player.cpp
 	${PROJECT_SOURCE_DIR}/src/core/gamestate.cpp
 	${PROJECT_SOURCE_DIR}/src/core/gamecontroller.cpp
+	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
 
 	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
@@ -138,6 +139,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/render.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/audio.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/animationSystem.cpp
 
 	${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
@@ -145,13 +147,13 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/utils/texture.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/textureArray.h
 	${PROJECT_SOURCE_DIR}/src/utils/textureArray.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
 
 	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
     ${PROJECT_SOURCE_DIR}/src/core/hero.h
     ${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
     ${PROJECT_SOURCE_DIR}/src/utils/animations.h
 )
- "src/core/hero.cpp" "src/utils/animations.cpp" "src/core/hero.h" "src/utils/animations.h" "src/core/components.h" "src/systems/animationSystem.h" "src/systems/animationSystem.cpp")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 20
