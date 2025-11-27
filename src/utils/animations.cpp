@@ -45,7 +45,6 @@ namespace df {
     }
 
 
- 
 
     void Animation::setLoop(bool l) { loop = l; }
     bool Animation::isLooping() const { return loop; }
