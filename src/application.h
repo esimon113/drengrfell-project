@@ -43,5 +43,8 @@ namespace df {
 
 			// GameState
 			GameState gameState;
+
+			// Settlement preview state -> toggled by pressing n/N
+			bool isSettlementPreviewActive = false;
 	};
 }

@@ -100,9 +100,9 @@ namespace df {
 		window->setResizeCallback([&](GLFWwindow* window, int width, int height) -> void {
 				onResizeCallback(window, width, height);
 				});
-		// window->setKeyCallback([&](GLFWwindow* window, int key, int scancode, int action, int mods) -> void {
-		// 		onKeyCallback(window, key, scancode, action, mods);
-		// 		});
+		window->setKeyCallback([&](GLFWwindow* window, int key, int scancode, int action, int mods) -> void {
+				onKeyCallback(window, key, scancode, action, mods);
+				});
 
 		std::cout << "	- Set windows->Callbacks" << std::endl;
 		float delta_time = 0;
@@ -128,6 +128,13 @@ namespace df {
 			// physics.step(delta_time);
 			// physics.handleCollisions(delta_time);
 			render.step(delta_time);
+
+			// Render settlement preview if active
+			if (isSettlementPreviewActive) {
+				glm::vec2 cursorPos = window->getCursorPosition();
+				glm::vec2 worldPos = render.screenToWorldCoordinates(cursorPos);
+				render.renderSettlementPreview(worldPos, true, time);
+			}
 
 			window->swapBuffers();
 		}
@@ -155,9 +162,13 @@ namespace df {
 	}
 
 
-	// void Application::onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept {
-	// 	world.onKeyCallback(window, key, scancode, action, mods);
-	// }
+	void Application::onKeyCallback(GLFWwindow* /* window */, int key, int /* scancode */, int action, int /* mods */) noexcept {
+		if (action == GLFW_PRESS) {
+			if (key == GLFW_KEY_N) {
+				isSettlementPreviewActive = !isSettlementPreviewActive;
+			}
+		}
+	}
 
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {

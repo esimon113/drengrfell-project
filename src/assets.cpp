@@ -26,7 +26,9 @@ namespace df {
 	static constexpr std::array<const char*, static_cast<size_t>(assets::Shader::count)> SHADER_FILES = {
 		"sprite",
 		"wind",
-		"tile"
+		"tile",
+		"settlement-hover",
+		"settlement-shadow"
 	};
 
 
@@ -37,7 +39,8 @@ namespace df {
 
 	static constexpr std::array<const char*, static_cast<size_t>(assets::Texture::count)> TEXTURE_FILES = {
 		// add "*.png"-files that contain the textures here
-		"tiles/tileAtlas.png"
+		"tiles/tileAtlas.png",
+		"settlements/viking-wood/viking-wood-settlement1.png"
 	};
 
 
