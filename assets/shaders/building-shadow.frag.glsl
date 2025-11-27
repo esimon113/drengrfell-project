@@ -18,7 +18,7 @@ void main() {
     // create gradient: shadow fades out -> no hard shadow-border
     vec2 center = vec2(0.5, 0.5);
     float dist = distance(frag_uv, center);
-    float gradientFade = 1.0 - smoothstep(0.2, 0.5, dist);
+    float gradientFade = 1.0 - smoothstep(0.1, 0.5, dist);
 
     vec3 shadowColor = vec3(0.0, 0.0, 0.0);
 

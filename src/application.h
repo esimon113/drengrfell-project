@@ -46,5 +46,6 @@ namespace df {
 
 			// Settlement preview state -> toggled by pressing n/N
 			bool isSettlementPreviewActive = false;
+			bool isRoadPreviewActive = false;
 	};
 }

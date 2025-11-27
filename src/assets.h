@@ -21,8 +21,8 @@ namespace df {
 			sprite,
 			wind,
 			tile,
-			settlementHover,
-			settlementShadow,
+			buildingHover,
+			buildingShadow,
 			count
 		};
 
@@ -30,6 +30,7 @@ namespace df {
 		enum struct Texture {
 			TILE_ATLAS,
 			VIKING_WOOD_SETTLEMENT1,
+			DIRT_ROAD_DIAGONAL_UP,
 			count
 		};
 

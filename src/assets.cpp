@@ -27,8 +27,8 @@ namespace df {
 		"sprite",
 		"wind",
 		"tile",
-		"settlement-hover",
-		"settlement-shadow"
+		"building-hover",
+		"building-shadow"
 	};
 
 
@@ -40,7 +40,8 @@ namespace df {
 	static constexpr std::array<const char*, static_cast<size_t>(assets::Texture::count)> TEXTURE_FILES = {
 		// add "*.png"-files that contain the textures here
 		"tiles/tileAtlas.png",
-		"settlements/viking-wood/viking-wood-settlement1.png"
+		"settlements/viking-wood/viking-wood-settlement1.png",
+		"roads/dirtRoad/dirt_road_diagonal_up.png"
 	};
 
 

@@ -129,11 +129,16 @@ namespace df {
 			// physics.handleCollisions(delta_time);
 			render.step(delta_time);
 
-			// Render settlement preview if active
+			// Render previews (only one at a time)
 			if (isSettlementPreviewActive) {
 				glm::vec2 cursorPos = window->getCursorPosition();
 				glm::vec2 worldPos = render.screenToWorldCoordinates(cursorPos);
 				render.renderSettlementPreview(worldPos, true, time);
+			}
+			else if (isRoadPreviewActive) {
+				glm::vec2 cursorPos = window->getCursorPosition();
+				glm::vec2 worldPos = render.screenToWorldCoordinates(cursorPos);
+				render.renderRoadPreview(worldPos, true, time);
 			}
 
 			window->swapBuffers();
@@ -166,6 +171,15 @@ namespace df {
 		if (action == GLFW_PRESS) {
 			if (key == GLFW_KEY_N) {
 				isSettlementPreviewActive = !isSettlementPreviewActive;
+				if (isSettlementPreviewActive) {
+					isRoadPreviewActive = false;
+				}
+			}
+			else if (key == GLFW_KEY_B) {
+				isRoadPreviewActive = !isRoadPreviewActive;
+				if (isRoadPreviewActive) {
+					isSettlementPreviewActive = false;
+				}
 			}
 		}
 	}
