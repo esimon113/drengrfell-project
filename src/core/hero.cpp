@@ -36,7 +36,7 @@ namespace df {
         int getBaseRange() const { return baseRange; }
 
         // Animationen verwalten
-        void setAnimation(const std::string& name, const std::vector<std::string>& frames, float frameDuration, bool loop = true) {
+        void setAnimation(const std::string& name, const std::vector<int>& frames, float frameDuration, bool loop = true) {
             Animation anim(frames, frameDuration, loop);
             animations[name] = anim;
         }
@@ -59,6 +59,8 @@ namespace df {
             static const std::string empty = "";
             return empty;
         }
+
+
 
     private:
         int tileID = -1;

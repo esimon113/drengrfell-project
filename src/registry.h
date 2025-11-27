@@ -18,11 +18,6 @@ namespace df {
     public:
         static Registry* init() noexcept;
 
-        Entity createEntity() noexcept { return Entity{}; }
-        void destroyEntity(Entity e) noexcept {
-            for (auto* c : containers) c->remove(e);
-        }
-
         void clear() noexcept;
         void clear(Entity e) noexcept;
 

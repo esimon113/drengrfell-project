@@ -20,6 +20,7 @@ namespace df {
 		enum struct Shader {
 			sprite,
 			wind,
+			hero,
 			count
 		};
 

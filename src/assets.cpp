@@ -25,7 +25,8 @@ namespace df {
 
 	static constexpr std::array<const char*, static_cast<size_t>(assets::Shader::count)> SHADER_FILES = {
 		"sprite",
-		"wind"
+		"wind",
+		"hero"
 	};
 
 

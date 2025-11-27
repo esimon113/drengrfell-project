@@ -37,6 +37,20 @@ namespace df {
 
         void updateAnimation(float deltaTime);
 
+        enum class AnimationType {
+            Idle,
+            Jump,
+            Attack,
+            Swim
+        };
+
+        struct HeroAnimations {
+            inline static const std::vector<int> idle = { 0,1,2,1 };
+            inline static const std::vector<int> swim = { 0, 1, 2, 3, 4, 5 };
+            inline static const std::vector<int> jump = { 0, 5, 1, 2, 3, 5 };
+            inline static const std::vector<int> attack = { 0,1 };
+        };
+
     private:
         int tileID = -1;                
         // current Tile-ID
@@ -47,11 +61,7 @@ namespace df {
         int baseRange = 3;               
         // maxi tile range
 
-        // Animations
-        Animation idleAnim;
-        Animation walkAnim;
-        Animation* currentAnim;          
-        // Pointer on current Animation
+
     };
 
 }

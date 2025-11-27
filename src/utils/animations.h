@@ -7,7 +7,7 @@ namespace df {
     class Animation {
     public:
         Animation();
-        Animation(const std::vector<std::string>& frames, float frameDuration, bool loop = true);
+        Animation(const std::vector<int>& frames, float frameDuration, bool loop = true);
 
         // Update frames based on elapsed time
         void step(float deltaTime);
@@ -16,16 +16,17 @@ namespace df {
         const std::string& getCurrentFrame() const;
 
         // change frames
-        void setFrames(const std::vector<std::string>& newFrames);
+        void setFrames(const std::vector<int>& newFrames);
 
         void setLoop(bool l);
         bool isLooping() const;
 
         int getCurrentFrameIndex() const noexcept;
+        int getCurrentFrameTextureIndex() const noexcept;
 
 
     private:
-        std::vector<std::string> frames; 
+        std::vector<int> frames; 
         // reference to texture/path
         float frameDuration;              
         // duration of frames in seconds

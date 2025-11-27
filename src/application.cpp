@@ -87,24 +87,6 @@ namespace df {
 
 	void Application::reset() noexcept {
 		registry->clear(); // remove all components
-
-		// initialize the player
-		Entity hero = registry->createEntity();
-		registry->positions.emplace(hero, glm::vec2(0.5f, 1.0f));
-		registry->scales.emplace(hero, glm::vec2(1.f, 1.f));
-		registry->collisionRadius.emplace(hero, 0.5f);
-		
-		std::vector<std::string> idleFrames = {
-			"assets/textures/hero/idle/idle_0.png",
-			"assets/textures/hero/idle/idle_1.png",
-			"assets/textures/hero/idle/idle_2.png",
-			"assets/textures/hero/idle/idle_3.png",
-			"assets/textures/hero/idle/idle_4.png",
-		};
-
-		Animation idleAnim(idleFrames, 0.4f, true); // 1 picture for 0.4 seconds
-		registry->animations.emplace(hero, AnimationComponent{ idleAnim });
-
 		render.reset();
 	}
 

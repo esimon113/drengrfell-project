@@ -7,6 +7,7 @@
 #include <utils/shader.h>
 #include <utils/texture.h>
 #include <utils/framebuffer.h>
+#include "hero.h"
 
 
 
@@ -23,7 +24,7 @@ namespace df {
 			void reset() noexcept;
 
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
-
+			Texture& getCurrentTexture(AnimationComponent& animComp, int frameIndex);
 
 		private:
 			Registry* registry;
@@ -32,6 +33,7 @@ namespace df {
 			Framebuffer intermediateFramebuffer;
 			Shader spriteShader;
 			Shader windShader;
+			Shader heroShader;
 
 			GLuint m_quad_vao;
 			GLuint m_quad_ebo;
@@ -41,5 +43,8 @@ namespace df {
 				glm::uvec2 m_size;
 			} m_viewport;
 			std::vector<Texture> heroIdleTextures;
+			std::vector<Texture> heroSwimTextures;
+			std::vector<Texture> heroAttackTextures;
+			std::vector<Texture> heroJumpTextures;
 	};
 }
