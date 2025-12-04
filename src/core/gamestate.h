@@ -47,18 +47,18 @@ namespace df {
         // settlements
         std::vector<std::shared_ptr<Settlement>> getSettlements();
         void addSettlement(std::shared_ptr<Settlement> settlement);
-        void clearSettlements() { 
-            settlements.clear(); 
-            registry->settlements.clear(); 
+        void clearSettlements() {
+            settlements.clear();
+            registry->settlements.clear();
         }
 
 
         // roads
         std::vector<std::shared_ptr<Road>> getRoads();
         void addRoad(std::shared_ptr<Road> road);
-        void clearRoads() { 
-            roads.clear(); 
-            registry->roads.clear(); 
+        void clearRoads() {
+            roads.clear();
+            registry->roads.clear();
         }
 
 
@@ -98,7 +98,7 @@ namespace df {
         size_t currentPlayerId = 0;
         size_t turnCount = 0;
         size_t roundNumber = 0;
-        types::GamePhase phase = types::GamePhase::SETUP;
+        types::GamePhase phase = types::GamePhase::CONFIG;
         Registry* registry = nullptr;
     };
 

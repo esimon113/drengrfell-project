@@ -59,8 +59,15 @@ namespace df::types {
 	};
 
 
+	/*
+	 * `START`: Show start screen -> Shows nice background + buttons to start game / exit program / etc.
+	 * `CONFIG`: Configure game settings -> entered if "start a game" is selected in Start Screen (players are configured here)
+	 * `PLAY`: Actual gameplay phase with turn-based game loop -> started if "start" is selected in config phase
+	 * `END`: End screen -> Shows some game stats (points, ...) -> entered if game is won/lost or ended by user
+	 */
     enum class GamePhase {
-        SETUP,
+        START,
+        CONFIG,
         PLAY,
         END
     };
