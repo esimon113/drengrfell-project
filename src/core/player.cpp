@@ -146,8 +146,6 @@ namespace df{
         }
 
         return j;
-
-        return j;
     }
 
     void Player::deserialize(const json& j) {
