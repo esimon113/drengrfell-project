@@ -4,5 +4,6 @@ build
 .cache
 .vscode
 .vs/
+.idea/
 *.user
 *.suo
