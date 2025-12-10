@@ -30,29 +30,24 @@ namespace df {
     /**
      * Assumes a vertical stripe of quadratical tile textures
      */
-    TextureArray TextureArray::init(const assets::Texture asset, int tiles, int tile_height, int tile_width) noexcept {
+    TextureArray TextureArray::init(const assets::Texture asset, const int tile_height) noexcept {
         const std::string assetPath = assets::getAssetPath(asset);
-        return init(assetPath.c_str(), tiles, tile_height, tile_width);
+        return init(assetPath.c_str(), tile_height);
     }
 
     /**
-     * Assumes a vertical stripe of quadratical tile textures
+     * Assumes a vertical stripe of rectangular tile textures
      */
-    TextureArray TextureArray::init(const char* path, int tiles, int tile_height, int tile_width) noexcept {
+    TextureArray TextureArray::init(const char* path, const int tile_height) noexcept {
         int width, height, channels;
         stbi_set_flip_vertically_on_load(true);
         stbi_uc* pixels = stbi_load(path, &width, &height, &channels, 4);
 
-        // TODO: Calculate this based on what is a 'default' value
-        if (tile_width <= 0 || tile_height <= 0 || tiles <= 0) {
-            tile_width = width;
-            tile_height = width;
-            tiles = height / tile_height;
+        if (height % tile_height != 0) {
+            std::cerr << "TextureArray::init: height is not divisible by tile_height" << std::endl;
         }
-        // Sanity check. Maybe throw exception?
-        if (tile_width != width) {
-            std::cout << "Warning: Tile width of " << tile_width << " isn't equal to atlas width of " << width << std::endl;
-        }
+        int tiles = height / tile_height;
+        int tile_width = width;
 
         TextureArray self;
         glGenTextures(1, &self.handle);
