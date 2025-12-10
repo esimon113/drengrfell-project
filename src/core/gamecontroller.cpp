@@ -45,8 +45,9 @@ namespace df {
 
 
     void GameController::giveResourcesTo(Player& player) {
-        for (Settlement* settlement : player.getSettlement()) {
-            if (!settlement) { continue; } // can happen because player has std::vector<Settlement*> -> potential nullptr
+        for (size_t settlementId : player.getSettlementIds()) {
+            const Settlement* settlement = this->findSettlementById(settlementId);
+            if (!settlement) { continue; }
 
             const auto tileIds = this->getSettlementTiles(*settlement);
             for (size_t tileId : tileIds) {
@@ -60,7 +61,7 @@ namespace df {
 
 
     void GameController::resetHeroMovement(Player& player) {
-        Hero* hero = player.getHero();
+        std::shared_ptr<Hero> hero = player.getHero();
         if (hero) {
             // TODO: something like this needs to be implemented in hero class:
             // reset the available movement points, hero also needs to keep track of used range per turn
@@ -78,7 +79,7 @@ namespace df {
 
             if (!player.isTileExplored(tileId)) {
                 tile.addVisibleForPlayers(player.getId());
-                player.exploreTile(&tile);
+                player.exploreTile(tileId);
             }
         } catch (const std::exception&) {} // invalid tile -> ignore
     }
@@ -88,7 +89,7 @@ namespace df {
         Player* player = this->getPlayerbyId(playerId);
         if (!player) { return false; }
 
-        Hero* hero = player->getHero();
+        std::shared_ptr<Hero> hero = player->getHero();
         if (!hero) { return false; }
 
         const int currentTileId = hero->getTileID(); // TODO: use size_t in hero
@@ -135,7 +136,7 @@ namespace df {
 
         const Player* player = this->getPlayerById(playerId);
         if (!player) { return false; }
-        const Hero* hero = player->getHero();
+        std::shared_ptr<Hero> hero = player->getHero();
         if (!hero) { return false; }
 
         // player can build settlement only on vertices that are adjacent to where the hero is:
@@ -167,7 +168,7 @@ namespace df {
             vertex.setSettlementId(newSettlementId);
             this->gameState.addSettlement(newSettlement);
             // Player still uses raw pointers, so get the raw pointer from shared_ptr
-            player->addSettlement(newSettlement.get());
+            player->addSettlement(newSettlement->getId());
 
             this->chargeResourceCost(*player, buildingCost);
 
@@ -208,7 +209,7 @@ namespace df {
             edge.setRoadId(roadId);
             this->gameState.addRoad(road);
             // Player still uses raw pointers, so get the raw pointer from shared_ptr
-            player->addRoad(road.get());
+            player->addRoad(road->getId());
 
             this->chargeResourceCost(*player, buildingCost);
 

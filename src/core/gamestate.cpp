@@ -169,8 +169,10 @@ namespace df {
         
         // Also add to ECS registry for rendering/systems
         Entity e;
-        Settlement& s = registry->settlements.emplace(e);
-        s = *settlement; // Copy data to ECS
+        if(registry) {
+            Settlement& s = registry->settlements.emplace(e);
+            s = *settlement; // Copy data to ECS
+        }
         
         settlements.push_back(settlement);
     }
@@ -182,8 +184,10 @@ namespace df {
         
         // Also add to ECS registry for rendering/systems
         Entity e;
-        Road& r = registry->roads.emplace(e);
-        r = *road; // Copy data to ECS
+        if(registry) {
+            Road& r = registry->roads.emplace(e);
+            r = *road; // Copy data to ECS
+        }
         
         roads.push_back(road);
     }
