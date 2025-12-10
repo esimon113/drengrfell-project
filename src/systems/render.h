@@ -25,24 +25,17 @@ namespace df {
 
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
-			// REMOVE this. step() should be the only method with "actual" rendering responsibility
-			void renderSettlementPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
-			void renderRoadPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
-
-			Viewport getViewport() const noexcept {
-				return this->viewport;
+			// Temporarily. REMOVE
+			[[nodiscard]] RenderBuildingsSystem& getRenderBuildingsSystem() noexcept {
+				return this->renderBuildingsSystem;
 			}
 
 		private:
-			Registry* registry;
-			Window* window;
+			Registry* registry = nullptr;
+			Window* window = nullptr;
 
+			Viewport viewport = Viewport();
 			Framebuffer intermediateFramebuffer;
-
-			GLuint m_quad_vao;
-			GLuint m_quad_ebo;
-
-			Viewport viewport;
 
 			RenderTilesSystem renderTilesSystem;
 			RenderHeroSystem renderHeroSystem;

@@ -104,15 +104,17 @@ namespace df {
 			render.step(delta_time);
 
 			// Render previews (only one at a time)
+			auto renderBuildingsSystem = this->render.getRenderBuildingsSystem();
+
 			if (this->world.isSettlementPreviewActive) {
 				glm::vec2 cursorPos = window->getCursorPosition();
-				glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, render.getViewport());
-				this->render.renderSettlementPreview(worldPos, true, time);
+				glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
+				renderBuildingsSystem.renderSettlementPreview(worldPos, true, time);
 			}
 			else if (this->world.isRoadPreviewActive) {
 				glm::vec2 cursorPos = window->getCursorPosition();
-				glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, render.getViewport());
-				this->render.renderRoadPreview(worldPos, true, time);
+				glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
+				renderBuildingsSystem.renderRoadPreview(worldPos, true, time);
 			}
 
 			window->swapBuffers();

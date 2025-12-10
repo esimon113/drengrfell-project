@@ -1,14 +1,11 @@
 ﻿#include "render.h"
 #include <iostream>
-#include "../core/player.h"
-#include "../core/tile.h"
 #include "common.h"
 
 
 namespace df {
 
     RenderSystem RenderSystem::init(Window* window, Registry* registry) noexcept {
-
         RenderSystem self;
 
         self.window = window;
@@ -17,48 +14,13 @@ namespace df {
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();
 
-		glm::uvec2 extent = self.window->getWindowExtent();
+		const glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
-
-        float quadVertices[] = {
-            // positions    // texcoords
-            0.0f, 0.0f,     0.0f, 0.0f,
-            1.0f, 0.0f,     1.0f, 0.0f,
-            1.0f, 1.0f,     1.0f, 1.0f,
-            0.0f, 1.0f,     0.0f, 1.0f
-        };
-        constexpr GLuint quadIndices[] = { 0, 1, 2, 2, 3, 0 };
-
-        glGenVertexArrays(1, &self.m_quad_vao);
-        glBindVertexArray(self.m_quad_vao);
-
-        GLuint quadVBO;
-        glGenBuffers(1, &quadVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-        GLuint quadEBO;
-        glGenBuffers(1, &quadEBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadEBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quadIndices), quadIndices, GL_STATIC_DRAW);
-
-        // Vertexattribs: pos (vec2), texcoord (vec2)
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-        glBindVertexArray(0);
-        
-		constexpr std::array<GLuint, 6> indices = { 0, 1, 2, 2, 3, 0 };
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.m_quad_ebo);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
 		// This shall be the place for initialization of ALL render systems. NOT anywhere else!
     	self.renderHeroSystem = RenderHeroSystem::init(window, registry);
     	self.renderTilesSystem = RenderTilesSystem::init(window, registry);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry);
-
 
 		return self;
 	}
@@ -82,6 +44,7 @@ namespace df {
     	this->renderBuildingsSystem.reset();
     	this->renderHeroSystem.reset();
     }
+
 
     static constexpr float GAME_ASPECT_RATIO = 1.f / 2;
 
@@ -111,14 +74,4 @@ namespace df {
 		intermediateFramebuffer.deinit();
 		intermediateFramebuffer = Framebuffer::init({ (GLsizei)size.x, (GLsizei)size.y, 1, true });
 	}
-
-
-	void RenderSystem::renderSettlementPreview(const glm::vec2 &worldPosition, bool active, float time) noexcept {
-    	this->renderBuildingsSystem.renderSettlementPreview(worldPosition, active, time);
-	}
-
-	void RenderSystem::renderRoadPreview(const glm::vec2 &worldPosition, bool active, float time) noexcept {
-    	this->renderBuildingsSystem.renderRoadPreview(worldPosition, active, time);
-	}
-
 }

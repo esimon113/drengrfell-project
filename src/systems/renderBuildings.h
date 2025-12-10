@@ -5,7 +5,6 @@
 #include <window.h>
 #include <utils/shader.h>
 #include <utils/texture.h>
-
 #include "framebuffer.h"
 
 namespace df {
@@ -21,6 +20,10 @@ namespace df {
 
 			void renderSettlementPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
 			void renderRoadPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
+
+			[[nodiscard]] Viewport getViewport() const noexcept {
+				return this->viewport;
+			}
 		private:
 			Registry* registry;
 			Window* window;

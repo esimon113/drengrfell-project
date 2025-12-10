@@ -21,7 +21,7 @@ namespace df {
 		self.tileShader = Shader::init(assets::Shader::tile).value();
 		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS, static_cast<int>(df::types::TileType::COUNT), 60, 59);
 
-		glm::uvec2 extent = self.window->getWindowExtent();
+		const glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
 		self.initMap();
@@ -30,13 +30,95 @@ namespace df {
 	}
 
 
+	void RenderTilesSystem::initMap() noexcept {
+    	this->tileMesh = createRectangularTileMesh();
+    	this->tileInstances = createTileInstances(10, 10);
+
+    	glGenVertexArrays(1, &tileVao);
+    	glGenBuffers(1, &tileVbo);
+    	glGenBuffers(1, &tileInstanceVbo);
+
+	    {
+    		glBindVertexArray(tileVao);
+
+    		tileInstances[0].explored = 1; // for testing
+    		tileInstances[10].explored = 1; // for testing
+
+    		glBindBuffer(GL_ARRAY_BUFFER, tileVbo);
+    		glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(float), this->tileMesh.data(), GL_STATIC_DRAW);
+
+    		// layout(location = 0) in vec2 position;
+    		glEnableVertexAttribArray(0);
+    		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, position));
+
+    		// layout(location = 1) in vec2 vertexUv;
+    		glEnableVertexAttribArray(1);
+    		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, uv));
+
+    		// Define instance attributes
+    		glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
+    		glBufferData(GL_ARRAY_BUFFER, this->tileInstances.size() * sizeof(TileInstance), this->tileInstances.data(), GL_STATIC_DRAW);
+
+    		// layout(location = 2) in vec2 instancePosition;
+    		glEnableVertexAttribArray(2);
+    		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void*)offsetof(TileInstance, position));
+    		glVertexAttribDivisor(2, 1);
+
+    		// layout(location = 3) in int type;
+    		glEnableVertexAttribArray(3);
+    		glVertexAttribIPointer(3, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
+    		glVertexAttribDivisor(3, 1);
+
+    		// layout(location = 4) in int explored;
+    		glEnableVertexAttribArray(4);
+    		glVertexAttribIPointer(4, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, explored));
+    		glVertexAttribDivisor(4, 1);
+
+    		glBindVertexArray(0);
+	    }
+    }
+
+
 	void RenderTilesSystem::deinit() noexcept {
 		tileShader.deinit();
 		tileAtlas.deinit();
 	}
 
+
     void RenderTilesSystem::step(float) noexcept {
         renderMap();
+    }
+
+
+	void RenderTilesSystem::renderMap(const glm::vec2 scale) const noexcept {
+    	glEnable(GL_BLEND);
+    	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    	const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
+
+    	Camera& cam = registry->cameras.get(registry->getCamera());
+    	glm::vec2 camPos = cam.position;
+    	float camZoom = cam.zoom;
+
+    	const glm::mat4 projection = glm::ortho(
+			camPos.x, camPos.x + worldDimensions.x / camZoom,
+			camPos.y, camPos.y + worldDimensions.y / camZoom,
+			-1.0f, 1.0f
+		);
+
+    	auto model = glm::identity<glm::mat4>();
+    	model = glm::translate(model, glm::vec3(-camPos, 0.0f));
+    	model = glm::scale(model, glm::vec3(scale, 1));
+
+    	tileAtlas.bind(0);
+    	tileShader.use()
+			.setMat4("model", model)
+			.setMat4("projection", projection)
+			.setSampler("tileAtlas", 0);
+
+    	glBindVertexArray(tileVao);
+    	glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / FLOATS_PER_TILE_VERTEX, this->tileInstances.size());
+    	glBindVertexArray(0);
     }
 
 
@@ -117,95 +199,12 @@ namespace df {
 	}
 
 
-	void RenderTilesSystem::initMap() noexcept {
-		this->tileMesh = createRectangularTileMesh();
-		this->tileInstances = createTileInstances(10, 10);
-
-		glGenVertexArrays(1, &tileVao);
-		glGenBuffers(1, &tileVbo);
-		glGenBuffers(1, &tileInstanceVbo);
-
-		{
-			glBindVertexArray(tileVao);
-
-			tileInstances[0].explored = 1; // for testing
-			tileInstances[10].explored = 1; // for testing
-
-			glBindBuffer(GL_ARRAY_BUFFER, tileVbo);
-			glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(float), this->tileMesh.data(), GL_STATIC_DRAW);
-
-			// layout(location = 0) in vec2 position;
-			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, position));
-
-			// layout(location = 1) in vec2 vertexUv;
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, uv));
-
-			// Define instance attributes
-			glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
-			glBufferData(GL_ARRAY_BUFFER, this->tileInstances.size() * sizeof(TileInstance), this->tileInstances.data(), GL_STATIC_DRAW);
-
-			// layout(location = 2) in vec2 instancePosition;
-			glEnableVertexAttribArray(2);
-			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void*)offsetof(TileInstance, position));
-			glVertexAttribDivisor(2, 1);
-
-			// layout(location = 3) in int type;
-			glEnableVertexAttribArray(3);
-			glVertexAttribIPointer(3, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
-			glVertexAttribDivisor(3, 1);
-
-			// layout(location = 4) in int explored;
-			glEnableVertexAttribArray(4);
-			glVertexAttribIPointer(4, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, explored));
-			glVertexAttribDivisor(4, 1);
-
-			glBindVertexArray(0);
-		}
-	}
-
-
-	void RenderTilesSystem::renderMap(const glm::vec2 scale) const noexcept {
-    	glEnable(GL_BLEND);
-    	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
-
-		Camera& cam = registry->cameras.get(registry->getCamera());
-		glm::vec2 camPos = cam.position;
-		float camZoom = cam.zoom;
-
-		const glm::mat4 projection = glm::ortho(
-			camPos.x, camPos.x + worldDimensions.x / camZoom,
-			camPos.y, camPos.y + worldDimensions.y / camZoom,
-			-1.0f, 1.0f
-		);
-
-		glm::mat4 model = glm::identity<glm::mat4>();
-		model = glm::translate(model, glm::vec3(-camPos, 0.0f));
-		model = glm::scale(model, glm::vec3(scale, 1));
-
-		tileAtlas.bind(0);
-		tileShader.use()
-			.setMat4("model", model)
-			.setMat4("projection", projection)
-			.setSampler("tileAtlas", 0);
-
-		glBindVertexArray(tileVao);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / FLOATS_PER_TILE_VERTEX, this->tileInstances.size());
-		glBindVertexArray(0);
-	}
-
-
 	void RenderTilesSystem::updateFogOfWar(const Player& player) noexcept {
-
 		for(auto& instance : tileInstances) {
 			instance.explored = 0;
 		}
 
-		const auto& exploredTiles = player.getExploredTiles();
-    	for (const Tile* tile : exploredTiles) {
+		for (const auto& exploredTiles = player.getExploredTiles(); const Tile* tile : exploredTiles) {
         	if (tile == nullptr) continue;
 
         	size_t tileId = tile->getId();
