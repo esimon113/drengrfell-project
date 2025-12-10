@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderCommon.h"
 #include <registry.h>
 #include <window.h>
 #include <utils/shader.h>
@@ -21,11 +22,6 @@ namespace df {
         void reset() noexcept;
 
         void updateFogOfWar(const Player*player) noexcept;
-
-        static glm::vec2 calculateWorldDimensions(int columns = 10.0f, int rows = 10.0f) noexcept;
-        glm::vec2 screenToWorldCoordinates(const glm::vec2& screenPos) const noexcept;
-
-
     private:
         Registry* registry;
         Window* window;
@@ -37,10 +33,7 @@ namespace df {
         GLuint tileInstanceVbo;
         TextureArray tileAtlas;
 
-        struct {
-            glm::uvec2 m_origin;
-            glm::uvec2 m_size;
-        } m_viewport;
+        Viewport viewport;
 
         struct TileVertex {
             glm::vec2 position;

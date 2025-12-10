@@ -13,8 +13,8 @@ namespace df {
         self.window = window;
         self.registry = registry;
 
-        self.m_viewport.m_origin = glm::uvec2(0);
-        self.m_viewport.m_size = self.window->getWindowExtent();
+        self.viewport.origin = glm::uvec2(0);
+        self.viewport.size = self.window->getWindowExtent();
 
 		// load resources for rendering
         self.heroShader = Shader::init(assets::Shader::hero).value();

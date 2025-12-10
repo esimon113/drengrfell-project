@@ -1,5 +1,7 @@
 #pragma once
 
+#include "renderCommon.h"
+
 #include <registry.h>
 #include <window.h>
 #include <utils/shader.h>
@@ -23,12 +25,13 @@ namespace df {
 
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
-			glm::vec2 screenToWorldCoordinates(const glm::vec2& screenPos) const noexcept;
-			static glm::vec2 calculateWorldDimensions(int columns = 10.0f, int rows = 10.0f) noexcept;
-
 			// REMOVE this. step() should be the only method with "actual" rendering responsibility
 			void renderSettlementPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
 			void renderRoadPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
+
+			Viewport getViewport() const noexcept {
+				return this->viewport;
+			}
 
 		private:
 			Registry* registry;
@@ -39,10 +42,7 @@ namespace df {
 			GLuint m_quad_vao;
 			GLuint m_quad_ebo;
 
-			struct {
-				glm::uvec2 m_origin;
-				glm::uvec2 m_size;
-			} m_viewport;
+			Viewport viewport;
 
 			RenderTilesSystem renderTilesSystem;
 			RenderHeroSystem renderHeroSystem;

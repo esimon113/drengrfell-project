@@ -14,8 +14,8 @@ namespace df {
         self.window = window;
         self.registry = registry;
 
-        self.m_viewport.m_origin = glm::uvec2(0);
-        self.m_viewport.m_size = self.window->getWindowExtent();
+        self.viewport.origin = glm::uvec2(0);
+        self.viewport.size = self.window->getWindowExtent();
 
 		// load resources for rendering
 		self.tileShader = Shader::init(assets::Shader::tile).value();
@@ -169,13 +169,6 @@ namespace df {
 	}
 
 
-	glm::vec2 RenderTilesSystem::calculateWorldDimensions(const int columns, const int rows) noexcept {
-		return {
-			sqrt(3.0f) * (columns + 0.5f),
-			1.5f * (rows + 1.0f)
-		};
-	}
-
 	void RenderTilesSystem::renderMap(const glm::vec2 scale) const noexcept {
 		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
 
@@ -230,17 +223,6 @@ namespace df {
 						tileInstances.size() * sizeof(TileInstance),
 						tileInstances.data());
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-	}
-
-
-	glm::vec2 RenderTilesSystem::screenToWorldCoordinates(const glm::vec2& screenPos) const noexcept {
-	    const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
-
-		glm::vec2 viewportPos = screenPos - glm::vec2(this->m_viewport.m_origin);
-		glm::vec2 normalizedPos = viewportPos / glm::vec2(this->m_viewport.m_size);
-		normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
-
-		return normalizedPos * worldDimensions;
 	}
 
 }

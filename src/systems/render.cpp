@@ -14,8 +14,8 @@ namespace df {
         self.window = window;
         self.registry = registry;
 
-        self.m_viewport.m_origin = glm::uvec2(0);
-        self.m_viewport.m_size = self.window->getWindowExtent();
+        self.viewport.origin = glm::uvec2(0);
+        self.viewport.size = self.window->getWindowExtent();
 
 		glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
@@ -106,8 +106,8 @@ namespace df {
 
     void RenderSystem::onResizeCallback(GLFWwindow*, int width, int height) noexcept {
         auto [origin, size] = computeViewportConfig({ width, height });
-        m_viewport.m_origin = origin;
-        m_viewport.m_size = size;
+        this->viewport.origin = origin;
+        this->viewport.size = size;
 
 		// reinitialize off-screen framebuffer
 		intermediateFramebuffer.deinit();
@@ -115,31 +115,12 @@ namespace df {
 	}
 
 
-	glm::vec2 RenderSystem::calculateWorldDimensions(const int columns, const int rows) noexcept {
-		return {
-			sqrt(3.0f) * (columns + 0.5f),
-			1.5f * (rows + 1.0f)
-		};
-	}
-
 	void RenderSystem::renderSettlementPreview(const glm::vec2 &worldPosition, bool active, float time) noexcept {
     	this->renderBuildingsSystem.renderSettlementPreview(worldPosition, active, time);
 	}
 
 	void RenderSystem::renderRoadPreview(const glm::vec2 &worldPosition, bool active, float time) noexcept {
     	this->renderBuildingsSystem.renderRoadPreview(worldPosition, active, time);
-	}
-
-
-	// Converts screen coordinates to world coordinates
-	glm::vec2 RenderSystem::screenToWorldCoordinates(const glm::vec2& screenPos) const noexcept {
-	    const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
-
-		glm::vec2 viewportPos = screenPos - glm::vec2(this->m_viewport.m_origin);
-		glm::vec2 normalizedPos = viewportPos / glm::vec2(this->m_viewport.m_size);
-		normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
-
-		return normalizedPos * worldDimensions;
 	}
 
 }

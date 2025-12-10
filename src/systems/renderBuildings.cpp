@@ -8,8 +8,8 @@ namespace df {
         self.window = window;
         self.registry = registry;
 
-        self.m_viewport.m_origin = glm::uvec2(0);
-        self.m_viewport.m_size = self.window->getWindowExtent();
+        self.viewport.origin = glm::uvec2(0);
+        self.viewport.size = self.window->getWindowExtent();
 
 		self.buildingHoverShader = Shader::init(assets::Shader::buildingHover).value();
 		self.buildingShadowShader = Shader::init(assets::Shader::buildingShadow).value();
@@ -76,7 +76,7 @@ namespace df {
 		if (!active) return;
 
 		// Set viewport = game viewport
-		glViewport(this->m_viewport.m_origin.x, this->m_viewport.m_origin.y, this->m_viewport.m_size.x, this->m_viewport.m_size.y);
+		glViewport(this->viewport.origin.x, this->viewport.origin.y, this->viewport.size.x, this->viewport.size.y);
 
 		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
 		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
@@ -123,7 +123,7 @@ namespace df {
 	void RenderBuildingsSystem::renderRoadPreview(const glm::vec2& worldPosition, bool active, float time) noexcept {
 		if (!active) return;
 
-		glViewport(this->m_viewport.m_origin.x, this->m_viewport.m_origin.y, this->m_viewport.m_size.x, this->m_viewport.m_size.y);
+		glViewport(this->viewport.origin.x, this->viewport.origin.y, this->viewport.size.x, this->viewport.size.y);
 
 		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
 		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
@@ -165,23 +165,5 @@ namespace df {
 
 		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		glBindVertexArray(0);
-	}
-
-	glm::vec2 RenderBuildingsSystem::calculateWorldDimensions(const int columns, const int rows) noexcept {
-		return {
-			sqrt(3.0f) * (columns + 0.5f),
-			1.5f * (rows + 1.0f)
-		};
-	}
-
-	// Converts screen coordinates to world coordinates
-	glm::vec2 RenderBuildingsSystem::screenToWorldCoordinates(const glm::vec2& screenPos) const noexcept {
-		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
-
-		glm::vec2 viewportPos = screenPos - glm::vec2(this->m_viewport.m_origin);
-		glm::vec2 normalizedPos = viewportPos / glm::vec2(this->m_viewport.m_size);
-		normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
-
-		return normalizedPos * worldDimensions;
 	}
 }

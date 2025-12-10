@@ -1,10 +1,12 @@
 #pragma once
 
+#include "renderCommon.h"
 #include <registry.h>
 #include <window.h>
 #include <utils/shader.h>
 #include <utils/texture.h>
 #include <utils/framebuffer.h>
+
 
 namespace df {
     class RenderHeroSystem {
@@ -29,10 +31,7 @@ namespace df {
 			GLuint m_quad_vao;
 			GLuint m_quad_ebo;
 
-			struct {
-				glm::uvec2 m_origin;
-				glm::uvec2 m_size;
-			} m_viewport;
+			Viewport viewport;
 
 			std::vector<Texture> heroIdleTextures;
 			std::vector<Texture> heroSwimTextures;

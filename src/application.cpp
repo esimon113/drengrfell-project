@@ -106,12 +106,12 @@ namespace df {
 			// Render previews (only one at a time)
 			if (this->world.isSettlementPreviewActive) {
 				glm::vec2 cursorPos = window->getCursorPosition();
-				glm::vec2 worldPos = render.screenToWorldCoordinates(cursorPos);
+				glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, render.getViewport());
 				this->render.renderSettlementPreview(worldPos, true, time);
 			}
 			else if (this->world.isRoadPreviewActive) {
 				glm::vec2 cursorPos = window->getCursorPosition();
-				glm::vec2 worldPos = render.screenToWorldCoordinates(cursorPos);
+				glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, render.getViewport());
 				this->render.renderRoadPreview(worldPos, true, time);
 			}
 
