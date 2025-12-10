@@ -50,17 +50,15 @@ namespace df {
 
         glBindVertexArray(0);
         
-		constexpr ::std::array<GLuint, 6> indices = { 0, 1, 2, 2, 3, 0 };
+		constexpr std::array<GLuint, 6> indices = { 0, 1, 2, 2, 3, 0 };
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.m_quad_ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 		// This shall be the place for initialization of ALL render systems. NOT anywhere else!
+    	self.renderHeroSystem = RenderHeroSystem::init(window, registry);
     	self.renderTilesSystem = RenderTilesSystem::init(window, registry);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry);
-    	//self.renderHeroSystem = RenderHeroSystem::init(window, registry);
+
 
 		return self;
 	}
@@ -69,20 +67,20 @@ namespace df {
 	void RenderSystem::deinit() noexcept {
     	this->renderTilesSystem.deinit();
     	this->renderBuildingsSystem.deinit();
-    	//this->renderHeroSystem.deinit();
+    	this->renderHeroSystem.deinit();
 	}
 
     void RenderSystem::step(const float dt) noexcept {
     	this->renderTilesSystem.step(dt);
     	this->renderBuildingsSystem.step(dt);
-    	//this->renderHeroSystem.step(dt);
+    	this->renderHeroSystem.step(dt);
     }
 
 
     void RenderSystem::reset() noexcept {
     	this->renderTilesSystem.reset();
     	this->renderBuildingsSystem.reset();
-    	//this->renderHeroSystem.reset();
+    	this->renderHeroSystem.reset();
     }
 
     static constexpr float GAME_ASPECT_RATIO = 1.f / 2;

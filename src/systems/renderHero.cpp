@@ -56,7 +56,7 @@ namespace df {
         // first milestone and change it later on when we have the logic to change between states (idling, swiming etc.)
         // maybe own class textureManager
 		std::string basePath = getBasePath();
-        std::vector<std::string> heroAttackTexturePaths = {
+        std::vector heroAttackTexturePaths = {
             basePath + "/assets/textures/hero/attack/attack_0.png",
             basePath + "/assets/textures/hero/attack/attack_1.png",
             //basePath + "/assets/textures/hero/attack/attack_2.png", weird animation
@@ -67,7 +67,7 @@ namespace df {
             self.heroAttackTextures.push_back(std::move(tex));
         }
 
-        std::vector<std::string> heroSwimTexturePaths = {
+        std::vector heroSwimTexturePaths = {
             basePath + "/assets/textures/hero/swim/swim_0.png",
             basePath + "/assets/textures/hero/swim/swim_1.png",
             basePath + "/assets/textures/hero/swim/swim_2.png",
@@ -79,10 +79,10 @@ namespace df {
 
         for (const auto& path : heroSwimTexturePaths) {
             Texture tex = Texture::init(path.c_str());
-            self.heroSwimTextures.push_back(std::move(tex));
+            self.heroSwimTextures.push_back(tex);
         }
 
-        std::vector<std::string> heroIdleTexturePaths = {
+        std::vector heroIdleTexturePaths = {
             basePath + "/assets/textures/hero/idle/idle_0.png",
             basePath + "/assets/textures/hero/idle/idle_1.png",
             basePath + "/assets/textures/hero/idle/idle_2.png",
@@ -90,10 +90,10 @@ namespace df {
 
         for (const auto& path : heroIdleTexturePaths) {
             Texture tex = Texture::init(path.c_str());
-            self.heroIdleTextures.push_back(std::move(tex));
+            self.heroIdleTextures.push_back(tex);
         }
 
-        std::vector<std::string> heroJumpTexturesPath = {
+        std::vector heroJumpTexturesPath = {
             basePath + "/assets/textures/hero/jump/jump_0.png",
             basePath + "/assets/textures/hero/jump/jump_1.png",
             basePath + "/assets/textures/hero/jump/jump_2.png",
@@ -104,7 +104,7 @@ namespace df {
 
         for (const auto& path : heroJumpTexturesPath) {
             Texture tex = Texture::init(path.c_str());
-            self.heroJumpTextures.push_back(std::move(tex));
+            self.heroJumpTextures.push_back(tex);
         }
 
         // Hero entity
@@ -115,16 +115,13 @@ namespace df {
         registry->scales.emplace(hero, glm::vec2(0.1f, 0.1f));
         registry->collisionRadius.emplace(hero, 0.5f);
 
-        std::vector<int> animationOrder = { 0,1,2,1 }; // Sequenz 0-1-2-1 for idle
+        std::vector animationOrder = { 0,1,2,1 }; // Sequenz 0-1-2-1 for idle
         Animation anim(animationOrder, 0.65f, true);
         registry->animations.emplace(hero, AnimationComponent{ anim });
 
-        constexpr ::std::array<GLuint, 6> indices = { 0, 1, 2, 2, 3, 0 };
+        constexpr std::array<GLuint, 6> indices = { 0, 1, 2, 2, 3, 0 };
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.m_quad_ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		return self;
 	}

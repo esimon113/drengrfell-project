@@ -21,7 +21,7 @@ namespace df {
         void step(float delta) noexcept;
         void reset() noexcept;
 
-        void updateFogOfWar(const Player*player) noexcept;
+        void updateFogOfWar(const Player& player) noexcept;
     private:
         Registry* registry;
         Window* window;

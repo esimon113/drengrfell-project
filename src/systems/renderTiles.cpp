@@ -24,9 +24,6 @@ namespace df {
 		glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 		self.initMap();
 
 		return self;
@@ -170,8 +167,10 @@ namespace df {
 
 
 	void RenderTilesSystem::renderMap(const glm::vec2 scale) const noexcept {
-		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
+    	glEnable(GL_BLEND);
+    	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
 
 		Camera& cam = registry->cameras.get(registry->getCamera());
 		glm::vec2 camPos = cam.position;
@@ -184,9 +183,7 @@ namespace df {
 		);
 
 		glm::mat4 model = glm::identity<glm::mat4>();
-		// camera translation: move the world around the camera position
 		model = glm::translate(model, glm::vec3(-camPos, 0.0f));
-
 		model = glm::scale(model, glm::vec3(scale, 1));
 
 		tileAtlas.bind(0);
@@ -201,14 +198,13 @@ namespace df {
 	}
 
 
-	void RenderTilesSystem::updateFogOfWar(const Player* player) noexcept {
-		if (player == nullptr) return;
+	void RenderTilesSystem::updateFogOfWar(const Player& player) noexcept {
 
 		for(auto& instance : tileInstances) {
 			instance.explored = 0;
 		}
 
-		const auto& exploredTiles = player->getExploredTiles();
+		const auto& exploredTiles = player.getExploredTiles();
     	for (const Tile* tile : exploredTiles) {
         	if (tile == nullptr) continue;
 
