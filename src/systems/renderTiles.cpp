@@ -204,10 +204,7 @@ namespace df {
 			instance.explored = 0;
 		}
 
-		for (const auto& exploredTiles = player.getExploredTiles(); const Tile* tile : exploredTiles) {
-        	if (tile == nullptr) continue;
-
-        	size_t tileId = tile->getId();
+		for (size_t tileId : player.getExploredTileIds()) {
         	if (tileId < tileInstances.size()) {
         	    tileInstances[tileId].explored = 1;
         	}
