@@ -19,7 +19,7 @@ namespace df{
 
     class Player {
         private:
-            // We store ids instead of references to respect ECS principles and serialize easily
+            // We store IDs instead of references to respect ECS principles and serialize easily
 
             size_t playerId;
             int heroPoints;

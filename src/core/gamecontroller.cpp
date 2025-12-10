@@ -167,7 +167,6 @@ namespace df {
 
             vertex.setSettlementId(newSettlementId);
             this->gameState.addSettlement(newSettlement);
-            // Player still uses raw pointers, so get the raw pointer from shared_ptr
             player->addSettlement(newSettlement->getId());
 
             this->chargeResourceCost(*player, buildingCost);
@@ -208,7 +207,6 @@ namespace df {
 
             edge.setRoadId(roadId);
             this->gameState.addRoad(road);
-            // Player still uses raw pointers, so get the raw pointer from shared_ptr
             player->addRoad(road->getId());
 
             this->chargeResourceCost(*player, buildingCost);
