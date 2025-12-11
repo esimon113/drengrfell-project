@@ -1,0 +1,28 @@
+#pragma once
+#include "registry.h"
+#include "renderCommon.h"
+#include "window.h"
+#include <utils/shader.h>
+
+namespace df {
+    class RenderHudSystem {
+    public:
+        RenderHudSystem() = default;
+        ~RenderHudSystem() = default;
+
+        static RenderHudSystem init(Window* window, Registry* registry) noexcept;
+        void deinit() noexcept;
+        void step(float dt) noexcept;
+        void reset() noexcept;
+        void renderHud() const noexcept;
+
+    private:
+        Registry* registry = nullptr;
+        Window* window = nullptr;
+        Viewport viewport;
+
+        Shader rectShader;
+        GLuint quadVao = 0;
+        GLuint vbo = 0; 
+    };
+}
