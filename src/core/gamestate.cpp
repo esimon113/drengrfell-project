@@ -172,6 +172,7 @@ namespace df {
         Settlement& s = registry->settlements.emplace(e);
         s = *settlement; // Copy data to ECS
         
+        
         settlements.push_back(settlement);
     }
 
@@ -184,6 +185,7 @@ namespace df {
         Entity e;
         Road& r = registry->roads.emplace(e);
         r = *road; // Copy data to ECS
+        
         
         roads.push_back(road);
     }
