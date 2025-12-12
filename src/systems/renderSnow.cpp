@@ -30,6 +30,7 @@ RenderSnowSystem RenderSnowSystem::init(Window* window, Registry* registry) noex
     self.particleShader = Shader::init(assets::Shader::particle).value();
     
     self.initBuffers();
+
     
     return self;
 }
@@ -97,7 +98,7 @@ void RenderSnowSystem::step(float deltaTime) noexcept {
     glm::vec3 cameraPos = glm::vec3(cam.position.x, cam.position.y, 0.0f);
     
     // Generate new particles (snow spawning)
-    int newparticles = (int)(deltaTime * 10000.0); // Adjust spawn rate
+    int newparticles = (int)(60 * 10000.0); // Adjust spawn rate
     if (newparticles > (int)(0.016f * 10000.0))
         newparticles = (int)(0.016f * 10000.0);
     

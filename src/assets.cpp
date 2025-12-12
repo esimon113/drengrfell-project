@@ -29,7 +29,8 @@ namespace df {
 		"tile",
 		"building-hover",
 		"building-shadow",
-		"hero"
+		"hero",
+		"particle"
 	};
 
 

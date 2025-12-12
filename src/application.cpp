@@ -32,6 +32,19 @@ namespace df {
 		}
 		self.window = ::std::move(*win);
 
+
+		::std::optional<Window*> debug_win_opt = Window::init(400, 400, "Particle Debug View");
+		if (!debug_win_opt) {
+			// Handle error: deinit the main window before terminating GLFW
+			self.window->deinit();
+			glfwTerminate();
+			return ::std::nullopt;
+		}
+		self.debugWindow = *debug_win_opt; // Store the pointer
+    
+    // Make the main window's context current for GL3W initialization
+    self.window->makeContextCurrent(); // Assuming Window has this method
+
 		if (gl3wInit()) {
 			fmt::println(stderr, "Failed to initialize OpenGL context");
 			self.window->deinit();
@@ -41,12 +54,20 @@ namespace df {
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 		self.registry = Registry::init();
-		// Create GameState
 		GameState newGameState(self.registry);
 		self.gameState = std::move(newGameState);
-		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
-		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
+		
+		// Initialize systems for the MAIN window
+		self.world = WorldSystem::init(self.window, self.registry, nullptr);
 		self.render = RenderSystem::init(self.window, self.registry);
+		
+		// Initialize RenderSnowSystem for the DEBUG window
+		// First, make the DEBUG window's context current! (If RenderSnowSystem::init has OpenGL calls)
+		self.debugWindow->makeContextCurrent(); 
+		self.renderSnowSystem = RenderSnowSystem::init(self.debugWindow, self.registry);
+		
+		// IMPORTANT: Switch the context back to the main window for the rest of setup/main loop
+		self.window->makeContextCurrent(); 
 
 		return self;
 	}
@@ -54,6 +75,10 @@ namespace df {
 	void Application::deinit() noexcept {
 		render.deinit();
 		delete registry;
+		if (debugWindow) {
+			debugWindow->deinit();
+			delete debugWindow;
+		}
 		window->deinit();
 		delete window;
 		glfwTerminate();
@@ -89,11 +114,28 @@ namespace df {
 		glClearColor(0, 0, 0, 1);
 
 		while (!window->shouldClose()) {
+
+			glfwPollEvents();
+			float time = static_cast<float>(glfwGetTime());
+			delta_time = time - last_time;
+			last_time = time;
+			
+			// --- B. Update Systems (Physics/Logic/Animation) ---
+			world.step(delta_time);
+			df::AnimationSystem::update(registry, delta_time);
+
+			// --- C. Render MAIN Window (Map, Buildings, Hero) ---
+			window->makeContextCurrent();
+			glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+			
+			render.step(delta_time);
+
 			glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 			glfwPollEvents();
 
-			float time = static_cast<float>(glfwGetTime());
+			time = static_cast<float>(glfwGetTime());
 			delta_time = time - last_time;
 			last_time = time;
 
@@ -118,6 +160,28 @@ namespace df {
 			}
 
 			window->swapBuffers();
+
+			if (debugWindow) {
+				if (!debugWindow->shouldClose()) {
+					debugWindow->makeContextCurrent(); // Activate the particle context
+					
+					// Clear with a specific color (e.g., black) to distinguish it
+					glClearColor(0.0f, 0.0f, 0.0f, 1.0f); 
+					glClear(GL_COLOR_BUFFER_BIT);
+					
+					// Now, call the snow system's draw method, passing delta_time
+					this->renderSnowSystem.step(delta_time); // <--- ASSUMING RenderSnowSystem has a 'step' or 'draw' method
+
+					// Swap buffers for the DEBUG window
+					debugWindow->swapBuffers();
+				} else {
+					// If the user closed the debug window, clean it up
+					debugWindow->deinit();
+					delete debugWindow;
+					debugWindow = nullptr;
+				}
+			}
+			glfwPollEvents();
 		}
 	}
 

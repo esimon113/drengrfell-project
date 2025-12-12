@@ -39,6 +39,8 @@ namespace df {
     	this->renderBuildingsSystem.step(dt);
     	this->renderHeroSystem.step(dt);
         this->renderSnowSystem.step(dt);
+        
+        
     }
 
 
