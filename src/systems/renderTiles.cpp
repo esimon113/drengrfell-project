@@ -19,7 +19,7 @@ namespace df {
 
 		// load resources for rendering
 		self.tileShader = Shader::init(assets::Shader::tile).value();
-		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);//, 59, 60);
+		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS, 59, 60);
 
 		const glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
