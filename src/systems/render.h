@@ -10,6 +10,7 @@
 #include "renderTiles.h"
 #include "renderBuildings.h"
 #include "renderHero.h"
+#include "renderSnow.h"
 
 namespace df {
 	class RenderSystem {
@@ -40,5 +41,6 @@ namespace df {
 			RenderTilesSystem renderTilesSystem;
 			RenderHeroSystem renderHeroSystem;
 			RenderBuildingsSystem renderBuildingsSystem;
+			RenderSnowSystem renderSnowSystem; 
 	};
 }

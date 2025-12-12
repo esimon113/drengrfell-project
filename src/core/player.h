@@ -23,7 +23,6 @@ namespace df{
 
             size_t playerId;
             int heroPoints;
-            int settlementCount;
             std::vector<size_t> settlementIds;
             std::map<types::TileType, int> resources;
             std::shared_ptr<Hero> heroReference;

@@ -24,7 +24,8 @@ namespace df {
 			buildingHover,
 			buildingShadow,
 			hero,
-			count
+			count,
+			particle
 		};
 
 

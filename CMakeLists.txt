@@ -157,6 +157,8 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/renderBuildings.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderTiles.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderCommon.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderSnow.cpp
+
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
