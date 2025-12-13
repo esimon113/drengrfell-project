@@ -19,7 +19,7 @@ namespace df {
 
 		// load resources for rendering
 		self.tileShader = Shader::init(assets::Shader::tile).value();
-		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS, static_cast<int>(df::types::TileType::COUNT), 60, 59);
+		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
 
 		const glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
@@ -85,12 +85,17 @@ namespace df {
 	}
 
 
-    void RenderTilesSystem::step(float) noexcept {
-        renderMap();
+	float accumulator = 0.0f;
+    void RenderTilesSystem::step(const float delta) noexcept {
+    	accumulator += delta;
+    	if (accumulator > 1.0) {
+    		accumulator = 0.0f;
+    	}
+        renderMap(accumulator);
     }
 
 
-	void RenderTilesSystem::renderMap(const glm::vec2 scale) const noexcept {
+	void RenderTilesSystem::renderMap(const float timeInSeconds, const glm::vec2 scale) const noexcept {
     	glEnable(GL_BLEND);
     	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -114,6 +119,8 @@ namespace df {
     	tileShader.use()
 			.setMat4("model", model)
 			.setMat4("projection", projection)
+	    	.setFloat("time", timeInSeconds)
+    		.setInt("frames", 4)
 			.setSampler("tileAtlas", 0);
 
     	glBindVertexArray(tileVao);
@@ -167,7 +174,7 @@ namespace df {
 
 		// Only one ice-desert tile -> like in catan game
 		std::unordered_map<int, int> tileCount;
-    	std::unordered_map<int, int> tileMax = {{ (int)df::types::TileType::ICE,    1 }};
+    	std::unordered_map<int, int> tileMax = {{ (int)types::TileType::ICE,    1 }};
 
 		for (int row = rows - 1; row >= 0; row--) {
 			for (int column = 0; column < columns; column++) {
@@ -177,7 +184,7 @@ namespace df {
 				// Creating an island with two water wide borders
 				if(row<1 || column <1 || row > rows -2 || column > columns -2){
 				    // make border tiles water
-				    instances.push_back({position, static_cast<int>(df::types::TileType::WATER), 0, 1});
+				    instances.push_back({position, static_cast<int>(types::TileType::WATER), 0, 1});
 				    continue;
 				}
 				int type = uniformTileTypeDistribution(randomEngine);
@@ -186,7 +193,7 @@ namespace df {
 				    if(tileCount[type] >= tileMax[type]){
 						do {
 							type = uniformTileTypeDistribution(randomEngine); // TODO: look for a more optimal solution
-						} while (type == (int)df::types::TileType::ICE);
+						} while (type == static_cast<int>(types::TileType::ICE));
 					} else {
 				        tileCount[type]++;
 				    }
@@ -216,5 +223,6 @@ namespace df {
 						tileInstances.data());
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
+
 
 }

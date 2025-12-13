@@ -8,16 +8,16 @@ layout(location = 4) in int explored;
 
 out vec2 uv;
 flat out int vertType;
-flat out int fragExplored;
+flat out int vertExplored;
 
 uniform mat4 model;
 uniform mat4 projection;
 
 void main() {
     vertType = type;
+    vertExplored = explored;
 
     vec2 worldPos = position + instancePosition;
     gl_Position = projection * model * vec4(worldPos, 0.0, 1.0);
     uv = vertexUv;
-    fragExplored = explored;
 }

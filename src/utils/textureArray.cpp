@@ -30,43 +30,75 @@ namespace df {
     /**
      * Assumes a vertical stripe of quadratical tile textures
      */
-    TextureArray TextureArray::init(const assets::Texture asset, int tiles, int tile_height, int tile_width) noexcept {
+    TextureArray TextureArray::init(const assets::Texture asset, const int widthOfSprite, int heightOfSprite) noexcept {
         const std::string assetPath = assets::getAssetPath(asset);
-        return init(assetPath.c_str(), tiles, tile_height, tile_width);
+        return init(assetPath.c_str(), widthOfSprite, heightOfSprite);
     }
 
     /**
-     * Assumes a vertical stripe of quadratical tile textures
+     * Assumes a vertical stripe of rectangular tile textures
      */
-    TextureArray TextureArray::init(const char* path, int tiles, int tile_height, int tile_width) noexcept {
+    TextureArray TextureArray::init(const char* path, int widthOfSprite, int heightOfSprite) noexcept {
         int width, height, channels;
         stbi_set_flip_vertically_on_load(true);
         stbi_uc* pixels = stbi_load(path, &width, &height, &channels, 4);
-
-        // TODO: Calculate this based on what is a 'default' value
-        if (tile_width <= 0 || tile_height <= 0 || tiles <= 0) {
-            tile_width = width;
-            tile_height = width;
-            tiles = height / tile_height;
+        if (pixels == nullptr) {
+            std::cerr << "Error loading pixels from " << path << std::endl;
+            return {};
         }
-        // Sanity check. Maybe throw exception?
-        if (tile_width != width) {
-            std::cout << "Warning: Tile width of " << tile_width << " isn't equal to atlas width of " << width << std::endl;
+        if (width % widthOfSprite != 0) {
+            std::cerr << "TextureArray::init: width is not divisible by widthOfSprite" << std::endl;
+        }
+        if (height % heightOfSprite != 0) {
+            std::cerr << "TextureArray::init: height is not divisible by heightOfSprite" << std::endl;
         }
 
         TextureArray self;
+        self.spriteWidth = widthOfSprite;
+        self.spriteHeight = heightOfSprite;
+        self.spritesInX = width / widthOfSprite;
+        self.spritesInY = height / heightOfSprite;
+
+        // The solution from last milestone only allows a vertical strip of textures.
+        // But we want a 2D-grid for easier asset creation work.
+        // The approach is to load the image as a grid and then "transform" it into a list of textures
+        // (aka the format we use in the OpenGL commands)
+
+        constexpr int bytesPerPixel = 4;
+        const int spriteSize = widthOfSprite * heightOfSprite * bytesPerPixel;
+
+        std::vector<stbi_uc> listPixels(self.getSpriteCount() * spriteSize);
+
+        for (int spriteRow = 0; spriteRow < self.spritesInY; spriteRow++) {
+            for (int spriteCol = 0; spriteCol < self.spritesInX; spriteCol++) {
+                const int sprite = spriteRow * self.spritesInX + spriteCol;
+                stbi_uc* destinationSprite = listPixels.data() + (sprite * spriteSize);
+
+                for (int row = 0; row < heightOfSprite; row++) {
+                    const int sourceY = (self.spritesInY - 1 - spriteRow) * heightOfSprite + row;
+                    const int sourceX = spriteCol * widthOfSprite;
+
+                    const stbi_uc* source = pixels + sourceY * (width * bytesPerPixel) + sourceX * bytesPerPixel;
+                    stbi_uc* destination = destinationSprite + row * (widthOfSprite * bytesPerPixel);
+
+                    std::memcpy(destination, source, widthOfSprite * bytesPerPixel);
+                }
+            }
+        }
+
         glGenTextures(1, &self.handle);
         glBindTexture(GL_TEXTURE_2D_ARRAY, self.handle);
+
         glTexImage3D(GL_TEXTURE_2D_ARRAY,
              0,                 // mipmap level
              GL_RGBA8,          // gpu texel format
-             tile_width,        // width
-             tile_height,       // height
-             tiles,             // depth
+             widthOfSprite,     // width
+             heightOfSprite,    // height
+             self.getSpriteCount(),           // depth
              0,                 // border
              GL_RGBA,           // cpu pixel format
              GL_UNSIGNED_BYTE,  // cpu pixel coord type
-             pixels);           // pixel data
+             listPixels.data());           // pixel data
 
         glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
