@@ -50,7 +50,7 @@ namespace df {
     void MainMenu::calcLayout() noexcept {
         // size of each component, all relative to window size
         float titleWidth = 0.7f;
-        float titleHeight = 0.2f;
+        float titleHeight = 0.25f;
         float buttonWidth = 0.40f;
         float buttonHeight = 0.15f;
 
