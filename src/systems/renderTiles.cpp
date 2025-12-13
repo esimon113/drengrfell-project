@@ -95,7 +95,7 @@ namespace df {
     }
 
 
-	void RenderTilesSystem::renderMap(float timeInSeconds, const glm::vec2 scale) const noexcept {
+	void RenderTilesSystem::renderMap(const float timeInSeconds, const glm::vec2 scale) const noexcept {
     	glEnable(GL_BLEND);
     	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -119,8 +119,8 @@ namespace df {
     	tileShader.use()
 			.setMat4("model", model)
 			.setMat4("projection", projection)
-	    	.setFloat("time", timeInSeconds) // For animationion
-    		.setInt("frames", 4) // Number of sprites per tile
+	    	.setFloat("time", timeInSeconds)
+    		.setInt("frames", 4)
 			.setSampler("tileAtlas", 0);
 
     	glBindVertexArray(tileVao);
@@ -174,7 +174,7 @@ namespace df {
 
 		// Only one ice-desert tile -> like in catan game
 		std::unordered_map<int, int> tileCount;
-    	std::unordered_map<int, int> tileMax = {{ (int)df::types::TileType::ICE,    1 }};
+    	std::unordered_map<int, int> tileMax = {{ (int)types::TileType::ICE,    1 }};
 
 		for (int row = rows - 1; row >= 0; row--) {
 			for (int column = 0; column < columns; column++) {
@@ -184,7 +184,7 @@ namespace df {
 				// Creating an island with two water wide borders
 				if(row<1 || column <1 || row > rows -2 || column > columns -2){
 				    // make border tiles water
-				    instances.push_back({position, static_cast<int>(df::types::TileType::WATER), 0, 1});
+				    instances.push_back({position, static_cast<int>(types::TileType::WATER), 0, 1});
 				    continue;
 				}
 				int type = uniformTileTypeDistribution(randomEngine);
@@ -193,7 +193,7 @@ namespace df {
 				    if(tileCount[type] >= tileMax[type]){
 						do {
 							type = uniformTileTypeDistribution(randomEngine); // TODO: look for a more optimal solution
-						} while (type == (int)df::types::TileType::ICE);
+						} while (type == static_cast<int>(types::TileType::ICE));
 					} else {
 				        tileCount[type]++;
 				    }
@@ -214,8 +214,7 @@ namespace df {
 		for (const auto& exploredTiles = player.getExploredTiles(); const Tile* tile : exploredTiles) {
         	if (tile == nullptr) continue;
 
-        	size_t tileId = tile->getId();
-        	if (tileId < tileInstances.size()) {
+	        if (const size_t tileId = tile->getId(); tileId < tileInstances.size()) {
         	    tileInstances[tileId].explored = 1;
         	}
     	}
