@@ -19,7 +19,7 @@ public:
     void step(float deltaTime) noexcept;
     void render(const glm::mat4& view, const glm::mat4& projection) noexcept;
     void deinit() noexcept;
-    void reset() noexcept;
+    void reset();
 
 private:
     Window* window;

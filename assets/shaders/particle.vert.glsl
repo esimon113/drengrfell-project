@@ -1,34 +1,26 @@
-#version 410 core
+#version 330 core
 
-// Input vertex data, different for all executions of this shader.
 layout(location = 0) in vec3 squareVertices;
-layout(location = 1) in vec4 xyzs; // Position of the center of the particule and size of the square
-layout(location = 2) in vec4 color; // Position of the center of the particule and size of the square
+layout(location = 1) in vec4 xyzs; // Position (xyz) and size (w)
+layout(location = 2) in vec4 color;
 
-// Output data ; will be interpolated for each fragment.
 out vec2 UV;
 out vec4 particlecolor;
 
-// Values that stay constant for the whole mesh.
-uniform vec3 CameraRight_worldspace;
-uniform vec3 CameraUp_worldspace;
-uniform mat4 V; // View matrix
-uniform mat4 P; // Projection matrix
+uniform mat4 V;
+uniform mat4 P;
 
 void main()
 {
-    float particleSize = xyzs.w; // because we encoded it this way.
-    vec3 particleCenter_wordspace = xyzs.xyz;
+    float particleSize = xyzs.w;
+    vec3 particleCenter = xyzs.xyz;
     
-    vec3 vertexPosition_worldspace = 
-        particleCenter_wordspace
-        + CameraRight_worldspace * squareVertices.x * particleSize
-        + CameraUp_worldspace * squareVertices.y * particleSize;
-
-    // Output position of the vertex
-    gl_Position = P * V * vec4(vertexPosition_worldspace, 1.0f);
+    // Simple 2D positioning - no complex billboarding needed
+    vec3 vertexPosition = particleCenter + vec3(squareVertices.x * particleSize, squareVertices.y * particleSize, 0.0);
     
-    // UV of the vertex. No special space for this one.
+    // Apply view and projection
+    gl_Position = P * V * vec4(vertexPosition, 1.0);
+    
     UV = squareVertices.xy + vec2(0.5, 0.5);
     particlecolor = color;
 }
