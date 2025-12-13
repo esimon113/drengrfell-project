@@ -207,22 +207,22 @@ namespace df {
 
 
 	void RenderTilesSystem::updateFogOfWar(const Player& player) noexcept {
-    	for(auto& instance : tileInstances) {
-    		instance.explored = 0;
+		for(auto& instance : tileInstances) {
+			instance.explored = 0;
+		}
+
+		for (size_t tileId : player.getExploredTileIds()) {
+        	if (tileId < tileInstances.size()) {
+        	    tileInstances[tileId].explored = 1;
+        	}
     	}
 
-    	for (size_t tileId : player.getExploredTileIds()) {
-    		if (tileId < tileInstances.size()) {
-    			tileInstances[tileId].explored = 1;
-    		}
-    	}
-
-    	glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
-    	glBufferSubData(GL_ARRAY_BUFFER, 0,
+		glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
+		glBufferSubData(GL_ARRAY_BUFFER, 0,
 						tileInstances.size() * sizeof(TileInstance),
 						tileInstances.data());
-    	glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
 
 
 }
