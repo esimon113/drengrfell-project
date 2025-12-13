@@ -29,7 +29,8 @@ namespace df {
 		"tile",
 		"building-hover",
 		"building-shadow",
-		"hero"
+		"hero",
+		"menu"
 	};
 
 
@@ -42,7 +43,11 @@ namespace df {
 		// add "*.png"-files that contain the textures here
 		"tiles/tileAtlas.png",
 		"settlements/viking-wood/viking-wood-settlement1.png",
-		"roads/dirtRoad/dirt_road_diagonal_up.png"
+		"roads/dirtRoad/dirt_road_diagonal_up.png",
+		"mainMenu/temp_menu_background.png",
+		"mainMenu/temp_menu_title.png",
+		"mainMenu/temp_menu_start.png",
+		"mainMenu/temp_menu_exit.png"
 	};
 
 

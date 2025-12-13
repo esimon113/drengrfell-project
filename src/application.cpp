@@ -3,6 +3,7 @@
 #include "GL/glcorearb.h"
 #include "hero.h"
 #include "animationSystem.h"
+#include "types.h"
 
 #include <iostream>
 
@@ -47,6 +48,8 @@ namespace df {
 		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry);
+		// Create main menu
+		self.mainMenu.init(self.window);	
 
 		return self;
 	}
@@ -82,6 +85,9 @@ namespace df {
 			});
 
 
+		// callbacks so menu can change phase / close window
+		mainMenu.setExitCallback([&]() { glfwSetWindowShouldClose(window->getHandle(), true); });
+		mainMenu.setStartCallback([&]() { startGame(); });
 
 		float delta_time = 0;
 		float last_time = static_cast<float>(glfwGetTime());
@@ -97,25 +103,42 @@ namespace df {
 			delta_time = time - last_time;
 			last_time = time;
 
-			world.step(delta_time);
-			// physics.step(delta_time);
-			// physics.handleCollisions(delta_time);
-			df::AnimationSystem::update(registry, delta_time);
-			render.step(delta_time);
+			types::GamePhase gamePhase = gameState.getPhase();
 
-			// Render previews (only one at a time)
-			auto renderBuildingsSystem = this->render.getRenderBuildingsSystem();
+			switch (gamePhase) {
+				case types::GamePhase::START:
+					mainMenu.update(delta_time);
+					mainMenu.render();
+					break;
+				case types::GamePhase::CONFIG:
+					break;
+				case types::GamePhase::PLAY:
+				{
+					world.step(delta_time);
+					// physics.step(delta_time);
+					// physics.handleCollisions(delta_time);
+					df::AnimationSystem::update(registry, delta_time);
+					render.step(delta_time);
 
-			if (this->world.isSettlementPreviewActive) {
-				glm::vec2 cursorPos = window->getCursorPosition();
-				glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
-				renderBuildingsSystem.renderSettlementPreview(worldPos, true, time);
+					// Render previews (only one at a time)
+					auto renderBuildingsSystem = this->render.getRenderBuildingsSystem();
+
+					if (this->world.isSettlementPreviewActive) {
+						glm::vec2 cursorPos = window->getCursorPosition();
+						glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
+						renderBuildingsSystem.renderSettlementPreview(worldPos, true, time);
+					}
+					else if (this->world.isRoadPreviewActive) {
+						glm::vec2 cursorPos = window->getCursorPosition();
+						glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
+						renderBuildingsSystem.renderRoadPreview(worldPos, true, time);
+					}
+				}
+					break;
+				case types::GamePhase::END:
+					break;
 			}
-			else if (this->world.isRoadPreviewActive) {
-				glm::vec2 cursorPos = window->getCursorPosition();
-				glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
-				renderBuildingsSystem.renderRoadPreview(worldPos, true, time);
-			}
+			
 
 			window->swapBuffers();
 		}
@@ -140,21 +163,77 @@ namespace df {
 		render.reset();
 	}
 
+	void Application::startGame() noexcept {
+		// For now instantly starts the game. Later on could set the phase to
+		// CONFIG first and after the configurations are done, the phase would be set to PLAY
+		this->gameState.setPhase(types::GamePhase::PLAY);
+	}
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
-		world.onKeyCallback(windowParam, key, scancode, action, mods);
+		types::GamePhase gamePhase = gameState.getPhase();
+
+		switch (gamePhase) {
+		case types::GamePhase::START:
+			mainMenu.onKeyCallback(windowParam, key, scancode, action, mods);
+			break;
+		case types::GamePhase::CONFIG:
+			break;
+		case types::GamePhase::PLAY:
+			world.onKeyCallback(windowParam, key, scancode, action, mods);
+			break;
+		case types::GamePhase::END:
+			break;
+		}
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
-		world.onMouseButtonCallback(windowParam, button, action, mods);
+		types::GamePhase gamePhase = gameState.getPhase();
+
+		switch (gamePhase) {
+		case types::GamePhase::START:
+			mainMenu.onMouseButtonCallback(windowParam, button, action, mods);
+			break;
+		case types::GamePhase::CONFIG:
+			break;
+		case types::GamePhase::PLAY:
+			world.onMouseButtonCallback(windowParam, button, action, mods);
+			break;
+		case types::GamePhase::END:
+			break;
+		}
 	}
 
 	void Application::onScrollCallback(GLFWwindow* windowParam, double xoffset, double yoffset) noexcept {
-		world.onScrollCallback(windowParam, xoffset, yoffset);
+		types::GamePhase gamePhase = gameState.getPhase();
+
+		switch (gamePhase) {
+		case types::GamePhase::START:
+			break;
+		case types::GamePhase::CONFIG:
+			break;
+		case types::GamePhase::PLAY:
+			world.onScrollCallback(windowParam, xoffset, yoffset);
+			break;
+		case types::GamePhase::END:
+			break;
+		}
 	}
 
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
-		render.onResizeCallback(windowParam, width, height);
+		types::GamePhase gamePhase = gameState.getPhase();
+
+		switch (gamePhase) {
+		case types::GamePhase::START:
+			mainMenu.onResizeCallback(windowParam, width, height);
+			break;
+		case types::GamePhase::CONFIG:
+			break;
+		case types::GamePhase::PLAY:
+			render.onResizeCallback(windowParam, width, height);
+			break;
+		case types::GamePhase::END:
+			break;
+		}
 	}
 }

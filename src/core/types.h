@@ -60,7 +60,8 @@ namespace df::types {
 
 
     enum class GamePhase {
-        SETUP,
+        START,
+		CONFIG,
         PLAY,
         END
     };
