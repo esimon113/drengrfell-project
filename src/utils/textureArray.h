@@ -25,21 +25,21 @@ namespace df {
         void bind(GLuint sampler) const noexcept;
         operator int() const noexcept { return handle; }
 
-        [[nodiscard]] std::size_t getSpriteWidth() const noexcept { return spriteWidth; }
-        [[nodiscard]] std::size_t getSpriteHeight() const noexcept { return spriteHeight; }
-        [[nodiscard]] std::size_t getSpritesInX() const noexcept { return spritesInX; }
-        [[nodiscard]] std::size_t getSpritesInY() const noexcept { return spritesInY; }
-        [[nodiscard]] std::size_t getSpriteCount() const noexcept {
+        [[nodiscard]] int getSpriteWidth() const noexcept { return spriteWidth; }
+        [[nodiscard]] int getSpriteHeight() const noexcept { return spriteHeight; }
+        [[nodiscard]] int getSpritesInX() const noexcept { return spritesInX; }
+        [[nodiscard]] int getSpritesInY() const noexcept { return spritesInY; }
+        [[nodiscard]] int getSpriteCount() const noexcept {
             return spritesInX * spritesInY;
         }
 
     private:
         GLuint handle;
 
-        std::size_t spriteWidth;
-        std::size_t spriteHeight;
-        std::size_t spritesInX;
-        std::size_t spritesInY;
+        int spriteWidth;
+        int spriteHeight;
+        int spritesInX;
+        int spritesInY;
     };
 }
 

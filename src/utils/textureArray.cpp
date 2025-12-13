@@ -42,7 +42,10 @@ namespace df {
         int width, height, channels;
         stbi_set_flip_vertically_on_load(true);
         stbi_uc* pixels = stbi_load(path, &width, &height, &channels, 4);
-
+        if (pixels == nullptr) {
+            std::cerr << "Error loading pixels from " << path << std::endl;
+            return {};
+        }
         if (width % widthOfSprite != 0) {
             std::cerr << "TextureArray::init: width is not divisible by widthOfSprite" << std::endl;
         }
@@ -56,6 +59,33 @@ namespace df {
         self.spritesInX = width / widthOfSprite;
         self.spritesInY = height / heightOfSprite;
 
+        // The solution from last milestone only allows a vertical strip of textures.
+        // But we want a 2D-grid for easier asset creation work.
+        // The approach is to load the image as a grid and then "transform" it into a list of textures
+        // (aka the format we use in the OpenGL commands)
+
+        constexpr int bytesPerPixel = 4;
+        const int spriteSize = widthOfSprite * heightOfSprite * bytesPerPixel;
+
+        std::vector<stbi_uc> listPixels(self.getSpriteCount() * spriteSize);
+
+        for (int spriteRow = 0; spriteRow < self.spritesInY; spriteRow++) {
+            for (int spriteCol = 0; spriteCol < self.spritesInX; spriteCol++) {
+                const int sprite = spriteRow * self.spritesInX + spriteCol;
+                stbi_uc* destinationSprite = listPixels.data() + (sprite * spriteSize);
+
+                for (int row = 0; row < heightOfSprite; row++) {
+                    const int sourceY = (self.spritesInY - 1 - spriteRow) * heightOfSprite + row;
+                    const int sourceX = spriteCol * widthOfSprite;
+
+                    const stbi_uc* source = pixels + sourceY * (width * bytesPerPixel) + sourceX * bytesPerPixel;
+                    stbi_uc* destination = destinationSprite + row * (widthOfSprite * bytesPerPixel);
+
+                    std::memcpy(destination, source, widthOfSprite * bytesPerPixel);
+                }
+            }
+        }
+
         glGenTextures(1, &self.handle);
         glBindTexture(GL_TEXTURE_2D_ARRAY, self.handle);
 
@@ -64,11 +94,11 @@ namespace df {
              GL_RGBA8,          // gpu texel format
              widthOfSprite,     // width
              heightOfSprite,    // height
-             static_cast<int>(self.getSpriteCount()),             // depth
+             self.getSpriteCount(),           // depth
              0,                 // border
              GL_RGBA,           // cpu pixel format
              GL_UNSIGNED_BYTE,  // cpu pixel coord type
-             pixels);           // pixel data
+             listPixels.data());           // pixel data
 
         glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
