@@ -24,6 +24,7 @@ namespace df {
 			buildingHover,
 			buildingShadow,
 			hero,
+			menu,
 			count
 		};
 
@@ -32,6 +33,10 @@ namespace df {
 			TILE_ATLAS,
 			VIKING_WOOD_SETTLEMENT1,
 			DIRT_ROAD_DIAGONAL_UP,
+			MENU_BACKGROUND,
+			MENU_TITLE,
+			MENU_START,
+			MENU_EXIT,
 			count
 		};
 

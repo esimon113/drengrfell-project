@@ -73,7 +73,7 @@ namespace df {
         void setRoundNumber(size_t round) { this->roundNumber = round; }
 
         types::GamePhase getPhase() const { return this->phase; }
-        void setPhase(types::GamePhase newPhase) { this->phase = newPhase; }
+        void setPhase(types::GamePhase newPhase) { this->phase = newPhase; fmt::println("Switched to game phase {}", (int)this->phase);}
 
 
         // persistence
@@ -98,7 +98,7 @@ namespace df {
         size_t currentPlayerId = 0;
         size_t turnCount = 0;
         size_t roundNumber = 0;
-        types::GamePhase phase = types::GamePhase::SETUP;
+        types::GamePhase phase = types::GamePhase::START;
         Registry* registry = nullptr;
     };
 
