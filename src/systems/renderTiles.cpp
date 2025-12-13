@@ -85,12 +85,17 @@ namespace df {
 	}
 
 
-    void RenderTilesSystem::step(float) noexcept {
-        renderMap();
+	float accumulator = 0.0f;
+    void RenderTilesSystem::step(const float delta) noexcept {
+    	accumulator += delta;
+    	if (accumulator > 1.0) {
+    		accumulator = 0.0f;
+    	}
+        renderMap(accumulator);
     }
 
 
-	void RenderTilesSystem::renderMap(const glm::vec2 scale) const noexcept {
+	void RenderTilesSystem::renderMap(float timeInSeconds, const glm::vec2 scale) const noexcept {
     	glEnable(GL_BLEND);
     	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -114,6 +119,8 @@ namespace df {
     	tileShader.use()
 			.setMat4("model", model)
 			.setMat4("projection", projection)
+	    	.setFloat("time", timeInSeconds) // For animationion
+    		.setInt("frames", 4) // Number of sprites per tile
 			.setSampler("tileAtlas", 0);
 
     	glBindVertexArray(tileVao);

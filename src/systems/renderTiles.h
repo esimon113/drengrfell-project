@@ -45,7 +45,7 @@ namespace df {
             glm::vec2 position;
             int type;
             int padding;
-            int explored; // 0 = unexplored, 1 = explored, maybe 2 for a second player
+            int explored; // 0 = unexplored, 1 = explored
         };
 
         std::vector<float> tileMesh;
@@ -54,6 +54,6 @@ namespace df {
         static std::vector<float> createRectangularTileMesh() noexcept;
         static std::vector<TileInstance> createTileInstances(int columns = 10.0f, int rows = 10.0f) noexcept;
         void initMap() noexcept;
-        void renderMap(glm::vec2 scale = {1.5f, 1.5f}) const noexcept;
+        void renderMap(float timeInSeconds = 0.0, glm::vec2 scale = {1.5f, 1.5f}) const noexcept;
     };
 }
