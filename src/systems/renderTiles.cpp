@@ -41,11 +41,14 @@ namespace df {
     	}*/
 
     	this->tileMesh = createRectangularTileMesh();
-    	const auto tiles = WorldGenerator::generateTiles(WorldGeneratorConfig());
+	    constexpr auto worldGeneratorConfig = WorldGeneratorConfig();
+    	const auto tiles = WorldGenerator::generateTiles(worldGeneratorConfig);
     	if (tiles.isErr()) {
     		return Err(tiles.unwrapErr());
     	}
-    	this->tileInstances = makeTileInstances(tiles.unwrap(), 10, player);
+    	this->tileColumns = worldGeneratorConfig.columns;
+    	this->tileRows = worldGeneratorConfig.rows;
+    	this->tileInstances = makeTileInstances(tiles.unwrap(), this->tileColumns, player);
 
     	glGenVertexArrays(1, &tileVao);
     	glGenBuffers(1, &tileVbo);
@@ -110,11 +113,11 @@ namespace df {
     }
 
 
-	void RenderTilesSystem::renderMap(const float timeInSeconds, const glm::vec2 scale) const noexcept {
+	void RenderTilesSystem::renderMap(const float timeInSeconds) const noexcept {
     	glEnable(GL_BLEND);
     	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    	const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
+    	const glm::vec2 worldDimensions = calculateWorldDimensions(this->tileColumns, this->tileRows);
 
     	Camera& cam = registry->cameras.get(registry->getCamera());
     	glm::vec2 camPos = cam.position;
@@ -128,7 +131,7 @@ namespace df {
 
     	auto model = glm::identity<glm::mat4>();
     	model = glm::translate(model, glm::vec3(-camPos, 0.0f));
-    	model = glm::scale(model, glm::vec3(scale, 1));
+    	model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
 
     	tileAtlas.bind(0);
     	tileShader.use()
