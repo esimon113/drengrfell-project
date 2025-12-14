@@ -1,6 +1,10 @@
 #include "renderCommon.h"
 
 namespace df {
+    RenderError::RenderError(const Kind kind, std::string text) : kind(kind), text(std::move(text)) {
+    }
+
+
     glm::vec2 screenToWorldCoordinates(const glm::vec2& screenPos, Viewport viewport) noexcept {
         const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
 
