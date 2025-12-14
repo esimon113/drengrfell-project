@@ -1,27 +1,6 @@
 #include "renderCommon.h"
 
 namespace df {
-    RenderError::RenderError(const Kind kind, std::string text) : kind(kind), text(std::move(text)) {
-    }
-
-    std::ostream &operator<<(std::ostream &out, const RenderError &e) {
-        std::string kind;
-        switch (e.kind) {
-            case RenderError::Kind::NullPointer:
-                kind = "NullPointer";
-                break;
-            case RenderError::Kind::InvalidArgument:
-                kind = "InvalidArgument";
-                break;
-            case RenderError::Kind::DomainError:
-                kind = "DomainError";
-                break;
-        }
-
-        out << kind << ": " << e.text;
-        return out;
-    }
-
     glm::vec2 screenToWorldCoordinates(const glm::vec2& screenPos, Viewport viewport) noexcept {
         const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
 
