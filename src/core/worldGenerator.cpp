@@ -2,11 +2,11 @@
 
 namespace df {
 
-    Result<std::vector<Tile>, ResultError> WorldGenerator::generateTiles(const unsigned paramColumns, const unsigned paramRows) noexcept {
-        if (paramColumns > 100) return Err(ResultError(ResultError::Kind::DomainError, "generateTiles: columns should not exceed 100"));
-        if (paramRows > 100) return Err(ResultError(ResultError::Kind::DomainError, "generateTiles: rows should not exceed 100"));
-        const int columns = static_cast<int>(paramColumns);
-        const int rows = static_cast<int>(paramRows);
+    Result<std::vector<Tile>, ResultError> WorldGenerator::generateTiles(const WorldGeneratorConfig& config) noexcept {
+        if (config.columns > 100) return Err(ResultError(ResultError::Kind::DomainError, "generateTiles: columns should not exceed 100"));
+        if (config.rows > 100) return Err(ResultError(ResultError::Kind::DomainError, "generateTiles: rows should not exceed 100"));
+        const int columns = static_cast<int>(config.columns);
+        const int rows = static_cast<int>(config.rows);
 
         auto randomEngine = std::default_random_engine(std::random_device()());
         auto uniformTileTypeDistribution = std::uniform_int_distribution(2, static_cast<int>(types::TileType::COUNT) - 1);

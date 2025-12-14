@@ -41,7 +41,7 @@ namespace df {
     	}*/
 
     	this->tileMesh = createRectangularTileMesh();
-    	const auto tiles = WorldGenerator::generateTiles();
+    	const auto tiles = WorldGenerator::generateTiles(WorldGeneratorConfig());
     	if (tiles.isErr()) {
     		return Err(tiles.unwrapErr());
     	}
