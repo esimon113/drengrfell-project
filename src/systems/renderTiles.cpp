@@ -207,8 +207,8 @@ namespace df {
 
 
 	Result<std::vector<Tile>, RenderError> RenderTilesSystem::generateTiles(const unsigned paramColumns, const unsigned paramRows) noexcept {
-    	if (paramColumns > 100) return Err(RenderError(RenderError::Kind::InvalidArgument, "generateTiles: columns should not exceed 100"));
-    	if (paramRows > 100) return Err(RenderError(RenderError::Kind::InvalidArgument, "generateTiles: rows should not exceed 100"));
+    	if (paramColumns > 100) return Err(RenderError(RenderError::Kind::DomainError, "generateTiles: columns should not exceed 100"));
+    	if (paramRows > 100) return Err(RenderError(RenderError::Kind::DomainError, "generateTiles: rows should not exceed 100"));
     	const int columns = static_cast<int>(paramColumns);
     	const int rows = static_cast<int>(paramRows);
 

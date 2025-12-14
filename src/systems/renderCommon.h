@@ -17,6 +17,7 @@ namespace df {
         enum class Kind {
             NullPointer,
             InvalidArgument,
+            DomainError,
         };
 
         RenderError(Kind kind, std::string text);

@@ -13,6 +13,9 @@ namespace df {
             case RenderError::Kind::InvalidArgument:
                 kind = "InvalidArgument";
                 break;
+            case RenderError::Kind::DomainError:
+                kind = "DomainError";
+                break;
         }
 
         out << kind << ": " << e.text;
