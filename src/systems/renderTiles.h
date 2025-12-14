@@ -53,8 +53,10 @@ namespace df {
         std::vector<TileInstance> tileInstances;
 
         static std::vector<float> createRectangularTileMesh() noexcept;
-        static std::vector<TileInstance> createTileInstances(int columns = 10.0f, int rows = 10.0f) noexcept;
-        void initMap() noexcept;
+        Result<void, RenderError> initMap() noexcept;
         void renderMap(float timeInSeconds = 0.0, glm::vec2 scale = {1.5f, 1.5f}) const noexcept;
+
+        static std::vector<TileInstance> makeTileInstances(const std::vector<Tile>& tiles, int columns, const Player* player = nullptr) noexcept;
+        static std::vector<Tile> generateTiles(int columns = 10.0f, int rows = 10.0f) noexcept;
     };
 }
