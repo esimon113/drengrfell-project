@@ -49,10 +49,12 @@ namespace df {
 
         std::vector<float> tileMesh;
         std::vector<TileInstance> tileInstances;
+        unsigned tileColumns;
+        unsigned tileRows;
 
         static std::vector<float> createRectangularTileMesh() noexcept;
         [[nodiscard]] Result<void, ResultError> initMap() noexcept;
-        void renderMap(float timeInSeconds = 0.0, glm::vec2 scale = {1.5f, 1.5f}) const noexcept;
+        void renderMap(float timeInSeconds = 0.0) const noexcept;
 
         static std::vector<TileInstance> makeTileInstances(const std::vector<Tile>& tiles, int columns, const Player* player = nullptr) noexcept;
     };

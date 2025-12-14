@@ -2,7 +2,7 @@
 
 namespace df {
     struct WorldGeneratorConfig {
-        unsigned columns = 10;
-        unsigned rows = 10;
+        unsigned columns = 12;
+        unsigned rows = 12;
     };
 }
