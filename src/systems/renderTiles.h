@@ -15,7 +15,7 @@ namespace df {
         RenderTilesSystem() = default;
         ~RenderTilesSystem() = default;
 
-        static RenderTilesSystem init(Window* window, Registry* registry) noexcept;
+        static RenderTilesSystem init(Window& window, Registry& registry, GameState& gameState) noexcept;
         void deinit() noexcept;
 
         void step(float delta) noexcept;
@@ -25,6 +25,7 @@ namespace df {
     private:
         Registry* registry;
         Window* window;
+        GameState* gameState;
         Framebuffer intermediateFramebuffer;
 
         Shader tileShader;
