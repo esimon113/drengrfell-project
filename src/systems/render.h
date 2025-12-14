@@ -7,6 +7,7 @@
 #include <utils/shader.h>
 #include <utils/framebuffer.h>
 
+
 #include "renderTiles.h"
 #include "renderBuildings.h"
 #include "renderHero.h"
@@ -17,7 +18,7 @@ namespace df {
 			RenderSystem() = default;
 			~RenderSystem() = default;
 
-			static RenderSystem init(Window* window, Registry* registry) noexcept;
+			static RenderSystem init(Window* window, Registry* registry, GameState& gameState) noexcept;
 			void deinit() noexcept;
 
 			void step(float dt) noexcept;
@@ -31,8 +32,8 @@ namespace df {
 			}
 
 		private:
-			Registry* registry = nullptr;
-			Window* window = nullptr;
+			Registry* registry;
+			Window* window;
 
 			Viewport viewport = Viewport();
 			Framebuffer intermediateFramebuffer;

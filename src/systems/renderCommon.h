@@ -1,5 +1,6 @@
 #pragma once
 #include "glm/vec2.hpp"
+#include "gamestate.h"
 
 /*
  * This header provides common functionality for render systems.

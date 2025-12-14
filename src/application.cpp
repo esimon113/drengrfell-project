@@ -47,7 +47,7 @@ namespace df {
 		self.gameState = std::move(newGameState);
 		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-		self.render = RenderSystem::init(self.window, self.registry);
+		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
 		// Create main menu
 		self.mainMenu.init(self.window);	
 

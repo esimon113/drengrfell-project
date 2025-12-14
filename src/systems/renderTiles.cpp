@@ -7,12 +7,13 @@
 
 namespace df {
 
-    RenderTilesSystem RenderTilesSystem::init(Window* window, Registry* registry) noexcept {
+    RenderTilesSystem RenderTilesSystem::init(Window& window, Registry& registry, GameState& gameState) noexcept {
 
         RenderTilesSystem self;
 
-        self.window = window;
-        self.registry = registry;
+        self.window = &window;
+        self.registry = &registry;
+    	self.gameState = &gameState;
 
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();
