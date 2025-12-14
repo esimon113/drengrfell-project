@@ -3,10 +3,10 @@
 namespace df {
     struct WorldGeneratorConfig {
         enum class GenerationMode {
-            RANDOM,
-            PERLIN
+            INSULAR, // Like in the classic board game
+            PERLIN,  // TODO: Find better name
         };
-        GenerationMode generationMode = GenerationMode::PERLIN;
+        GenerationMode generationMode = GenerationMode::INSULAR;
 
         // General
         unsigned seed = 123;

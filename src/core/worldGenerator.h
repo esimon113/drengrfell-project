@@ -10,7 +10,7 @@ namespace df {
 
         static Result<std::vector<Tile>, ResultError> generateTiles(const WorldGeneratorConfig& config) noexcept;
     private:
-        static std::vector<Tile> generateTilesRandom(const WorldGeneratorConfig& config) noexcept;
+        static std::vector<Tile> generateTilesInsular(const WorldGeneratorConfig& config) noexcept;
         static std::vector<Tile> generateTilesPerlin(const WorldGeneratorConfig& config) noexcept;
     };
 }
