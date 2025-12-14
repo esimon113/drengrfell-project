@@ -1,7 +1,7 @@
 #pragma once
 #include "glm/vec2.hpp"
 #include "gamestate.h"
-#include "result.h"
+#include "resultError.h"
 
 /*
  * This header provides common functionality for render systems.
@@ -11,21 +11,6 @@ namespace df {
     struct Viewport {
         glm::uvec2 origin;
         glm::uvec2 size;
-    };
-
-    struct RenderError {
-        enum class Kind {
-            NullPointer,
-            InvalidArgument,
-            DomainError,
-        };
-
-        RenderError(Kind kind, std::string text);
-
-        Kind kind;
-        std::string text;
-
-        friend std::ostream &operator<<(std::ostream &out, const RenderError &e);
     };
 
     glm::vec2 screenToWorldCoordinates(const glm::vec2& screenPos, Viewport viewport) noexcept;
