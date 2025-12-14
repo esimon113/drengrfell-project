@@ -31,9 +31,15 @@ namespace df {
 	}
 
 
-	void RenderTilesSystem::initMap() noexcept {
+	Result<void, RenderError> RenderTilesSystem::initMap() noexcept {
+    	const Player* player = this->gameState->getPlayer(0);
+    	//if (player == nullptr) {
+    	//	std::cerr << "Player is null" << std::endl;
+    	//	return Err(RenderError(RenderError::Kind::PlayerIsNull, "Could not find player with id 0"));
+    	//}
+
     	this->tileMesh = createRectangularTileMesh();
-    	this->tileInstances = createTileInstances(10, 10);
+    	this->tileInstances = makeTileInstances(generateTiles(), 10, player);
 
     	glGenVertexArrays(1, &tileVao);
     	glGenBuffers(1, &tileVbo);
@@ -77,6 +83,8 @@ namespace df {
 
     		glBindVertexArray(0);
 	    }
+
+    	return Ok();
     }
 
 
@@ -162,49 +170,75 @@ namespace df {
 		return meshData;
 	}
 
-	/**
-	 * Creates a vector of the tile-specific data for the whole map arranged in a "rectangle".
-	 * The tile specific data is the position and tile type, yet.
-	 */
-	std::vector<RenderTilesSystem::TileInstance> RenderTilesSystem::createTileInstances(const int columns, const int rows) noexcept {
-		// TODO: Add dedicated world generator.
-		auto randomEngine = std::default_random_engine(std::random_device()());
-		auto uniformTileTypeDistribution = std::uniform_int_distribution(2, static_cast<int>(df::types::TileType::COUNT) - 1);
 
-		std::vector<TileInstance> instances;
+	std::vector<RenderTilesSystem::TileInstance> RenderTilesSystem::makeTileInstances(const std::vector<Tile>& tiles, const int columns, const Player* player) noexcept {
+    	const int rows = static_cast<int>(tiles.size()) / columns;
+    	std::vector<TileInstance> instances;
 
-		// Only one ice-desert tile -> like in catan game
-		std::unordered_map<int, int> tileCount;
-    	std::unordered_map<int, int> tileMax = {{ (int)types::TileType::ICE,    1 }};
+    	// The iteration order is important!
+    	for (int row = rows - 1; row >= 0; row--) {
+    		for (int column = 0; column < columns; column++) {
+    			glm::vec2 position;
+    			position.x = 2.0f * (static_cast<float>(column) + 0.5f * static_cast<float>(row & 1));
+    			position.y = static_cast<float>(row) * 1.5f;
 
-		for (int row = rows - 1; row >= 0; row--) {
-			for (int column = 0; column < columns; column++) {
-				glm::vec2 position;
-				position.x = 2.0f * (column + 0.5f * (row & 1));
-				position.y = row * 1.5f;
-				// Creating an island with two water wide borders
-				if(row<1 || column <1 || row > rows -2 || column > columns -2){
-				    // make border tiles water
-				    instances.push_back({position, static_cast<int>(types::TileType::WATER), 0, 1});
-				    continue;
-				}
-				int type = uniformTileTypeDistribution(randomEngine);
+    			const auto& tile = tiles[row * columns + column];
+    			instances.push_back({position, static_cast<int>(tile.getType()), 0, player == nullptr});
+    		}
+    	}
 
-				if(tileMax.contains(type)){
-				    if(tileCount[type] >= tileMax[type]){
-						do {
-							type = uniformTileTypeDistribution(randomEngine); // TODO: look for a more optimal solution
-						} while (type == static_cast<int>(types::TileType::ICE));
-					} else {
-				        tileCount[type]++;
-				    }
-				}
+    	// If no player is given, the whole map is shown as explored
+    	if (player != nullptr) {
+    		// Do not move into double loop for performance reasons [O(n^2)+O(n) vs. O(n^3)]
+    		for (size_t tileId : player->getExploredTileIds()) {
+    			if (tileId < instances.size()) {
+    				instances[tileId].explored = 1;
+    			}
+    		}
+    	}
 
-				instances.push_back({position, type, 0, uniformTileTypeDistribution(randomEngine) % 6 > 2});
-			}
-		}
-		return instances;
-	}
+    	return instances;
+    }
+
+
+	std::vector<Tile> RenderTilesSystem::generateTiles(const int columns, const int rows) noexcept {
+    	// TODO: Add dedicated world generator.
+    	auto randomEngine = std::default_random_engine(std::random_device()());
+    	auto uniformTileTypeDistribution = std::uniform_int_distribution(2, static_cast<int>(types::TileType::COUNT) - 1);
+
+    	std::vector<Tile> tiles;
+
+    	// Only one ice-desert tile -> like in catan game
+    	std::unordered_map<int, int> tileCount;
+    	std::unordered_map<int, int> tileMax = {{ static_cast<int>(types::TileType::ICE),    1 }};
+
+    	for (int row = rows - 1; row >= 0; row--) {
+    		for (int column = 0; column < columns; column++) {
+    			// Creating an island with two water wide borders
+    			if(row<1 || column <1 || row > rows -2 || column > columns -2){
+    				// make border tiles water
+				    size_t id = row * columns + column;
+    				tiles.push_back({id, types::TileType::WATER, types::TilePotency::MEDIUM});
+    				continue;
+    			}
+    			int type = uniformTileTypeDistribution(randomEngine);
+
+    			if(tileMax.contains(type)){
+    				if(tileCount[type] >= tileMax[type]){
+    					do {
+    						type = uniformTileTypeDistribution(randomEngine); // TODO: look for a more optimal solution
+    					} while (type == static_cast<int>(types::TileType::ICE));
+    				} else {
+    					tileCount[type]++;
+    				}
+    			}
+
+    			size_t id = row * columns + column;
+    			tiles.push_back({id, static_cast<types::TileType>(type), types::TilePotency::MEDIUM});
+    		}
+    	}
+    	return tiles;
+    }
 
 
 	void RenderTilesSystem::updateFogOfWar(const Player& player) noexcept {
