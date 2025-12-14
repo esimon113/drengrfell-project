@@ -9,8 +9,6 @@ namespace df {
         switch (config.generationMode) {
             case WorldGeneratorConfig::GenerationMode::INSULAR:
                 return Ok(generateTilesInsular(config));
-            case WorldGeneratorConfig::GenerationMode::PERLIN:
-                return Ok(generateTilesPerlin(config));
             default:
                 return Ok(generateTilesPerlin(config));
         }
@@ -36,7 +34,7 @@ namespace df {
                 if(row<1 || column <1 || row > rows -2 || column > columns -2){
                     // make border tiles water
                     size_t id = row * columns + column;
-                    tiles.push_back({id, types::TileType::WATER, types::TilePotency::MEDIUM});
+                    tiles.emplace_back(id, types::TileType::WATER, types::TilePotency::MEDIUM);
                     continue;
                 }
                 int type = uniformTileTypeDistribution(randomEngine);
@@ -52,7 +50,7 @@ namespace df {
                 }
 
                 size_t id = row * columns + column;
-                tiles.push_back({id, static_cast<types::TileType>(type), types::TilePotency::MEDIUM});
+                tiles.emplace_back(id, static_cast<types::TileType>(type), types::TilePotency::MEDIUM);
             }
         }
         return tiles;
@@ -68,7 +66,12 @@ namespace df {
 
         for (int row = 0; row < rows; row++) {
             for (int column = 0; column < columns; column++) {
-                const double altitude = perlin.normalizedOctave2D_01((row * 0.1), (column * 0.1), config.octaves, config.persistence);
+                const double altitude = perlin.normalizedOctave2D_01(
+                    static_cast<float>(row) * config.altitudeNoise.frequency,
+                    static_cast<float>(column) * config.altitudeNoise.frequency,
+                    static_cast<int>(config.altitudeNoise.octaves),
+                    config.altitudeNoise.persistence
+                );
 
                 types::TileType type;
                 if (altitude > 0.70f) {
@@ -80,7 +83,7 @@ namespace df {
                 }
 
                 size_t id = row * columns + column;
-                tiles.push_back({id, type, types::TilePotency::MEDIUM});
+                tiles.emplace_back(id, type, types::TilePotency::MEDIUM);
             }
         }
 
