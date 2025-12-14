@@ -1,17 +1,30 @@
 #include "worldGenerator.h"
+#include "perlinNoise.h"
 
 namespace df {
-
     Result<std::vector<Tile>, ResultError> WorldGenerator::generateTiles(const WorldGeneratorConfig& config) noexcept {
         if (config.columns > 100) return Err(ResultError(ResultError::Kind::DomainError, "generateTiles: columns should not exceed 100"));
         if (config.rows > 100) return Err(ResultError(ResultError::Kind::DomainError, "generateTiles: rows should not exceed 100"));
+
+        switch (config.generationMode) {
+            case WorldGeneratorConfig::GenerationMode::RANDOM:
+                return Ok(generateTilesRandom(config));
+            case WorldGeneratorConfig::GenerationMode::PERLIN:
+                return Ok(generateTilesPerlin(config));
+            default:
+                return Ok(generateTilesRandom(config));
+        }
+    }
+
+
+    std::vector<Tile> WorldGenerator::generateTilesRandom(const WorldGeneratorConfig& config) noexcept {
+        std::vector<Tile> tiles;
+
         const int columns = static_cast<int>(config.columns);
         const int rows = static_cast<int>(config.rows);
 
         auto randomEngine = std::default_random_engine(std::random_device()());
         auto uniformTileTypeDistribution = std::uniform_int_distribution(2, static_cast<int>(types::TileType::COUNT) - 1);
-
-        std::vector<Tile> tiles;
 
         // Only one ice-desert tile -> like in catan game
         std::unordered_map<int, int> tileCount;
@@ -42,7 +55,36 @@ namespace df {
                 tiles.push_back({id, static_cast<types::TileType>(type), types::TilePotency::MEDIUM});
             }
         }
-        return Ok(tiles);
+        return tiles;
+    }
+
+    std::vector<Tile> WorldGenerator::generateTilesPerlin(const WorldGeneratorConfig& config) noexcept {
+        std::vector<Tile> tiles;
+
+        const int columns = static_cast<int>(config.columns);
+        const int rows = static_cast<int>(config.rows);
+
+        const siv::PerlinNoise perlin{ config.seed };
+
+        for (int row = 0; row < rows; row++) {
+            for (int column = 0; column < columns; column++) {
+                const double altitude = perlin.normalizedOctave2D_01((row * 0.1), (column * 0.1), config.octaves, config.persistence);
+
+                types::TileType type;
+                if (altitude > 0.70f) {
+                    type = types::TileType::MOUNTAIN;
+                } else if (altitude > 0.50) {
+                    type = types::TileType::GRASS;
+                } else {
+                    type = types::TileType::WATER;
+                }
+
+                size_t id = row * columns + column;
+                tiles.push_back({id, type, types::TilePotency::MEDIUM});
+            }
+        }
+
+        return tiles;
     }
 
 }
