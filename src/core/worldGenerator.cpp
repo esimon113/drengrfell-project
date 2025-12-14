@@ -7,17 +7,17 @@ namespace df {
         if (config.rows > 100) return Err(ResultError(ResultError::Kind::DomainError, "generateTiles: rows should not exceed 100"));
 
         switch (config.generationMode) {
-            case WorldGeneratorConfig::GenerationMode::RANDOM:
-                return Ok(generateTilesRandom(config));
+            case WorldGeneratorConfig::GenerationMode::INSULAR:
+                return Ok(generateTilesInsular(config));
             case WorldGeneratorConfig::GenerationMode::PERLIN:
                 return Ok(generateTilesPerlin(config));
             default:
-                return Ok(generateTilesRandom(config));
+                return Ok(generateTilesPerlin(config));
         }
     }
 
 
-    std::vector<Tile> WorldGenerator::generateTilesRandom(const WorldGeneratorConfig& config) noexcept {
+    std::vector<Tile> WorldGenerator::generateTilesInsular(const WorldGeneratorConfig& config) noexcept {
         std::vector<Tile> tiles;
 
         const int columns = static_cast<int>(config.columns);
