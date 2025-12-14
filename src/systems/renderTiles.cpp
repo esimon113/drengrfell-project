@@ -25,7 +25,9 @@ namespace df {
 		const glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
-		self.initMap();
+        if (const auto result = self.initMap(); result.isErr()) {
+        	std::cerr << result.unwrapErr() << std::endl;
+    	}
 
 		return self;
 	}
@@ -33,13 +35,16 @@ namespace df {
 
 	Result<void, RenderError> RenderTilesSystem::initMap() noexcept {
     	const Player* player = this->gameState->getPlayer(0);
-    	//if (player == nullptr) {
-    	//	std::cerr << "Player is null" << std::endl;
-    	//	return Err(RenderError(RenderError::Kind::PlayerIsNull, "Could not find player with id 0"));
-    	//}
+    	/*if (player == nullptr) {
+    		return Err(RenderError(RenderError::Kind::NullPointer, "Could not find player with id 0"));
+    	}*/
 
     	this->tileMesh = createRectangularTileMesh();
-    	this->tileInstances = makeTileInstances(generateTiles(), 10, player);
+    	const auto tiles = generateTiles();
+    	if (tiles.isErr()) {
+    		return Err(tiles.unwrapErr());
+    	}
+    	this->tileInstances = makeTileInstances(tiles.unwrap(), 10, player);
 
     	glGenVertexArrays(1, &tileVao);
     	glGenBuffers(1, &tileVbo);
@@ -201,8 +206,12 @@ namespace df {
     }
 
 
-	std::vector<Tile> RenderTilesSystem::generateTiles(const int columns, const int rows) noexcept {
-    	// TODO: Add dedicated world generator.
+	Result<std::vector<Tile>, RenderError> RenderTilesSystem::generateTiles(const unsigned paramColumns, const unsigned paramRows) noexcept {
+    	if (paramColumns > 100) return Err(RenderError(RenderError::Kind::InvalidArgument, "generateTiles: columns should not exceed 100"));
+    	if (paramRows > 100) return Err(RenderError(RenderError::Kind::InvalidArgument, "generateTiles: rows should not exceed 100"));
+    	const int columns = static_cast<int>(paramColumns);
+    	const int rows = static_cast<int>(paramRows);
+
     	auto randomEngine = std::default_random_engine(std::random_device()());
     	auto uniformTileTypeDistribution = std::uniform_int_distribution(2, static_cast<int>(types::TileType::COUNT) - 1);
 
@@ -237,6 +246,6 @@ namespace df {
     			tiles.push_back({id, static_cast<types::TileType>(type), types::TilePotency::MEDIUM});
     		}
     	}
-    	return tiles;
+    	return Ok(tiles);
     }
 }

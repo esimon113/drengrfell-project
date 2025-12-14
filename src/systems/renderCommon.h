@@ -15,15 +15,16 @@ namespace df {
 
     struct RenderError {
         enum class Kind {
-            WindowIsNull,
-            RegistryIsNull,
-            PlayerIsNull,
+            NullPointer,
+            InvalidArgument,
         };
 
         RenderError(Kind kind, std::string text);
 
         Kind kind;
         std::string text;
+
+        friend std::ostream &operator<<(std::ostream &out, const RenderError &e);
     };
 
     glm::vec2 screenToWorldCoordinates(const glm::vec2& screenPos, Viewport viewport) noexcept;
