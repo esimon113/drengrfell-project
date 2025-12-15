@@ -17,8 +17,8 @@ namespace df {
 		const glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
-    	self.renderHeroSystem = RenderHeroSystem::init(window, registry);
-    	self.renderTilesSystem = RenderTilesSystem::init(*window, *registry, gameState);
+        self.renderTilesSystem = RenderTilesSystem::init(*window, *registry, gameState);
+    	self.renderHeroSystem = RenderHeroSystem::init(window, registry, gameState);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry);
         self.renderHudSystem = RenderHudSystem::init(window, registry);
         self.renderTextSystem = RenderTextSystem::init(window, registry);
