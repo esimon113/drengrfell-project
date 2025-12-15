@@ -20,6 +20,9 @@ namespace df {
 
         void step(float delta) noexcept;
         void reset() noexcept;
+
+        // Call this only if map size has changed. Everything else is handled in step()
+        [[nodiscard]] Result<void, ResultError> updateMap() noexcept;
     private:
         Registry* registry;
         Window* window;
@@ -49,11 +52,12 @@ namespace df {
 
         std::vector<float> tileMesh;
         std::vector<TileInstance> tileInstances;
+        size_t tileInstancesBufferSize;
         unsigned tileColumns;
         unsigned tileRows;
 
         static std::vector<float> createRectangularTileMesh() noexcept;
-        [[nodiscard]] Result<void, ResultError> initMap() noexcept;
+        void initMap() noexcept;
         void renderMap(float timeInSeconds = 0.0) const noexcept;
 
         static std::vector<TileInstance> makeTileInstances(const std::vector<Tile>& tiles, int columns, const Player* player = nullptr) noexcept;

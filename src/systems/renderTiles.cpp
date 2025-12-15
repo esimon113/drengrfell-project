@@ -26,25 +26,14 @@ namespace df {
         const glm::uvec2 extent = self.window->getWindowExtent();
         self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
-        if (const auto result = self.initMap(); result.isErr()) {
-            std::cerr << result.unwrapErr() << std::endl;
-        }
+        self.initMap();
 
         return self;
     }
 
 
-    Result<void, ResultError> RenderTilesSystem::initMap() noexcept {
-        const Player* player = this->gameState->getPlayer(0);
-        const Graph& map = this->gameState->getMap();
-        if (map.getMapWidth() == 0 or map.getTileCount() == 0) {
-            return Err(ResultError(ResultError::Kind::DomainError, "The tile renderer assumes a initialized map"));
-        }
-
+    void RenderTilesSystem::initMap() noexcept {
         this->tileMesh = createRectangularTileMesh();
-        this->tileColumns = map.getMapWidth();
-        this->tileRows = map.getTileCount() / this->tileColumns;
-        this->tileInstances = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
 
         glGenVertexArrays(1, &tileVao);
         glGenBuffers(1, &tileVbo);
@@ -52,10 +41,6 @@ namespace df {
 
         {
             glBindVertexArray(tileVao);
-
-            tileInstances[0].explored = 1; // for testing
-            tileInstances[10].explored = 1; // for testing
-
             glBindBuffer(GL_ARRAY_BUFFER, tileVbo);
             glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(float), this->tileMesh.data(), GL_STATIC_DRAW);
 
@@ -69,7 +54,8 @@ namespace df {
 
             // Define instance attributes
             glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
-            glBufferData(GL_ARRAY_BUFFER, this->tileInstances.size() * sizeof(TileInstance), this->tileInstances.data(), GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
+            this->tileInstancesBufferSize = 0;
 
             // layout(location = 2) in vec2 instancePosition;
             glEnableVertexAttribArray(2);
@@ -88,6 +74,29 @@ namespace df {
 
             glBindVertexArray(0);
         }
+    }
+
+
+    Result<void, ResultError> RenderTilesSystem::updateMap() noexcept {
+        const Player* player = this->gameState->getPlayer(0);
+        const Graph& map = this->gameState->getMap();
+        if (map.getMapWidth() == 0 or map.getTileCount() == 0) {
+            return Err(ResultError(ResultError::Kind::DomainError, "RenderTilesSystem::updateMap() assumes a initialized map"));
+        }
+
+        this->tileColumns = map.getMapWidth();
+        this->tileRows = map.getTileCount() / this->tileColumns;
+        this->tileInstances = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
+
+        const size_t newTileInstancesBufferSize = this->tileInstances.size() * sizeof(TileInstance);
+        glBindBuffer(GL_ARRAY_BUFFER, this->tileInstanceVbo);
+        if (newTileInstancesBufferSize > this->tileInstancesBufferSize) {
+            glBufferData(GL_ARRAY_BUFFER, newTileInstancesBufferSize, this->tileInstances.data(), GL_DYNAMIC_DRAW);
+            this->tileInstancesBufferSize = newTileInstancesBufferSize;
+        } else {
+            glBufferSubData(GL_ARRAY_BUFFER, 0, newTileInstancesBufferSize, this->tileInstances.data());
+        }
+
 
         return Ok();
     }
