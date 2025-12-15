@@ -4,6 +4,12 @@
 #include "../core/camera.h"
 #include <iostream>
 
+/*
+*   Used the OPENGL particle system tutorial :
+*   https://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/particles-instancing/
+*   to create the particles aand then render it as snow
+*/
+
 namespace df {
 
     // The VBO containing the 4 vertices of the particles (billboard quad)
@@ -33,7 +39,6 @@ namespace df {
             self.particlesContainer[i].life = -1.0f;
         }
         
-        // Load shader 
         self.particleShader = Shader::init(assets::Shader::particle).value();
         
         self.initBuffers();
