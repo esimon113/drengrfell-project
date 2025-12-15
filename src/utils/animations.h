@@ -22,6 +22,7 @@ namespace df {
         bool isLooping() const;
 
         int getCurrentFrameIndex() const noexcept;
+        void setCurrentFrameIndex(size_t newFrameIndex) noexcept;
         int getCurrentFrameTextureIndex() const noexcept;
 
 

@@ -47,7 +47,27 @@ namespace df {
 		"mainMenu/temp_menu_background.png",
 		"mainMenu/temp_menu_title.png",
 		"mainMenu/temp_menu_start.png",
-		"mainMenu/temp_menu_exit.png"
+		"mainMenu/temp_menu_exit.png",
+		"hero/idle/idle_0.png",
+		"hero/idle/idle_1.png",
+		"hero/idle/idle_2.png",
+	
+		"hero/swim/swim_0.png",
+		"hero/swim/swim_1.png",
+		"hero/swim/swim_2.png",
+		"hero/swim/swim_3.png",
+		"hero/swim/swim_4.png",
+		"hero/swim/swim_5.png",
+
+		"hero/jump/jump_0.png",
+		"hero/jump/jump_1.png",
+		"hero/jump/jump_2.png",
+		"hero/jump/jump_3.png",
+		"hero/jump/jump_4.png",
+		"hero/jump/jump_5.png",
+
+		"hero/attack/attack_0.png",
+		"hero/attack/attack_1.png",
 	};
 
 

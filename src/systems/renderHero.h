@@ -29,13 +29,13 @@ namespace df {
 			Shader heroShader;
 
 			GLuint m_quad_vao;
-			GLuint m_quad_ebo;
+			GLuint m_quad_ebo;;
 
 			Viewport viewport;
 
 			std::vector<Texture> heroIdleTextures;
 			std::vector<Texture> heroSwimTextures;
-			std::vector<Texture> heroAttackTextures;
 			std::vector<Texture> heroJumpTextures;
+			std::vector<Texture> heroAttackTextures;
 	};
 }
