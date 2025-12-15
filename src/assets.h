@@ -25,6 +25,7 @@ namespace df {
 			buildingShadow,
 			hero,
 			hud,
+			text,
 			count
 		};
 

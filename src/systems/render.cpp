@@ -21,7 +21,8 @@ namespace df {
     	self.renderHeroSystem = RenderHeroSystem::init(window, registry);
     	self.renderTilesSystem = RenderTilesSystem::init(window, registry);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry);
-        self.renderHudSysten = RenderHudSystem::init(window, registry);
+        self.renderHudSystem = RenderHudSystem::init(window, registry);
+        self.renderTextSystem = RenderTextSystem::init(window, registry);
 
 		return self;
 	}
@@ -31,14 +32,16 @@ namespace df {
     	this->renderTilesSystem.deinit();
     	this->renderBuildingsSystem.deinit();
     	this->renderHeroSystem.deinit();
-    	this->renderHudSysten.deinit();
+    	this->renderHudSystem.deinit();
+    	this->renderTextSystem.deinit();
 	}
 
     void RenderSystem::step(const float dt) noexcept {
     	this->renderTilesSystem.step(dt);
     	this->renderBuildingsSystem.step(dt);
     	this->renderHeroSystem.step(dt);
-    	this->renderHudSysten.step(dt);
+    	this->renderHudSystem.step(dt);
+    	this->renderTextSystem.step(dt);
     }
 
 
@@ -46,7 +49,8 @@ namespace df {
     	this->renderTilesSystem.reset();
     	this->renderBuildingsSystem.reset();
     	this->renderHeroSystem.reset();
-    	this->renderHudSysten.reset();
+    	this->renderHudSystem.reset();
+    	this->renderTextSystem.reset();
     }
 
 

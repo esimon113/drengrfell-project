@@ -11,6 +11,7 @@
 #include "renderBuildings.h"
 #include "renderHero.h"
 #include "renderHud.h"
+#include "renderText.h"
 
 namespace df {
 	class RenderSystem {
@@ -31,6 +32,10 @@ namespace df {
 				return this->renderBuildingsSystem;
 			}
 
+			RenderTextSystem& getRenderTextSystem() noexcept {
+				return renderTextSystem;
+			}
+
 		private:
 			Registry* registry = nullptr;
 			Window* window = nullptr;
@@ -41,6 +46,7 @@ namespace df {
 			RenderTilesSystem renderTilesSystem;
 			RenderHeroSystem renderHeroSystem;
 			RenderBuildingsSystem renderBuildingsSystem;
-			RenderHudSystem renderHudSysten;
+			RenderTextSystem renderTextSystem;
+			RenderHudSystem renderHudSystem;
 	};
 }

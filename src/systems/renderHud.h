@@ -3,6 +3,7 @@
 #include "renderCommon.h"
 #include "window.h"
 #include <utils/shader.h>
+#include <renderText.h>
 
 namespace df {
     class RenderHudSystem {

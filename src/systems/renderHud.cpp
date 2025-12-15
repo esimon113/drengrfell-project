@@ -46,7 +46,17 @@ namespace df {
     }
 
     void RenderHudSystem::step(float /*dt*/) noexcept {
+
         renderHud();
+        RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
+        if (textSystem) {
+            textSystem->renderText(
+                "Wood: 0; Stone: 10; Grain: 20",
+                { 20.0f, 27.0f }, // window->getWindowExtent().y - 120.0f
+                0.5f,
+                { 1.0f, 1.0f, 1.0f }
+            );
+        }
     }
 
     void RenderHudSystem::reset() noexcept {
@@ -70,7 +80,7 @@ namespace df {
             .setMat4("projection", projection)
             .setMat4("view", glm::identity<glm::mat4>())
             .setMat4("model", model)
-            .setVec3("fcolor", glm::vec3(1.f, 0.f, 0.f));   // TODO: temp set to red
+            .setVec3("fcolor", glm::vec3(0.f, 0.f, 0.f));  
 
         glBindVertexArray(quadVao);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);

@@ -30,7 +30,8 @@ namespace df {
 		"building-hover",
 		"building-shadow",
 		"hero",
-		"hud"
+		"hud",
+		"text"
 	};
 
 
