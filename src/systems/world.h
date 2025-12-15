@@ -20,6 +20,7 @@ namespace df {
 			void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
 			void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
 			void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
+			void calcNewCameraZoom(double yoffset) noexcept;
 
 			// for rendering building previews on selection
 			bool isSettlementPreviewActive = false;
