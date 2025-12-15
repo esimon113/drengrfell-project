@@ -22,6 +22,7 @@ namespace df {
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry);
         self.renderHudSystem = RenderHudSystem::init(window, registry);
         self.renderTextSystem = RenderTextSystem::init(window, registry);
+        self.renderSnowSystem = RenderSnowSystem::init(window,registry);
 
 		return self;
 	}
@@ -33,14 +34,17 @@ namespace df {
     	this->renderHeroSystem.deinit();
     	this->renderHudSystem.deinit();
     	this->renderTextSystem.deinit();
+        this->renderSnowSystem.deinit();
 	}
 
     void RenderSystem::step(const float dt) noexcept {
     	this->renderTilesSystem.step(dt);
     	this->renderBuildingsSystem.step(dt);
     	this->renderHeroSystem.step(dt);
-    	this->renderHudSystem.step(dt);
     	this->renderTextSystem.step(dt);
+        this->renderSnowSystem.step(dt);
+        this->renderHudSystem.step(dt); // always rendered last
+        
     }
 
 
@@ -50,6 +54,7 @@ namespace df {
     	this->renderHeroSystem.reset();
     	this->renderHudSystem.reset();
     	this->renderTextSystem.reset();
+        this->renderSnowSystem.reset();
     }
 
 

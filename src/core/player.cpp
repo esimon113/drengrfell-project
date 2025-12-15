@@ -127,7 +127,6 @@ namespace df{
 
         j["playerId"] = playerId;
         j["heroPoints"] = heroPoints;
-        j["settlementCount"] = settlementCount;
         
         j["settlementIds"] = settlementIds;
         j["roadIds"] = roadIds;
@@ -152,7 +151,6 @@ namespace df{
 
         if(j.contains("playerId")) this->setPlayerId(j.at("playerId").get<size_t>());
         if(j.contains("heroPoints")) this->setHeroPoints(j.at("heroPoints").get<int>());
-        if(j.contains("settlementCount")) this->settlementCount = (j.at("settlementCount").get<int>());
         
         if(j.contains("settlementIds")) settlementIds = j["settlementIds"].get<std::vector<size_t>>();
         if(j.contains("roadIds")) roadIds = j["roadIds"].get<std::vector<size_t>>();

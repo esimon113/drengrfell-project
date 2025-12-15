@@ -13,6 +13,7 @@
 #include "renderHero.h"
 #include "renderHud.h"
 #include "renderText.h"
+#include "renderSnow.h"
 
 namespace df {
 	class RenderSystem {
@@ -33,6 +34,7 @@ namespace df {
 			RenderBuildingsSystem renderBuildingsSystem;
 			RenderTextSystem renderTextSystem;
 			RenderHudSystem renderHudSystem;
+			RenderSnowSystem renderSnowSystem; 
 
 			RenderTextSystem& getRenderTextSystem() noexcept {
 				return renderTextSystem;

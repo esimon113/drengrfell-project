@@ -160,9 +160,12 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/renderTiles.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderCommon.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderHud.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderSnow.cpp
 	${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
 	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
+	
+
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

@@ -31,6 +31,7 @@ namespace df {
 		"building-shadow",
 		"hero",
 		"menu",
+		"particle",
 		"text",
 		"hud"
 	};
