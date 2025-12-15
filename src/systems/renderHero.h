@@ -29,7 +29,7 @@ namespace df {
 			Shader heroShader;
 
 			GLuint m_quad_vao;
-			GLuint m_quad_ebo;;
+			GLuint m_quad_ebo;
 
 			Viewport viewport;
 

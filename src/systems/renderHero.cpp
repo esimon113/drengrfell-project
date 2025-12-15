@@ -93,7 +93,7 @@ namespace df {
         Animation anim(animationOrder, 0.65f, true);
         registry->animations.emplace(hero, AnimationComponent{ anim });
 
-        constexpr std::array<GLuint, 6> indices = { 0, 1, 2, 2, 3, 0 };
+        //constexpr std::array<GLuint, 6> indices = { 0, 1, 2, 2, 3, 0 };
 
         return self;
     }
@@ -159,7 +159,7 @@ namespace df {
             Texture& tex = getCurrentTexture(animComp, texIndex);
             tex.bind(0);
 
-            glm::vec2 screenPos = glm::vec2(0.5f, 0.5f) * glm::vec2(window->getWindowExtent());
+            //glm::vec2 screenPos = glm::vec2(0.5f, 0.5f) * glm::vec2(window->getWindowExtent());
 
             glm::vec2 heroPos = registry->positions.get(e);
             glm::vec2 worldScale = registry->scales.get(e);
