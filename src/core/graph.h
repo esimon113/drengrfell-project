@@ -88,8 +88,10 @@ namespace df {
             template<HasIdProperty T>
             size_t getDistanceBetween(const T& start, const T& end) const;
 
-
+            unsigned getMapWidth() const { return this->mapWidth; }
+            void setMapWidth(const unsigned width) { this->mapWidth = width; }
         private:
+            unsigned mapWidth = 0;
             std::vector<Tile> tiles;
             std::vector<Edge> edges;
             std::vector<Vertex> vertices;
