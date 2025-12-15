@@ -5,7 +5,7 @@
 
 namespace df {
 
-    RenderSystem RenderSystem::init(Window* window, Registry* registry) noexcept {
+    RenderSystem RenderSystem::init(Window* window, Registry* registry, GameState& gameState) noexcept {
         RenderSystem self;
 
         self.window = window;
@@ -17,9 +17,8 @@ namespace df {
 		const glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
-		// This shall be the place for initialization of ALL render systems. NOT anywhere else!
     	self.renderHeroSystem = RenderHeroSystem::init(window, registry);
-    	self.renderTilesSystem = RenderTilesSystem::init(window, registry);
+    	self.renderTilesSystem = RenderTilesSystem::init(*window, *registry, gameState);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry);
 
 		return self;

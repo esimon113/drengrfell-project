@@ -7,6 +7,9 @@
 
 #include <iostream>
 
+#include "worldGenerator.h"
+#include "worldGeneratorConfig.h"
+
 namespace df {
 	static void glfwErrorCallback(int error, const char* description) {
 		fmt::println(stderr, "[GLFW Error {}]: {}", error, description);
@@ -47,9 +50,26 @@ namespace df {
 		self.gameState = std::move(newGameState);
 		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-		self.render = RenderSystem::init(self.window, self.registry);
+
+		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
+		// Move this to a better place
+		constexpr auto worldGeneratorConfig = WorldGeneratorConfig();
+		const auto tiles = WorldGenerator::generateTiles(worldGeneratorConfig);
+		if (tiles.isOk()) {
+			auto& map = self.gameState.getMap();
+			map.setMapWidth(worldGeneratorConfig.columns);
+			for (const auto& tile : tiles.unwrap()) {
+				map.addTile(tile);
+			}
+		} else {
+			std::cerr << tiles.unwrapErr() << std::endl;
+		}
+		if (auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
+			std::cerr << result.unwrapErr() << std::endl;
+		}
+
 		// Create main menu
-		self.mainMenu.init(self.window);	
+		self.mainMenu.init(self.window);
 
 		return self;
 	}
@@ -121,7 +141,7 @@ namespace df {
 					render.step(delta_time);
 
 					// Render previews (only one at a time)
-					auto renderBuildingsSystem = this->render.getRenderBuildingsSystem();
+					auto renderBuildingsSystem = this->render.renderBuildingsSystem;
 
 					if (this->world.isSettlementPreviewActive) {
 						glm::vec2 cursorPos = window->getCursorPosition();
@@ -138,7 +158,7 @@ namespace df {
 				case types::GamePhase::END:
 					break;
 			}
-			
+
 
 			window->swapBuffers();
 		}
