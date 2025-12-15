@@ -25,6 +25,7 @@ namespace df {
 			buildingShadow,
 			hero,
 			menu,
+			particle,
 			count
 		};
 

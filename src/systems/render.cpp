@@ -20,6 +20,7 @@ namespace df {
     	self.renderHeroSystem = RenderHeroSystem::init(window, registry);
     	self.renderTilesSystem = RenderTilesSystem::init(*window, *registry, gameState);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry);
+        self.renderSnowSystem = RenderSnowSystem::init(window,registry);
 
 		return self;
 	}
@@ -29,12 +30,16 @@ namespace df {
     	this->renderTilesSystem.deinit();
     	this->renderBuildingsSystem.deinit();
     	this->renderHeroSystem.deinit();
+        this->renderSnowSystem.deinit();
 	}
 
     void RenderSystem::step(const float dt) noexcept {
     	this->renderTilesSystem.step(dt);
     	this->renderBuildingsSystem.step(dt);
     	this->renderHeroSystem.step(dt);
+        this->renderSnowSystem.step(dt);
+        
+        
     }
 
 
@@ -42,6 +47,7 @@ namespace df {
     	this->renderTilesSystem.reset();
     	this->renderBuildingsSystem.reset();
     	this->renderHeroSystem.reset();
+        this->renderSnowSystem.reset();
     }
 
 

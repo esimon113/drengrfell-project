@@ -30,7 +30,8 @@ namespace df {
 		"building-hover",
 		"building-shadow",
 		"hero",
-		"menu"
+		"menu",
+		"particle"
 	};
 
 

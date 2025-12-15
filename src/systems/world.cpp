@@ -11,7 +11,7 @@ namespace df {
 		self.window = window;
 		self.registry = registry;
 		self.audioEngine = audioEngine;
-
+		self.score = 0;
 		self.randomEngine = std::default_random_engine(std::random_device()());
 
 		self.m_reset = true;
@@ -37,6 +37,16 @@ namespace df {
 
 		Camera& cam = registry->cameras.get(registry->getCamera());
 		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
+
+		//each settlement is one point so we update score -> once multiplayer 
+		//Player& player = registry->players.get(registry->getPlayer()); 
+		//score = player.getSettlementIds().size();
+
+		if(score>=10){
+			fmt::println("End of the game, you win!");
+			// Implement proper game ending logic here -> close the window for now
+			window->close();
+		}
 
 		// The world min and max values would need to be set dynamically depending on the world dimensions, once we save that outside the render.cpp
 		// these values are just placeholders which work well for now, but are determined by testing alone

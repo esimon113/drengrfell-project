@@ -4,6 +4,8 @@
 #include "hero.h"
 #include "animationSystem.h"
 #include "types.h"
+#include "core/camera.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
 
@@ -36,6 +38,8 @@ namespace df {
 		}
 		self.window = ::std::move(*win);
 
+		self.window->makeContextCurrent();
+
 		if (gl3wInit()) {
 			fmt::println(stderr, "Failed to initialize OpenGL context");
 			self.window->deinit();
@@ -45,7 +49,6 @@ namespace df {
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 		self.registry = Registry::init();
-		// Create GameState
 		GameState newGameState(self.registry);
 		self.gameState = std::move(newGameState);
 		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
@@ -89,20 +92,20 @@ namespace df {
 		}
 
 		window->setResizeCallback([&](GLFWwindow* window, int width, int height) -> void {
-				onResizeCallback(window, width, height);
-				});
+			onResizeCallback(window, width, height);
+		});
 
 		window->setKeyCallback([&](GLFWwindow* window, int key, int scancode, int action, int mods) -> void {
-		 		onKeyCallback(window, key, scancode, action, mods);
-		 		});
+			onKeyCallback(window, key, scancode, action, mods);
+		});
 
 		window->setMouseButtonCallback([&](GLFWwindow* window, int button, int action, int mods) {
 			onMouseButtonCallback(window, button, action, mods);
-			});
+		});
 
 		window->setScrollCallback([&](GLFWwindow* window, double xoffset, double yoffset) {
 			onScrollCallback(window, xoffset, yoffset);
-			});
+		});
 
 
 		// callbacks so menu can change phase / close window
@@ -115,10 +118,8 @@ namespace df {
 		glClearColor(0, 0, 0, 1);
 
 		while (!window->shouldClose()) {
-			glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
 			glfwPollEvents();
-
+			
 			float time = static_cast<float>(glfwGetTime());
 			delta_time = time - last_time;
 			last_time = time;
@@ -138,6 +139,10 @@ namespace df {
 					// physics.step(delta_time);
 					// physics.handleCollisions(delta_time);
 					df::AnimationSystem::update(registry, delta_time);
+					window->makeContextCurrent();
+					glClearColor(0.5f,0.5f,0.5f,1.0f);
+					glClear(GL_COLOR_BUFFER_BIT);
+					
 					render.step(delta_time);
 
 					// Render previews (only one at a time)
@@ -165,7 +170,7 @@ namespace df {
 	}
 
 	void Application::reset() noexcept {
-		registry->clear(); // remove all components
+		registry->clear();
 
 		// initialize the player
 		registry->players.emplace(registry->getPlayer());
@@ -179,7 +184,6 @@ namespace df {
 
 		// reset systems
 		world.reset();
-		// physics.reset();
 		render.reset();
 	}
 
@@ -238,7 +242,6 @@ namespace df {
 			break;
 		}
 	}
-
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
 		types::GamePhase gamePhase = gameState.getPhase();
