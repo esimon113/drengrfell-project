@@ -145,13 +145,9 @@ namespace df {
             cam.position.y, cam.position.y + worldDims.y / cam.zoom,
             -1.f, 1.f
         );
-
-
         glm::mat4 view = glm::mat4(1.f);
 
-
         glBindVertexArray(m_quad_vao);
-
 
         for (Entity e : registry->animations.entities) {
             auto& animComp = registry->animations.get(e);
