@@ -12,10 +12,8 @@ namespace df {
 
 class RenderSnowSystem {
 public:
-    // Static init function matching your project's pattern
     static RenderSnowSystem init(Window* window, Registry* registry) noexcept;
     
-    // Main methods
     void step(float deltaTime) noexcept;
     void render(const glm::mat4& view, const glm::mat4& projection) noexcept;
     void deinit() noexcept;
@@ -25,32 +23,23 @@ private:
     Window* window;
     Registry* registry;
     
-    // OpenGL buffer objects
     GLuint billboard_vertex_buffer;
     GLuint particles_position_buffer;
     GLuint particles_color_buffer;
     GLuint vao;
-    
-    // Shader
+
     Shader particleShader;
     
-    // Particle settings
     int maxParticles;
     int particlesCount;
     
-    // Particle data (CPU side)
     struct Particle {
         glm::vec3 pos;
         glm::vec3 speed;
-        unsigned char r, g, b, a; // Color
+        unsigned char r, g, b, a; 
         float size;
-        float life; // Remaining life
-        float cameradistance; // For sorting
-        
-        bool operator<(const Particle& that) const {
-            // Sort in reverse order : far particles drawn first.
-            return this->cameradistance > that.cameradistance;
-        }
+        float life;
+        float cameradistance; 
     };
     
     std::vector<Particle> particlesContainer;
@@ -61,7 +50,6 @@ private:
     
     // Helper methods
     int findUnusedParticle() noexcept;
-    void sortParticles() noexcept;
     void initBuffers() noexcept;
 };
 
