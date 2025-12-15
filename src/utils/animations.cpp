@@ -31,6 +31,10 @@ namespace df {
     int Animation::getCurrentFrameIndex() const noexcept {
         return currentFrameIndex;
     }
+    
+    void Animation::setCurrentFrameIndex(size_t newFrameIndex) noexcept {
+        this->currentFrameIndex = newFrameIndex;
+    }
 
     int Animation::getCurrentFrameTextureIndex() const noexcept {
         return frames.at(currentFrameIndex);
@@ -40,8 +44,6 @@ namespace df {
 
     void Animation::setFrames(const std::vector<int>& newFrames) {
         frames = newFrames;
-        currentFrameIndex = 0;
-        elapsedTime = 0.f;
     }
 
 

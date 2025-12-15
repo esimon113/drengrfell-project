@@ -2,6 +2,7 @@
 #include "hero.h"
 #include <iostream>
 #include "fmt/base.h"
+#
 
 
 namespace df {
@@ -12,6 +13,7 @@ namespace df {
 		self.registry = registry;
 		self.audioEngine = audioEngine;
 		self.score = 0;
+
 		self.randomEngine = std::default_random_engine(std::random_device()());
 
 		self.m_reset = true;
@@ -79,9 +81,33 @@ namespace df {
 
 	void WorldSystem::onKeyCallback(GLFWwindow* /* window */, int key, int /* scancode */, int action, int /* mods */) noexcept {
 		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
+		Entity hero = registry->animations.entities.front();
+		auto& animComp = registry->animations.get(hero);
 		switch (action) {
 			case GLFW_PRESS:
 				switch (key) {
+				case GLFW_KEY_F7:
+					animComp.currentType = Hero::AnimationType::Idle;
+					animComp.anim.setCurrentFrameIndex(0);
+					fmt::println("Debug: Idle animation activated");
+					break;
+				case GLFW_KEY_F8:
+					animComp.currentType = Hero::AnimationType::Swim;
+					animComp.anim.setCurrentFrameIndex(0);
+					fmt::println("Debug: Swim animation activated");
+					break;
+				case GLFW_KEY_F9:
+					animComp.currentType = Hero::AnimationType::Attack;
+					animComp.anim.setCurrentFrameIndex(0);
+					fmt::println("Debug: Attack animation activated");
+					break;
+
+				case GLFW_KEY_F10:
+					animComp.currentType = Hero::AnimationType::Jump;
+					animComp.anim.setCurrentFrameIndex(0);
+					fmt::println("Debug: Jump animation activated");
+					break;
+
 					case GLFW_KEY_R: // pressing the 'r' key triggers a reset of the game
 						m_reset = true;
 						break;
