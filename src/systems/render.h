@@ -26,10 +26,9 @@ namespace df {
 
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
-			// Temporarily. REMOVE
-			[[nodiscard]] RenderBuildingsSystem& getRenderBuildingsSystem() noexcept {
-				return this->renderBuildingsSystem;
-			}
+			RenderTilesSystem renderTilesSystem;
+			RenderHeroSystem renderHeroSystem;
+			RenderBuildingsSystem renderBuildingsSystem;
 
 		private:
 			Registry* registry;
@@ -37,9 +36,5 @@ namespace df {
 
 			Viewport viewport = Viewport();
 			Framebuffer intermediateFramebuffer;
-
-			RenderTilesSystem renderTilesSystem;
-			RenderHeroSystem renderHeroSystem;
-			RenderBuildingsSystem renderBuildingsSystem;
 	};
 }
