@@ -3,6 +3,7 @@
 #include <common.h>
 #include <utils/commandLineOptions.h>
 #include "core/gamestate.h"
+#include "core/mainMenu.h"
 
 #include <miniaudio.h>
 #include <utils/mesh.h>
@@ -39,6 +40,8 @@ namespace df {
 
 			void reset() noexcept;
 
+			void startGame() noexcept;
+
 			void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
 			void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
 			void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
@@ -46,5 +49,7 @@ namespace df {
 
 			// GameState
 			GameState gameState;
+			// MainMenu
+			MainMenu mainMenu;
 	};
 }

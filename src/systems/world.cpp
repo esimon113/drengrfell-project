@@ -105,6 +105,22 @@ namespace df {
     						this->isSettlementPreviewActive = false;
     					}
     					break;
+					case GLFW_KEY_RIGHT_BRACKET:
+						// This case is the key which can produce +, *, ~ on the german keyboard layout, so a plus
+						calcNewCameraZoom(1.0f);
+						break;
+					case GLFW_KEY_SLASH:
+						// This case is the key which can produce -, _ on the german keyboard layout, so a minus
+						calcNewCameraZoom(-1.0f);
+						break;
+					case GLFW_KEY_KP_ADD:
+						// This case is the + key on the numpad
+						calcNewCameraZoom(1.0f);
+						break;
+					case GLFW_KEY_KP_SUBTRACT:
+						// This case is the - key on the numpad
+						calcNewCameraZoom(-1.0f);
+						break;
 					default:
 						break;
 				}
@@ -148,10 +164,14 @@ namespace df {
 
 	void WorldSystem::onScrollCallback(GLFWwindow*, double /* xoffset */, double yoffset) noexcept {
 		fmt::println("Scrolled: {}", yoffset);
+		calcNewCameraZoom(yoffset);
+	}
+
+	void WorldSystem::calcNewCameraZoom(double yoffset) noexcept {
 		Camera& cam = registry->cameras.get(registry->getCamera());
 		// linear zoom means the effect gets greater the farther we zoom out and smaller the more we zoom in
 		// we may want to opt for zoom depending on the current zoom factor, depending on our preference and which feels better
-		cam.zoom +=  yoffset * 0.1f;
+		cam.zoom += yoffset * 0.1f;
 		if (cam.zoom > cam.zoomMaxValue)	cam.zoom = cam.zoomMaxValue;
 		if (cam.zoom < cam.zoomMinValue)	cam.zoom = cam.zoomMinValue;
 		fmt::println("Zoom now: {}", cam.zoom);

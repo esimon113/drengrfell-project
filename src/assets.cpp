@@ -22,7 +22,7 @@ namespace df {
 		return getBasePath() + "/assets/mesh/" + MESH_FILES[static_cast<size_t>(assetId)];
 	}
 
-
+	// ORDER IS IMPORTANT
 	static constexpr std::array<const char*, static_cast<size_t>(assets::Shader::count)> SHADER_FILES = {
 		"sprite",
 		"wind",
@@ -30,8 +30,9 @@ namespace df {
 		"building-hover",
 		"building-shadow",
 		"hero",
-		"hud",
-		"text"
+		"menu",
+		"text",
+		"hud"
 	};
 
 
@@ -44,7 +45,11 @@ namespace df {
 		// add "*.png"-files that contain the textures here
 		"tiles/tileAtlas.png",
 		"settlements/viking-wood/viking-wood-settlement1.png",
-		"roads/dirtRoad/dirt_road_diagonal_up.png"
+		"roads/dirtRoad/dirt_road_diagonal_up.png",
+		"mainMenu/temp_menu_background.png",
+		"mainMenu/temp_menu_title.png",
+		"mainMenu/temp_menu_start.png",
+		"mainMenu/temp_menu_exit.png"
 	};
 
 

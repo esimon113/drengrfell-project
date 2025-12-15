@@ -16,7 +16,7 @@ namespace df {
 			count
 		};
 
-
+		// ORDER IS IMPORTANT
 		enum struct Shader {
 			sprite,
 			wind,
@@ -24,8 +24,9 @@ namespace df {
 			buildingHover,
 			buildingShadow,
 			hero,
-			hud,
+			menu,
 			text,
+			hud,
 			count
 		};
 
@@ -34,6 +35,10 @@ namespace df {
 			TILE_ATLAS,
 			VIKING_WOOD_SETTLEMENT1,
 			DIRT_ROAD_DIAGONAL_UP,
+			MENU_BACKGROUND,
+			MENU_TITLE,
+			MENU_START,
+			MENU_EXIT,
 			count
 		};
 

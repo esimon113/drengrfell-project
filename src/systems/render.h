@@ -7,6 +7,7 @@
 #include <utils/shader.h>
 #include <utils/framebuffer.h>
 
+
 #include "renderTiles.h"
 #include "renderBuildings.h"
 #include "renderHero.h"
@@ -19,7 +20,7 @@ namespace df {
 			RenderSystem() = default;
 			~RenderSystem() = default;
 
-			static RenderSystem init(Window* window, Registry* registry) noexcept;
+			static RenderSystem init(Window* window, Registry* registry, GameState& gameState) noexcept;
 			void deinit() noexcept;
 
 			void step(float dt) noexcept;
@@ -27,26 +28,22 @@ namespace df {
 
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
-			// Temporarily. REMOVE
-			[[nodiscard]] RenderBuildingsSystem& getRenderBuildingsSystem() noexcept {
-				return this->renderBuildingsSystem;
-			}
+			RenderTilesSystem renderTilesSystem;
+			RenderHeroSystem renderHeroSystem;
+			RenderBuildingsSystem renderBuildingsSystem;
+			RenderTextSystem renderTextSystem;
+			RenderHudSystem renderHudSystem;
 
 			RenderTextSystem& getRenderTextSystem() noexcept {
 				return renderTextSystem;
 			}
 
 		private:
-			Registry* registry = nullptr;
-			Window* window = nullptr;
+			Registry* registry;
+			Window* window;
 
 			Viewport viewport = Viewport();
 			Framebuffer intermediateFramebuffer;
 
-			RenderTilesSystem renderTilesSystem;
-			RenderHeroSystem renderHeroSystem;
-			RenderBuildingsSystem renderBuildingsSystem;
-			RenderTextSystem renderTextSystem;
-			RenderHudSystem renderHudSystem;
 	};
 }
