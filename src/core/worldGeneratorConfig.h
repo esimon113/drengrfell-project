@@ -24,7 +24,7 @@ namespace df {
         struct AltitudeNoiseConfig {
             float frequency = 0.1f; // Same meaning as in sine waves
             float persistence = 0.50f; // The higher, the more similar to swiss cheese
-            unsigned octaves = 12; // The "granularity" of the map. Look up Fractal Brownian Motion
+            unsigned octaves = 6; // The "granularity" of the map. Look up Fractal Brownian Motion
         } altitudeNoise;
 
         nlohmann::json serialize() const;
