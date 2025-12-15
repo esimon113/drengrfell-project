@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 include(FetchContent)
 
 # propagate variables set in this project to fetched dependencies
@@ -91,11 +92,17 @@ FetchContent_Declare(
 	GIT_PROGRESS TRUE
 	EXCLUDE_FROM_ALL
 )
+FetchContent_Declare(
+    freetype
+    GIT_REPOSITORY https://github.com/freetype/freetype.git
+    GIT_TAG VER-2-13-2
+)
 FetchContent_MakeAvailable(
 	fmt
 	tinyobj
 	stb
 	nlohmann_json
+	freetype
 )
 
 # Configure compiler flags as an interface library
@@ -133,14 +140,12 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
 	${PROJECT_SOURCE_DIR}/src/core/mainMenu.cpp
 
-	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
-	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
-
 	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/render.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/audio.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/animationSystem.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderText.cpp
 
 	${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
@@ -150,14 +155,11 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/utils/textureArray.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
 
-	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
-	${PROJECT_SOURCE_DIR}/src/core/hero.h
-	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
-	${PROJECT_SOURCE_DIR}/src/utils/animations.h
 	${PROJECT_SOURCE_DIR}/src/systems/renderHero.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderBuildings.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderTiles.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderCommon.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderHud.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderSnow.cpp
 	${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
 	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
@@ -193,4 +195,5 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	fmt
 	tinyECS
 	nlohmann_json::nlohmann_json
+	freetype
 )

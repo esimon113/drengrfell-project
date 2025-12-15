@@ -86,6 +86,8 @@ namespace df {
 	}
 
 	void Application::run() noexcept {
+		// Store RenderTextSystem in registry to use it in any other System.
+		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
 		if (!this->window || !this->window->getHandle()) {
 			std::cerr << "Invalid window or GLFWwindow handle!" << std::endl;
 			return;
