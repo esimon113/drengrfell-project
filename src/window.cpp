@@ -61,7 +61,18 @@ namespace df {
 
 	void Window::cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) noexcept {
 		Window* win = (Window*)glfwGetWindowUserPointer(window);
-		win->cursorPosition = glm::vec2(xpos, ypos);
+
+		int winWidth, winHeight;
+		glfwGetWindowSize(window, &winWidth, &winHeight);
+
+		int fbWidth, fbHeight;
+		glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+
+		// Calculate scale ratio manually
+		float scaleX = (float)fbWidth / (float)winWidth;
+		float scaleY = (float)fbHeight / (float)winHeight;
+
+		win->cursorPosition = glm::vec2(xpos * scaleX, ypos * scaleY);
 	}
 
 
