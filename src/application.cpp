@@ -70,6 +70,8 @@ namespace df {
 		if (auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
 		}
+		self.render.renderHeroSystem.updateDimensionsFromMap();
+
 
 		// Create main menu
 		self.mainMenu.init(self.window);

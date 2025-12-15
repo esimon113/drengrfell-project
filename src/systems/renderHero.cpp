@@ -6,15 +6,17 @@
 
 namespace df {
 
-    RenderHeroSystem RenderHeroSystem::init(Window* window, Registry* registry) noexcept {
+    RenderHeroSystem RenderHeroSystem::init(Window* window, Registry* registry, GameState& gameState) noexcept {
 
         RenderHeroSystem self;
 
         self.window = window;
         self.registry = registry;
+        self.gameState = &gameState;
 
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();
+
 
         // load resources for rendering
         self.heroShader = Shader::init(assets::Shader::hero).value();
@@ -82,14 +84,16 @@ namespace df {
             Texture::init(assets::getAssetPath(assets::Texture::HERO_JUMP_4).c_str()),
             Texture::init(assets::getAssetPath(assets::Texture::HERO_JUMP_5).c_str()),
         };
-        Camera& cam = registry->cameras.get(registry->getCamera());
+
+        
         Entity hero;
-        glm::vec2 camCenter = cam.position + (calculateWorldDimensions(24, 24) / cam.zoom) * 0.5f;
-        registry->positions.emplace(hero, camCenter);
+      
+        registry->positions.emplace(hero, glm::vec2(1.0f, 1.0f));
         registry->scales.emplace(hero, glm::vec2(1.0f, 1.0f));
         registry->collisionRadius.emplace(hero, 0.5f);
 
-        std::vector animationOrder = { 0,1 }; // Sequenz 0-1-2-1 for idle
+
+        std::vector animationOrder = { 0,1 }; 
         Animation anim(animationOrder, 0.65f, true);
         registry->animations.emplace(hero, AnimationComponent{ anim });
 
@@ -98,6 +102,19 @@ namespace df {
         return self;
     }
 
+
+
+    void RenderHeroSystem::updateDimensionsFromMap() noexcept {
+        if (!gameState) return;
+
+        const Graph& map = gameState->getMap();
+        unsigned mapColumns = map.getMapWidth();
+        unsigned tileCount = map.getTileCount();
+
+        this->columns = mapColumns;
+        this->rows = tileCount / mapColumns;
+        fmt::println("INIT ERFOLGREICH");
+    }
 
     void RenderHeroSystem::deinit() noexcept {
         heroShader.deinit();
@@ -114,8 +131,6 @@ namespace df {
         }
     }
 
-
-
     const std::vector<int>& getHeroAnimationSequence(Hero::AnimationType type) {
         switch (type) {
         case Hero::AnimationType::Idle:   return Hero::HeroAnimations::idle;
@@ -126,8 +141,9 @@ namespace df {
         }
     }
 
-
     void RenderHeroSystem::step(float deltaTime) noexcept {
+
+
         glm::uvec2 extent = window->getWindowExtent();
         Camera& cam = registry->cameras.get(registry->getCamera());
         glViewport(0, 0, extent.x, extent.y);
@@ -138,8 +154,7 @@ namespace df {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDisable(GL_DEPTH_TEST);
 
-
-        glm::vec2 worldDims = calculateWorldDimensions(24, 24);
+        glm::vec2 worldDims = calculateWorldDimensions(this->columns, this->rows);
         glm::mat4 projection = glm::ortho(
             cam.position.x, cam.position.x + worldDims.x / cam.zoom,
             cam.position.y, cam.position.y + worldDims.y / cam.zoom,
@@ -173,13 +188,10 @@ namespace df {
                 .setMat4("view", view)
                 .setMat4("projection", projection)
                 .setVec3("fcolor", glm::vec3(1.0f));
-
         }
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
-
-
     void RenderHeroSystem::reset() noexcept {}
 
 }
