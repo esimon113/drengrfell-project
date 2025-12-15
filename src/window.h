@@ -44,6 +44,8 @@ namespace df {
 				return scale;
 			}
 
+			glm::vec2 getCursorPosFramebuffer() const noexcept;
+
 
 		private:
 			GLFWwindow* handle;

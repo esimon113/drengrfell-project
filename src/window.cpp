@@ -86,4 +86,20 @@ namespace df {
 		win->windowExtent = glm::uvec2(width, height);
 		win->resizeFunction(window, width, height);
 	}
+
+	glm::vec2 Window::getCursorPosFramebuffer() const noexcept {
+		double x, y;
+		glfwGetCursorPos(handle, &x, &y);
+
+		int fbW, fbH;
+		glfwGetFramebufferSize(handle, &fbW, &fbH);
+
+		// GLFW cursor origin is top-left, so we convert to bottom-left
+		return {
+			static_cast<float>(x),
+			static_cast<float>(fbH - y)
+		};
+	}
+
+
 } // namespace df

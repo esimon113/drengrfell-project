@@ -33,14 +33,10 @@ namespace df {
 
     void MainMenu::update(float /* delta */) noexcept {
         // hover detection (update hovered flags)
-        glm::dvec2 cursor = window->getCursorPosition();
-        // window returns screen coords with origin top-left
-        float mouseX = static_cast<float>(cursor.x);
-        float mouseY = static_cast<float>(cursor.y);
+        glm::vec2 mouse = window->getCursorPosFramebuffer();
 
-        // convert to bottom-left origin, because the layout uses bottom-left
-        glm::uvec2 extent = window->getWindowExtent();
-        mouseY = static_cast<float>(extent.y) - mouseY;
+        float mouseX = mouse.x;
+        float mouseY = mouse.y;
 
         startButton.hovered = isCursorOnButton(mouseX, mouseY, startButton);
         exitButton.hovered = isCursorOnButton(mouseX, mouseY, exitButton);
@@ -60,9 +56,12 @@ namespace df {
         float buttonDistance = 20.0f;   // distance between two buttons
 
 
-        glm::uvec2 extent = window->getWindowExtent();
-        float winW = static_cast<float>(extent.x);
-        float winH = static_cast<float>(extent.y);
+        int fbW, fbH;
+        glfwGetFramebufferSize(window->getHandle(), &fbW, &fbH);
+
+        float winW = static_cast<float>(fbW);
+        float winH = static_cast<float>(fbH);
+
 
         // title layout (top-center)
         titleSize = glm::vec2(winW * titleWidth, winH * titleHeight);
@@ -87,9 +86,12 @@ namespace df {
         // determines how much more saturated an element gets, when hovered over
         float hoverIntensity = 1.25f;
 
-        glm::uvec2 extent = window->getWindowExtent();
-        float winW = static_cast<float>(extent.x);
-        float winH = static_cast<float>(extent.y);
+        int fbW, fbH;
+        glfwGetFramebufferSize(window->getHandle(), &fbW, &fbH);
+
+        float winW = static_cast<float>(fbW);
+        float winH = static_cast<float>(fbH);
+
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -138,12 +140,10 @@ namespace df {
         if (button != GLFW_MOUSE_BUTTON_LEFT) return;
         if (action != GLFW_PRESS) return;
 
-        glm::dvec2 cursor = window->getCursorPosition();
-        float mouseX = static_cast<float>(cursor.x);
-        float mouseY = static_cast<float>(cursor.y);
+        glm::vec2 mouse = window->getCursorPosFramebuffer();
 
-        glm::uvec2 extent = window->getWindowExtent();
-        mouseY = static_cast<float>(extent.y) - mouseY;
+        float mouseX = mouse.x;
+        float mouseY = mouse.y;
 
         if (isCursorOnButton(mouseX, mouseY, startButton)) {
             fmt::println("Game started");
