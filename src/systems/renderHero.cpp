@@ -16,11 +16,11 @@ namespace df {
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();
 
-		// load resources for rendering
+        // load resources for rendering
         self.heroShader = Shader::init(assets::Shader::hero).value();
 
-		glm::uvec2 extent = self.window->getWindowExtent();
-		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
+        glm::uvec2 extent = self.window->getWindowExtent();
+        self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
         float quadVertices[] = {
             // positions    // texcoords
@@ -84,7 +84,7 @@ namespace df {
         };
         Camera& cam = registry->cameras.get(registry->getCamera());
         Entity hero;
-        glm::vec2 camCenter = cam.position + (calculateWorldDimensions(10, 10) / cam.zoom) * 0.5f;
+        glm::vec2 camCenter = cam.position + (calculateWorldDimensions(24, 24) / cam.zoom) * 0.5f;
         registry->positions.emplace(hero, camCenter);
         registry->scales.emplace(hero, glm::vec2(1.0f, 1.0f));
         registry->collisionRadius.emplace(hero, 0.5f);
@@ -95,13 +95,13 @@ namespace df {
 
         constexpr std::array<GLuint, 6> indices = { 0, 1, 2, 2, 3, 0 };
 
-		return self;
-	}
+        return self;
+    }
 
 
-	void RenderHeroSystem::deinit() noexcept {
+    void RenderHeroSystem::deinit() noexcept {
         heroShader.deinit();
-	}
+    }
 
 
     Texture& RenderHeroSystem::getCurrentTexture(AnimationComponent& animComp, int frameIndex) {
@@ -139,19 +139,15 @@ namespace df {
         glDisable(GL_DEPTH_TEST);
 
 
-        glm::vec2 worldDims = calculateWorldDimensions(10, 10);
+        glm::vec2 worldDims = calculateWorldDimensions(24, 24);
         glm::mat4 projection = glm::ortho(
             cam.position.x, cam.position.x + worldDims.x / cam.zoom,
             cam.position.y, cam.position.y + worldDims.y / cam.zoom,
             -1.f, 1.f
         );
-
-
-        glm::mat4 view = glm::translate(glm::mat4(1.f), glm::vec3(-cam.position, 0.f));
-
+        glm::mat4 view = glm::mat4(1.f);
 
         glBindVertexArray(m_quad_vao);
-
 
         for (Entity e : registry->animations.entities) {
             auto& animComp = registry->animations.get(e);
@@ -162,13 +158,13 @@ namespace df {
             int texIndex = animComp.anim.getCurrentFrameTextureIndex();
             Texture& tex = getCurrentTexture(animComp, texIndex);
             tex.bind(0);
-     
+
             glm::vec2 screenPos = glm::vec2(0.5f, 0.5f) * glm::vec2(window->getWindowExtent());
 
-            glm::vec2 heroPos = registry->positions.get(e); 
+            glm::vec2 heroPos = registry->positions.get(e);
             glm::vec2 worldScale = registry->scales.get(e);
 
-            glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(heroPos, 0.f));
+            glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(heroPos - cam.position, 0.f));
             model = glm::scale(model, glm::vec3(worldScale, 1.f));
 
             Shader& shader = heroShader;
