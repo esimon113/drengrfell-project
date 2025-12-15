@@ -62,6 +62,9 @@ namespace df {
         const int columns = static_cast<int>(config.columns);
         const int rows = static_cast<int>(config.rows);
 
+        auto randomEngine = std::default_random_engine(std::random_device()());
+        auto uniformTileTypeDistribution = std::uniform_int_distribution(2, static_cast<int>(types::TileType::COUNT) - 1);
+
         const siv::PerlinNoise perlin{ config.seed };
 
         for (int row = 0; row < rows; row++) {
@@ -73,11 +76,15 @@ namespace df {
                     config.altitudeNoise.persistence
                 );
 
+                // TODO: Add altitudes to world generation configuration
+                // TODO: Add variation chances to world generation configuration
                 types::TileType type;
-                if (altitude > 0.70f) {
+                if (altitude > 0.60f) {
                     type = types::TileType::MOUNTAIN;
-                } else if (altitude > 0.50) {
-                    type = types::TileType::GRASS;
+                } else if (altitude > 0.58) {
+                    type = types::TileType::FOREST;
+                } else if (altitude > 0.42) {
+                    type = static_cast<types::TileType>(uniformTileTypeDistribution(randomEngine));
                 } else {
                     type = types::TileType::WATER;
                 }
