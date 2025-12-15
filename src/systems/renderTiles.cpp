@@ -14,198 +14,194 @@ namespace df {
 
         self.window = &window;
         self.registry = &registry;
-    	self.gameState = &gameState;
+        self.gameState = &gameState;
 
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();
 
-		// load resources for rendering
-		self.tileShader = Shader::init(assets::Shader::tile).value();
-		self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
+        // load resources for rendering
+        self.tileShader = Shader::init(assets::Shader::tile).value();
+        self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
 
-		const glm::uvec2 extent = self.window->getWindowExtent();
-		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
+        const glm::uvec2 extent = self.window->getWindowExtent();
+        self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
         if (const auto result = self.initMap(); result.isErr()) {
-        	std::cerr << result.unwrapErr() << std::endl;
-    	}
+            std::cerr << result.unwrapErr() << std::endl;
+        }
 
-		return self;
-	}
-
-
-	Result<void, ResultError> RenderTilesSystem::initMap() noexcept {
-    	const Player* player = this->gameState->getPlayer(0);
-    	/*if (player == nullptr) {
-    		return Err(RenderError(ResultError::Kind::NullPointer, "Could not find player with id 0"));
-    	}*/
-
-    	this->tileMesh = createRectangularTileMesh();
-	    constexpr auto worldGeneratorConfig = WorldGeneratorConfig();
-    	const auto tiles = WorldGenerator::generateTiles(worldGeneratorConfig);
-    	if (tiles.isErr()) {
-    		return Err(tiles.unwrapErr());
-    	}
-    	this->tileColumns = worldGeneratorConfig.columns;
-    	this->tileRows = worldGeneratorConfig.rows;
-    	this->tileInstances = makeTileInstances(tiles.unwrap(), this->tileColumns, player);
-
-    	glGenVertexArrays(1, &tileVao);
-    	glGenBuffers(1, &tileVbo);
-    	glGenBuffers(1, &tileInstanceVbo);
-
-	    {
-    		glBindVertexArray(tileVao);
-
-    		tileInstances[0].explored = 1; // for testing
-    		tileInstances[10].explored = 1; // for testing
-
-    		glBindBuffer(GL_ARRAY_BUFFER, tileVbo);
-    		glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(float), this->tileMesh.data(), GL_STATIC_DRAW);
-
-    		// layout(location = 0) in vec2 position;
-    		glEnableVertexAttribArray(0);
-    		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, position));
-
-    		// layout(location = 1) in vec2 vertexUv;
-    		glEnableVertexAttribArray(1);
-    		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, uv));
-
-    		// Define instance attributes
-    		glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
-    		glBufferData(GL_ARRAY_BUFFER, this->tileInstances.size() * sizeof(TileInstance), this->tileInstances.data(), GL_STATIC_DRAW);
-
-    		// layout(location = 2) in vec2 instancePosition;
-    		glEnableVertexAttribArray(2);
-    		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void*)offsetof(TileInstance, position));
-    		glVertexAttribDivisor(2, 1);
-
-    		// layout(location = 3) in int type;
-    		glEnableVertexAttribArray(3);
-    		glVertexAttribIPointer(3, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
-    		glVertexAttribDivisor(3, 1);
-
-    		// layout(location = 4) in int explored;
-    		glEnableVertexAttribArray(4);
-    		glVertexAttribIPointer(4, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, explored));
-    		glVertexAttribDivisor(4, 1);
-
-    		glBindVertexArray(0);
-	    }
-
-    	return Ok();
+        return self;
     }
 
 
-	void RenderTilesSystem::deinit() noexcept {
-		tileShader.deinit();
-		tileAtlas.deinit();
-	}
+    Result<void, ResultError> RenderTilesSystem::initMap() noexcept {
+        const Player* player = this->gameState->getPlayer(0);
+        const Graph& map = this->gameState->getMap();
+        if (map.getMapWidth() == 0 or map.getTileCount() == 0) {
+            return Err(ResultError(ResultError::Kind::DomainError, "The tile renderer assumes a initialized map"));
+        }
+
+        this->tileMesh = createRectangularTileMesh();
+        this->tileColumns = map.getMapWidth();
+        this->tileRows = map.getTileCount() / this->tileColumns;
+        this->tileInstances = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
+
+        glGenVertexArrays(1, &tileVao);
+        glGenBuffers(1, &tileVbo);
+        glGenBuffers(1, &tileInstanceVbo);
+
+        {
+            glBindVertexArray(tileVao);
+
+            tileInstances[0].explored = 1; // for testing
+            tileInstances[10].explored = 1; // for testing
+
+            glBindBuffer(GL_ARRAY_BUFFER, tileVbo);
+            glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(float), this->tileMesh.data(), GL_STATIC_DRAW);
+
+            // layout(location = 0) in vec2 position;
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, position));
+
+            // layout(location = 1) in vec2 vertexUv;
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, uv));
+
+            // Define instance attributes
+            glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
+            glBufferData(GL_ARRAY_BUFFER, this->tileInstances.size() * sizeof(TileInstance), this->tileInstances.data(), GL_STATIC_DRAW);
+
+            // layout(location = 2) in vec2 instancePosition;
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void*)offsetof(TileInstance, position));
+            glVertexAttribDivisor(2, 1);
+
+            // layout(location = 3) in int type;
+            glEnableVertexAttribArray(3);
+            glVertexAttribIPointer(3, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
+            glVertexAttribDivisor(3, 1);
+
+            // layout(location = 4) in int explored;
+            glEnableVertexAttribArray(4);
+            glVertexAttribIPointer(4, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, explored));
+            glVertexAttribDivisor(4, 1);
+
+            glBindVertexArray(0);
+        }
+
+        return Ok();
+    }
 
 
-	float accumulator = 0.0f;
+    void RenderTilesSystem::deinit() noexcept {
+        tileShader.deinit();
+        tileAtlas.deinit();
+    }
+
+
+    float accumulator = 0.0f;
     void RenderTilesSystem::step(const float delta) noexcept {
-    	accumulator += delta;
-    	if (accumulator > 1.0) {
-    		accumulator = 0.0f;
-    	}
+        accumulator += delta;
+        if (accumulator > 1.0) {
+            accumulator = 0.0f;
+        }
         renderMap(accumulator);
     }
 
 
-	void RenderTilesSystem::renderMap(const float timeInSeconds) const noexcept {
-    	glEnable(GL_BLEND);
-    	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    void RenderTilesSystem::renderMap(const float timeInSeconds) const noexcept {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    	const glm::vec2 worldDimensions = calculateWorldDimensions(this->tileColumns, this->tileRows);
+        const glm::vec2 worldDimensions = calculateWorldDimensions(this->tileColumns, this->tileRows);
 
-    	Camera& cam = registry->cameras.get(registry->getCamera());
-    	glm::vec2 camPos = cam.position;
-    	float camZoom = cam.zoom;
+        Camera& cam = registry->cameras.get(registry->getCamera());
+        glm::vec2 camPos = cam.position;
+        float camZoom = cam.zoom;
 
-    	const glm::mat4 projection = glm::ortho(
-			camPos.x, camPos.x + worldDimensions.x / camZoom,
-			camPos.y, camPos.y + worldDimensions.y / camZoom,
-			-1.0f, 1.0f
-		);
+        const glm::mat4 projection = glm::ortho(
+            camPos.x, camPos.x + worldDimensions.x / camZoom,
+            camPos.y, camPos.y + worldDimensions.y / camZoom,
+            -1.0f, 1.0f
+        );
 
-    	auto model = glm::identity<glm::mat4>();
-    	model = glm::translate(model, glm::vec3(-camPos, 0.0f));
-    	model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
+        auto model = glm::identity<glm::mat4>();
+        model = glm::translate(model, glm::vec3(-camPos, 0.0f));
+        model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
 
-    	tileAtlas.bind(0);
-    	tileShader.use()
-			.setMat4("model", model)
-			.setMat4("projection", projection)
-	    	.setFloat("time", timeInSeconds)
-    		.setInt("frames", 4)
-			.setSampler("tileAtlas", 0);
+        tileAtlas.bind(0);
+        tileShader.use()
+            .setMat4("model", model)
+            .setMat4("projection", projection)
+            .setFloat("time", timeInSeconds)
+            .setInt("frames", 4)
+            .setSampler("tileAtlas", 0);
 
-    	glBindVertexArray(tileVao);
-    	glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / FLOATS_PER_TILE_VERTEX, this->tileInstances.size());
-    	glBindVertexArray(0);
+        glBindVertexArray(tileVao);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / FLOATS_PER_TILE_VERTEX, this->tileInstances.size());
+        glBindVertexArray(0);
     }
 
 
     void RenderTilesSystem::reset() noexcept {}
 
 
-	std::vector<float> RenderTilesSystem::createRectangularTileMesh() noexcept {
-		std::vector<TileVertex> vertices;
-		vertices.push_back({{1, -1}, {1, 0}});
-		vertices.push_back({{1, 1}, {1, 1}});
-		vertices.push_back({{-1, 1}, {0, 1}});
-		vertices.push_back({{-1, -1}, {0, 0}});
+    std::vector<float> RenderTilesSystem::createRectangularTileMesh() noexcept {
+        std::vector<TileVertex> vertices;
+        vertices.push_back({{1, -1}, {1, 0}});
+        vertices.push_back({{1, 1}, {1, 1}});
+        vertices.push_back({{-1, 1}, {0, 1}});
+        vertices.push_back({{-1, -1}, {0, 0}});
 
-		std::vector<float> meshData;
-		for (int i = 0; i < 2; i++) {
-			meshData.push_back(vertices[2 * i + 0].position.x);
-			meshData.push_back(vertices[2 * i + 0].position.y);
-			meshData.push_back(vertices[2 * i + 0].uv.x);
-			meshData.push_back(vertices[2 * i + 0].uv.y);
+        std::vector<float> meshData;
+        for (int i = 0; i < 2; i++) {
+            meshData.push_back(vertices[2 * i + 0].position.x);
+            meshData.push_back(vertices[2 * i + 0].position.y);
+            meshData.push_back(vertices[2 * i + 0].uv.x);
+            meshData.push_back(vertices[2 * i + 0].uv.y);
 
-			meshData.push_back(vertices[2 * i + 1].position.x);
-			meshData.push_back(vertices[2 * i + 1].position.y);
-			meshData.push_back(vertices[2 * i + 1].uv.x);
-			meshData.push_back(vertices[2 * i + 1].uv.y);
+            meshData.push_back(vertices[2 * i + 1].position.x);
+            meshData.push_back(vertices[2 * i + 1].position.y);
+            meshData.push_back(vertices[2 * i + 1].uv.x);
+            meshData.push_back(vertices[2 * i + 1].uv.y);
 
-			meshData.push_back(vertices[(2 * i + 2) % 4].position.x);
-			meshData.push_back(vertices[(2 * i + 2) % 4].position.y);
-			meshData.push_back(vertices[(2 * i + 2) % 4].uv.x);
-			meshData.push_back(vertices[(2 * i + 2) % 4].uv.y);
-		}
-
-
-		return meshData;
-	}
+            meshData.push_back(vertices[(2 * i + 2) % 4].position.x);
+            meshData.push_back(vertices[(2 * i + 2) % 4].position.y);
+            meshData.push_back(vertices[(2 * i + 2) % 4].uv.x);
+            meshData.push_back(vertices[(2 * i + 2) % 4].uv.y);
+        }
 
 
-	std::vector<RenderTilesSystem::TileInstance> RenderTilesSystem::makeTileInstances(const std::vector<Tile>& tiles, const int columns, const Player* player) noexcept {
-    	const int rows = static_cast<int>(tiles.size()) / columns;
-    	std::vector<TileInstance> instances;
+        return meshData;
+    }
 
-    	// The iteration order is important!
-    	for (int row = rows - 1; row >= 0; row--) {
-    		for (int column = 0; column < columns; column++) {
-    			glm::vec2 position;
-    			position.x = 2.0f * (static_cast<float>(column) + 0.5f * static_cast<float>(row & 1));
-    			position.y = static_cast<float>(row) * 1.5f;
 
-    			const auto& tile = tiles[row * columns + column];
-    			instances.push_back({position, static_cast<int>(tile.getType()), 0, player == nullptr});
-    		}
-    	}
+    std::vector<RenderTilesSystem::TileInstance> RenderTilesSystem::makeTileInstances(const std::vector<Tile>& tiles, const int columns, const Player* player) noexcept {
+        const int rows = static_cast<int>(tiles.size()) / columns;
+        std::vector<TileInstance> instances;
 
-    	// If no player is given, the whole map is shown as explored
-    	if (player != nullptr) {
-    		// Do not move into double loop for performance reasons [O(n^2)+O(n) vs. O(n^3)]
-    		for (size_t tileId : player->getExploredTileIds()) {
-    			if (tileId < instances.size()) {
-    				instances[tileId].explored = 1;
-    			}
-    		}
-    	}
+        // The iteration order is important!
+        for (int row = rows - 1; row >= 0; row--) {
+            for (int column = 0; column < columns; column++) {
+                glm::vec2 position;
+                position.x = 2.0f * (static_cast<float>(column) + 0.5f * static_cast<float>(row & 1));
+                position.y = static_cast<float>(row) * 1.5f;
 
-    	return instances;
+                const auto& tile = tiles[row * columns + column];
+                instances.push_back({position, static_cast<int>(tile.getType()), 0, player == nullptr});
+            }
+        }
+
+        // If no player is given, the whole map is shown as explored
+        if (player != nullptr) {
+            // Do not move into double loop for performance reasons [O(n^2)+O(n) vs. O(n^3)]
+            for (size_t tileId : player->getExploredTileIds()) {
+                if (tileId < instances.size()) {
+                    instances[tileId].explored = 1;
+                }
+            }
+        }
+
+        return instances;
     }
 }
