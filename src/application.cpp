@@ -51,6 +51,7 @@ namespace df {
 		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 
+		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
 		// Move this to a better place
 		constexpr auto worldGeneratorConfig = WorldGeneratorConfig();
 		const auto tiles = WorldGenerator::generateTiles(worldGeneratorConfig);
@@ -63,7 +64,10 @@ namespace df {
 		} else {
 			std::cerr << tiles.unwrapErr() << std::endl;
 		}
-		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
+		if (auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
+			std::cerr << result.unwrapErr() << std::endl;
+		}
+
 		// Create main menu
 		self.mainMenu.init(self.window);
 
@@ -137,7 +141,7 @@ namespace df {
 					render.step(delta_time);
 
 					// Render previews (only one at a time)
-					auto renderBuildingsSystem = this->render.getRenderBuildingsSystem();
+					auto renderBuildingsSystem = this->render.renderBuildingsSystem;
 
 					if (this->world.isSettlementPreviewActive) {
 						glm::vec2 cursorPos = window->getCursorPosition();
