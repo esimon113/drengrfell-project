@@ -9,6 +9,7 @@
 #include "core/player.h"
 #include <core/camera.h>
 #include <core/cameraInput.h>
+#include <unordered_map>
 
 
 
@@ -50,11 +51,27 @@ namespace df {
 			inline float& getScreenDarkness() noexcept { return screenDarkness; }
 
 
+			// This Code was generated using ChatGPT in order to store the rederTextSystem in the Registry.
+			// For use in other systems.
+			template<typename T>
+			void addSystem(T* system) {
+				systems[typeid(T).hash_code()] = system;
+			}
+
+			template<typename T>
+			T* getSystem() {
+				auto it = systems.find(typeid(T).hash_code());
+				return it != systems.end() ? static_cast<T*>(it->second) : nullptr;
+			}
+			// ChatGPT code end
+
+
 		private:
 			std::array<ContainerInterface*, 12> containers;
 
 			Entity player;
 			Entity camera;
 			float screenDarkness;
+			std::unordered_map<size_t, void*> systems;
 	};
 } // namespace df

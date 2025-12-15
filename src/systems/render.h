@@ -11,6 +11,8 @@
 #include "renderTiles.h"
 #include "renderBuildings.h"
 #include "renderHero.h"
+#include "renderHud.h"
+#include "renderText.h"
 #include "renderSnow.h"
 
 namespace df {
@@ -30,7 +32,13 @@ namespace df {
 			RenderTilesSystem renderTilesSystem;
 			RenderHeroSystem renderHeroSystem;
 			RenderBuildingsSystem renderBuildingsSystem;
+			RenderTextSystem renderTextSystem;
+			RenderHudSystem renderHudSystem;
 			RenderSnowSystem renderSnowSystem; 
+
+			RenderTextSystem& getRenderTextSystem() noexcept {
+				return renderTextSystem;
+			}
 
 		private:
 			Registry* registry;
@@ -38,5 +46,6 @@ namespace df {
 
 			Viewport viewport = Viewport();
 			Framebuffer intermediateFramebuffer;
+
 	};
 }

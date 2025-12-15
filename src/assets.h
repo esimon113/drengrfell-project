@@ -16,7 +16,7 @@ namespace df {
 			count
 		};
 
-
+		// ORDER IS IMPORTANT
 		enum struct Shader {
 			sprite,
 			wind,
@@ -26,6 +26,8 @@ namespace df {
 			hero,
 			menu,
 			particle,
+			text,
+			hud,
 			count
 		};
 

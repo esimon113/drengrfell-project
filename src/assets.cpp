@@ -22,7 +22,7 @@ namespace df {
 		return getBasePath() + "/assets/mesh/" + MESH_FILES[static_cast<size_t>(assetId)];
 	}
 
-
+	// ORDER IS IMPORTANT
 	static constexpr std::array<const char*, static_cast<size_t>(assets::Shader::count)> SHADER_FILES = {
 		"sprite",
 		"wind",
@@ -31,7 +31,9 @@ namespace df {
 		"building-shadow",
 		"hero",
 		"menu",
-		"particle"
+		"particle",
+		"text",
+		"hud"
 	};
 
 
