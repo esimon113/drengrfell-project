@@ -120,8 +120,6 @@ namespace df {
 
     float accumulator = 0.0f;
     void RenderTilesSystem::step(const float delta) noexcept {
-        return;
-
         accumulator += delta;
         if (accumulator > 1.0) {
             accumulator = 0.0f;

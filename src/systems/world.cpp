@@ -84,7 +84,6 @@ namespace df {
 		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
 		Entity hero = registry->animations.entities.front();
 		auto& animComp = registry->animations.get(hero);
-		auto worldGeneratorConfig = WorldGeneratorConfig();
 		switch (action) {
 			case GLFW_PRESS:
 				switch (key) {
@@ -149,12 +148,11 @@ namespace df {
     					}
     					break;
 					case GLFW_KEY_G: {
-						worldGeneratorConfig.seed = 0;//std::uniform_int_distribution()(this->randomEngine);
 						GameState* gs = this->gameState;
 						std::cerr << "gs-ptr: " << reinterpret_cast<uintptr_t>(gs) << std::endl;
 						Graph& map = gs->getMap();
 						std::cerr << "map-ptr: " << reinterpret_cast<uintptr_t>(&map) << std::endl;
-						this->gameState->getMap().regenerate(worldGeneratorConfig);
+						map.regenerate();
 					} break;
 					case GLFW_KEY_RIGHT_BRACKET:
 						// This case is the key which can produce +, *, ~ on the german keyboard layout, so a plus

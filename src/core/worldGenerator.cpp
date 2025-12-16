@@ -2,9 +2,14 @@
 #include "perlinNoise.h"
 
 namespace df {
-    Result<std::vector<Tile>, ResultError> WorldGenerator::generateTiles(const WorldGeneratorConfig& config) noexcept {
+    Result<std::vector<Tile>, ResultError> WorldGenerator::generateTiles(WorldGeneratorConfig config) noexcept {
         if (config.columns > 100) return Err(ResultError(ResultError::Kind::DomainError, "generateTiles: columns should not exceed 100"));
         if (config.rows > 100) return Err(ResultError(ResultError::Kind::DomainError, "generateTiles: rows should not exceed 100"));
+        if (config.seed == 0) {
+            auto randomEngine = std::default_random_engine(std::random_device()());
+            config.seed = std::uniform_int_distribution()(randomEngine);
+        }
+
 
         switch (config.generationMode) {
             case WorldGeneratorConfig::GenerationMode::INSULAR:

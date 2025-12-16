@@ -596,8 +596,12 @@ namespace df {
 
     // Map methods
 	void Graph::regenerate(const WorldGeneratorConfig &worldGeneratorConfig) {
-		if (const auto generatedTiles = WorldGenerator::generateTiles(worldGeneratorConfig); generatedTiles.isOk()) {
+		if (const Result<std::vector<Tile>, ResultError> generatedTiles = WorldGenerator::generateTiles(worldGeneratorConfig); generatedTiles.isOk()) {
 			setMapWidth(worldGeneratorConfig.columns);
+			/*tiles.clear();
+			for (const Tile& tile : generatedTiles.unwrap<>()) {
+				addTile(tile);
+			}*/
 			tiles = generatedTiles.unwrap();
 			fmt::print("Graph::regenerate: Map pointer: {}\n", reinterpret_cast<uintptr_t>(this));
 			fmt::print("Graph::regenerate: Map width: {}\n", worldGeneratorConfig.columns);
