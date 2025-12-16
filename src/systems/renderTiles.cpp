@@ -71,8 +71,6 @@ namespace df {
 
 
     Result<void, ResultError> RenderTilesSystem::updateMap() noexcept {
-        fmt::print("RenderTilesSystem::updateMap()\n");
-
         const Player* player = this->gameState->getPlayer(0);
         const Graph& map = this->gameState->getMap();
 
@@ -124,12 +122,12 @@ namespace df {
         if (accumulator > 1.0) {
             accumulator = 0.0f;
         }
-        /*if (Graph& map = this->gameState->getMap(); map.isRenderUpdateRequested()) {
+        if (Graph& map = this->gameState->getMap(); map.isRenderUpdateRequested()) {
             if (const Result<void, ResultError> result = updateMap(); result.isErr()) {
                 std::cerr << result.unwrapErr() << std::endl;
             }
             map.setRenderUpdateRequested(false);
-        }*/
+        }
         renderMap(accumulator);
     }
 
@@ -207,10 +205,13 @@ namespace df {
 
         // If no player is given, the whole map is shown as explored
         if (player != nullptr) {
-            // Do not move into double loop for performance reasons [O(n^2)+O(n) vs. O(n^3)]
+            // Do not move into double loop for performance reasons
             for (const size_t tileId : player->getExploredTileIds()) {
-                if (tileId < instances.size()) {
-                    instances[tileId].explored = 1;
+                if (static_cast<int>(tileId) < rows * columns) {
+                    const size_t row = tileId / columns;
+                    const size_t col = tileId % columns;
+                    const size_t instanceId = (rows - 1 - row) * columns + col;
+                    instances[instanceId].explored = 1;
                 }
             }
         }
