@@ -598,8 +598,10 @@ namespace df {
 	void Graph::regenerate(const WorldGeneratorConfig &worldGeneratorConfig) {
 		if (const auto generatedTiles = WorldGenerator::generateTiles(worldGeneratorConfig); generatedTiles.isOk()) {
 			setMapWidth(worldGeneratorConfig.columns);
-			fmt::print("Generated columns: {}\n", worldGeneratorConfig.columns);
 			tiles = generatedTiles.unwrap();
+			fmt::print("Graph::regenerate: Map pointer: {}\n", reinterpret_cast<uintptr_t>(this));
+			fmt::print("Graph::regenerate: Map width: {}\n", worldGeneratorConfig.columns);
+			fmt::print("Graph::regenerate: Tile count: {}\n", getTileCount());
 			this->renderUpdateRequested = true;
 		} else {
 			std::cerr << generatedTiles.unwrapErr() << std::endl;
