@@ -147,9 +147,24 @@ namespace df {
     						this->isSettlementPreviewActive = false;
     					}
     					break;
-					case GLFW_KEY_G:
-						this->gameState->getMap().regenerate();
-						break;
+					case GLFW_KEY_G: {
+						Graph& map = this->gameState->getMap();
+						map.regenerate();
+
+						if (Player* player = this->gameState->getPlayer(0)) {
+							const int width = map.getMapWidth();
+							const int height = map.getTileCount() / width;
+
+							player->forgetExploredTiles();
+							for (int row = 0; row < height; ++row) {
+								for (int col = 0; col < width; ++col) {
+									if (uniformDistribution(randomEngine) > 0.25f) {
+										player->exploreTile(row * width + col);
+									}
+								}
+							}
+						}
+					} break;
 					case GLFW_KEY_RIGHT_BRACKET:
 						// This case is the key which can produce +, *, ~ on the german keyboard layout, so a plus
 						calcNewCameraZoom(1.0f);
