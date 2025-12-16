@@ -197,23 +197,40 @@ namespace df {
     // Tutorial
     void GameState::initTutorial() {
         tutorialSteps.clear();
+
         tutorialSteps.push_back({
-            TutorialStepId::MOVE_CAMERA,
-            "Use WASD or move the camera. Use the mousewheel to zoom out/in. This is also possible with +/-."
+            .id = TutorialStepId::MOVE_CAMERA,
+            .text = "Use WASD or move the camera. Use the mousewheel to zoom out/in. This is auch möglich mit +/-.",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = true
             });
+
         tutorialSteps.push_back({
-            TutorialStepId::BUILD_SETTLEMENT,
-            "Build your first settlement using the b Button to create the hover view. Then click any free tile close to your hero to build the settlement."
+            .id = TutorialStepId::BUILD_SETTLEMENT,
+            .text = "Build your first settlement using the b Button to create the hover view. Then click any free tile close to your hero to build the settlement.",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = true
             });
+
         tutorialSteps.push_back({
-            TutorialStepId::BUILD_ROAD,
-            "Build a road to expand using n Button to create the hover view. Then select any free edge close to your hero to build the road."
+            .id = TutorialStepId::BUILD_ROAD,
+            .text = "Build a road to expand using n Button to create the hover view. Then select any free edge close to your hero to build the road.",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = true
             });
+
         tutorialSteps.push_back({
-            TutorialStepId::END,
-            "Tutorial completed!"
+            .id = TutorialStepId::END,
+            .text = "Tutorial completed!",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = false
             });
     }
+
 
     TutorialStep* GameState::getCurrentTutorialStep() {
         if (currentTutorialStep >= tutorialSteps.size()) {
