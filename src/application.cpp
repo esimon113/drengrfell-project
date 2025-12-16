@@ -48,14 +48,11 @@ namespace df {
 
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
-		std::cerr << "gs-ptr: " << reinterpret_cast<uintptr_t>(&self.gameState) << std::endl;
-		std::cerr << "map-ptr: " << reinterpret_cast<uintptr_t>(&(self.gameState->getMap())) << std::endl;
 		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 
 		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
-		Graph& map = self.gameState->getMap();
-		map.regenerate();
+		self.gameState->getMap().regenerate();
 		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
 		}

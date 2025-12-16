@@ -71,8 +71,6 @@ namespace df {
 
 
     Result<void, ResultError> RenderTilesSystem::updateMap() noexcept {
-        fmt::print("RenderTilesSystem::updateMap()\n");
-
         const Player* player = this->gameState->getPlayer(0);
         const Graph& map = this->gameState->getMap();
 
@@ -124,12 +122,12 @@ namespace df {
         if (accumulator > 1.0) {
             accumulator = 0.0f;
         }
-        /*if (Graph& map = this->gameState->getMap(); map.isRenderUpdateRequested()) {
+        if (Graph& map = this->gameState->getMap(); map.isRenderUpdateRequested()) {
             if (const Result<void, ResultError> result = updateMap(); result.isErr()) {
                 std::cerr << result.unwrapErr() << std::endl;
             }
             map.setRenderUpdateRequested(false);
-        }*/
+        }
         renderMap(accumulator);
     }
 
