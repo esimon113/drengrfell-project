@@ -148,11 +148,12 @@ namespace df {
     					}
     					break;
 					case GLFW_KEY_G: {
-						GameState* gs = this->gameState;
+						/*GameState* gs = this->gameState;
 						std::cerr << "gs-ptr: " << reinterpret_cast<uintptr_t>(gs) << std::endl;
 						Graph& map = gs->getMap();
 						std::cerr << "map-ptr: " << reinterpret_cast<uintptr_t>(&map) << std::endl;
-						map.regenerate();
+						map.regenerate();*/
+						// This would work. It is not the fault of the tile renderer or the map generator that it doesnt. :/
 					} break;
 					case GLFW_KEY_RIGHT_BRACKET:
 						// This case is the key which can produce +, *, ~ on the german keyboard layout, so a plus
