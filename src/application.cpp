@@ -6,6 +6,8 @@
 #include "types.h"
 #include "core/camera.h"
 #include <glm/gtc/matrix_transform.hpp>
+// test for entityMovement
+#include "entityMovement.h"
 
 #include <iostream>
 
@@ -75,6 +77,8 @@ namespace df {
 
 		// Create main menu
 		self.mainMenu.init(self.window);
+		// for testing hero movement until we have a triggerpoint
+		self.movementSystem = EntityMovementSystem::init(self.registry, self.gameState);
 
 		return self;
 	}
@@ -154,7 +158,19 @@ namespace df {
 					glClear(GL_COLOR_BUFFER_BIT);
 					
 					render.step(delta_time);
+					// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
+					if (world.isTestMovementActive()) {
+						if (!registry->animations.entities.empty()) {
 
+							Entity hero = registry->animations.entities.front();
+							glm::vec2 targetPos = glm::vec2(6,6);
+							movementSystem.moveEntityTo(hero, targetPos, delta_time);
+						}
+						else {
+							fmt::println("No hero entity available!");
+						}
+					}
+					// ------------------------------------------------------------
 					// Render previews (only one at a time)
 					auto renderBuildingsSystem = this->render.renderBuildingsSystem;
 
