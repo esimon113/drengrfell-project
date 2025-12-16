@@ -146,7 +146,7 @@ namespace df {
         mouseY = static_cast<float>(extent.y) - mouseY;
 
         if (isCursorOnButton(mouseX, mouseY, startButton)) {
-            fmt::println("Game started");
+            fmt::println("Entering configuration");
             onStart();
         }
         else if (isCursorOnButton(mouseX, mouseY, exitButton)) {

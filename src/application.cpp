@@ -49,7 +49,9 @@ namespace df {
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry);
 		// Create main menu
-		self.mainMenu.init(self.window);	
+		self.mainMenu.init(self.window);
+		// Create config menu
+		self.configMenu.init(self.window);
 
 		return self;
 	}
@@ -87,7 +89,10 @@ namespace df {
 
 		// callbacks so menu can change phase / close window
 		mainMenu.setExitCallback([&]() { glfwSetWindowShouldClose(window->getHandle(), true); });
-		mainMenu.setStartCallback([&]() { startGame(); });
+		mainMenu.setStartCallback([&]() { configurateGame(); });
+
+		// callbacks so the config menu can change phase, set world parameters etc.
+		configMenu.setStartCallback([&]() { startGame(); });
 
 		float delta_time = 0;
 		float last_time = static_cast<float>(glfwGetTime());
@@ -111,6 +116,8 @@ namespace df {
 					mainMenu.render();
 					break;
 				case types::GamePhase::CONFIG:
+					configMenu.update(delta_time);
+					configMenu.render();
 					break;
 				case types::GamePhase::PLAY:
 				{
@@ -163,9 +170,11 @@ namespace df {
 		render.reset();
 	}
 
+	void Application::configurateGame() noexcept {
+		this->gameState.setPhase(types::GamePhase::CONFIG);
+	}
+
 	void Application::startGame() noexcept {
-		// For now instantly starts the game. Later on could set the phase to
-		// CONFIG first and after the configurations are done, the phase would be set to PLAY
 		this->gameState.setPhase(types::GamePhase::PLAY);
 	}
 
@@ -177,6 +186,7 @@ namespace df {
 			mainMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::CONFIG:
+			configMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::PLAY:
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
@@ -194,6 +204,7 @@ namespace df {
 			mainMenu.onMouseButtonCallback(windowParam, button, action, mods);
 			break;
 		case types::GamePhase::CONFIG:
+			configMenu.onMouseButtonCallback(windowParam, button, action, mods);
 			break;
 		case types::GamePhase::PLAY:
 			world.onMouseButtonCallback(windowParam, button, action, mods);
@@ -228,6 +239,7 @@ namespace df {
 			mainMenu.onResizeCallback(windowParam, width, height);
 			break;
 		case types::GamePhase::CONFIG:
+			configMenu.onResizeCallback(windowParam, width, height);
 			break;
 		case types::GamePhase::PLAY:
 			render.onResizeCallback(windowParam, width, height);

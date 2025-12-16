@@ -22,6 +22,11 @@ namespace df {
 		return init(assetPath.c_str());
 	}
 
+	Texture Texture::init(const assets::MenuTexture asset) noexcept {
+		const std::string assetPath = assets::getAssetPath(asset);
+		return init(assetPath.c_str());
+	}
+
 
 	Texture Texture::init(const char* path) noexcept {
 		int w, h, c; // assuming these stand for: width, height, channels ?!
