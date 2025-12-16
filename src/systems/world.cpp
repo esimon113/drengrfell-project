@@ -6,12 +6,13 @@
 
 
 namespace df {
-	WorldSystem WorldSystem::init(Window* window, Registry *registry, AudioSystem *audioEngine) noexcept {
+	WorldSystem WorldSystem::init(Window* window, Registry *registry, AudioSystem *audioEngine, GameState& gameState) noexcept {
 		WorldSystem self;
 
 		self.window = window;
 		self.registry = registry;
 		self.audioEngine = audioEngine;
+		self.gameState = &gameState;
 		self.score = 0;
 
 		self.randomEngine = std::default_random_engine(std::random_device()());
@@ -107,6 +108,11 @@ namespace df {
 					animComp.anim.setCurrentFrameIndex(0);
 					fmt::println("Debug: Jump animation activated");
 					break;
+				case GLFW_KEY_F11:
+					animComp.currentType = Hero::AnimationType::Run;
+					animComp.anim.setCurrentFrameIndex(0);
+					fmt::println("Debug: Run animation activated");
+					break;
 
 					case GLFW_KEY_R: // pressing the 'r' key triggers a reset of the game
 						m_reset = true;
@@ -141,6 +147,14 @@ namespace df {
     						this->isSettlementPreviewActive = false;
     					}
     					break;
+					case GLFW_KEY_G: {
+						/*GameState* gs = this->gameState;
+						std::cerr << "gs-ptr: " << reinterpret_cast<uintptr_t>(gs) << std::endl;
+						Graph& map = gs->getMap();
+						std::cerr << "map-ptr: " << reinterpret_cast<uintptr_t>(&map) << std::endl;
+						map.regenerate();*/
+						// This would work. It is not the fault of the tile renderer or the map generator that it doesnt. :/
+					} break;
 					case GLFW_KEY_RIGHT_BRACKET:
 						// This case is the key which can produce +, *, ~ on the german keyboard layout, so a plus
 						calcNewCameraZoom(1.0f);

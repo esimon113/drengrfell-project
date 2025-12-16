@@ -194,4 +194,61 @@ namespace df {
         return roads;
     }
 
+    // Tutorial
+    void GameState::initTutorial() {
+        tutorialSteps.clear();
+
+        tutorialSteps.push_back({
+            .id = TutorialStepId::MOVE_CAMERA,
+            .text = "Use WASD or move the camera. Use the mousewheel to zoom out/in. This is auch möglich mit +/-.",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = true
+            });
+
+        tutorialSteps.push_back({
+            .id = TutorialStepId::BUILD_SETTLEMENT,
+            .text = "Build your first settlement using the b Button to create the hover view. Then click any free tile close to your hero to build the settlement.",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = true
+            });
+
+        tutorialSteps.push_back({
+            .id = TutorialStepId::BUILD_ROAD,
+            .text = "Build a road to expand using n Button to create the hover view. Then select any free edge close to your hero to build the road.",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = true
+            });
+
+        tutorialSteps.push_back({
+            .id = TutorialStepId::END,
+            .text = "Tutorial completed!",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = false
+            });
+    }
+
+
+    TutorialStep* GameState::getCurrentTutorialStep() {
+        if (currentTutorialStep >= tutorialSteps.size()) {
+            return nullptr;
+        }
+        return &tutorialSteps[currentTutorialStep];
+    }
+
+    void GameState::completeCurrentTutorialStep() {
+        if (currentTutorialStep < tutorialSteps.size()) {
+            tutorialSteps[currentTutorialStep].completed = true;
+            currentTutorialStep++;
+        }
+    }
+
+    bool GameState::isTutorialActive() const {
+        return currentTutorialStep < tutorialSteps.size();
+    }
+
+
 } // namespace df

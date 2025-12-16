@@ -9,8 +9,6 @@
 
 #include <iostream>
 
-#include "worldGenerator.h"
-#include "worldGeneratorConfig.h"
 
 namespace df {
 	static void glfwErrorCallback(int error, const char* description) {
@@ -49,26 +47,16 @@ namespace df {
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 		self.registry = Registry::init();
-
-		self.gameState = std::make_shared<GameState>(self.registry);;
-		fmt::println("gameState pointer in application: {}", (void*)&self.gameState);
-		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
+		self.gameState = std::make_shared<GameState>(self.registry);
+		std::cerr << "gs-ptr: " << reinterpret_cast<uintptr_t>(&self.gameState) << std::endl;
+		std::cerr << "map-ptr: " << reinterpret_cast<uintptr_t>(&(self.gameState->getMap())) << std::endl;
+		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 
 		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
-		// Move this to a better place
-		constexpr auto worldGeneratorConfig = WorldGeneratorConfig();
-		const auto tiles = WorldGenerator::generateTiles(worldGeneratorConfig);
-		if (tiles.isOk()) {
-			auto& map = self.gameState->getMap();
-			map.setMapWidth(worldGeneratorConfig.columns);
-			for (const auto& tile : tiles.unwrap()) {
-				map.addTile(tile);
-			}
-		} else {
-			std::cerr << tiles.unwrapErr() << std::endl;
-		}
-		if (auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
+		Graph& map = self.gameState->getMap();
+		map.regenerate();
+		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
 		}
 		self.render.renderHeroSystem.updateDimensionsFromMap();
@@ -121,6 +109,12 @@ namespace df {
 		float last_time = static_cast<float>(glfwGetTime());
 
 		glClearColor(0, 0, 0, 1);
+		// Force an initial resize to ensure a correct viewport
+		int fbWidth, fbHeight;
+		glfwGetFramebufferSize(window->getHandle(), &fbWidth, &fbHeight);
+		onResizeCallback(window->getHandle(), fbWidth, fbHeight);
+		
+
 
 		while (!window->shouldClose()) {
 			glfwPollEvents();
@@ -195,12 +189,13 @@ namespace df {
 	void Application::startGame() noexcept {
 		// For now instantly starts the game. Later on could set the phase to
 		// CONFIG first and after the configurations are done, the phase would be set to PLAY
+		this->gameState->initTutorial();	// Init the Tutorial
 		this->gameState->setPhase(types::GamePhase::PLAY);
 	}
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
 		types::GamePhase gamePhase = gameState->getPhase();
-
+		auto* step = this->gameState->getCurrentTutorialStep();
 		switch (gamePhase) {
 		case types::GamePhase::START:
 			mainMenu.onKeyCallback(windowParam, key, scancode, action, mods);
@@ -209,6 +204,12 @@ namespace df {
 			break;
 		case types::GamePhase::PLAY:
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
+			// Update Tutorial if step == moveCamera
+			if (step && step->id == TutorialStepId::MOVE_CAMERA) {
+				if (action == GLFW_PRESS && (key == GLFW_KEY_W || key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_D)) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			}
 			break;
 		case types::GamePhase::END:
 			break;

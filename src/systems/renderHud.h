@@ -17,6 +17,9 @@ namespace df {
         void reset() noexcept;
         void renderHud() const noexcept;
 
+        void renderTutorialBox(glm::vec2 pos, glm::vec2 size) const noexcept;
+
+
     private:
         Registry* registry = nullptr;
         Window* window = nullptr;
