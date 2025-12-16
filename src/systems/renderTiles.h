@@ -56,6 +56,6 @@ namespace df {
         void initMap() noexcept;
         void renderMap(float timeInSeconds = 0.0) const noexcept;
 
-        static std::vector<TileInstance> makeTileInstances(const std::vector<Tile>& tiles, int columns, const Player* player = nullptr) noexcept;
+        static Result<std::vector<TileInstance>, ResultError> makeTileInstances(const std::vector<Tile>& tiles, int columns, const Player* player = nullptr) noexcept;
     };
 }
