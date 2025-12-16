@@ -87,6 +87,8 @@ namespace df {
 		switch (action) {
 			case GLFW_PRESS:
 				switch (key) {
+
+					// ----------------------currently only here for testing until we have a triggerpoint--------------------------------------
 				case GLFW_KEY_F7:
 					animComp.currentType = Hero::AnimationType::Idle;
 					animComp.anim.setCurrentFrameIndex(0);
@@ -109,9 +111,18 @@ namespace df {
 					fmt::println("Debug: Jump animation activated");
 					break;
 				case GLFW_KEY_F11:
+				
 					animComp.currentType = Hero::AnimationType::Run;
 					animComp.anim.setCurrentFrameIndex(0);
 					fmt::println("Debug: Run animation activated");
+					break;
+				case GLFW_KEY_F5:
+					if (action == GLFW_PRESS) {
+						testMovement = !testMovement;
+						fmt::println("They hero should be moving now!");
+						break;
+					}
+					// ------------------------------------------------------------
 					break;
 
 					case GLFW_KEY_R: // pressing the 'r' key triggers a reset of the game
