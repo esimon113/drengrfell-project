@@ -26,7 +26,7 @@ namespace df {
         void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
         void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
-        void setStartCallback(std::function<void()> callback) { onStart = std::move(callback); }
+        void setStartCallback(std::function<void()> callback) { onStartConfig = std::move(callback); }
         void setExitCallback(std::function<void()> callback) { onExit = std::move(callback); }
 
     private:
@@ -54,7 +54,7 @@ namespace df {
         glm::vec2 titlePos{}; // bottom-left of title quad
         glm::vec2 titleSize{};
 
-        std::function<void()> onStart;
+        std::function<void()> onStartConfig;
         std::function<void()> onExit;
 
         // helper functions

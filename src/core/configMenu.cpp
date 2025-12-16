@@ -3,9 +3,10 @@
 
 namespace df {
 
-    void ConfigMenu::init(Window* windowParam) noexcept
+    void ConfigMenu::init(Window* windowParam, Registry* registryParam) noexcept
     {
         this->window = windowParam;
+        this->registry = registryParam;
 
         menuShader = Shader::init(assets::Shader::menu).value();
 
@@ -42,6 +43,7 @@ namespace df {
 
 
     void ConfigMenu::update(float /* delta */) noexcept {
+        capInputValue();
         // hover detection (update hovered flags)
         glm::dvec2 cursor = window->getCursorPosition();
         // window returns screen coords with origin top-left
@@ -196,6 +198,16 @@ namespace df {
             heightButton.hovered ? glm::vec3(hoverIntensity) : glm::vec3(1.0f));
 
         glBindVertexArray(0);
+
+        RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
+        if (textSystem) {
+            textSystem->renderText(
+                inputString,
+                { 20.0f, 27.0f }, // window->getWindowExtent().y - 120.0f
+                0.5f,
+                { 1.0f, 1.0f, 1.0f }
+            );
+        }
     }
 
     void ConfigMenu::onMouseButtonCallback(GLFWwindow* /*windowParam*/, int button, int action, int /* mods */) noexcept {
@@ -212,21 +224,91 @@ namespace df {
 
         if (isCursorOnButton(mouseX, mouseY, startButton)) {
             fmt::println("Game started");
-            onStart();
+            onStart(
+                worldSeed,
+                worldWidth,
+                worldHeight,
+                worldGenerationMode
+            );
+        }
+        if (isCursorOnButton(mouseX, mouseY, insularButton)) {
+            fmt::println("Insular generation chosen");
+            worldGenerationMode = WorldGeneratorConfig::GenerationMode::INSULAR;
+        }
+        if (isCursorOnButton(mouseX, mouseY, perlinButton)) {
+            fmt::println("Perlin generation chosen");
+            worldGenerationMode = WorldGeneratorConfig::GenerationMode::PERLIN;
+        }
+        if (isCursorOnButton(mouseX, mouseY, seedButton)) {
+            fmt::println("Enter seed");
+            activeInput = InputField::SEED;
+            inputString.clear();
+        }
+        if (isCursorOnButton(mouseX, mouseY, widthButton)) {
+            fmt::println("Enter width");
+            activeInput = InputField::WIDTH;
+            inputString.clear();
+        }
+        if (isCursorOnButton(mouseX, mouseY, heightButton)) {
+            fmt::println("Enter height");
+            activeInput = InputField::HEIGHT;
+            inputString.clear();
         }
 
+    }
 
+    void ConfigMenu::capInputValue() noexcept {
+        if (inputString.length() > 10) { // INT_MAX = 2147483647 so more than 10 digits are not allowed
+            fmt::println("Input length too large, defaulting to INT_MAX");
+            inputString = std::to_string(INT_MAX);
+        }
+        else if (inputString.length() == 10 && inputString > "2147483647") {
+            fmt::println("Value too large, defaulting to INT_MAX");
+            inputString = std::to_string(INT_MAX);
+        }
     }
 
     void ConfigMenu::onKeyCallback(GLFWwindow* /*windowParam*/, int key, int /* scancode */, int action, int /* mods */) noexcept {
         
-        if (action != GLFW_PRESS) return;
-        if (key == GLFW_KEY_ENTER) {
-            
+        if (activeInput != InputField::NONE && action == GLFW_PRESS) {
+            // only read numbers
+            if (key >= GLFW_KEY_0 && key <= GLFW_KEY_9) {
+                // append the pressed key to the number
+                inputString += static_cast<char>('0' + (key - GLFW_KEY_0));
+            }
+            // delete the last character on backspace
+            else if (key == GLFW_KEY_BACKSPACE && !inputString.empty()) {
+                inputString.pop_back();
+            }
+            // finish input with enter
+            else if (key == GLFW_KEY_ENTER) {
+                int value = std::stoi(inputString);
+                switch (activeInput) {
+                case InputField::SEED:
+                    worldSeed = value;
+                    fmt::println("Seed: {}", value);
+                    break;
+                case InputField::WIDTH:
+                    worldWidth = value;
+                    fmt::println("width: {}", value);
+                    break;
+                case InputField::HEIGHT:
+                    worldHeight = value;
+                    fmt::println("height: {}", value);
+                    break;
+                default:
+                    break;
+                }
+                activeInput = InputField::NONE;
+                inputString.clear();
+            }
+            // Pressing esc cancels the input
+            else if (key == GLFW_KEY_ESCAPE) {
+                activeInput = InputField::NONE;
+                inputString.clear();
+            }
         }
-        else if (key == GLFW_KEY_ESCAPE) {
-            
-        }
+
     }
 
     void ConfigMenu::onResizeCallback(GLFWwindow*, int width, int height) noexcept {

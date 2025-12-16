@@ -147,7 +147,7 @@ namespace df {
 
         if (isCursorOnButton(mouseX, mouseY, startButton)) {
             fmt::println("Entering configuration");
-            onStart();
+            onStartConfig();
         }
         else if (isCursorOnButton(mouseX, mouseY, exitButton)) {
             fmt::println("Game exited");
@@ -159,7 +159,7 @@ namespace df {
         // some testing for key-inputs, not fix yet
         if (action != GLFW_PRESS) return;
         if (key == GLFW_KEY_ENTER) {
-            onStart();
+            onStartConfig();
         }
         else if (key == GLFW_KEY_ESCAPE) {
             onExit();

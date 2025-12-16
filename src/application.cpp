@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include "worldGenerator.h"
-#include "worldGeneratorConfig.h"
+
 
 namespace df {
 	static void glfwErrorCallback(int error, const char* description) {
@@ -56,7 +56,9 @@ namespace df {
 
 		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
 		// Move this to a better place
-		constexpr auto worldGeneratorConfig = WorldGeneratorConfig();
+
+		auto worldGeneratorConfig = WorldGeneratorConfig();
+		worldGeneratorConfig.generationMode = WorldGeneratorConfig::GenerationMode::PERLIN;		// TEST, MOVE LATER
 		const auto tiles = WorldGenerator::generateTiles(worldGeneratorConfig);
 		if (tiles.isOk()) {
 			auto& map = self.gameState.getMap();
@@ -72,11 +74,10 @@ namespace df {
 		}
 		self.render.renderHeroSystem.updateDimensionsFromMap();
 
-
 		// Create main menu
 		self.mainMenu.init(self.window);
 		// Create config menu
-		self.configMenu.init(self.window);
+		self.configMenu.init(self.window, self.registry);
 
 		return self;
 	}
@@ -119,7 +120,19 @@ namespace df {
 		mainMenu.setStartCallback([&]() { configurateGame(); });
 
 		// callbacks so the config menu can change phase, set world parameters etc.
-		configMenu.setStartCallback([&]() { startGame(); });
+		//configMenu.setStartCallback([&]() { startGame(); });
+		configMenu.setStartCallback(
+			[&](int seed,
+				int width,
+				int height,
+				WorldGeneratorConfig::GenerationMode mode)
+			{
+				startGame(seed, width, height, mode);
+			}
+		);
+
+		//configMenu.setInsularCallback([&]() { setInsular(); });
+		//configMenu.setPerlinCallback([&]() { setPerlin(); });
 
 		float delta_time = 0;
 		float last_time = static_cast<float>(glfwGetTime());
@@ -202,7 +215,18 @@ namespace df {
 		this->gameState.setPhase(types::GamePhase::CONFIG);
 	}
 
-	void Application::startGame() noexcept {
+	void Application::startGame(int seed, int width, int height, WorldGeneratorConfig::GenerationMode mode) noexcept {
+		std::string modeName = "";
+		if (mode == WorldGeneratorConfig::GenerationMode::INSULAR) {
+			modeName = "insular";
+		}
+		else if (mode == WorldGeneratorConfig::GenerationMode::PERLIN) {
+			modeName = "perlin";
+		}
+		else {
+			modeName = "none";
+		}
+		fmt::println("set worldGen parameters to seed: {}, width: {}, height: {}, mode: {}", seed, width, height, modeName);
 		this->gameState.setPhase(types::GamePhase::PLAY);
 	}
 
