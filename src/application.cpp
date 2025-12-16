@@ -120,6 +120,12 @@ namespace df {
 		float last_time = static_cast<float>(glfwGetTime());
 
 		glClearColor(0, 0, 0, 1);
+		// Force an initial resize to ensure a correct viewport
+		int fbWidth, fbHeight;
+		glfwGetFramebufferSize(window->getHandle(), &fbWidth, &fbHeight);
+		onResizeCallback(window->getHandle(), fbWidth, fbHeight);
+		
+
 
 		while (!window->shouldClose()) {
 			glfwPollEvents();

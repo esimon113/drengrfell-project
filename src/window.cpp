@@ -38,6 +38,10 @@ namespace df {
 
 		self->makeContextCurrent();
 
+		int fbWidth, fbHeight;
+    	glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    	self->windowExtent = glm::uvec2(fbWidth, fbHeight);
+
 		glfwSetWindowUserPointer(self->getHandle(), self);
 		glfwSetCursorPosCallback(self->getHandle(), Window::cursorPositionCallback);
 		glfwSetKeyCallback(self->getHandle(), Window::keyCallback);
