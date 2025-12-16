@@ -89,7 +89,12 @@ namespace df {
 
         this->tileColumns = map.getMapWidth();
         this->tileRows = map.getTileCount() / this->tileColumns;
-        this->tileInstances = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
+        auto tileInstanceResult = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
+        if (tileInstanceResult.isOk()) {
+            this->tileInstances = tileInstanceResult.unwrap<>();
+        } else {
+            return Err(tileInstanceResult.unwrapErr());
+        }
 
         const size_t newTileInstancesBufferSize = this->tileInstances.size() * sizeof(TileInstance);
         glBindBuffer(GL_ARRAY_BUFFER, this->tileInstanceVbo);
@@ -187,7 +192,7 @@ namespace df {
     }
 
 
-    std::vector<RenderTilesSystem::TileInstance> RenderTilesSystem::makeTileInstances(const std::vector<Tile>& tiles, const int columns, const Player* player) noexcept {
+    Result<std::vector<RenderTilesSystem::TileInstance>, ResultError> RenderTilesSystem::makeTileInstances(const std::vector<Tile>& tiles, const int columns, const Player* player) noexcept {
         const int rows = static_cast<int>(tiles.size()) / columns;
         std::vector<TileInstance> instances;
 
@@ -211,11 +216,15 @@ namespace df {
                     const size_t row = tileId / columns;
                     const size_t col = tileId % columns;
                     const size_t instanceId = (rows - 1 - row) * columns + col;
-                    instances[instanceId].explored = 1;
+                    if (instanceId < instances.size()) {
+                        instances[instanceId].explored = 1;
+                    } else {
+                        return Err(ResultError(ResultError::Kind::DomainError, fmt::format("RenderTilesSystem::makeTileInstance: invalid instanceId={}. There are only {} instances.", instanceId, instances.size())));
+                    }
                 }
             }
         }
 
-        return instances;
+        return Ok(instances);
     }
 }
