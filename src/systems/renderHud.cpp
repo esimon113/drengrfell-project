@@ -39,16 +39,6 @@ namespace df {
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 
         glBindVertexArray(0);
-        // TODO: TMP to delete: test initilize player
-        Entity playerEntity;
-        registry->players.emplace(playerEntity);
-        for (Entity e : registry->players.entities) {
-            Player& player = registry->players.get(e);
-            player.addResources(types::TileType::FOREST, 10);
-            player.addResources(types::TileType::MOUNTAIN, 5);
-            player.addResources(types::TileType::FIELD, 8);
-        }
-        //
 
         return self;
     }
@@ -82,20 +72,18 @@ namespace df {
                 );
             }*/
 
-            for (Entity e : registry->players.entities) {
-                Player& player = registry->players.get(e);
-                std::map<types::TileType, int> resources = player.getResources();
-                textSystem->renderText(
-                    "Wood: " + std::to_string(resources[types::TileType::FOREST]) +
-                    "; Stone: " + std::to_string(resources[types::TileType::MOUNTAIN]) +
-                    "; Grain: " + std::to_string(resources[types::TileType::FIELD]) +
-                    "; Round: " + std::to_string(gameState->getRoundNumber()),
-                    { 20.0f, 27.0f },
-                    0.5f,
-                    { 1.0f, 1.0f, 1.0f }
-                );
-            }
-            gameState->setRoundNumber(gameState->getRoundNumber() + 1); // TODO: remove TMP test
+            // TODO: update for multiple player if we do multiplayer
+            Player& player = *gameState->getPlayer(0);
+            std::map<types::TileType, int> resources = player.getResources();
+            textSystem->renderText(
+                "Wood: " + std::to_string(resources[types::TileType::FOREST]) +
+                "; Stone: " + std::to_string(resources[types::TileType::MOUNTAIN]) +
+                "; Grain: " + std::to_string(resources[types::TileType::FIELD]) +
+                "; Round: " + std::to_string(gameState->getRoundNumber()),
+                { 20.0f, 27.0f },
+                0.5f,
+                { 1.0f, 1.0f, 1.0f }
+            );
         }
     }
 
