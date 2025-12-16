@@ -57,7 +57,7 @@ namespace df {
                 0.5f,
                 { 1.0f, 1.0f, 1.0f }
             );
-            
+            /*      TODO: format tutorial view
             if (gameState->isTutorialActive()) {
                 fmt::println("innerhalb von isTutorialActive");
                 TutorialStep* step = gameState->getCurrentTutorialStep();
@@ -75,7 +75,7 @@ namespace df {
                     0.6f,
                     { 1.f, 1.f, 1.f }
                 );
-            }
+            }*/
         }
     }
 

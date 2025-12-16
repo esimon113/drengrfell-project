@@ -21,6 +21,11 @@ namespace df {
 			void renderSettlementPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
 			void renderRoadPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
 
+
+			void updateViewport(const glm::uvec2& origin, const glm::uvec2& size) noexcept {
+                this->viewport.origin = origin;
+                this->viewport.size = size;
+            }
 			// Temporary. REMOVE this
 			[[nodiscard]] Viewport getViewport() const noexcept {
 				return this->viewport;

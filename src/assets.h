@@ -63,6 +63,13 @@ namespace df {
 
 			HERO_ATTACK_0,
 			HERO_ATTACK_1,
+
+			HERO_RUN_0,
+			HERO_RUN_1,
+			HERO_RUN_2,
+			HERO_RUN_3,
+			HERO_RUN_4,
+			HERO_RUN_5,
 			count
 		};
 

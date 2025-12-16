@@ -16,8 +16,7 @@
 
 #include "graph.h"
 
-
-
+#include "worldGenerator.h"
 
 
 namespace df {
@@ -594,4 +593,22 @@ namespace df {
 
     // Explicit template instantiation for Tile (currently only used for Tile)
     template size_t Graph::getDistanceBetween<Tile>(const Tile& start, const Tile& end) const;
+
+    // Map methods
+	void Graph::regenerate(const WorldGeneratorConfig &worldGeneratorConfig) {
+		if (const Result<std::vector<Tile>, ResultError> generatedTiles = WorldGenerator::generateTiles(worldGeneratorConfig); generatedTiles.isOk()) {
+			setMapWidth(worldGeneratorConfig.columns);
+			/*tiles.clear();
+			for (const Tile& tile : generatedTiles.unwrap<>()) {
+				addTile(tile);
+			}*/
+			tiles = generatedTiles.unwrap();
+			fmt::print("Graph::regenerate: Map pointer: {}\n", reinterpret_cast<uintptr_t>(this));
+			fmt::print("Graph::regenerate: Map width: {}\n", worldGeneratorConfig.columns);
+			fmt::print("Graph::regenerate: Tile count: {}\n", getTileCount());
+			this->renderUpdateRequested = true;
+		} else {
+			std::cerr << generatedTiles.unwrapErr() << std::endl;
+		}
+	}
 }

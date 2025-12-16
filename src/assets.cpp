@@ -71,6 +71,13 @@ namespace df {
 
 		"hero/attack/attack_0.png",
 		"hero/attack/attack_1.png",
+
+		"hero/run/run_0.png",
+		"hero/run/run_1.png",
+		"hero/run/run_2.png",
+		"hero/run/run_3.png",
+		"hero/run/run_4.png",
+		"hero/run/run_5.png",
 	};
 
 
