@@ -6,12 +6,13 @@
 
 
 namespace df {
-	WorldSystem WorldSystem::init(Window* window, Registry *registry, AudioSystem *audioEngine) noexcept {
+	WorldSystem WorldSystem::init(Window* window, Registry *registry, AudioSystem *audioEngine, GameState& gameState) noexcept {
 		WorldSystem self;
 
 		self.window = window;
 		self.registry = registry;
 		self.audioEngine = audioEngine;
+		self.gameState = &gameState;
 		self.score = 0;
 
 		self.randomEngine = std::default_random_engine(std::random_device()());

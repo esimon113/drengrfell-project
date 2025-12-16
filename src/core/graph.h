@@ -10,6 +10,8 @@
 
 
 #include <nlohmann/json.hpp>
+
+#include "worldGeneratorConfig.h"
 using json = nlohmann::json;
 
 
@@ -88,8 +90,10 @@ namespace df {
             template<HasIdProperty T>
             size_t getDistanceBetween(const T& start, const T& end) const;
 
+            // Methods for using the graph as a rectangular map
             unsigned getMapWidth() const { return this->mapWidth; }
             void setMapWidth(const unsigned width) { this->mapWidth = width; }
+            void regenerate(const WorldGeneratorConfig &worldGeneratorConfig = WorldGeneratorConfig());
         private:
             unsigned mapWidth = 0;
             std::vector<Tile> tiles;
