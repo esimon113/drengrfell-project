@@ -36,7 +36,7 @@ namespace df {
 			AudioSystem* audioEngine;
 
 			size_t score;
-
+			Entity heroEntity;
 			bool m_reset;
 
 			std::default_random_engine randomEngine;

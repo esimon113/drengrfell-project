@@ -31,6 +31,7 @@ namespace df {
 
 		private:
 			Window* window;
+			Window* debugWindow = nullptr;
 			Registry* registry;
 			// AudioSystem* audioEngine;
 
@@ -38,6 +39,7 @@ namespace df {
 			// PhysicsSystem physics;
 
 			RenderSystem render;
+			RenderSnowSystem renderSnowSystem;
 
 			void reset() noexcept;
 

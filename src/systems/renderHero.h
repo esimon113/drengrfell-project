@@ -14,7 +14,8 @@ namespace df {
 			RenderHeroSystem() = default;
 			~RenderHeroSystem() = default;
 
-			static RenderHeroSystem init(Window* window, Registry* registry) noexcept;
+			static RenderHeroSystem init(Window* window, Registry* registry, GameState& gameState) noexcept;
+			void updateDimensionsFromMap() noexcept;
 			void deinit() noexcept;
 
 			void step(float delta) noexcept;
@@ -24,6 +25,7 @@ namespace df {
 		private:
 			Registry* registry;
 			Window* window;
+			GameState* gameState;
 
 			Framebuffer intermediateFramebuffer;
 			Shader heroShader;
@@ -31,11 +33,14 @@ namespace df {
 			GLuint m_quad_vao;
 			GLuint m_quad_ebo;
 
+			unsigned columns;
+			unsigned rows;
+
 			Viewport viewport;
 
 			std::vector<Texture> heroIdleTextures;
 			std::vector<Texture> heroSwimTextures;
-			std::vector<Texture> heroAttackTextures;
 			std::vector<Texture> heroJumpTextures;
+			std::vector<Texture> heroAttackTextures;
 	};
 }

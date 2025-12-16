@@ -16,7 +16,7 @@ namespace df {
 			count
 		};
 
-
+		// ORDER IS IMPORTANT
 		enum struct Shader {
 			sprite,
 			wind,
@@ -25,6 +25,9 @@ namespace df {
 			buildingShadow,
 			hero,
 			menu,
+			particle,
+			text,
+			hud,
 			count
 		};
 
@@ -37,6 +40,29 @@ namespace df {
 			MENU_TITLE,
 			MENU_START,
 			MENU_EXIT,
+
+			// hero
+
+			HERO_IDLE_0,
+			HERO_IDLE_1,
+			HERO_IDLE_2,
+
+			HERO_SWIM_0,
+			HERO_SWIM_1,
+			HERO_SWIM_2,
+			HERO_SWIM_3,
+			HERO_SWIM_4,
+			HERO_SWIM_5,
+
+			HERO_JUMP_0,
+			HERO_JUMP_1,
+			HERO_JUMP_2,
+			HERO_JUMP_3,
+			HERO_JUMP_4,
+			HERO_JUMP_5,
+
+			HERO_ATTACK_0,
+			HERO_ATTACK_1,
 			count
 		};
 

@@ -1,5 +1,7 @@
 #pragma once
 #include "glm/vec2.hpp"
+#include "gamestate.h"
+#include "resultError.h"
 
 /*
  * This header provides common functionality for render systems.

@@ -5,7 +5,7 @@
 
 namespace df {
 
-    RenderSystem RenderSystem::init(Window* window, Registry* registry) noexcept {
+    RenderSystem RenderSystem::init(Window* window, Registry* registry, GameState& gameState) noexcept {
         RenderSystem self;
 
         self.window = window;
@@ -17,10 +17,12 @@ namespace df {
 		const glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
-		// This shall be the place for initialization of ALL render systems. NOT anywhere else!
-    	self.renderHeroSystem = RenderHeroSystem::init(window, registry);
-    	self.renderTilesSystem = RenderTilesSystem::init(window, registry);
+        self.renderTilesSystem = RenderTilesSystem::init(*window, *registry, gameState);
+    	self.renderHeroSystem = RenderHeroSystem::init(window, registry, gameState);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry);
+        self.renderHudSystem = RenderHudSystem::init(window, registry);
+        self.renderTextSystem = RenderTextSystem::init(window, registry);
+        self.renderSnowSystem = RenderSnowSystem::init(window,registry);
 
 		return self;
 	}
@@ -30,12 +32,19 @@ namespace df {
     	this->renderTilesSystem.deinit();
     	this->renderBuildingsSystem.deinit();
     	this->renderHeroSystem.deinit();
+    	this->renderHudSystem.deinit();
+    	this->renderTextSystem.deinit();
+        this->renderSnowSystem.deinit();
 	}
 
     void RenderSystem::step(const float dt) noexcept {
     	this->renderTilesSystem.step(dt);
     	this->renderBuildingsSystem.step(dt);
     	this->renderHeroSystem.step(dt);
+    	this->renderTextSystem.step(dt);
+        this->renderSnowSystem.step(dt);
+        this->renderHudSystem.step(dt); // always rendered last
+        
     }
 
 
@@ -43,6 +52,9 @@ namespace df {
     	this->renderTilesSystem.reset();
     	this->renderBuildingsSystem.reset();
     	this->renderHeroSystem.reset();
+    	this->renderHudSystem.reset();
+    	this->renderTextSystem.reset();
+        this->renderSnowSystem.reset();
     }
 
 

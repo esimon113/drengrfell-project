@@ -6,21 +6,23 @@
 
 namespace df {
 
-    RenderHeroSystem RenderHeroSystem::init(Window* window, Registry* registry) noexcept {
+    RenderHeroSystem RenderHeroSystem::init(Window* window, Registry* registry, GameState& gameState) noexcept {
 
         RenderHeroSystem self;
 
         self.window = window;
         self.registry = registry;
+        self.gameState = &gameState;
 
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();
 
-		// load resources for rendering
+
+        // load resources for rendering
         self.heroShader = Shader::init(assets::Shader::hero).value();
 
-		glm::uvec2 extent = self.window->getWindowExtent();
-		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
+        glm::uvec2 extent = self.window->getWindowExtent();
+        self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
         float quadVertices[] = {
             // positions    // texcoords
@@ -52,98 +54,80 @@ namespace df {
 
         glBindVertexArray(0);
 
-        // the texture buffer should be moved to another class, not in render::init but we leave it here for the
-        // first milestone and change it later on when we have the logic to change between states (idling, swiming etc.)
-        // maybe own class textureManager
-		std::string basePath = getBasePath();
-        std::vector heroAttackTexturePaths = {
-            basePath + "/assets/textures/hero/attack/attack_0.png",
-            basePath + "/assets/textures/hero/attack/attack_1.png",
-            //basePath + "/assets/textures/hero/attack/attack_2.png", weird animation
-        };
 
-        for (const auto& path : heroAttackTexturePaths) {
-            Texture tex = Texture::init(path.c_str());
-            self.heroAttackTextures.push_back(std::move(tex));
-        }
-
-        std::vector heroSwimTexturePaths = {
-            basePath + "/assets/textures/hero/swim/swim_0.png",
-            basePath + "/assets/textures/hero/swim/swim_1.png",
-            basePath + "/assets/textures/hero/swim/swim_2.png",
-            basePath + "/assets/textures/hero/swim/swim_3.png",
-            basePath + "/assets/textures/hero/swim/swim_4.png",
-            basePath + "/assets/textures/hero/swim/swim_5.png",
+        self.heroAttackTextures = {
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_ATTACK_0).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_ATTACK_1).c_str())
 
         };
 
-        for (const auto& path : heroSwimTexturePaths) {
-            Texture tex = Texture::init(path.c_str());
-            self.heroSwimTextures.push_back(tex);
-        }
-
-        std::vector heroIdleTexturePaths = {
-            basePath + "/assets/textures/hero/idle/idle_0.png",
-            basePath + "/assets/textures/hero/idle/idle_1.png",
-            basePath + "/assets/textures/hero/idle/idle_2.png",
+        self.heroSwimTextures = {
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_SWIM_0).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_SWIM_1).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_SWIM_2).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_SWIM_3).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_SWIM_4).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_SWIM_5).c_str()),
         };
 
-        for (const auto& path : heroIdleTexturePaths) {
-            Texture tex = Texture::init(path.c_str());
-            self.heroIdleTextures.push_back(tex);
-        }
-
-        std::vector heroJumpTexturesPath = {
-            basePath + "/assets/textures/hero/jump/jump_0.png",
-            basePath + "/assets/textures/hero/jump/jump_1.png",
-            basePath + "/assets/textures/hero/jump/jump_2.png",
-            basePath + "/assets/textures/hero/jump/jump_3.png",
-            basePath + "/assets/textures/hero/jump/jump_4.png",
-            basePath + "/assets/textures/hero/jump/jump_5.png",
+        self.heroIdleTextures = {
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_IDLE_0).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_IDLE_1).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_IDLE_2).c_str()),
         };
 
-        for (const auto& path : heroJumpTexturesPath) {
-            Texture tex = Texture::init(path.c_str());
-            self.heroJumpTextures.push_back(tex);
-        }
+        self.heroJumpTextures = {
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_JUMP_0).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_JUMP_1).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_JUMP_2).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_JUMP_3).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_JUMP_4).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_JUMP_5).c_str()),
+        };
 
-        // Hero entity
-        // shouldnt be initialized here, but we currently dont use world.cpp so i leave it here for
-        // milestone 2 and move it to another class when our project is more strucuted
+        
         Entity hero;
-        registry->positions.emplace(hero, glm::vec2(0.5f, 0.5f));
-        registry->scales.emplace(hero, glm::vec2(0.1f, 0.1f));
+      
+        registry->positions.emplace(hero, glm::vec2(1.0f, 1.0f));
+        registry->scales.emplace(hero, glm::vec2(1.0f, 1.0f));
         registry->collisionRadius.emplace(hero, 0.5f);
 
-        std::vector animationOrder = { 0,1,2,1 }; // Sequenz 0-1-2-1 for idle
+
+        std::vector animationOrder = { 0,1 }; 
         Animation anim(animationOrder, 0.65f, true);
         registry->animations.emplace(hero, AnimationComponent{ anim });
 
-        constexpr std::array<GLuint, 6> indices = { 0, 1, 2, 2, 3, 0 };
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.m_quad_ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
+        //constexpr std::array<GLuint, 6> indices = { 0, 1, 2, 2, 3, 0 };
 
-		return self;
-	}
+        return self;
+    }
 
 
-	void RenderHeroSystem::deinit() noexcept {
+
+    void RenderHeroSystem::updateDimensionsFromMap() noexcept {
+        if (!gameState) return;
+
+        const Graph& map = gameState->getMap();
+        unsigned mapColumns = map.getMapWidth();
+        unsigned tileCount = map.getTileCount();
+
+        this->columns = mapColumns;
+        this->rows = tileCount / mapColumns;
+        fmt::println("INIT ERFOLGREICH");
+    }
+
+    void RenderHeroSystem::deinit() noexcept {
         heroShader.deinit();
-	}
+    }
 
 
     Texture& RenderHeroSystem::getCurrentTexture(AnimationComponent& animComp, int frameIndex) {
         switch (animComp.currentType) {
-        case Hero::AnimationType::Idle:
-            return heroIdleTextures[frameIndex];
-        case Hero::AnimationType::Jump:
-            return heroJumpTextures[frameIndex];
-        case Hero::AnimationType::Swim:
-            return heroSwimTextures[frameIndex];
-        case Hero::AnimationType::Attack:
-            return heroAttackTextures[frameIndex];
-        default:
-            return heroIdleTextures[frameIndex];
+        case Hero::AnimationType::Idle:   return heroIdleTextures[frameIndex];
+        case Hero::AnimationType::Jump:   return heroJumpTextures[frameIndex];
+        case Hero::AnimationType::Swim:   return heroSwimTextures[frameIndex];
+        case Hero::AnimationType::Attack: return heroAttackTextures[frameIndex];
+        default:                          return heroIdleTextures[frameIndex];
         }
     }
 
@@ -157,9 +141,11 @@ namespace df {
         }
     }
 
-
     void RenderHeroSystem::step(float deltaTime) noexcept {
+
+
         glm::uvec2 extent = window->getWindowExtent();
+        Camera& cam = registry->cameras.get(registry->getCamera());
         glViewport(0, 0, extent.x, extent.y);
         //glClearColor(0.674f, 0.847f, 1.0f, 1.0f);
         //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -168,35 +154,33 @@ namespace df {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDisable(GL_DEPTH_TEST);
 
-        glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-        glm::mat4 projection = glm::ortho(0.f, static_cast<float>(extent.x), 0.f, static_cast<float>(extent.y), 0.1f, 10.f);
+        glm::vec2 worldDims = calculateWorldDimensions(this->columns, this->rows);
+        glm::mat4 projection = glm::ortho(
+            cam.position.x, cam.position.x + worldDims.x / cam.zoom,
+            cam.position.y, cam.position.y + worldDims.y / cam.zoom,
+            -1.f, 1.f
+        );
+        glm::mat4 view = glm::mat4(1.f);
 
         glBindVertexArray(m_quad_vao);
 
-
         for (Entity e : registry->animations.entities) {
             auto& animComp = registry->animations.get(e);
+            std::vector<int> animationOrder = getHeroAnimationSequence(animComp.currentType);
+            animComp.anim.setFrames(animationOrder);
             animComp.anim.step(deltaTime);
-            // not working correctly yet, needs fix
-            // idea was to get the animation type like "Idle", "Swim" etc from animations.get(e)
-            // and then we chose the correct textureBuffer and the correct animationSequence and render
-            // the animation, but currently the animationSequence is fixed and cant be changed in this loop
-            // needs change, but it works to display hero idle animation for milestone 2
+
             int texIndex = animComp.anim.getCurrentFrameTextureIndex();
             Texture& tex = getCurrentTexture(animComp, texIndex);
             tex.bind(0);
-            std::vector<int> animationOrder = getHeroAnimationSequence(animComp.currentType);
 
+            //glm::vec2 screenPos = glm::vec2(0.5f, 0.5f) * glm::vec2(window->getWindowExtent());
 
-            glm::vec2 pos = registry->positions.get(e);
-            glm::vec2 scale = registry->scales.get(e);
-            glm::vec2 pixelPos = glm::vec2(pos.x * extent.x, pos.y * extent.y);
-            glm::vec2 pixelScale = glm::vec2(scale.x * extent.x, scale.y * extent.y);
+            glm::vec2 heroPos = registry->positions.get(e);
+            glm::vec2 worldScale = registry->scales.get(e);
 
-
-
-            glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(pixelPos, 0));
-            model = glm::scale(model, glm::vec3(pixelScale, 1));
+            glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(heroPos - cam.position, 0.f));
+            model = glm::scale(model, glm::vec3(worldScale, 1.f));
 
             Shader& shader = heroShader;
             shader.use()
@@ -204,13 +188,10 @@ namespace df {
                 .setMat4("view", view)
                 .setMat4("projection", projection)
                 .setVec3("fcolor", glm::vec3(1.0f));
-
         }
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
-
-
     void RenderHeroSystem::reset() noexcept {}
 
 }
