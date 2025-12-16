@@ -73,6 +73,11 @@ namespace df {
 			count
 		};
 
+		enum struct JsonFile {
+			WORLD_GENERATION_CONFIGURATION,
+			COUNT,
+		};
+
 
 		template<typename AssetType>
 		std::string getAssetPath(const AssetType assetId) noexcept;

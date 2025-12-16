@@ -8,6 +8,8 @@ namespace df {
             NullPointer,
             InvalidArgument,
             DomainError,
+            IOError,
+            JsonParseError,
         };
 
         ResultError(Kind kind, std::string text);

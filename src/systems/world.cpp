@@ -149,7 +149,12 @@ namespace df {
     					break;
 					case GLFW_KEY_G: {
 						Graph& map = this->gameState->getMap();
-						map.regenerate();
+						if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
+							std::cerr << worldGenConfResult.unwrapErr() << std::endl;
+							break;
+						} else {
+							map.regenerate(worldGenConfResult.unwrap<>());
+						}
 
 						if (Player* player = this->gameState->getPlayer(0)) {
 							const int width = map.getMapWidth();

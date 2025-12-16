@@ -84,4 +84,14 @@ namespace df {
 	template<> std::string assets::getAssetPath<assets::Texture>(const assets::Texture assetId) noexcept {
 		return getBasePath() + "/assets/textures/" + TEXTURE_FILES[static_cast<size_t>(assetId)];
 	}
+
+
+	static constexpr std::array<const char*, static_cast<size_t>(assets::JsonFile::COUNT)> JSON_FILES = {
+		"world_generation.json",
+	};
+
+
+	template<> std::string assets::getAssetPath<assets::JsonFile>(const assets::JsonFile assetId) noexcept {
+		return getBasePath() + "/assets/jsons/" + JSON_FILES[static_cast<size_t>(assetId)];
+	}
 }

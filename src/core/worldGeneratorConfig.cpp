@@ -1,4 +1,8 @@
 #include "worldGeneratorConfig.h"
+
+#include <nlohmann/json.hpp>
+#include <fstream>
+#include <iostream>
 using json = nlohmann::json;
 
 
@@ -38,5 +42,21 @@ namespace df {
         overwrite(a, "octaves", self.altitudeNoise.octaves);
 
         return self;
+    }
+
+    Result<WorldGeneratorConfig, ResultError> WorldGeneratorConfig::deserialize(const assets::JsonFile asset) {
+        auto path = assets::getAssetPath(asset);
+        std::ifstream file(path);
+        if (!file) {
+            return Err(ResultError(ResultError::Kind::IOError, "WorldGeneratorConfig::deserialize(): Could not open file: " + path));
+        }
+
+        try {
+            json j;
+            file >> j;
+            return Ok(deserialize(j));
+        } catch (const json::parse_error& e) {
+            return Err(ResultError(ResultError::Kind::JsonParseError, "WorldGeneratorConfig::deserialize(): Could not parse file: " + path + ". Reason: " + std::string(e.what())));
+        }
     }
 }
