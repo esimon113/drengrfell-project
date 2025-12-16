@@ -1,4 +1,5 @@
 #include "renderHud.h"
+#include <iostream>
 
 namespace df {
 
@@ -37,6 +38,18 @@ namespace df {
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 
         glBindVertexArray(0);
+        // TMP to delete: test initilize player
+        Entity playerEntity;
+        registry->players.emplace(playerEntity);
+        for (Entity e : registry->players.entities) {
+
+            std::cout << "innerhalb der step hud schleife 1" << std::endl;
+            Player& player = registry->players.get(e);
+            player.addResources(types::TileType::FOREST, 10);
+            player.addResources(types::TileType::MOUNTAIN, 5);
+            player.addResources(types::TileType::FIELD, 8);
+        }
+        //
 
         return self;
     }
@@ -46,20 +59,33 @@ namespace df {
     }
 
     void RenderHudSystem::step(float /*dt*/) noexcept {
-
         renderHud();
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
-            textSystem->renderText(
-                "Wood: 0; Stone: 10; Grain: 20",
-                { 20.0f, 27.0f }, // window->getWindowExtent().y - 120.0f
-                0.5f,
-                { 1.0f, 1.0f, 1.0f }
-            );
+            for (Entity e : registry->players.entities) {
+
+                std::cout << "innerhalb der step hud schleife 2" << std::endl;
+                Player& player = registry->players.get(e);
+                std::map<types::TileType, int> resources = player.getResources();
+                textSystem->renderText(
+                    "Wood: " + std::to_string(resources[types::TileType::FOREST]) +
+                    "; Stone: " + std::to_string(resources[types::TileType::MOUNTAIN]) +
+                    "; Grain: " + std::to_string(resources[types::TileType::FIELD]) +
+                    "; Round: 1", // TODO: update current round
+                    { 20.0f, 27.0f },
+                    0.5f,
+                    { 1.0f, 1.0f, 1.0f }
+                );
+            }
         }
     }
 
     void RenderHudSystem::reset() noexcept {
+        renderHud();
+        RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
+        if (textSystem) {
+            textSystem->renderText(" ", { 0.0f, 0.0f }, 0.5f, { 1.0f, 1.0f, 1.0f });
+        }
     }
 
     void RenderHudSystem::renderHud() const noexcept {
