@@ -55,9 +55,6 @@ namespace df {
 
 		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
 		self.gameState.getMap().regenerate();
-		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
-			std::cerr << result.unwrapErr() << std::endl;
-		}
 		self.render.renderHeroSystem.updateDimensionsFromMap();
 
 

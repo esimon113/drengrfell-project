@@ -23,9 +23,6 @@ namespace df {
         self.tileShader = Shader::init(assets::Shader::tile).value();
         self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
 
-        const glm::uvec2 extent = self.window->getWindowExtent();
-        self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
-
         self.initMap();
 
         return self;
@@ -78,6 +75,8 @@ namespace df {
 
 
     Result<void, ResultError> RenderTilesSystem::updateMap() noexcept {
+        fmt::print("RenderTilesSystem::updateMap()\n");
+
         const Player* player = this->gameState->getPlayer(0);
         const Graph& map = this->gameState->getMap();
         if (map.getMapWidth() == 0 or map.getTileCount() == 0) {
@@ -85,6 +84,7 @@ namespace df {
         }
 
         this->tileColumns = map.getMapWidth();
+        fmt::print("tileColumns: {}\n", this->tileColumns);
         this->tileRows = map.getTileCount() / this->tileColumns;
         this->tileInstances = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
 
@@ -113,6 +113,12 @@ namespace df {
         accumulator += delta;
         if (accumulator > 1.0) {
             accumulator = 0.0f;
+        }
+        if (this->gameState->getMap().isRenderUpdateRequested()) {
+            if (const auto result = updateMap(); result.isErr()) {
+                std::cerr << result.unwrapErr() << std::endl;
+            }
+            this->gameState->getMap().setRenderUpdateRequested(false);
         }
         renderMap(accumulator);
     }

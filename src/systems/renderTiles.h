@@ -27,7 +27,6 @@ namespace df {
         Registry* registry;
         Window* window;
         GameState* gameState;
-        Framebuffer intermediateFramebuffer;
 
         Shader tileShader;
         GLuint tileVao;

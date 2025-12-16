@@ -597,10 +597,10 @@ namespace df {
     // Map methods
 	void Graph::regenerate(const WorldGeneratorConfig &worldGeneratorConfig) {
 		if (const auto generatedTiles = WorldGenerator::generateTiles(worldGeneratorConfig); generatedTiles.isOk()) {
-			this->setMapWidth(worldGeneratorConfig.columns);
-			for (const auto& tile : generatedTiles.unwrap()) {
-				this->addTile(tile);
-			}
+			setMapWidth(worldGeneratorConfig.columns);
+			fmt::print("Generated columns: {}\n", worldGeneratorConfig.columns);
+			tiles = generatedTiles.unwrap();
+			this->renderUpdateRequested = true;
 		} else {
 			std::cerr << generatedTiles.unwrapErr() << std::endl;
 		}
