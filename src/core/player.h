@@ -60,6 +60,7 @@ namespace df{
             void exploreTile(size_t tileId);
             bool isTileExplored(size_t tileId) const;
             const std::vector<size_t>& getExploredTileIds() const;
+            void forgetExploredTiles();
 
             size_t getPlayerId() const;
             void setPlayerId(size_t newPlayerId);

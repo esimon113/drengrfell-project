@@ -109,6 +109,10 @@ namespace df{
         return exploredTileIds;
     }
 
+    void Player::forgetExploredTiles() {
+        this->exploredTileIds.clear();
+    }
+
     void Player::reset(){
         heroPoints = 0;
         settlementIds.clear();
