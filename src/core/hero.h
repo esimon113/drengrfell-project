@@ -42,7 +42,8 @@ namespace df {
             Idle,
             Jump,
             Attack,
-            Swim
+            Swim,
+            Run
         };
 
         struct HeroAnimations {
@@ -50,6 +51,7 @@ namespace df {
             inline static const std::vector<int> swim = { 0, 1, 2, 3, 4, 5 };
             inline static const std::vector<int> jump = { 0, 5, 1, 2, 3, 5};
             inline static const std::vector<int> attack = { 0,1 };
+            inline static const std::vector<int> run = { 0,1,2,3,4,5 };
         };
 
     private:

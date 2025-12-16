@@ -107,6 +107,11 @@ namespace df {
 					animComp.anim.setCurrentFrameIndex(0);
 					fmt::println("Debug: Jump animation activated");
 					break;
+				case GLFW_KEY_F11:
+					animComp.currentType = Hero::AnimationType::Run;
+					animComp.anim.setCurrentFrameIndex(0);
+					fmt::println("Debug: Run animation activated");
+					break;
 
 					case GLFW_KEY_R: // pressing the 'r' key triggers a reset of the game
 						m_reset = true;

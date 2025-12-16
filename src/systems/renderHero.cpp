@@ -85,6 +85,15 @@ namespace df {
             Texture::init(assets::getAssetPath(assets::Texture::HERO_JUMP_5).c_str()),
         };
 
+        self.heroRunTextures = {
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_RUN_0).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_RUN_1).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_RUN_2).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_RUN_3).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_RUN_4).c_str()),
+            Texture::init(assets::getAssetPath(assets::Texture::HERO_RUN_5).c_str()),
+        };
+
         
         Entity hero;
       
@@ -126,6 +135,7 @@ namespace df {
         case Hero::AnimationType::Idle:   return heroIdleTextures[frameIndex];
         case Hero::AnimationType::Jump:   return heroJumpTextures[frameIndex];
         case Hero::AnimationType::Swim:   return heroSwimTextures[frameIndex];
+        case Hero::AnimationType::Run:    return heroRunTextures[frameIndex];
         case Hero::AnimationType::Attack: return heroAttackTextures[frameIndex];
         default:                          return heroIdleTextures[frameIndex];
         }
@@ -136,6 +146,7 @@ namespace df {
         case Hero::AnimationType::Idle:   return Hero::HeroAnimations::idle;
         case Hero::AnimationType::Swim:   return Hero::HeroAnimations::swim;
         case Hero::AnimationType::Jump:   return Hero::HeroAnimations::jump;
+        case Hero::AnimationType::Run:    return Hero::HeroAnimations::run;
         case Hero::AnimationType::Attack: return Hero::HeroAnimations::attack;
         default:                          return Hero::HeroAnimations::idle;
         }
