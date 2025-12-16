@@ -49,8 +49,9 @@ namespace df {
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 		self.registry = Registry::init();
-		GameState newGameState(self.registry);
-		self.gameState = std::move(newGameState);
+
+		self.gameState = GameState(self.registry);
+		fmt::println("gameState pointer in application: {}", (void*)&self.gameState);
 		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 

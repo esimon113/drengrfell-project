@@ -20,7 +20,7 @@ namespace df {
         self.renderTilesSystem = RenderTilesSystem::init(*window, *registry, gameState);
     	self.renderHeroSystem = RenderHeroSystem::init(window, registry, gameState);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry);
-        self.renderHudSystem = RenderHudSystem::init(window, registry);
+        self.renderHudSystem = RenderHudSystem::init(window, registry, gameState);
         self.renderTextSystem = RenderTextSystem::init(window, registry);
         self.renderSnowSystem = RenderSnowSystem::init(window,registry);
 

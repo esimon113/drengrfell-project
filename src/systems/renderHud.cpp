@@ -3,11 +3,12 @@
 
 namespace df {
 
-    RenderHudSystem RenderHudSystem::init(Window* window, Registry* registry) noexcept {
+    RenderHudSystem RenderHudSystem::init(Window* window, Registry* registry, GameState& gameState) noexcept {
         RenderHudSystem self;
 
         self.window = window;
         self.registry = registry;
+        self.gameState = &gameState;
 
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();
@@ -59,24 +60,27 @@ namespace df {
     }
 
     void RenderHudSystem::step(float /*dt*/) noexcept {
+
         renderHud();
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
-            for (Entity e : registry->players.entities) {
+            fmt::println("gameState pointer: {}", (void*)gameState);
+            fmt::println("roundNumber: {}", gameState ? gameState->getRoundNumber() : 999);
 
-                std::cout << "innerhalb der step hud schleife 2" << std::endl;
+            for (Entity e : registry->players.entities) {
                 Player& player = registry->players.get(e);
                 std::map<types::TileType, int> resources = player.getResources();
                 textSystem->renderText(
                     "Wood: " + std::to_string(resources[types::TileType::FOREST]) +
                     "; Stone: " + std::to_string(resources[types::TileType::MOUNTAIN]) +
                     "; Grain: " + std::to_string(resources[types::TileType::FIELD]) +
-                    "; Round: 1", // TODO: update current round
+                    "; Round: " + std::to_string(gameState->getRoundNumber()),
                     { 20.0f, 27.0f },
                     0.5f,
                     { 1.0f, 1.0f, 1.0f }
                 );
             }
+            gameState->setRoundNumber(gameState->getRoundNumber() + 1);
         }
     }
 
@@ -97,7 +101,7 @@ namespace df {
 
         // Modellmatrix
         glm::vec2 pos = { 10.f, 10.f };
-        glm::vec2 size = { 400.f, 50.f };       // Size of the HUD
+        glm::vec2 size = { 580.f, 50.f };       // Size of the HUD
 
         glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), glm::vec3(pos, 0.f));
         model = glm::scale(model, glm::vec3(size, 1.f));
