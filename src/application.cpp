@@ -50,9 +50,25 @@ namespace df {
 		self.gameState = std::make_shared<GameState>(self.registry);
 		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-
 		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
 		self.gameState->getMap().regenerate();
+		{
+			Player player{};
+			self.gameState->addPlayer(player);
+			const int width = self.gameState->getMap().getMapWidth();
+			const int height = self.gameState->getMap().getTileCount() / width;
+
+			auto randomEngine = std::default_random_engine(std::random_device()());
+			auto uniformDistribution = std::uniform_int_distribution();
+
+			for (int row = 0; row < height; ++row) {
+				for (int col = 0; col < width; ++col) {
+					if (uniformDistribution(randomEngine) % 4 != 0) {
+						self.gameState->getPlayer(0)->exploreTile(row * width + col);
+					}
+				}
+			}
+		}
 		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
 		}
