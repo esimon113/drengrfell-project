@@ -50,7 +50,7 @@ namespace df {
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
 			// GameState
-			GameState gameState;
+			std::shared_ptr<GameState> gameState;
 			// MainMenu
 			MainMenu mainMenu;
 	};

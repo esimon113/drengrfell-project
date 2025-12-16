@@ -49,17 +49,16 @@ namespace df {
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 		self.registry = Registry::init();
-		GameState newGameState(self.registry);
-		self.gameState = std::move(newGameState);
+		self.gameState = std::make_shared<GameState>(self.registry);
 		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 
-		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
+		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
 		// Move this to a better place
 		constexpr auto worldGeneratorConfig = WorldGeneratorConfig();
 		const auto tiles = WorldGenerator::generateTiles(worldGeneratorConfig);
 		if (tiles.isOk()) {
-			auto& map = self.gameState.getMap();
+			auto& map = self.gameState->getMap();
 			map.setMapWidth(worldGeneratorConfig.columns);
 			for (const auto& tile : tiles.unwrap()) {
 				map.addTile(tile);
@@ -128,7 +127,7 @@ namespace df {
 			delta_time = time - last_time;
 			last_time = time;
 
-			types::GamePhase gamePhase = gameState.getPhase();
+			types::GamePhase gamePhase = gameState->getPhase();
 
 			switch (gamePhase) {
 				case types::GamePhase::START:
@@ -194,12 +193,13 @@ namespace df {
 	void Application::startGame() noexcept {
 		// For now instantly starts the game. Later on could set the phase to
 		// CONFIG first and after the configurations are done, the phase would be set to PLAY
-		this->gameState.setPhase(types::GamePhase::PLAY);
+		this->gameState->initTutorial();	// Init the Tutorial
+		this->gameState->setPhase(types::GamePhase::PLAY);
 	}
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
-
+		types::GamePhase gamePhase = gameState->getPhase();
+		auto* step = this->gameState->getCurrentTutorialStep();
 		switch (gamePhase) {
 		case types::GamePhase::START:
 			mainMenu.onKeyCallback(windowParam, key, scancode, action, mods);
@@ -208,6 +208,12 @@ namespace df {
 			break;
 		case types::GamePhase::PLAY:
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
+			// Update Tutorial if step == moveCamera
+			if (step && step->id == TutorialStepId::MOVE_CAMERA) {
+				if (action == GLFW_PRESS && (key == GLFW_KEY_W || key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_D)) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			}
 			break;
 		case types::GamePhase::END:
 			break;
@@ -215,7 +221,7 @@ namespace df {
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
+		types::GamePhase gamePhase = gameState->getPhase();
 
 		switch (gamePhase) {
 		case types::GamePhase::START:
@@ -232,7 +238,7 @@ namespace df {
 	}
 
 	void Application::onScrollCallback(GLFWwindow* windowParam, double xoffset, double yoffset) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
+		types::GamePhase gamePhase = gameState->getPhase();
 
 		switch (gamePhase) {
 		case types::GamePhase::START:
@@ -248,7 +254,7 @@ namespace df {
 	}
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
+		types::GamePhase gamePhase = gameState->getPhase();
 
 		switch (gamePhase) {
 		case types::GamePhase::START:

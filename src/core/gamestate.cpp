@@ -194,4 +194,44 @@ namespace df {
         return roads;
     }
 
+    // Tutorial
+    void GameState::initTutorial() {
+        tutorialSteps.clear();
+        tutorialSteps.push_back({
+            TutorialStepId::MOVE_CAMERA,
+            "Use WASD or move the camera. Use the mousewheel to zoom out/in. This is also possible with +/-."
+            });
+        tutorialSteps.push_back({
+            TutorialStepId::BUILD_SETTLEMENT,
+            "Build your first settlement using the b Button to create the hover view. Then click any free tile close to your hero to build the settlement."
+            });
+        tutorialSteps.push_back({
+            TutorialStepId::BUILD_ROAD,
+            "Build a road to expand using n Button to create the hover view. Then select any free edge close to your hero to build the road."
+            });
+        tutorialSteps.push_back({
+            TutorialStepId::END,
+            "Tutorial completed!"
+            });
+    }
+
+    TutorialStep* GameState::getCurrentTutorialStep() {
+        if (currentTutorialStep >= tutorialSteps.size()) {
+            return nullptr;
+        }
+        return &tutorialSteps[currentTutorialStep];
+    }
+
+    void GameState::completeCurrentTutorialStep() {
+        if (currentTutorialStep < tutorialSteps.size()) {
+            tutorialSteps[currentTutorialStep].completed = true;
+            currentTutorialStep++;
+        }
+    }
+
+    bool GameState::isTutorialActive() const {
+        return currentTutorialStep < tutorialSteps.size();
+    }
+
+
 } // namespace df
