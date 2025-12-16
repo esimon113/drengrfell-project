@@ -49,17 +49,19 @@ namespace df {
 		self.registry = Registry::init();
 		GameState newGameState(self.registry);
 		self.gameState = std::move(newGameState);
+		std::cerr << "gs-ptr: " << reinterpret_cast<uintptr_t>(&self.gameState) << std::endl;
+		std::cerr << "map-ptr: " << reinterpret_cast<uintptr_t>(&(self.gameState.getMap())) << std::endl;
 		// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		self.world = WorldSystem::init(self.window, self.registry, nullptr, self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 
 		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
-		Graph& map = self.gameState.getMap();
+		/*Graph& map = self.gameState.getMap();
 		map.regenerate();
 		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
 		}
-		self.render.renderHeroSystem.updateDimensionsFromMap();
+		self.render.renderHeroSystem.updateDimensionsFromMap();*/
 
 
 		// Create main menu
