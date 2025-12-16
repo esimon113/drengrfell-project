@@ -1,4 +1,5 @@
 #include "renderHud.h"
+#include <iostream>
 
 namespace df {
 
@@ -51,12 +52,6 @@ namespace df {
         renderHud();
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
-            textSystem->renderText(
-                "Wood: 0; Stone: 10; Grain: 20",
-                { 20.0f, 27.0f }, // window->getWindowExtent().y - 120.0f
-                0.5f,
-                { 1.0f, 1.0f, 1.0f }
-            );
             /*      TODO: format tutorial view
             if (gameState->isTutorialActive()) {
                 fmt::println("innerhalb von isTutorialActive");
@@ -76,10 +71,28 @@ namespace df {
                     { 1.f, 1.f, 1.f }
                 );
             }*/
+
+            // TODO: update for multiple player if we do multiplayer
+            Player& player = *gameState->getPlayer(0);
+            std::map<types::TileType, int> resources = player.getResources();
+            textSystem->renderText(
+                "Wood: " + std::to_string(resources[types::TileType::FOREST]) +
+                "; Stone: " + std::to_string(resources[types::TileType::MOUNTAIN]) +
+                "; Grain: " + std::to_string(resources[types::TileType::FIELD]) +
+                "; Round: " + std::to_string(gameState->getRoundNumber()),
+                { 20.0f, 27.0f },
+                0.5f,
+                { 1.0f, 1.0f, 1.0f }
+            );
         }
     }
 
     void RenderHudSystem::reset() noexcept {
+        renderHud();
+        RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
+        if (textSystem) {
+            textSystem->renderText(" ", { 0.0f, 0.0f }, 0.5f, { 1.0f, 1.0f, 1.0f });
+        }
     }
 
     void RenderHudSystem::renderHud() const noexcept {
@@ -91,7 +104,7 @@ namespace df {
 
         // Modellmatrix
         glm::vec2 pos = { 10.f, 10.f };
-        glm::vec2 size = { 400.f, 50.f };       // Size of the HUD
+        glm::vec2 size = { 580.f, 50.f };       // Size of the HUD
 
         glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), glm::vec3(pos, 0.f));
         model = glm::scale(model, glm::vec3(size, 1.f));
