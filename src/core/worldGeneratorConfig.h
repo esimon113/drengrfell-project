@@ -19,7 +19,7 @@ namespace df {
         GenerationMode generationMode = GenerationMode::PERLIN;
 
         // General
-        unsigned seed = 123; // The same seed creates the same world
+        unsigned seed = 0; // The same seed creates the same world. 0 for random seed.
         // Noise
         struct AltitudeNoiseConfig {
             float frequency = 0.1f; // Same meaning as in sine waves

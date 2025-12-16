@@ -24,39 +24,35 @@ namespace df {
         // Call this only if map size has changed. Everything else is handled in step()
         [[nodiscard]] Result<void, ResultError> updateMap() noexcept;
     private:
-        Registry* registry;
-        Window* window;
-        GameState* gameState;
-        Framebuffer intermediateFramebuffer;
+        Registry* registry = nullptr;
+        Window* window = nullptr;
+        GameState* gameState = nullptr;
 
-        Shader tileShader;
-        GLuint tileVao;
-        GLuint tileVbo;
-        GLuint tileInstanceVbo;
-        TextureArray tileAtlas;
-
-        Viewport viewport;
+        Shader tileShader{};
+        GLuint tileVao = 0;
+        GLuint tileVbo = 0;
+        GLuint tileInstanceVbo = 0;
+        TextureArray tileAtlas{};
 
         struct TileVertex {
             glm::vec2 position;
             glm::vec2 uv;
         };
-        static constexpr int FLOATS_PER_TILE_VERTEX = 4;
 
         struct TileInstance {
             glm::vec2 position;
-            int type;
-            int padding;
-            int explored; // 0 = unexplored, 1 = explored
+            std::int32_t type;
+            std::int32_t padding;
+            std::int32_t explored; // 0 = unexplored, 1 = explored
         };
 
-        std::vector<float> tileMesh;
+        std::vector<TileVertex> tileMesh;
         std::vector<TileInstance> tileInstances;
-        size_t tileInstancesBufferSize;
-        unsigned tileColumns;
-        unsigned tileRows;
+        size_t tileInstancesBufferSize = 0;
+        unsigned tileColumns = 0;
+        unsigned tileRows = 0;
 
-        static std::vector<float> createRectangularTileMesh() noexcept;
+        static std::vector<TileVertex> createRectangularTileMesh() noexcept;
         void initMap() noexcept;
         void renderMap(float timeInSeconds = 0.0) const noexcept;
 

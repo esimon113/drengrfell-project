@@ -9,8 +9,6 @@
 
 #include <iostream>
 
-#include "worldGenerator.h"
-#include "worldGeneratorConfig.h"
 
 namespace df {
 	static void glfwErrorCallback(int error, const char* description) {
@@ -51,23 +49,16 @@ namespace df {
 		self.registry = Registry::init();
 		GameState newGameState(self.registry);
 		self.gameState = std::move(newGameState);
-		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
+		std::cerr << "gs-ptr: " << reinterpret_cast<uintptr_t>(&self.gameState) << std::endl;
+		std::cerr << "map-ptr: " << reinterpret_cast<uintptr_t>(&(self.gameState.getMap())) << std::endl;
+		// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
+		self.world = WorldSystem::init(self.window, self.registry, nullptr, self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 
 		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
-		// Move this to a better place
-		constexpr auto worldGeneratorConfig = WorldGeneratorConfig();
-		const auto tiles = WorldGenerator::generateTiles(worldGeneratorConfig);
-		if (tiles.isOk()) {
-			auto& map = self.gameState.getMap();
-			map.setMapWidth(worldGeneratorConfig.columns);
-			for (const auto& tile : tiles.unwrap()) {
-				map.addTile(tile);
-			}
-		} else {
-			std::cerr << tiles.unwrapErr() << std::endl;
-		}
-		if (auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
+		Graph& map = self.gameState.getMap();
+		map.regenerate();
+		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
 		}
 		self.render.renderHeroSystem.updateDimensionsFromMap();

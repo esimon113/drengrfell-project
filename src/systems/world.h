@@ -4,12 +4,13 @@
 #include <window.h>
 #include <systems/audio.h>
 
+#include "gamestate.h"
 
 
 namespace df {
 	class WorldSystem {
 		public:
-			static WorldSystem init(Window* window, Registry* registry, AudioSystem* audioEngine) noexcept;
+			static WorldSystem init(Window* window, Registry* registry, AudioSystem* audioEngine, GameState& gameState) noexcept;
 			void deinit() noexcept;
 
 			void step(const float delta) noexcept;
@@ -34,6 +35,7 @@ namespace df {
 			Window* window;
 			Registry* registry;
 			AudioSystem* audioEngine;
+			GameState* gameState;
 
 			size_t score;
 			Entity heroEntity;
