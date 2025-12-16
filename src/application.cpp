@@ -54,7 +54,11 @@ namespace df {
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 
 		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
-		self.gameState.getMap().regenerate();
+		Graph& map = self.gameState.getMap();
+		map.regenerate();
+		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
+			std::cerr << result.unwrapErr() << std::endl;
+		}
 		self.render.renderHeroSystem.updateDimensionsFromMap();
 
 
