@@ -47,16 +47,14 @@ namespace df {
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 		self.registry = Registry::init();
-		GameState newGameState(self.registry);
-		self.gameState = std::move(newGameState);
+		self.gameState = std::make_shared<GameState>(self.registry);
 		std::cerr << "gs-ptr: " << reinterpret_cast<uintptr_t>(&self.gameState) << std::endl;
-		std::cerr << "map-ptr: " << reinterpret_cast<uintptr_t>(&(self.gameState.getMap())) << std::endl;
-		// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
-		self.world = WorldSystem::init(self.window, self.registry, nullptr, self.gameState);
+		std::cerr << "map-ptr: " << reinterpret_cast<uintptr_t>(&(self.gameState->getMap())) << std::endl;
+		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 
-		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
-		Graph& map = self.gameState.getMap();
+		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
+		Graph& map = self.gameState->getMap();
 		map.regenerate();
 		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
@@ -125,7 +123,7 @@ namespace df {
 			delta_time = time - last_time;
 			last_time = time;
 
-			types::GamePhase gamePhase = gameState.getPhase();
+			types::GamePhase gamePhase = gameState->getPhase();
 
 			switch (gamePhase) {
 				case types::GamePhase::START:
@@ -191,12 +189,13 @@ namespace df {
 	void Application::startGame() noexcept {
 		// For now instantly starts the game. Later on could set the phase to
 		// CONFIG first and after the configurations are done, the phase would be set to PLAY
-		this->gameState.setPhase(types::GamePhase::PLAY);
+		this->gameState->initTutorial();	// Init the Tutorial
+		this->gameState->setPhase(types::GamePhase::PLAY);
 	}
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
-
+		types::GamePhase gamePhase = gameState->getPhase();
+		auto* step = this->gameState->getCurrentTutorialStep();
 		switch (gamePhase) {
 		case types::GamePhase::START:
 			mainMenu.onKeyCallback(windowParam, key, scancode, action, mods);
@@ -205,6 +204,12 @@ namespace df {
 			break;
 		case types::GamePhase::PLAY:
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
+			// Update Tutorial if step == moveCamera
+			if (step && step->id == TutorialStepId::MOVE_CAMERA) {
+				if (action == GLFW_PRESS && (key == GLFW_KEY_W || key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_D)) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			}
 			break;
 		case types::GamePhase::END:
 			break;
@@ -212,7 +217,7 @@ namespace df {
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
+		types::GamePhase gamePhase = gameState->getPhase();
 
 		switch (gamePhase) {
 		case types::GamePhase::START:
@@ -229,7 +234,7 @@ namespace df {
 	}
 
 	void Application::onScrollCallback(GLFWwindow* windowParam, double xoffset, double yoffset) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
+		types::GamePhase gamePhase = gameState->getPhase();
 
 		switch (gamePhase) {
 		case types::GamePhase::START:
@@ -245,7 +250,7 @@ namespace df {
 	}
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
+		types::GamePhase gamePhase = gameState->getPhase();
 
 		switch (gamePhase) {
 		case types::GamePhase::START:
