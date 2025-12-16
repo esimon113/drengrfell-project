@@ -205,10 +205,13 @@ namespace df {
 
         // If no player is given, the whole map is shown as explored
         if (player != nullptr) {
-            // Do not move into double loop for performance reasons [O(n^2)+O(n) vs. O(n^3)]
+            // Do not move into double loop for performance reasons
             for (const size_t tileId : player->getExploredTileIds()) {
-                if (tileId < instances.size()) {
-                    instances[tileId].explored = 1;
+                if (static_cast<int>(tileId) < rows * columns) {
+                    const size_t row = tileId / columns;
+                    const size_t col = tileId % columns;
+                    const size_t instanceId = (rows - 1 - row) * columns + col;
+                    instances[instanceId].explored = 1;
                 }
             }
         }
