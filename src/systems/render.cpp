@@ -62,18 +62,20 @@ namespace df {
 
 
     static std::pair<glm::uvec2, glm::uvec2> computeViewportConfig(const glm::uvec2 resolution) noexcept {
-        float window_aspect_ratio = static_cast<float>(resolution.x) / resolution.y;
-        if (window_aspect_ratio > GAME_ASPECT_RATIO) {
-            glm::uvec2 viewport_size = { resolution.y * GAME_ASPECT_RATIO, resolution.y };
-            uint32_t offset = (resolution.x - viewport_size.x) / 2;
-            glm::uvec2 viewport_offset = { offset, 0 };
-            return { viewport_offset, viewport_size };
-        }
+        // Use the full window
+        // float window_aspect_ratio = static_cast<float>(resolution.x) / resolution.y;
+        // if (window_aspect_ratio > GAME_ASPECT_RATIO) {
+        //     glm::uvec2 viewport_size = { resolution.y * GAME_ASPECT_RATIO, resolution.y };
+        //     uint32_t offset = (resolution.x - viewport_size.x) / 2;
+        //     glm::uvec2 viewport_offset = { offset, 0 };
+        //     return { viewport_offset, viewport_size };
+        // }
 
-        glm::uvec2 viewport_size = { resolution.x, resolution.x * 1 / GAME_ASPECT_RATIO };
-        uint32_t offset = (resolution.y - viewport_size.y) / 2;
-        glm::uvec2 viewport_offset = { 0, offset };
-        return { viewport_offset, viewport_size };
+        // glm::uvec2 viewport_size = { resolution.x, resolution.x * 1 / GAME_ASPECT_RATIO };
+        // uint32_t offset = (resolution.y - viewport_size.y) / 2;
+        // glm::uvec2 viewport_offset = { 0, offset };
+        // return { viewport_offset, viewport_size };
+        return { glm::uvec2(0, 0), resolution };
     }
 
 
@@ -82,8 +84,12 @@ namespace df {
         this->viewport.origin = origin;
         this->viewport.size = size;
 
+
+        this->renderBuildingsSystem.updateViewport(origin, size);
+
 		// reinitialize off-screen framebuffer
 		intermediateFramebuffer.deinit();
 		intermediateFramebuffer = Framebuffer::init({ (GLsizei)size.x, (GLsizei)size.y, 1, true });
+        
 	}
 }
