@@ -85,7 +85,7 @@ namespace df {
 		// Create main menu
 		self.mainMenu.init(self.window);
 		// for testing hero movement until we have a triggerpoint
-		self.movementSystem = EntityMovementSystem::init(self.registry, self.gameState);
+		self.movementSystem = EntityMovementSystem::init(self.registry, *self.gameState);
 
 		return self;
 	}

@@ -200,7 +200,7 @@ namespace df {
 
         tutorialSteps.push_back({
             .id = TutorialStepId::MOVE_CAMERA,
-            .text = "Use WASD or move the camera. Use the mousewheel to zoom out/in. This is auch möglich mit +/-.",
+            .text = "Use WASD or move the camera. Use the mousewheel to zoom out/in. This is also possible with +/-.",
             .completed = false,
             .screenPosition = std::nullopt,
             .renderBox = true
