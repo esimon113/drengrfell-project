@@ -48,7 +48,7 @@ namespace df {
 
 			void reset() noexcept;
 
-			void startGame(int seed, int width, int height, WorldGeneratorConfig::GenerationMode mode) noexcept;
+			void startGame(int seed, int width, int height, int mode) noexcept;
 			void configurateGame() noexcept;
 			void setInsular() noexcept;
 			void setPerlin() noexcept;

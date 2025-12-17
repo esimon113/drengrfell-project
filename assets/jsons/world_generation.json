@@ -1,12 +1,12 @@
 {
-  "version": 1,
-  "columns": 24,
-  "rows": 24,
-  "generationMode": 1,
-  "seed": 0,
-  "altitudeNoise": {
-    "frequency": 0.1,
-    "persistence": 0.5,
-    "octaves": 6
-  }
+    "altitudeNoise": {
+        "frequency": 0.10000000149011612,
+        "octaves": 6,
+        "persistence": 0.5
+    },
+    "columns": 24,
+    "generationMode": 1,
+    "rows": 24,
+    "seed": 0,
+    "version": 1
 }

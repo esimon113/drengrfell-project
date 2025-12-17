@@ -59,7 +59,10 @@ namespace df {
         perlinButton.hovered = isCursorOnButton(mouseX, mouseY, perlinButton);
         seedButton.hovered = isCursorOnButton(mouseX, mouseY, seedButton);
         widthButton.hovered = isCursorOnButton(mouseX, mouseY, widthButton);
+        /*
+        * heightButton is used when map can be non quadratic
         heightButton.hovered = isCursorOnButton(mouseX, mouseY, heightButton);
+        */
 
     }
 
@@ -114,15 +117,23 @@ namespace df {
         perlinButton.w = absButtonWidth;
         perlinButton.h = absButtonHeight;
 
-        widthButton.x = xLeft;
+        // TEMPORARY START while we only support quadratic maps
+        widthButton.x = xMiddle;
+        // TEMPORARY END
+        //widthButton.x = xLeft;
         widthButton.y = absTopButtonOffsetY - 2 * (absButtonDistanceY + absButtonHeight);
         widthButton.w = absButtonWidth;
         widthButton.h = absButtonHeight;
 
+        /*
+        * Keeping the map quadratic for this milestone
         heightButton.x = xRight;
         heightButton.y = absTopButtonOffsetY - 2 * (absButtonDistanceY + absButtonHeight);
         heightButton.w = absButtonWidth;
         heightButton.h = absButtonHeight;
+        */
+
+        
 
         startButton.x = xMiddle;
         startButton.y = absTopButtonOffsetY - 3 * (absButtonDistanceY + absButtonHeight);
@@ -192,10 +203,13 @@ namespace df {
             glm::vec2(widthButton.x, widthButton.y),
             glm::vec2(widthButton.w, widthButton.h),
             widthButton.hovered ? glm::vec3(hoverIntensity) : glm::vec3(1.0f));
+        /*
+        * heightButton is used when map can be non quadratic
         drawSprite(heightBtnTexture,
             glm::vec2(heightButton.x, heightButton.y),
             glm::vec2(heightButton.w, heightButton.h),
             heightButton.hovered ? glm::vec3(hoverIntensity) : glm::vec3(1.0f));
+        */
 
         glBindVertexArray(0);
 
@@ -233,11 +247,11 @@ namespace df {
         }
         if (isCursorOnButton(mouseX, mouseY, insularButton)) {
             fmt::println("Insular generation chosen");
-            worldGenerationMode = WorldGeneratorConfig::GenerationMode::INSULAR;
+            worldGenerationMode = 0;
         }
         if (isCursorOnButton(mouseX, mouseY, perlinButton)) {
             fmt::println("Perlin generation chosen");
-            worldGenerationMode = WorldGeneratorConfig::GenerationMode::PERLIN;
+            worldGenerationMode = 1;
         }
         if (isCursorOnButton(mouseX, mouseY, seedButton)) {
             fmt::println("Enter seed");
@@ -249,11 +263,14 @@ namespace df {
             activeInput = InputField::WIDTH;
             inputString.clear();
         }
+        /*
+        * heightButton is used when map can be non quadratic
         if (isCursorOnButton(mouseX, mouseY, heightButton)) {
             fmt::println("Enter height");
             activeInput = InputField::HEIGHT;
             inputString.clear();
         }
+        */
 
     }
 
@@ -291,6 +308,9 @@ namespace df {
                 case InputField::WIDTH:
                     worldWidth = value;
                     fmt::println("width: {}", value);
+                    // TEMPORARY while map is only quadratic
+                    worldHeight = value;
+                    fmt::println("height: {}", value);
                     break;
                 case InputField::HEIGHT:
                     worldHeight = value;

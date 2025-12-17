@@ -10,6 +10,7 @@
 #include "entityMovement.h"
 
 #include <iostream>
+#include <fstream>
 
 #include "worldGenerator.h"
 
@@ -56,34 +57,6 @@ namespace df {
 		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
-		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
-			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
-			self.gameState->getMap().regenerate();
-		} else {
-			self.gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
-		}
-		{
-			Player player{};
-			self.gameState->addPlayer(player);
-			const int width = self.gameState->getMap().getMapWidth();
-			const int height = self.gameState->getMap().getTileCount() / width;
-
-			auto randomEngine = std::default_random_engine(std::random_device()());
-			auto uniformDistribution = std::uniform_int_distribution();
-
-			for (int row = 0; row < height; ++row) {
-				for (int col = 0; col < width; ++col) {
-					if (uniformDistribution(randomEngine) % 4 != 0) {
-						self.gameState->getPlayer(0)->exploreTile(row * width + col);
-					}
-				}
-			}
-		}
-		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
-			std::cerr << result.unwrapErr() << std::endl;
-		}
-		self.render.renderHeroSystem.updateDimensionsFromMap();
-
 		// Create main menu
 		self.mainMenu.init(self.window);
 		// for testing hero movement until we have a triggerpoint
@@ -137,7 +110,7 @@ namespace df {
 			[&](int seed,
 				int width,
 				int height,
-				WorldGeneratorConfig::GenerationMode mode)
+				int mode)
 			{
 				startGame(seed, width, height, mode);
 			}
@@ -245,18 +218,94 @@ namespace df {
 		gameState->setPhase(types::GamePhase::CONFIG);
 	}
 
-	void Application::startGame(int seed, int width, int height, WorldGeneratorConfig::GenerationMode mode) noexcept {
+	void Application::startGame(int seedParam, int widthParam, int heightParam, int mode) noexcept {
+		std::string seedName = std::to_string(seedParam);
+		std::string widthName = std::to_string(widthParam);
+		std::string heightName = std::to_string(heightParam);
 		std::string modeName = "";
-		if (mode == WorldGeneratorConfig::GenerationMode::INSULAR) {
-			modeName = "insular";
-		}
-		else if (mode == WorldGeneratorConfig::GenerationMode::PERLIN) {
-			modeName = "perlin";
+		
+
+		// read config from json file
+		WorldGeneratorConfig config;
+		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
+			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
 		}
 		else {
-			modeName = "none";
+			config = worldGenConfResult.unwrap<>();
 		}
-		fmt::println("set worldGen parameters to seed: {}, width: {}, height: {}, mode: {}", seed, width, height, modeName);
+
+		// set config to user input or keep existing config-values if no input was made (== -1)
+		if (mode == -1) {
+			if (config.generationMode == WorldGeneratorConfig::GenerationMode::INSULAR) {
+				modeName = "kept as insular";
+			}
+			else if (config.generationMode == WorldGeneratorConfig::GenerationMode::PERLIN) {
+				modeName = "kept as perlin";
+			}
+		} else if (mode == 0) {
+			config.generationMode = WorldGeneratorConfig::GenerationMode::INSULAR;
+			modeName = "insular";
+		}
+		else if (mode == 1) {
+			config.generationMode = WorldGeneratorConfig::GenerationMode::PERLIN;
+			modeName = "perlin";
+		}
+
+		if (seedParam != -1) {config.seed = static_cast<unsigned>(seedParam);}
+		else {seedName = "kept as " + std::to_string(config.seed);}
+
+		if (widthParam != -1) {config.columns = static_cast<unsigned>(widthParam);}
+		else {widthName = "kept as " + std::to_string(config.columns);}
+
+		if (widthParam != -1) {config.rows = static_cast<unsigned>(heightParam);}
+		else {heightName = "kept as " + std::to_string(config.rows);}
+
+		fmt::println("set worldGen parameters to seed: {}, width: {}, height: {}, mode: {}", seedName, widthName, heightName, modeName);
+		
+
+		// write config to json
+		const auto path = assets::getAssetPath(assets::JsonFile::WORLD_GENERATION_CONFIGURATION);
+
+		{	// open the stream in an extra block, so the stream gets closed before deserialize tries to open the json
+			std::ofstream file(path);
+			if (!file) {
+				std::cerr << "Could not open config file: " << path << '\n';
+				return;
+			}
+			file << config.serialize().dump(4);
+		}
+
+
+		// generate map with the WorldGeneratorConfig
+		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
+			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
+			gameState->getMap().regenerate();
+		}
+		else {
+			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
+		}
+		{
+			Player player{};
+			gameState->addPlayer(player);
+			const int width = gameState->getMap().getMapWidth();
+			const int height = gameState->getMap().getTileCount() / width;
+
+			auto randomEngine = std::default_random_engine(std::random_device()());
+			auto uniformDistribution = std::uniform_int_distribution();
+
+			for (int row = 0; row < height; ++row) {
+				for (int col = 0; col < width; ++col) {
+					if (uniformDistribution(randomEngine) % 4 != 0) {
+						gameState->getPlayer(0)->exploreTile(row * width + col);
+					}
+				}
+			}
+		}
+		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
+			std::cerr << result.unwrapErr() << std::endl;
+		}
+		render.renderHeroSystem.updateDimensionsFromMap();
+
 		gameState->initTutorial();	// Init the Tutorial
 		gameState->setPhase(types::GamePhase::PLAY);
 	}

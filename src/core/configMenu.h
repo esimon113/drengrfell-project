@@ -29,7 +29,7 @@ namespace df {
         void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
         void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
-        void setStartCallback(std::function<void(int, int, int, WorldGeneratorConfig::GenerationMode)> callback) {
+        void setStartCallback(std::function<void(int, int, int, int)> callback) {
             onStart = std::move(callback);
         }
 
@@ -48,10 +48,10 @@ namespace df {
         };
         InputField activeInput = InputField::NONE;
         std::string inputString;
-        int worldSeed = 0;
-        int worldHeight = 20;
-        int worldWidth = 20;
-        WorldGeneratorConfig::GenerationMode worldGenerationMode = WorldGeneratorConfig::GenerationMode::PERLIN;
+        int worldSeed = -1;
+        int worldHeight = -1;
+        int worldWidth = -1;
+        int worldGenerationMode = -1;
 
 
         Shader menuShader;
@@ -124,7 +124,7 @@ namespace df {
         //std::function<void()> onMultiplayer;
         //std::function<void()> onPerlin;
         //std::function<void()> onSeed;
-        std::function<void(int, int, int, WorldGeneratorConfig::GenerationMode)> onStart;
+        std::function<void(int, int, int, int)> onStart;
         //std::function<void()> onWidth;
 
         // helper functions
