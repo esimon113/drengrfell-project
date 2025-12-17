@@ -374,6 +374,7 @@ namespace df {
 		switch (gamePhase) {
 		case types::GamePhase::START:
 			mainMenu.onResizeCallback(windowParam, width, height);
+			configMenu.onResizeCallback(windowParam, width, height);
 			break;
 		case types::GamePhase::CONFIG:
 			configMenu.onResizeCallback(windowParam, width, height);
