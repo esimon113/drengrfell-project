@@ -260,6 +260,17 @@ namespace df {
 		case types::GamePhase::CONFIG:
 			break;
 		case types::GamePhase::PLAY:
+			double x, y;
+			glfwGetCursorPos(windowParam, &x, &y);
+
+			glm::vec2 mouse{
+				static_cast<float>(x),
+				static_cast<float>(window->getWindowExtent().y - y)
+			};
+			// if mouse over hud -> hud callbacks
+			if (render.renderHudSystem.onMouseButton(mouse, button, action))
+				return;
+			// else World callbacks
 			world.onMouseButtonCallback(windowParam, button, action, mods);
 			break;
 		case types::GamePhase::END:
