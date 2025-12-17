@@ -259,7 +259,7 @@ namespace df {
 			break;
 		case types::GamePhase::CONFIG:
 			break;
-		case types::GamePhase::PLAY:
+		case types::GamePhase::PLAY: {
 			double x, y;
 			glfwGetCursorPos(windowParam, &x, &y);
 
@@ -272,7 +272,7 @@ namespace df {
 				return;
 			// else World callbacks
 			world.onMouseButtonCallback(windowParam, button, action, mods);
-			break;
+		} break;
 		case types::GamePhase::END:
 			break;
 		}
