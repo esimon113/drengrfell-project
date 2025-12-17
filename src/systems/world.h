@@ -4,12 +4,13 @@
 #include <window.h>
 #include <systems/audio.h>
 
+#include "gamestate.h"
 
 
 namespace df {
 	class WorldSystem {
 		public:
-			static WorldSystem init(Window* window, Registry* registry, AudioSystem* audioEngine) noexcept;
+			static WorldSystem init(Window* window, Registry* registry, AudioSystem* audioEngine, GameState& gameState) noexcept;
 			void deinit() noexcept;
 
 			void step(const float delta) noexcept;
@@ -21,6 +22,7 @@ namespace df {
 			void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
 			void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 			void calcNewCameraZoom(double yoffset) noexcept;
+			bool isTestMovementActive() const { return testMovement; }
 
 			// for rendering building previews on selection
 			bool isSettlementPreviewActive = false;
@@ -34,10 +36,12 @@ namespace df {
 			Window* window;
 			Registry* registry;
 			AudioSystem* audioEngine;
+			GameState* gameState;
 
 			size_t score;
 			Entity heroEntity;
 			bool m_reset;
+			bool testMovement = false;
 
 			std::default_random_engine randomEngine;
 			std::uniform_real_distribution<float> uniformDistribution;

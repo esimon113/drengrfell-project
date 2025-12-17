@@ -12,6 +12,7 @@
 #include <utils/shader.h>
 #include <utils/texture.h>
 #include <utils/framebuffer.h>
+#include "entityMovement.h"
 
 #include <systems/systems.h>
 
@@ -34,6 +35,7 @@ namespace df {
 			Window* window;
 			Window* debugWindow = nullptr;
 			Registry* registry;
+			
 			// AudioSystem* audioEngine;
 
 			WorldSystem world;
@@ -41,6 +43,8 @@ namespace df {
 
 			RenderSystem render;
 			RenderSnowSystem renderSnowSystem;
+
+			EntityMovementSystem movementSystem;
 
 			void reset() noexcept;
 
@@ -56,7 +60,7 @@ namespace df {
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
 			// GameState
-			GameState gameState;
+			std::shared_ptr<GameState> gameState;
 			// MainMenu
 			MainMenu mainMenu;
 			// ConfigMenu

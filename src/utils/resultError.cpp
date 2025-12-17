@@ -16,6 +16,12 @@ namespace df {
             case ResultError::Kind::DomainError:
                 kind = "DomainError";
                 break;
+            case ResultError::Kind::IOError:
+                kind = "IOError";
+                break;
+            case ResultError::Kind::JsonParseError:
+                kind = "JsonParseError";
+                break;
         }
 
         out << kind << ": " << e.text;

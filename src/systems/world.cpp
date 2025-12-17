@@ -6,12 +6,13 @@
 
 
 namespace df {
-	WorldSystem WorldSystem::init(Window* window, Registry *registry, AudioSystem *audioEngine) noexcept {
+	WorldSystem WorldSystem::init(Window* window, Registry *registry, AudioSystem *audioEngine, GameState& gameState) noexcept {
 		WorldSystem self;
 
 		self.window = window;
 		self.registry = registry;
 		self.audioEngine = audioEngine;
+		self.gameState = &gameState;
 		self.score = 0;
 
 		self.randomEngine = std::default_random_engine(std::random_device()());
@@ -86,6 +87,8 @@ namespace df {
 		switch (action) {
 			case GLFW_PRESS:
 				switch (key) {
+
+					// ----------------------currently only here for testing until we have a triggerpoint--------------------------------------
 				case GLFW_KEY_F7:
 					animComp.currentType = Hero::AnimationType::Idle;
 					animComp.anim.setCurrentFrameIndex(0);
@@ -106,6 +109,20 @@ namespace df {
 					animComp.currentType = Hero::AnimationType::Jump;
 					animComp.anim.setCurrentFrameIndex(0);
 					fmt::println("Debug: Jump animation activated");
+					break;
+				case GLFW_KEY_F11:
+				
+					animComp.currentType = Hero::AnimationType::Run;
+					animComp.anim.setCurrentFrameIndex(0);
+					fmt::println("Debug: Run animation activated");
+					break;
+				case GLFW_KEY_F5:
+					if (action == GLFW_PRESS) {
+						testMovement = !testMovement;
+						fmt::println("They hero should be moving now!");
+						break;
+					}
+					// ------------------------------------------------------------
 					break;
 
 					case GLFW_KEY_R: // pressing the 'r' key triggers a reset of the game
@@ -141,6 +158,29 @@ namespace df {
     						this->isSettlementPreviewActive = false;
     					}
     					break;
+					case GLFW_KEY_G: {
+						Graph& map = this->gameState->getMap();
+						if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
+							std::cerr << worldGenConfResult.unwrapErr() << std::endl;
+							break;
+						} else {
+							map.regenerate(worldGenConfResult.unwrap<>());
+						}
+
+						if (Player* player = this->gameState->getPlayer(0)) {
+							const int width = map.getMapWidth();
+							const int height = map.getTileCount() / width;
+
+							player->forgetExploredTiles();
+							for (int row = 0; row < height; ++row) {
+								for (int col = 0; col < width; ++col) {
+									if (uniformDistribution(randomEngine) > 0.25f) {
+										player->exploreTile(row * width + col);
+									}
+								}
+							}
+						}
+					} break;
 					case GLFW_KEY_RIGHT_BRACKET:
 						// This case is the key which can produce +, *, ~ on the german keyboard layout, so a plus
 						calcNewCameraZoom(1.0f);

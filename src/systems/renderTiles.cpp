@@ -9,22 +9,15 @@
 namespace df {
 
     RenderTilesSystem RenderTilesSystem::init(Window& window, Registry& registry, GameState& gameState) noexcept {
-
         RenderTilesSystem self;
 
         self.window = &window;
         self.registry = &registry;
         self.gameState = &gameState;
 
-        self.viewport.origin = glm::uvec2(0);
-        self.viewport.size = self.window->getWindowExtent();
-
         // load resources for rendering
         self.tileShader = Shader::init(assets::Shader::tile).value();
         self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
-
-        const glm::uvec2 extent = self.window->getWindowExtent();
-        self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
 
         self.initMap();
 
@@ -42,7 +35,7 @@ namespace df {
         {
             glBindVertexArray(tileVao);
             glBindBuffer(GL_ARRAY_BUFFER, tileVbo);
-            glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(float), this->tileMesh.data(), GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(TileVertex), this->tileMesh.data(), GL_STATIC_DRAW);
 
             // layout(location = 0) in vec2 position;
             glEnableVertexAttribArray(0);
@@ -80,13 +73,28 @@ namespace df {
     Result<void, ResultError> RenderTilesSystem::updateMap() noexcept {
         const Player* player = this->gameState->getPlayer(0);
         const Graph& map = this->gameState->getMap();
-        if (map.getMapWidth() == 0 or map.getTileCount() == 0) {
-            return Err(ResultError(ResultError::Kind::DomainError, "RenderTilesSystem::updateMap() assumes a initialized map"));
+
+        const unsigned width = map.getMapWidth();
+        const size_t tileCount = map.getTileCount();
+
+        if (width == 0 or width > 100) {
+            return Err(ResultError(ResultError::Kind::DomainError, fmt::format("RenderTilesSystem::updateMap() width={} of map({}) is not in [1, 100]. Cannot allocate render buffer.", width, reinterpret_cast<uintptr_t>(&map))));
+        }
+        if (tileCount == 0 or tileCount > 10000) {
+            return Err(ResultError(ResultError::Kind::DomainError, fmt::format("RenderTilesSystem::updateMap() tileCount={} of map({}) is not in [1, 10'000]. Cannot allocate render buffer.", tileCount, reinterpret_cast<uintptr_t>(&map))));
+        }
+        if (tileCount < width || tileCount % width != 0) {
+            return Err(ResultError(ResultError::Kind::DomainError, fmt::format("RenderTilesSystem::updateMap() width and tileCount are inconsistent. Cannot allocate render buffer.")));
         }
 
         this->tileColumns = map.getMapWidth();
         this->tileRows = map.getTileCount() / this->tileColumns;
-        this->tileInstances = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
+        auto tileInstanceResult = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
+        if (tileInstanceResult.isOk()) {
+            this->tileInstances = tileInstanceResult.unwrap<>();
+        } else {
+            return Err(tileInstanceResult.unwrapErr());
+        }
 
         const size_t newTileInstancesBufferSize = this->tileInstances.size() * sizeof(TileInstance);
         glBindBuffer(GL_ARRAY_BUFFER, this->tileInstanceVbo);
@@ -105,6 +113,11 @@ namespace df {
     void RenderTilesSystem::deinit() noexcept {
         tileShader.deinit();
         tileAtlas.deinit();
+
+        glDeleteBuffers(1, &tileInstanceVbo);
+        glDeleteBuffers(1, &tileVbo);
+        glDeleteVertexArrays(1, &tileVao);
+        tileInstanceVbo = tileVbo = tileVao = 0;
     }
 
 
@@ -113,6 +126,12 @@ namespace df {
         accumulator += delta;
         if (accumulator > 1.0) {
             accumulator = 0.0f;
+        }
+        if (Graph& map = this->gameState->getMap(); map.isRenderUpdateRequested()) {
+            if (const Result<void, ResultError> result = updateMap(); result.isErr()) {
+                std::cerr << result.unwrapErr() << std::endl;
+            }
+            map.setRenderUpdateRequested(false);
         }
         renderMap(accumulator);
     }
@@ -134,7 +153,7 @@ namespace df {
             -1.0f, 1.0f
         );
 
-        auto model = glm::identity<glm::mat4>();
+        glm::mat4 model = glm::identity<glm::mat4>();
         model = glm::translate(model, glm::vec3(-camPos, 0.0f));
         model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
 
@@ -147,7 +166,7 @@ namespace df {
             .setSampler("tileAtlas", 0);
 
         glBindVertexArray(tileVao);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, this->tileMesh.size() / FLOATS_PER_TILE_VERTEX, this->tileInstances.size());
+        glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(this->tileMesh.size()), static_cast<GLsizei>(this->tileInstances.size()));
         glBindVertexArray(0);
     }
 
@@ -155,37 +174,25 @@ namespace df {
     void RenderTilesSystem::reset() noexcept {}
 
 
-    std::vector<float> RenderTilesSystem::createRectangularTileMesh() noexcept {
+    std::vector<RenderTilesSystem::TileVertex> RenderTilesSystem::createRectangularTileMesh() noexcept {
         std::vector<TileVertex> vertices;
         vertices.push_back({{1, -1}, {1, 0}});
         vertices.push_back({{1, 1}, {1, 1}});
         vertices.push_back({{-1, 1}, {0, 1}});
         vertices.push_back({{-1, -1}, {0, 0}});
 
-        std::vector<float> meshData;
+        std::vector<TileVertex> meshData;
         for (int i = 0; i < 2; i++) {
-            meshData.push_back(vertices[2 * i + 0].position.x);
-            meshData.push_back(vertices[2 * i + 0].position.y);
-            meshData.push_back(vertices[2 * i + 0].uv.x);
-            meshData.push_back(vertices[2 * i + 0].uv.y);
-
-            meshData.push_back(vertices[2 * i + 1].position.x);
-            meshData.push_back(vertices[2 * i + 1].position.y);
-            meshData.push_back(vertices[2 * i + 1].uv.x);
-            meshData.push_back(vertices[2 * i + 1].uv.y);
-
-            meshData.push_back(vertices[(2 * i + 2) % 4].position.x);
-            meshData.push_back(vertices[(2 * i + 2) % 4].position.y);
-            meshData.push_back(vertices[(2 * i + 2) % 4].uv.x);
-            meshData.push_back(vertices[(2 * i + 2) % 4].uv.y);
+            meshData.push_back(vertices[2 * i + 0]);
+            meshData.push_back(vertices[2 * i + 1]);
+            meshData.push_back(vertices[(2 * i + 2) % 4]);
         }
-
 
         return meshData;
     }
 
 
-    std::vector<RenderTilesSystem::TileInstance> RenderTilesSystem::makeTileInstances(const std::vector<Tile>& tiles, const int columns, const Player* player) noexcept {
+    Result<std::vector<RenderTilesSystem::TileInstance>, ResultError> RenderTilesSystem::makeTileInstances(const std::vector<Tile>& tiles, const int columns, const Player* player) noexcept {
         const int rows = static_cast<int>(tiles.size()) / columns;
         std::vector<TileInstance> instances;
 
@@ -196,21 +203,28 @@ namespace df {
                 position.x = 2.0f * (static_cast<float>(column) + 0.5f * static_cast<float>(row & 1));
                 position.y = static_cast<float>(row) * 1.5f;
 
-                const auto& tile = tiles[row * columns + column];
+                const Tile& tile = tiles[row * columns + column];
                 instances.push_back({position, static_cast<int>(tile.getType()), 0, player == nullptr});
             }
         }
 
         // If no player is given, the whole map is shown as explored
         if (player != nullptr) {
-            // Do not move into double loop for performance reasons [O(n^2)+O(n) vs. O(n^3)]
-            for (size_t tileId : player->getExploredTileIds()) {
-                if (tileId < instances.size()) {
-                    instances[tileId].explored = 1;
+            // Do not move into double loop for performance reasons
+            for (const size_t tileId : player->getExploredTileIds()) {
+                if (static_cast<int>(tileId) < rows * columns) {
+                    const size_t row = tileId / columns;
+                    const size_t col = tileId % columns;
+                    const size_t instanceId = (rows - 1 - row) * columns + col;
+                    if (instanceId < instances.size()) {
+                        instances[instanceId].explored = 1;
+                    } else {
+                        return Err(ResultError(ResultError::Kind::DomainError, fmt::format("RenderTilesSystem::makeTileInstance: invalid instanceId={}. There are only {} instances.", instanceId, instances.size())));
+                    }
                 }
             }
         }
 
-        return instances;
+        return Ok(instances);
     }
 }

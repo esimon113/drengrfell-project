@@ -6,10 +6,13 @@
 #include "types.h"
 #include "core/camera.h"
 #include <glm/gtc/matrix_transform.hpp>
+// test for entityMovement
+#include "entityMovement.h"
 
 #include <iostream>
 
 #include "worldGenerator.h"
+
 
 
 namespace df {
@@ -49,33 +52,42 @@ namespace df {
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 		self.registry = Registry::init();
-		GameState newGameState(self.registry);
-		self.gameState = std::move(newGameState);
-		self.world = WorldSystem::init(self.window, self.registry, nullptr);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
+		self.gameState = std::make_shared<GameState>(self.registry);
+		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-
-		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
-		// Move this to a better place
-
-		auto worldGeneratorConfig = WorldGeneratorConfig();
-		worldGeneratorConfig.generationMode = WorldGeneratorConfig::GenerationMode::PERLIN;		// TEST, MOVE LATER
-		const auto tiles = WorldGenerator::generateTiles(worldGeneratorConfig);
-		if (tiles.isOk()) {
-			auto& map = self.gameState.getMap();
-			map.setMapWidth(worldGeneratorConfig.columns);
-			for (const auto& tile : tiles.unwrap()) {
-				map.addTile(tile);
-			}
+		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
+		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
+			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
+			self.gameState->getMap().regenerate();
 		} else {
-			std::cerr << tiles.unwrapErr() << std::endl;
+			self.gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
-		if (auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
+		{
+			Player player{};
+			self.gameState->addPlayer(player);
+			const int width = self.gameState->getMap().getMapWidth();
+			const int height = self.gameState->getMap().getTileCount() / width;
+
+			auto randomEngine = std::default_random_engine(std::random_device()());
+			auto uniformDistribution = std::uniform_int_distribution();
+
+			for (int row = 0; row < height; ++row) {
+				for (int col = 0; col < width; ++col) {
+					if (uniformDistribution(randomEngine) % 4 != 0) {
+						self.gameState->getPlayer(0)->exploreTile(row * width + col);
+					}
+				}
+			}
+		}
+		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
 		}
 		self.render.renderHeroSystem.updateDimensionsFromMap();
 
 		// Create main menu
 		self.mainMenu.init(self.window);
+		// for testing hero movement until we have a triggerpoint
+		self.movementSystem = EntityMovementSystem::init(self.registry, *self.gameState);
 		// Create config menu
 		self.configMenu.init(self.window, self.registry);
 
@@ -138,6 +150,12 @@ namespace df {
 		float last_time = static_cast<float>(glfwGetTime());
 
 		glClearColor(0, 0, 0, 1);
+		// Force an initial resize to ensure a correct viewport
+		int fbWidth, fbHeight;
+		glfwGetFramebufferSize(window->getHandle(), &fbWidth, &fbHeight);
+		onResizeCallback(window->getHandle(), fbWidth, fbHeight);
+		
+
 
 		while (!window->shouldClose()) {
 			glfwPollEvents();
@@ -146,7 +164,7 @@ namespace df {
 			delta_time = time - last_time;
 			last_time = time;
 
-			types::GamePhase gamePhase = gameState.getPhase();
+			types::GamePhase gamePhase = gameState->getPhase();
 
 			switch (gamePhase) {
 				case types::GamePhase::START:
@@ -168,7 +186,19 @@ namespace df {
 					glClear(GL_COLOR_BUFFER_BIT);
 					
 					render.step(delta_time);
+					// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
+					if (world.isTestMovementActive()) {
+						if (!registry->animations.entities.empty()) {
 
+							Entity hero = registry->animations.entities.front();
+							glm::vec2 targetPos = glm::vec2(6,6);
+							movementSystem.moveEntityTo(hero, targetPos, delta_time);
+						}
+						else {
+							fmt::println("No hero entity available!");
+						}
+					}
+					// ------------------------------------------------------------
 					// Render previews (only one at a time)
 					auto renderBuildingsSystem = this->render.renderBuildingsSystem;
 
@@ -212,7 +242,7 @@ namespace df {
 	}
 
 	void Application::configurateGame() noexcept {
-		this->gameState.setPhase(types::GamePhase::CONFIG);
+		gameState->setPhase(types::GamePhase::CONFIG);
 	}
 
 	void Application::startGame(int seed, int width, int height, WorldGeneratorConfig::GenerationMode mode) noexcept {
@@ -227,12 +257,13 @@ namespace df {
 			modeName = "none";
 		}
 		fmt::println("set worldGen parameters to seed: {}, width: {}, height: {}, mode: {}", seed, width, height, modeName);
-		this->gameState.setPhase(types::GamePhase::PLAY);
+		gameState->initTutorial();	// Init the Tutorial
+		gameState->setPhase(types::GamePhase::PLAY);
 	}
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
-
+		types::GamePhase gamePhase = gameState->getPhase();
+		auto* step = this->gameState->getCurrentTutorialStep();
 		switch (gamePhase) {
 		case types::GamePhase::START:
 			mainMenu.onKeyCallback(windowParam, key, scancode, action, mods);
@@ -242,6 +273,12 @@ namespace df {
 			break;
 		case types::GamePhase::PLAY:
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
+			// Update Tutorial if step == moveCamera
+			if (step && step->id == TutorialStepId::MOVE_CAMERA) {
+				if (action == GLFW_PRESS && (key == GLFW_KEY_W || key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_D)) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			}
 			break;
 		case types::GamePhase::END:
 			break;
@@ -249,7 +286,7 @@ namespace df {
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
+		types::GamePhase gamePhase = gameState->getPhase();
 
 		switch (gamePhase) {
 		case types::GamePhase::START:
@@ -267,7 +304,7 @@ namespace df {
 	}
 
 	void Application::onScrollCallback(GLFWwindow* windowParam, double xoffset, double yoffset) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
+		types::GamePhase gamePhase = gameState->getPhase();
 
 		switch (gamePhase) {
 		case types::GamePhase::START:
@@ -283,7 +320,7 @@ namespace df {
 	}
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
-		types::GamePhase gamePhase = gameState.getPhase();
+		types::GamePhase gamePhase = gameState->getPhase();
 
 		switch (gamePhase) {
 		case types::GamePhase::START:

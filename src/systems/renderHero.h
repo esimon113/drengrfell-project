@@ -42,5 +42,6 @@ namespace df {
 			std::vector<Texture> heroSwimTextures;
 			std::vector<Texture> heroJumpTextures;
 			std::vector<Texture> heroAttackTextures;
+			std::vector<Texture> heroRunTextures;
 	};
 }

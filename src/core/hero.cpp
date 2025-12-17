@@ -50,7 +50,4 @@ namespace df {
             currentAnim->step(deltaTime);
         }
     }
-
-
-
 }

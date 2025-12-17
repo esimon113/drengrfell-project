@@ -13,6 +13,7 @@ using json = nlohmann::json;
 #include "road.h"
 #include "settlement.h"
 #include "types.h"
+#include "tutorial.h"
 
 
 
@@ -82,7 +83,11 @@ namespace df {
         void save(const std::filesystem::path &filepath) const;
         void load(const std::filesystem::path &filepath);
 
-
+        // Tutorial
+        void initTutorial();
+        TutorialStep* getCurrentTutorialStep();
+        void completeCurrentTutorialStep();
+        bool isTutorialActive() const;
 
     private:
         // TODO: discuss ownership model for game...
@@ -100,6 +105,9 @@ namespace df {
         size_t roundNumber = 0;
         types::GamePhase phase = types::GamePhase::START;
         Registry* registry = nullptr;
+        // Tutorial
+        std::vector<TutorialStep> tutorialSteps;
+        size_t currentTutorialStep = 0;
     };
 
 }

@@ -1,6 +1,9 @@
 #pragma once
 #include <nlohmann/json.hpp>
 
+#include "assets.h"
+#include "resultError.h"
+
 namespace df {
     // This is intended to be used like a plain old data structure with serialization. Nothing more.
     // Because of the implementation of deserialize, everything after = is used as a default value,
@@ -19,7 +22,7 @@ namespace df {
         GenerationMode generationMode = GenerationMode::PERLIN;
 
         // General
-        unsigned seed = 123; // The same seed creates the same world
+        unsigned seed = 0; // The same seed creates the same world. 0 for random seed.
         // Noise
         struct AltitudeNoiseConfig {
             float frequency = 0.1f; // Same meaning as in sine waves
@@ -29,5 +32,6 @@ namespace df {
 
         nlohmann::json serialize() const;
         static WorldGeneratorConfig deserialize(const nlohmann::json& j);
+        static Result<WorldGeneratorConfig, ResultError> deserialize(assets::JsonFile asset = assets::JsonFile::WORLD_GENERATION_CONFIGURATION);
     };
 }
