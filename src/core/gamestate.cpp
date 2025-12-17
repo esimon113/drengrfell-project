@@ -200,7 +200,10 @@ namespace df {
 
         tutorialSteps.push_back({
             .id = TutorialStepId::MOVE_CAMERA,
-            .text = "Use WASD or move the camera. Use the mousewheel to zoom out/in. This is also possible with +/-.",
+            .text =
+                "Use WASD to move the camera.\n"
+                "Use the mousewheel to zoom in/out.\n"
+                "This is also possible with +/-.",
             .completed = false,
             .screenPosition = std::nullopt,
             .renderBox = true
@@ -208,7 +211,10 @@ namespace df {
 
         tutorialSteps.push_back({
             .id = TutorialStepId::BUILD_SETTLEMENT,
-            .text = "Build your first settlement using the b Button to create the hover view. Then click any free tile close to your hero to build the settlement.",
+            .text = 
+                "Build your first settlement using the b Button.\n"
+                "Then you get the hover view.\n"
+                "Here click any free tile close to your hero to build the settlement.",
             .completed = false,
             .screenPosition = std::nullopt,
             .renderBox = true

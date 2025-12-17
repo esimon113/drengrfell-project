@@ -62,24 +62,35 @@ namespace df {
         renderHud();
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
-            /*//     TODO: format tutorial view
+            //     TODO: format tutorial view
             if (gameState->isTutorialActive()) {
+                // get next tutorial step
                 TutorialStep* step = gameState->getCurrentTutorialStep();
                 if (!step)
                     return;
-                //glm::vec2 pos = step->screenPosition.value_or(glm::vec2{ 20.f, 60.f });
-                glm::vec2 pos = { 150.0f, 150.0f };
+                // box position/size
+                float boxPosPaddingX = 10.f;
+                float boxPosPaddingY = 10.f;
+                float scale = 0.4f;
+                glm::vec2 textSize = textSystem->measureText(step->text, scale);
+                glm::vec2 rectBoxSize = {
+                    textSize.x + boxPosPaddingX,
+                    textSize.y + boxPosPaddingY
+                };
+                glm::vec2 pos = { 10.0f, window->getWindowExtent().y - rectBoxSize.y - 10.0f };     // box position always top left
+                // Tutorial box
                 if (step->renderBox) {
-                    renderRectBox(pos, { 420.f, 70.f }, {0.0f, 0.0f, 0.0f});
+                    renderRectBox(pos, rectBoxSize, {0.0f, 0.0f, 0.0f});
                 }
+
+                // center text in the middle of the box
+                glm::vec2 textPos = {
+                    pos.x + (rectBoxSize.x - textSize.x) / 2.0f,
+                    pos.y + (rectBoxSize.y + textSize.y) / 2.0f - 15.0f
+                };
                 // Tutorial-Text
-                textSystem->renderText(
-                    step->text,
-                    pos + glm::vec2{ 10.f, 20.f },
-                    0.6f,
-                    { 1.f, 1.f, 1.f }
-                );
-            }*/
+                textSystem->renderText(step->text, textPos, scale, { 1.f, 1.f, 1.f });
+            }
 
             // TODO: update for multiple player if we do multiplayer
             Player& player = *gameState->getPlayer(0);
