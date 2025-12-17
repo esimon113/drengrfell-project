@@ -175,5 +175,21 @@ namespace df {
         return false;
     }
 
+    void RenderHudSystem::onResizeCallback(GLFWwindow* /*window*/, int width, int height) noexcept {
+       
+        this->viewport.size = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+
+        
+        float winW = static_cast<float>(width);
+        float winH = static_cast<float>(height);
+
+        float buttonWidth = 0.20f;
+        float buttonHeight = 0.07f;
+        
+        endTurnButton.w = winW * buttonWidth;
+        endTurnButton.h = winH * buttonHeight;
+        endTurnButton.x = (winW - endTurnButton.w) * 0.94f;
+        endTurnButton.y = winH * 0.025f;
+    }
 
 }

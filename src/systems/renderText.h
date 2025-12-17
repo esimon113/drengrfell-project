@@ -29,6 +29,10 @@ namespace df {
         ) const noexcept;
 
         Viewport getViewport() const noexcept;
+        void updateViewport(glm::uvec2 origin, glm::uvec2 size) {
+            this->viewport.origin = origin;
+            this->viewport.size = size;
+        }
 
     private:
         struct Character {

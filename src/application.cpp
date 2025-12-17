@@ -260,17 +260,30 @@ namespace df {
 		case types::GamePhase::CONFIG:
 			break;
 		case types::GamePhase::PLAY: {
-			double x, y;
-			glfwGetCursorPos(windowParam, &x, &y);
+			double xpos, ypos;
+			glfwGetCursorPos(windowParam, &xpos, &ypos);
+
+			int winWidth, winHeight;
+			glfwGetWindowSize(windowParam, &winWidth, &winHeight);
+
+			int fbWidth, fbHeight;
+			glfwGetFramebufferSize(windowParam, &fbWidth, &fbHeight);
+
+
+			float xScale = (winWidth > 0) ? (float)fbWidth / winWidth : 1.f;
+			float yScale = (winHeight > 0) ? (float)fbHeight / winHeight : 1.f;
+
+			float mouseX = static_cast<float>(xpos * xScale);
+			float mouseY = static_cast<float>(ypos * yScale);
 
 			glm::vec2 mouse{
-				static_cast<float>(x),
-				static_cast<float>(window->getWindowExtent().y - y)
+				mouseX,
+				static_cast<float>(window->getWindowExtent().y) - mouseY 
 			};
-			// if mouse over hud -> hud callbacks
+
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
 				return;
-			// else World callbacks
+
 			world.onMouseButtonCallback(windowParam, button, action, mods);
 		} break;
 		case types::GamePhase::END:
@@ -305,6 +318,7 @@ namespace df {
 			break;
 		case types::GamePhase::PLAY:
 			render.onResizeCallback(windowParam, width, height);
+			render.renderHudSystem.onResizeCallback(windowParam, width, height);
 			break;
 		case types::GamePhase::END:
 			break;
