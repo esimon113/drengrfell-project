@@ -40,6 +40,16 @@ namespace df {
 
         glBindVertexArray(0);
 
+        // End Turn Button
+        float buttonWidth = 0.20f;
+        float buttonHeight = 0.07f;
+        float winW = static_cast<float>(extent.x);
+        float winH = static_cast<float>(extent.y);
+        self.endTurnButton.w = winW * buttonWidth;
+        self.endTurnButton.h = winH * buttonHeight;
+        self.endTurnButton.x = (winW - self.endTurnButton.w) * 0.94f;
+        self.endTurnButton.y = winH * 0.025f;
+
         return self;
     }
 
@@ -52,16 +62,15 @@ namespace df {
         renderHud();
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
-            /*      TODO: format tutorial view
+            /*//     TODO: format tutorial view
             if (gameState->isTutorialActive()) {
-                fmt::println("innerhalb von isTutorialActive");
                 TutorialStep* step = gameState->getCurrentTutorialStep();
                 if (!step)
                     return;
                 //glm::vec2 pos = step->screenPosition.value_or(glm::vec2{ 20.f, 60.f });
                 glm::vec2 pos = { 150.0f, 150.0f };
                 if (step->renderBox) {
-                    renderTutorialBox(pos, { 420.f, 70.f });
+                    renderRectBox(pos, { 420.f, 70.f }, {0.0f, 0.0f, 0.0f});
                 }
                 // Tutorial-Text
                 textSystem->renderText(
@@ -84,6 +93,10 @@ namespace df {
                 0.5f,
                 { 1.0f, 1.0f, 1.0f }
             );
+
+            // End Turn Button
+            renderRectBox({ endTurnButton.x , endTurnButton.y }, { endTurnButton.w, endTurnButton.h }, {0.0f, 0.0f, 1.0f});
+            textSystem->renderText("End Turn", { endTurnButton.x +10 , endTurnButton.y +10 }, 0.5f, {1.0f, 1.0f, 1.0f});
         }
     }
 
@@ -120,7 +133,7 @@ namespace df {
         glBindVertexArray(0);
     }
 
-    void RenderHudSystem::renderTutorialBox(glm::vec2 pos, glm::vec2 size) const noexcept {
+    void RenderHudSystem::renderRectBox(glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept {
 
         const float width = viewport.size.x;
         const float height = viewport.size.y;
@@ -134,11 +147,33 @@ namespace df {
             .setMat4("projection", projection)
             .setMat4("view", glm::identity<glm::mat4>())
             .setMat4("model", model)
-            .setVec3("fcolor", glm::vec3(0.f, 0.f, 0.f));
+            .setVec3("fcolor", color);
 
         glBindVertexArray(quadVao);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         glBindVertexArray(0);
     }
+
+    bool RenderHudSystem::isMouseOverEndTurn(glm::vec2 mouse) const noexcept {
+        return mouse.x >= endTurnButton.x &&
+            mouse.x <= endTurnButton.x + endTurnButton.w &&
+            mouse.y >= endTurnButton.y &&
+            mouse.y <= endTurnButton.y + endTurnButton.h;
+    }
+
+    bool RenderHudSystem::onMouseButton(glm::vec2 mouse, int button, int action) noexcept
+    {
+        if (button == GLFW_MOUSE_BUTTON_LEFT &&
+            action == GLFW_PRESS &&
+            isMouseOverEndTurn(mouse))
+        {
+            //gameState->endTurn(); TODO: use when endTurn exists.
+            gameState->setRoundNumber(gameState->getRoundNumber() + 1);
+            gameState->setTurnCount(gameState->getTurnCount() + 1);
+            return true;
+        }
+        return false;
+    }
+
 
 }
