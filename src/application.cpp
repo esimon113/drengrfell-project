@@ -313,6 +313,8 @@ namespace df {
 		switch (gamePhase) {
 		case types::GamePhase::START:
 			mainMenu.onResizeCallback(windowParam, width, height);
+			render.onResizeCallback(windowParam, width, height);
+			render.renderHudSystem.onResizeCallback(windowParam, width, height);
 			break;
 		case types::GamePhase::CONFIG:
 			break;
