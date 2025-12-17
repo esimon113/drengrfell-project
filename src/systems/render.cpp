@@ -86,7 +86,9 @@ namespace df {
 
 
         this->renderBuildingsSystem.updateViewport(origin, size);
-
+        this->renderTextSystem.updateViewport(origin, size);
+        this->renderHudSystem.updateViewport(origin,size);
+        
 		// reinitialize off-screen framebuffer
 		intermediateFramebuffer.deinit();
 		intermediateFramebuffer = Framebuffer::init({ (GLsizei)size.x, (GLsizei)size.y, 1, true });
