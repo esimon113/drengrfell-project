@@ -143,7 +143,12 @@ namespace df {
                         fmt::println("Set hex rendering to {}", this->useHex ? "true" : "false");
                     } break;
                     case GLFW_KEY_P: {
-                        fmt::println("Picked: {}", getTileIdAtPosition(100, 100));
+                        double xpos, ypos;
+                        glfwGetCursorPos(this->window->getHandle(), &xpos, &ypos);
+                        auto extent = this->window->getWindowExtent();
+
+
+                        fmt::println("Picked: {} at mouse ({}, {})", getTileIdAtPosition(xpos, extent.y - ypos), xpos, ypos);
                     } break;
                 }
             }
@@ -251,6 +256,21 @@ namespace df {
     unsigned RenderTilesSystem::getTileIdAtPosition(const int x, const int y) const noexcept {
         // See https://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-an-opengl-hack/
 
+        this->intermediateFramebuffer.bind();
+
+        glm::uvec2 extent = this->intermediateFramebuffer.getExtent();
+        if (static_cast<unsigned>(x) >= extent.x || static_cast<unsigned>(y) >= extent.y) {
+            std::cerr << "Tile picker coordinates are out of bounds: " << "x: " << x << ", y: " << y;
+            return 0;
+        }
+        glViewport(0, 0, extent.x, extent.y);
+        glClearColor(0.0, 0.0, 0.0f , 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_PROGRAM_POINT_SIZE);
+        //glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable(GL_DEPTH_TEST);
+
         renderPickerMap(false);
 
         glFlush();
@@ -258,6 +278,9 @@ namespace df {
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         unsigned char data[4];
         glReadPixels(x, y,1,1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+        this->intermediateFramebuffer.unbind();
+
         return data[0] +
                data[1] * 256 +
                data[2] * 256*256;
