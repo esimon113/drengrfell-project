@@ -177,12 +177,26 @@ namespace df {
 
 					if (this->world.isSettlementPreviewActive) {
 						glm::vec2 cursorPos = window->getCursorPosition();
-						glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
+						glm::vec2 worldPos = screenToWorldCoordinates(
+							cursorPos,
+							renderBuildingsSystem.getViewport(),
+							calculateWorldDimensions(
+								RenderCommon::getMapColumns<int>(gameState->getMap()),
+								RenderCommon::getMapRows<int>(gameState->getMap())
+							)
+						);
 						renderBuildingsSystem.renderSettlementPreview(worldPos, true, time);
 					}
 					else if (this->world.isRoadPreviewActive) {
 						glm::vec2 cursorPos = window->getCursorPosition();
-						glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
+						glm::vec2 worldPos = screenToWorldCoordinates(
+							cursorPos,
+							renderBuildingsSystem.getViewport(),
+							calculateWorldDimensions(
+								RenderCommon::getMapColumns<int>(gameState->getMap()),
+									RenderCommon::getMapRows<int>(gameState->getMap())
+							)
+						);
 						renderBuildingsSystem.renderRoadPreview(worldPos, true, time);
 					}
 				}

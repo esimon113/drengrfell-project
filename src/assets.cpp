@@ -33,7 +33,8 @@ namespace df {
 		"menu",
 		"particle",
 		"text",
-		"hud"
+		"hud",
+		"tilepick"
 	};
 
 

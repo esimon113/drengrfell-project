@@ -31,6 +31,7 @@ namespace df {
         GameState* gameState = nullptr;
 
         Shader tileShader{};
+        Shader tilePickerShader{};
         GLuint tileVao = 0;
         GLuint tileVbo = 0;
         GLuint tileInstanceVbo = 0;
@@ -46,6 +47,7 @@ namespace df {
             std::int32_t type;
             std::int32_t padding;
             std::int32_t explored; // 0 = unexplored, 1 = explored
+            std::uint32_t index; // used for mouse picking
         };
 
         std::vector<TileVertex> tileMesh;
@@ -54,6 +56,7 @@ namespace df {
         unsigned tileColumns = 0;
         unsigned tileRows = 0;
 
+        static std::vector<TileVertex> createHexagonalTileMesh() noexcept;
         static std::vector<TileVertex> createRectangularTileMesh() noexcept;
         void initMap() noexcept;
         void renderMap(float timeInSeconds = 0.0) const noexcept;
