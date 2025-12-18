@@ -31,6 +31,7 @@ namespace df {
         GameState* gameState = nullptr;
 
         Shader tileShader{};
+        Shader tilePickerShader{};
         GLuint tileVao = 0;
         GLuint tileVbo = 0;
         GLuint tileInstanceVbo = 0;

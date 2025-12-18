@@ -17,6 +17,7 @@ namespace df {
 
         // load resources for rendering
         self.tileShader = Shader::init(assets::Shader::tile).value();
+        self.tilePickerShader = Shader::init(assets::Shader::tilePicker).value();
         self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
 
         self.initMap();
@@ -157,7 +158,7 @@ namespace df {
     }
 
 
-    void RenderTilesSystem::renderMap(const float timeInSeconds) const noexcept {
+    void RenderTilesSystem::renderMap(const float /*timeInSeconds*/) const noexcept {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -177,13 +178,16 @@ namespace df {
         model = glm::translate(model, glm::vec3(-camPos, 0.0f));
         model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
 
-        tileAtlas.bind(0);
-        tileShader.use()
+        this->tileAtlas.bind(0);
+        /*this->tileShader.use()
             .setMat4("model", model)
             .setMat4("projection", projection)
             .setFloat("time", timeInSeconds)
             .setInt("frames", 4)
-            .setSampler("tileAtlas", 0);
+            .setSampler("tileAtlas", 0);*/
+        this->tilePickerShader.use()
+            .setMat4("model", model)
+            .setMat4("projection", projection);
 
         glBindVertexArray(tileVao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(this->tileMesh.size()), static_cast<GLsizei>(this->tileInstances.size()));
