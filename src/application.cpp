@@ -198,7 +198,7 @@ namespace df {
 
 							Entity hero = registry->animations.entities.front();
 							glm::vec2 targetPos = tilePosition;
-							glm::vec2 currentTargetPos = targetPos;
+							//glm::vec2 currentTargetPos = targetPos;
 			
 							movementSystem.moveEntityTo(hero, targetPos, delta_time);
 						}
