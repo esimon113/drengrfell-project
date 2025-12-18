@@ -170,6 +170,8 @@ namespace df {
         if (!this->hasEnoughResources(*player, buildingCost)) { return false; }
 
         Graph& map = this->gameState.getMap();
+        // Tutorial
+        auto* step = this->gameState.getCurrentTutorialStep();
 
         try {
             Vertex& vertex = map.getVertex(vertexId);
@@ -181,7 +183,10 @@ namespace df {
             player->addSettlement(newSettlement->getId());
 
             this->chargeResourceCost(*player, buildingCost);
-
+            // Finish Tutorial if step is BUILD_SETTLEMENT
+            if (step && step->id == TutorialStepId::BUILD_SETTLEMENT) {
+                this->gameState.completeCurrentTutorialStep();
+            }
             return true;
 
         } catch (const std::exception&) { return false; }
@@ -211,6 +216,8 @@ namespace df {
         if (!this->hasEnoughResources(*player, buildingCost)) { return false; }
 
         Graph& map = this->gameState.getMap();
+        // Tutorial
+        auto* step = this->gameState.getCurrentTutorialStep();
         try {
             Edge& edge = map.getEdge(edgeId);
             size_t roadId = this->gameState.getRoads().size();
@@ -221,7 +228,10 @@ namespace df {
             player->addRoad(road->getId());
 
             this->chargeResourceCost(*player, buildingCost);
-
+            // Finish Tutorial if step is BUILD_ROAD
+            if (step && step->id == TutorialStepId::BUILD_ROAD) {
+                this->gameState.completeCurrentTutorialStep();
+            }
             return true;
 
         } catch (const std::exception&) {

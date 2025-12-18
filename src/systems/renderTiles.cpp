@@ -148,6 +148,7 @@ namespace df {
                         auto extent = this->window->getWindowExtent();
 
                         auto tileId = getTileIdAtPosition(xpos, extent.y - ypos);
+                        this->selectedTile = tileId;
                         auto mapId = tileIdToMapId(tileId);
                         fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, xpos, ypos);
                     } break;
@@ -243,6 +244,7 @@ namespace df {
             .setMat4("projection", projection)
             .setFloat("time", timeInSeconds)
             .setInt("frames", 4)
+            .setInt("selectedTile", this->selectedTile)
             .setSampler("tileAtlas", 0);
 
         glBindVertexArray(useHex ? hexVao : tileVao);
