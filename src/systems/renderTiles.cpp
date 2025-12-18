@@ -147,12 +147,33 @@ namespace df {
                         glfwGetCursorPos(this->window->getHandle(), &xpos, &ypos);
                         auto extent = this->window->getWindowExtent();
 
-
-                        fmt::println("Picked: Tile {} at mouse ({}, {})", getTileIdAtPosition(xpos, extent.y - ypos), xpos, ypos);
+                        auto tileId = getTileIdAtPosition(xpos, extent.y - ypos);
+                        auto mapId = tileIdToMapId(tileId);
+                        fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, xpos, ypos);
                     } break;
                 }
             }
         }
+    }
+
+
+    int RenderTilesSystem::tileIdToMapId(unsigned tileId) const noexcept {
+        if (tileId == 0) return -1;
+        tileId--;
+
+        const auto columns = this->tileColumns;
+        const auto rows = this->tileRows;
+
+        if (tileId < rows * columns) {
+            const size_t row = tileId / columns;
+            const size_t col = tileId % columns;
+            const size_t instanceId = (rows - 1 - row) * columns + col;
+            if (instanceId < this->tileInstances.size()) {
+                return static_cast<int>(instanceId);
+            }
+        }
+
+        return -1;
     }
 
 
