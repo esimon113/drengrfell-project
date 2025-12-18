@@ -31,6 +31,8 @@ namespace df {
 
         // Map tile id. Equal to index in Graph::tiles. -1 = no tile / error.
         [[nodiscard]] int tileIdToMapId(unsigned tileId) const noexcept;
+
+        [[nodiscard]] int getMapIdAtMouse() noexcept;
     private:
         Registry* registry = nullptr;
         Window* window = nullptr;
