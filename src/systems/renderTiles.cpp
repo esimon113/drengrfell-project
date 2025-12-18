@@ -148,6 +148,7 @@ namespace df {
                         auto extent = this->window->getWindowExtent();
 
                         auto tileId = getTileIdAtPosition(xpos, extent.y - ypos);
+                        this->selectedTile = tileId;
                         auto mapId = tileIdToMapId(tileId);
                         fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, xpos, ypos);
                     } break;
