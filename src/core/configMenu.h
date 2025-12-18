@@ -52,6 +52,8 @@ namespace df {
         int worldHeight = -1;
         int worldWidth = -1;
         int worldGenerationMode = -1;
+        float warningTimer = 0;
+        std::string warningMessage = "";
 
 
         Shader menuShader;
@@ -128,6 +130,8 @@ namespace df {
         //std::function<void()> onWidth;
 
         // helper functions
+        void renderWarning() noexcept;
+        void capMapsize() noexcept;
         void capInputValue() noexcept;
         bool isCursorOnButton(float px, float py, const Button& b) const noexcept;
         void initQuadBuffers() noexcept;

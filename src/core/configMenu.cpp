@@ -42,7 +42,9 @@ namespace df {
     }
 
 
-    void ConfigMenu::update(float /* delta */) noexcept {
+    void ConfigMenu::update(float  delta ) noexcept {
+        if (warningTimer > 0.0f)
+            warningTimer -= delta;
         capInputValue();
         // hover detection (update hovered flags)
         glm::dvec2 cursor = window->getCursorPosition();
@@ -215,12 +217,57 @@ namespace df {
 
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
+            // renders the user keyboard-input
             textSystem->renderText(
                 inputString,
                 { 20.0f, 27.0f }, // window->getWindowExtent().y - 120.0f
                 0.5f,
                 { 1.0f, 1.0f, 1.0f }
             );
+
+            if(seedButton.hovered) {
+                textSystem->renderText(
+                    "Click this button to start the seed input.\nYou can type a number between 1 and 100 and confirm with enter.",
+                    { titlePos - glm::vec2{0.0f, winH * 0.03f} },
+                    0.4f,
+                    { 1.0f, 0.0f, 0.0f }
+                );
+            }
+            if (insularButton.hovered) {
+                textSystem->renderText(
+                    "Click this button to select the generation mode insular.",
+                    { titlePos - glm::vec2{0.0f, winH * 0.03f} },
+                    0.4f,
+                    { 1.0f, 0.0f, 0.0f }
+                );
+            }
+            if (perlinButton.hovered) {
+                textSystem->renderText(
+                    "Click this button to select the generation mode perlin.",
+                    { titlePos - glm::vec2{0.0f, winH * 0.03f} },
+                    0.4f,
+                    { 1.0f, 0.0f, 0.0f }
+                );
+            }
+            if (widthButton.hovered) {
+                textSystem->renderText(
+                    "Click this button to start the map-size input.\nYou can type a number between 1 and 100 and confirm with enter.",
+                    { titlePos - glm::vec2{0.0f, winH * 0.03f} },
+                    0.4f,
+                    { 1.0f, 0.0f, 0.0f }
+                );
+            }
+            if (startButton.hovered) {
+                textSystem->renderText(
+                    "Click this button to start the game.\n Not selecting parameters will use the ones from the previous map.",
+                    { titlePos - glm::vec2{0.0f, winH * 0.03f} },
+                    0.4f,
+                    { 1.0f, 0.0f, 0.0f }
+                );
+            }
+        }
+        if (warningTimer > 0.0f) {
+            renderWarning();
         }
     }
 
@@ -274,15 +321,52 @@ namespace df {
 
     }
 
+    void ConfigMenu::renderWarning() noexcept {
+        glm::uvec2 extent = window->getWindowExtent();
+        float winW = static_cast<float>(extent.x);
+        float winH = static_cast<float>(extent.y);
+        RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
+        if (textSystem) {
+            // renders a warning - input too small
+            textSystem->renderText(
+                warningMessage,
+                { winW * 0.1f, winH * 0.95f },
+                0.5f,
+                { 1.0f, 0.0f, 0.0f }
+            );
+        }
+    }
+
+    void ConfigMenu::capMapsize() noexcept {
+        if (activeInput == InputField::WIDTH || activeInput == InputField::HEIGHT) {
+            int value = std::stoi(inputString);
+            if (value < 1) {
+                warningTimer = 2.0f;
+                warningMessage = "Map size too small, must be >= 1";
+                inputString = "1";
+            }
+            if (value > 100) {
+                warningTimer = 2.0f;
+                warningMessage = "Map size too big, must be <= 100";
+                inputString = "100";
+            }
+        }
+    }
+
     void ConfigMenu::capInputValue() noexcept {
         if (inputString.length() > 10) { // INT_MAX = 2147483647 so more than 10 digits are not allowed
-            fmt::println("Input length too large, defaulting to INT_MAX");
+            warningTimer = 2.0f;
+            warningMessage = "Input length too long, defaulting to INT_MAX";
+            fmt::println("Input length too long, defaulting to INT_MAX");
             inputString = std::to_string(INT_MAX);
         }
         else if (inputString.length() == 10 && inputString > "2147483647") {
+            warningTimer = 2.0f;
+            warningMessage = "Value too large, defaulting to INT_MAX";
             fmt::println("Value too large, defaulting to INT_MAX");
             inputString = std::to_string(INT_MAX);
         }
+        if (inputString.length() > 0) capMapsize();
     }
 
     void ConfigMenu::onKeyCallback(GLFWwindow* /*windowParam*/, int key, int /* scancode */, int action, int /* mods */) noexcept {
