@@ -15,7 +15,6 @@ namespace df {
         void deinit() noexcept;
         void step(float dt) noexcept;
         void reset() noexcept;
-        void renderHud() const noexcept;
 
         void renderRectBox(glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept;
         bool isMouseOverEndTurn(glm::vec2 mouse) const noexcept;
@@ -35,6 +34,8 @@ namespace df {
         Shader rectShader;
         GLuint quadVao = 0;
         GLuint vbo = 0; 
+        glm::vec2 hudSize;
+        glm::vec2 hudPos;
 
         struct Button {
             // rectangle in pixels; origin is bottom-left
