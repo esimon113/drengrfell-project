@@ -132,7 +132,12 @@ namespace df {
                         this->renderFogOfWar ^= true;
                         this->updateRequired = true;
                         fmt::println("Set fow rendering to {}", this->renderFogOfWar ? "true" : "false");
-                    }
+                    } break;
+                    case GLFW_KEY_H: {
+                        this->useHex ^= true;
+                        this->updateRequired = true;
+                        fmt::println("Set hex rendering to {}", this->useHex ? "true" : "false");
+                    } break;
                 }
             }
         }
@@ -195,8 +200,8 @@ namespace df {
             .setInt("frames", 4)
             .setSampler("tileAtlas", 0);
 
-        glBindVertexArray(tileVao);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(this->tileMesh.size()), static_cast<GLsizei>(this->tileInstances.size()));
+        glBindVertexArray(useHex ? hexVao : tileVao);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>((useHex ? this->hexMesh : this->tileMesh).size()), static_cast<GLsizei>(this->tileInstances.size()));
         glBindVertexArray(0);
     }
 

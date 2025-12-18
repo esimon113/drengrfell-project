@@ -69,5 +69,6 @@ namespace df {
 
         bool renderFogOfWar = true;
         bool updateRequired = false;
+        bool useHex = false;
     };
 }
