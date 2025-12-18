@@ -56,7 +56,7 @@ namespace df {
         unsigned tileColumns = 0;
         unsigned tileRows = 0;
 
-        static std::vector<float> createTileMesh() noexcept;
+        static std::vector<TileVertex> createHexagonalTileMesh() noexcept;
         static std::vector<TileVertex> createRectangularTileMesh() noexcept;
         void initMap() noexcept;
         void renderMap(float timeInSeconds = 0.0) const noexcept;
