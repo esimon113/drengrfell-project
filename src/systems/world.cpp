@@ -116,14 +116,11 @@ namespace df {
 					animComp.anim.setCurrentFrameIndex(0);
 					fmt::println("Debug: Run animation activated");
 					break;
-				case GLFW_KEY_F5:
-					if (action == GLFW_PRESS) {
-						testMovement = !testMovement;
-						fmt::println("They hero should be moving now!");
-						break;
-					}
-					// ------------------------------------------------------------
+				case GLFW_KEY_H:
+					heroMovementState = !heroMovementState;
+					fmt::println("Hero movement mode toggled: {}", heroMovementState ? "ON" : "OFF");
 					break;
+					// ------------------------------------------------------------
 
 					case GLFW_KEY_R: // pressing the 'r' key triggers a reset of the game
 						m_reset = true;
