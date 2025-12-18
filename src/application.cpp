@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 // test for entityMovement
 #include "entityMovement.h"
+#include "renderCommon.h"
 
 #include <iostream>
 #include <fstream>
@@ -163,12 +164,28 @@ namespace df {
 					if (world.isTestMovementActive()) {
 						if (!registry->animations.entities.empty()) {
 
+							glm::vec2 mouseScreen(
+								static_cast<float>(world.getMouseX()),
+								static_cast<float>(world.getMouseY())
+							);
+
+							// relative Mausposition zum Viewport
+							auto viewport = render.renderBuildingsSystem.getViewport();
+							glm::vec2 mouseRelToViewport = mouseScreen - glm::vec2(viewport.origin);
+
+							glm::vec2 worldDims = calculateWorldDimensions(
+								RenderCommon::getMapColumns<int>(gameState->getMap()),
+								RenderCommon::getMapRows<int>(gameState->getMap())
+							);
+							glm::vec2 mouseWorld = screenToWorldCoordinates(mouseRelToViewport, viewport, worldDims);
 
 							size_t tileIndex = 24; // falls 24x24 World
 							glm::vec2 worldPos = movementSystem.getTileWorldPosition(tileIndex);
 							fmt::println("TileIndex {} -> WorldPosition: ({}, {})", tileIndex, worldPos.x, worldPos.y);
 							size_t calculatedIndex = movementSystem.getTileIndexFromPosition(worldPos);
 							fmt::println("WorldPosition ({}, {}) -> TileIndex: {}", worldPos.x, worldPos.y, calculatedIndex);
+							fmt::println("Maus coordinates ({}, {}) -> world ({}, {}) ", mouseScreen.x, mouseScreen.y, mouseWorld.x, mouseWorld.y);
+
 
 							Entity hero = registry->animations.entities.front();
 							glm::vec2 targetPos = glm::vec2(1,1.5);

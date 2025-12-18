@@ -250,41 +250,11 @@ namespace df {
 		}
 	}
 
-	glm::vec2 WorldSystem::getTileWorldPosition(size_t tileIndex) const noexcept {
-		if (!gameState) return glm::vec2(0.0f);
-
-		const Graph& map = gameState->getMap();
-		unsigned mapWidth = map.getMapWidth();
-
-		if (mapWidth != 0 && tileIndex < map.getTileCount()) {
-			unsigned row = tileIndex / mapWidth;
-			unsigned col = tileIndex % mapWidth;
-
-			float x = 2.0f * (static_cast<float>(col) + 0.5f * (row & 1));
-			float y = 1.5f * static_cast<float>(row);
-
-			return glm::vec2(x, y);
-		}
-		else {
-			return glm::vec2(0.0f);
-		}
+	double WorldSystem::getMouseX() {
+		return mouseX;
 	}
-
-	size_t WorldSystem::getTileIndexFromPosition(const glm::vec2& worldPosition) const noexcept {
-		if (!gameState) return 0;
-
-		const Graph& map = gameState->getMap();
-		unsigned mapWidth = map.getMapWidth();
-
-		float rowF = worldPosition.y / 1.5f;
-		unsigned row = static_cast<unsigned>(rowF);
-
-		float colF = worldPosition.x / 2.0f - 0.5f * (row & 1);
-		unsigned col = static_cast<unsigned>(colF);
-
-		if (row >= map.getTileCount() / mapWidth || col >= mapWidth) return 0;
-
-		return row * mapWidth + col;
+	double WorldSystem::getMouseY() {
+		return mouseY;
 	}
 
 	void WorldSystem::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int /* mods */) noexcept {
@@ -292,11 +262,8 @@ namespace df {
 
 		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 			// LMB gedrückt
-			double mouseX, mouseY;
 			glfwGetCursorPos(windowParam, &mouseX, &mouseY);
-			size_t help = getTileIndexFromPosition(glm::vec2(mouseX, mouseY));
-			glm::vec2 result = getTileWorldPosition(help);
-			fmt::println("LMB pressed at screen coordinates: ({}, {})", result.x, result.y);
+			fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
 			// Update Tutorial if finished
 			if ((step && step->id == TutorialStepId::END) || (step && step->id == TutorialStepId::WELCOME)) {
@@ -305,7 +272,6 @@ namespace df {
 		}
 		else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
 			// RMB gedrückt
-			double mouseX, mouseY;
 			glfwGetCursorPos(windowParam, &mouseX, &mouseY);
 			fmt::println("RMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 		}

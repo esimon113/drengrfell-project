@@ -23,6 +23,8 @@ namespace df {
 			void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 			void calcNewCameraZoom(double yoffset) noexcept;
 			bool isTestMovementActive() const { return testMovement; }
+			double getMouseX();
+			double getMouseY();
 
 			// for rendering building previews on selection
 			bool isSettlementPreviewActive = false;
@@ -34,6 +36,8 @@ namespace df {
 		private:
 			static constexpr size_t MAX_EAGLES = 15;
 			static constexpr size_t MAX_BUGS = 5;
+			double mouseX;
+			double mouseY;
 
 			Window* window;
 			Registry* registry;
