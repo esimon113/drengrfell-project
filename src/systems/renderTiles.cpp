@@ -148,7 +148,7 @@ namespace df {
                         auto extent = this->window->getWindowExtent();
 
 
-                        fmt::println("Picked: {} at mouse ({}, {})", getTileIdAtPosition(xpos, extent.y - ypos), xpos, ypos);
+                        fmt::println("Picked: Tile {} at mouse ({}, {})", getTileIdAtPosition(xpos, extent.y - ypos), xpos, ypos);
                     } break;
                 }
             }
@@ -183,8 +183,8 @@ namespace df {
             map.setRenderUpdateRequested(false);
             this->updateRequired = false;
         }
-        //renderMap(accumulator);
-        renderPickerMap(true);
+        renderMap(accumulator);
+        //renderPickerMap(true);
     }
 
 
