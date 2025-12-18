@@ -1,10 +1,12 @@
 #include "entityMovement.h"
+#include "application.h"
 
 namespace df {
 	EntityMovementSystem EntityMovementSystem::init(Registry* registry, GameState& gameState) noexcept {
 		EntityMovementSystem self;
 		self.registry = registry;
 		self.gameState = &gameState;
+
 		return self;
 	}
 
@@ -16,17 +18,24 @@ namespace df {
 		glm::vec2 direction = targetPos - currentPos;
 		float distance = glm::length(direction);
 		// if we are already there
-		if (distance == 0.0f) return;
+		if (distance == 0.0f) {
+			moving = false;
+			return;
+		}
 
 		direction = glm::normalize(direction);
 		float speed = 5.0f; // speed in tiles per second
 		glm::vec2 movement = direction * speed * deltaTime;
+
+		moving = true;
 			
 		if (glm::length(movement) >= distance) {
 			currentPos = targetPos;
 			
 			animComp.currentType = Hero::AnimationType::Idle;
 			animComp.anim.setCurrentFrameIndex(0);
+			moving = false;
+			toggleMovementState();
 		}
 		else {
 			if (animComp.currentType == Hero::AnimationType::Idle) {
@@ -36,6 +45,11 @@ namespace df {
 			currentPos += movement;
 		}
 	}
+
+	void EntityMovementSystem::toggleMovementState() noexcept {
+		movementState = !movementState;
+	}
+
 
 	glm::vec2 EntityMovementSystem::getTileWorldPosition(size_t tileIndex) const noexcept {
 		if (!gameState) return glm::vec2(0.0f);

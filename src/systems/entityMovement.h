@@ -4,6 +4,7 @@
 #include <core/gamestate.h>
 #include <glm/vec2.hpp>
 
+
 namespace df {
 	class EntityMovementSystem {
 	public:
@@ -14,10 +15,14 @@ namespace df {
 		glm::vec2 getTileWorldPosition(size_t tileIndex) const noexcept;
 		size_t getTileIndexFromPosition(const glm::vec2& worldPosition) const noexcept;
 
+		void toggleMovementState() noexcept;
+		bool getMovementState() noexcept { return movementState; };
+		bool isEntityMoving() const noexcept { return moving; }
+
 	private:
 		Registry* registry;
 		GameState* gameState;
-
-		
+		bool movementState = false;
+		bool moving = false;
 	};
 }

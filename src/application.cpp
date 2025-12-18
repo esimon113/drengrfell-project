@@ -183,10 +183,9 @@ namespace df {
 
 					render.step(delta_time);
 					// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
-					if (world.isTestMovementActive()) {
+					if (movementSystem.getMovementState()) {
 						if (!registry->animations.entities.empty()) {
 							
-
 							glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
 							auto extent = this->window->getWindowExtent();
 
@@ -199,6 +198,8 @@ namespace df {
 
 							Entity hero = registry->animations.entities.front();
 							glm::vec2 targetPos = tilePosition;
+							glm::vec2 currentTargetPos = targetPos;
+			
 							movementSystem.moveEntityTo(hero, targetPos, delta_time);
 						}
 						else {
@@ -249,6 +250,10 @@ namespace df {
 
 			window->swapBuffers();
 		}
+	}
+
+	void Application::toggleMovement() noexcept {
+		test = !test;
 	}
 
 	void Application::reset() noexcept {
@@ -437,10 +442,13 @@ namespace df {
 			};
 
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
-			if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
-				gameController->endTurn();
-				gameController->startTurn(); // Start turn for the next player
-				return;
+			if (!movementSystem.getMovementState()) {
+				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
+					gameController->endTurn();
+					movementSystem.toggleMovementState();
+					gameController->startTurn(); // Start turn for the next player
+					return;
+				}
 			}
 
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
