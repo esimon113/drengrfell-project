@@ -389,6 +389,12 @@ namespace df {
             }
             // finish input with enter
             else if (key == GLFW_KEY_ENTER) {
+                if (inputString.empty()) {
+                    fmt::println("Input an empty string"); 
+                    activeInput = InputField::NONE;
+                    inputString.clear();
+                    return;
+                }
                 int value = std::stoi(inputString);
                 switch (activeInput) {
                 case InputField::SEED:
