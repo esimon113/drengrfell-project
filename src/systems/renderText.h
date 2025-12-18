@@ -21,14 +21,14 @@ namespace df {
         void step(float delta) noexcept;
         void reset() noexcept;
 
-        void renderText(
-            std::string text,
-            glm::vec2 position,
-            float scale,
-            glm::vec3 color
-        ) const noexcept;
+        void renderText(std::string text, glm::vec2 position, float scale, glm::vec3 color) const noexcept;
+        glm::vec2 measureText(const std::string text, float scale) const noexcept;
 
         Viewport getViewport() const noexcept;
+        void updateViewport(glm::uvec2 origin, glm::uvec2 size) {
+            this->viewport.origin = origin;
+            this->viewport.size = size;
+        }
 
     private:
         struct Character {

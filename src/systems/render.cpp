@@ -86,10 +86,16 @@ namespace df {
 
 
         this->renderBuildingsSystem.updateViewport(origin, size);
-
+        this->renderTextSystem.updateViewport(origin, size);
+        this->renderHudSystem.updateViewport(origin,size);
+        
 		// reinitialize off-screen framebuffer
 		intermediateFramebuffer.deinit();
 		intermediateFramebuffer = Framebuffer::init({ (GLsizei)size.x, (GLsizei)size.y, 1, true });
         
 	}
+
+    void RenderSystem::onKeyCallback(GLFWwindow *pwindow, int key, int scancode, int action, int mods) noexcept {
+    	this->renderTilesSystem.onKeyCallback(pwindow, key, scancode, action, mods);
+    }
 }

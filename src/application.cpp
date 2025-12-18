@@ -322,6 +322,7 @@ namespace df {
 			break;
 		case types::GamePhase::PLAY:
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
+			render.onKeyCallback(windowParam, key, scancode, action, mods);
 			// Update Tutorial if step == moveCamera
 			if (step && step->id == TutorialStepId::MOVE_CAMERA) {
 				if (action == GLFW_PRESS && (key == GLFW_KEY_W || key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_D)) {
@@ -344,9 +345,33 @@ namespace df {
 		case types::GamePhase::CONFIG:
 			configMenu.onMouseButtonCallback(windowParam, button, action, mods);
 			break;
-		case types::GamePhase::PLAY:
+		case types::GamePhase::PLAY: {
+			double xpos, ypos;
+			glfwGetCursorPos(windowParam, &xpos, &ypos);
+
+			int winWidth, winHeight;
+			glfwGetWindowSize(windowParam, &winWidth, &winHeight);
+
+			int fbWidth, fbHeight;
+			glfwGetFramebufferSize(windowParam, &fbWidth, &fbHeight);
+
+
+			float xScale = (winWidth > 0) ? (float)fbWidth / winWidth : 1.f;
+			float yScale = (winHeight > 0) ? (float)fbHeight / winHeight : 1.f;
+
+			float mouseX = static_cast<float>(xpos * xScale);
+			float mouseY = static_cast<float>(ypos * yScale);
+
+			glm::vec2 mouse{
+				mouseX,
+				static_cast<float>(window->getWindowExtent().y) - mouseY 
+			};
+
+			if (render.renderHudSystem.onMouseButton(mouse, button, action))
+				return;
+
 			world.onMouseButtonCallback(windowParam, button, action, mods);
-			break;
+		} break;
 		case types::GamePhase::END:
 			break;
 		}
@@ -374,6 +399,8 @@ namespace df {
 		switch (gamePhase) {
 		case types::GamePhase::START:
 			mainMenu.onResizeCallback(windowParam, width, height);
+			render.onResizeCallback(windowParam, width, height);
+			render.renderHudSystem.onResizeCallback(windowParam, width, height);
 			configMenu.onResizeCallback(windowParam, width, height);
 			break;
 		case types::GamePhase::CONFIG:
@@ -381,6 +408,7 @@ namespace df {
 			break;
 		case types::GamePhase::PLAY:
 			render.onResizeCallback(windowParam, width, height);
+			render.renderHudSystem.onResizeCallback(windowParam, width, height);
 			break;
 		case types::GamePhase::END:
 			break;
