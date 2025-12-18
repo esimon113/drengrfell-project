@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 // test for entityMovement
 #include "entityMovement.h"
+#include "systems/renderCommon.h"
 
 #include <iostream>
 
@@ -183,12 +184,36 @@ namespace df {
 
 					if (this->world.isSettlementPreviewActive) {
 						glm::vec2 cursorPos = window->getCursorPosition();
-						glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
+						// Convert screen coordinates to world coordinates accounting for camera position and zoom
+						Camera& cam = registry->cameras.get(registry->getCamera());
+						const Graph& map = gameState->getMap();
+						const unsigned tileColumns = map.getMapWidth();
+						const unsigned tileRows = map.getTileCount() / tileColumns;
+						const glm::vec2 worldDimensions = calculateWorldDimensions(tileColumns, tileRows);
+						
+						const Viewport viewport = renderBuildingsSystem.getViewport();
+						const glm::vec2 viewportPos = cursorPos - glm::vec2(viewport.origin);
+						glm::vec2 normalizedPos = viewportPos / glm::vec2(viewport.size);
+						normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
+						
+						glm::vec2 worldPos = cam.position + normalizedPos * (worldDimensions / cam.zoom);
 						renderBuildingsSystem.renderSettlementPreview(worldPos, true, time);
 					}
 					else if (this->world.isRoadPreviewActive) {
 						glm::vec2 cursorPos = window->getCursorPosition();
-						glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
+						// Convert screen coordinates to world coordinates accounting for camera position and zoom
+						Camera& cam = registry->cameras.get(registry->getCamera());
+						const Graph& map = gameState->getMap();
+						const unsigned tileColumns = map.getMapWidth();
+						const unsigned tileRows = map.getTileCount() / tileColumns;
+						const glm::vec2 worldDimensions = calculateWorldDimensions(tileColumns, tileRows);
+						
+						const Viewport viewport = renderBuildingsSystem.getViewport();
+						const glm::vec2 viewportPos = cursorPos - glm::vec2(viewport.origin);
+						glm::vec2 normalizedPos = viewportPos / glm::vec2(viewport.size);
+						normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
+						
+						glm::vec2 worldPos = cam.position + normalizedPos * (worldDimensions / cam.zoom);
 						renderBuildingsSystem.renderRoadPreview(worldPos, true, time);
 					}
 				}

@@ -19,7 +19,7 @@ namespace df {
 
         self.renderTilesSystem = RenderTilesSystem::init(*window, *registry, gameState);
     	self.renderHeroSystem = RenderHeroSystem::init(window, registry, gameState);
-		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry);
+		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry, gameState);
         self.renderHudSystem = RenderHudSystem::init(window, registry, gameState);
         self.renderTextSystem = RenderTextSystem::init(window, registry);
         self.renderSnowSystem = RenderSnowSystem::init(window,registry);
@@ -44,7 +44,7 @@ namespace df {
     	this->renderTextSystem.step(dt);
         this->renderSnowSystem.step(dt);
         this->renderHudSystem.step(dt); // always rendered last
-        
+
     }
 
 
@@ -88,11 +88,11 @@ namespace df {
         this->renderBuildingsSystem.updateViewport(origin, size);
         this->renderTextSystem.updateViewport(origin, size);
         this->renderHudSystem.updateViewport(origin,size);
-        
+
 		// reinitialize off-screen framebuffer
 		intermediateFramebuffer.deinit();
 		intermediateFramebuffer = Framebuffer::init({ (GLsizei)size.x, (GLsizei)size.y, 1, true });
-        
+
 	}
 
     void RenderSystem::onKeyCallback(GLFWwindow *pwindow, int key, int scancode, int action, int mods) noexcept {
