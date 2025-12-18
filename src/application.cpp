@@ -325,11 +325,21 @@ namespace df {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
 		{
-			Player player{};
-			player.addResources(types::TileType::FOREST, 100);				// give player 100 wood
-			player.addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
-			player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
-			gameState->addPlayer(player);
+			// only supports one player for now. TODO: if we do multplayer update this.
+			if (gameState->getPlayer(0)) {
+				Player* player = gameState->getPlayer(0);
+				player->reset();
+				player->addResources(types::TileType::FOREST, 100);				// give player 100 wood
+				player->addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
+				player->addResources(types::TileType::FIELD, 50);				// give player 50 grain
+			}
+			else {
+				Player player{};
+				player.addResources(types::TileType::FOREST, 100);				// give player 100 wood
+				player.addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
+				player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
+				gameState->addPlayer(player);
+			}
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
 
