@@ -23,9 +23,14 @@ namespace df {
 
         // Call this only if map size has changed. Everything else is handled in step()
         [[nodiscard]] Result<void, ResultError> updateMap() noexcept;
-        unsigned getTileIdAtPosition(int x, int y) noexcept;
 
         void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+
+        // Render tile id. 0 = no tile
+        unsigned getTileIdAtPosition(int x, int y) noexcept;
+
+        // Map tile id. Equal to index in Graph::tiles. -1 = no tile / error.
+        [[nodiscard]] int tileIdToMapId(unsigned tileId) const noexcept;
     private:
         Registry* registry = nullptr;
         Window* window = nullptr;
