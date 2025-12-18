@@ -153,6 +153,14 @@ namespace df {
 					world.step(delta_time);
 					// physics.step(delta_time);
 					// physics.handleCollisions(delta_time);
+
+					if(gameState->isGameOver()){
+						fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
+						this->reset();
+						gameState->setPhase(types::GamePhase::START);
+						break;
+					}
+
 					df::AnimationSystem::update(registry, delta_time);
 					window->makeContextCurrent();
 					glClearColor(0.5f,0.5f,0.5f,1.0f);
@@ -411,24 +419,10 @@ namespace df {
 	}
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
-		types::GamePhase gamePhase = gameState->getPhase();
-
-		switch (gamePhase) {
-		case types::GamePhase::START:
-			mainMenu.onResizeCallback(windowParam, width, height);
-			render.onResizeCallback(windowParam, width, height);
-			render.renderHudSystem.onResizeCallback(windowParam, width, height);
-			configMenu.onResizeCallback(windowParam, width, height);
-			break;
-		case types::GamePhase::CONFIG:
-			configMenu.onResizeCallback(windowParam, width, height);
-			break;
-		case types::GamePhase::PLAY:
-			render.onResizeCallback(windowParam, width, height);
-			render.renderHudSystem.onResizeCallback(windowParam, width, height);
-			break;
-		case types::GamePhase::END:
-			break;
-		}
+		mainMenu.onResizeCallback(windowParam, width, height);
+		render.onResizeCallback(windowParam, width, height);
+		render.renderHudSystem.onResizeCallback(windowParam, width, height);
+		configMenu.onResizeCallback(windowParam, width, height);
+		
 	}
 }
