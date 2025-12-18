@@ -147,12 +147,46 @@ namespace df {
                         glfwGetCursorPos(this->window->getHandle(), &xpos, &ypos);
                         auto extent = this->window->getWindowExtent();
 
-
-                        fmt::println("Picked: Tile {} at mouse ({}, {})", getTileIdAtPosition(xpos, extent.y - ypos), xpos, ypos);
+                        auto tileId = getTileIdAtPosition(xpos, extent.y - ypos);
+                        this->selectedTile = tileId;
+                        auto mapId = tileIdToMapId(tileId);
+                        fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, xpos, ypos);
                     } break;
                 }
             }
         }
+    }
+
+
+    int RenderTilesSystem::tileIdToMapId(unsigned tileId) const noexcept {
+        if (tileId == 0) return -1;
+        tileId--;
+
+        const auto columns = this->tileColumns;
+        const auto rows = this->tileRows;
+
+        if (tileId < rows * columns) {
+            const size_t row = tileId / columns;
+            const size_t col = tileId % columns;
+            const size_t instanceId = (rows - 1 - row) * columns + col;
+            if (instanceId < this->tileInstances.size()) {
+                return static_cast<int>(instanceId);
+            }
+        }
+
+        return -1;
+    }
+
+
+    int RenderTilesSystem::getMapIdAtMouse() noexcept {
+        double xpos, ypos;
+        glfwGetCursorPos(this->window->getHandle(), &xpos, &ypos);
+        const auto extent = this->window->getWindowExtent();
+
+        const auto tileId = getTileIdAtPosition(xpos, extent.y - ypos);
+        const auto mapId = tileIdToMapId(tileId);
+
+        return mapId;
     }
 
 
@@ -192,21 +226,17 @@ namespace df {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        const glm::vec2 worldDimensions = calculateWorldDimensions(this->tileColumns, this->tileRows);
-
         Camera& cam = registry->cameras.get(registry->getCamera());
-        glm::vec2 camPos = cam.position;
-        float camZoom = cam.zoom;
 
         const glm::mat4 projection = glm::ortho(
-            camPos.x, camPos.x + worldDimensions.x / camZoom,
-            camPos.y, camPos.y + worldDimensions.y / camZoom,
+            cam.minX(), cam.maxX(),
+            cam.minY(), cam.maxY(),
             -1.0f, 1.0f
         );
 
         glm::mat4 model = glm::identity<glm::mat4>();
-        model = glm::translate(model, glm::vec3(-camPos, 0.0f));
-        model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
+        //model = glm::translate(model, glm::vec3(-camPos, 0.0f));
+        //model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
 
         this->tileAtlas.bind(0);
         this->tileShader.use()
@@ -214,6 +244,7 @@ namespace df {
             .setMat4("projection", projection)
             .setFloat("time", timeInSeconds)
             .setInt("frames", 4)
+            .setInt("selectedTile", this->selectedTile)
             .setSampler("tileAtlas", 0);
 
         glBindVertexArray(useHex ? hexVao : tileVao);
