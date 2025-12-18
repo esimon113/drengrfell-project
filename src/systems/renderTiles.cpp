@@ -256,8 +256,15 @@ namespace df {
     }
 
 
-    unsigned RenderTilesSystem::getTileIdAtPosition(const int x, const int y) const noexcept {
+    unsigned RenderTilesSystem::getTileIdAtPosition(const int x, const int y) noexcept {
         // See https://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-an-opengl-hack/
+
+        const glm::uvec2 windowExtent = this->window->getWindowExtent();
+        const glm::uvec2 framebufferExtent = this->intermediateFramebuffer.getExtent();
+        if (windowExtent != framebufferExtent) {
+            this->intermediateFramebuffer.deinit();
+            this->intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(windowExtent.x), static_cast<GLsizei>(windowExtent.y), 1, true });
+        }
 
         this->intermediateFramebuffer.bind();
 

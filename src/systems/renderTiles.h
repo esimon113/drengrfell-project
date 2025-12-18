@@ -23,7 +23,7 @@ namespace df {
 
         // Call this only if map size has changed. Everything else is handled in step()
         [[nodiscard]] Result<void, ResultError> updateMap() noexcept;
-        unsigned getTileIdAtPosition(int x, int y) const noexcept;
+        unsigned getTileIdAtPosition(int x, int y) noexcept;
 
         void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
     private:
