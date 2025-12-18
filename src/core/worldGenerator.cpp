@@ -141,7 +141,7 @@ namespace df {
                         static_cast<float>(column) * config.temperatureNoise.frequency,
                         static_cast<int>(config.temperatureNoise.octaves),
                         config.temperatureNoise.persistence
-                    ) * equatorProximity * (1 - altitude);
+                    ) * equatorProximity;
                     double precipitation = perlin.normalizedOctave2D_01(
                         static_cast<float>(row) * config.precipitationNoise.frequency,
                         static_cast<float>(column) * config.precipitationNoise.frequency,
