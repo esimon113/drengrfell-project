@@ -9,9 +9,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 // test for entityMovement
 #include "entityMovement.h"
+
+#include "renderCommon.h"
+
 #include "systems/renderCommon.h"
 #include "utils/worldNodeMapper.h"
 #include "core/road.h"
+
 
 #include <iostream>
 #include <fstream>
@@ -181,9 +185,20 @@ namespace df {
 					// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
 					if (world.isTestMovementActive()) {
 						if (!registry->animations.entities.empty()) {
+							
+
+							glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
+							auto extent = this->window->getWindowExtent();
+
+							auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+							auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+							//fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+
+							glm::vec2 tilePosition = movementSystem.getTileWorldPosition(mapId);
+							//fmt::println("Tile Position: ({},{})", tilePosition.x, tilePosition.y);
 
 							Entity hero = registry->animations.entities.front();
-							glm::vec2 targetPos = glm::vec2(6,6);
+							glm::vec2 targetPos = tilePosition;
 							movementSystem.moveEntityTo(hero, targetPos, delta_time);
 						}
 						else {

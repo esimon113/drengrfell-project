@@ -11,11 +11,13 @@ namespace df {
 
 		void moveEntityTo(Entity entity, const glm::vec2& targetPosition, float deltaTime) noexcept;
 
+		glm::vec2 getTileWorldPosition(size_t tileIndex) const noexcept;
+		size_t getTileIndexFromPosition(const glm::vec2& worldPosition) const noexcept;
+
 	private:
 		Registry* registry;
 		GameState* gameState;
 
-		glm::vec2 getTileWorldPosition(size_t tileIndex) const noexcept;
-		size_t getTileIndexFromPosition(const glm::vec2& worldPosition) const noexcept;
+		
 	};
 }

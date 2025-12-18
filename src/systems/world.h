@@ -22,14 +22,27 @@ namespace df {
 			void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
 			void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 			void calcNewCameraZoom(double yoffset) noexcept;
+
+			double getMouseX();
+			double getMouseY();
+
 			bool isTestMovementActive() const { return heroMovementState; }
+
 
 			// for rendering building previews on selection
 			bool isSettlementPreviewActive = false;
 			bool isRoadPreviewActive = false;
 
+			glm::vec2 getTileWorldPosition(size_t tileIndex) const noexcept;
+			size_t getTileIndexFromPosition(const glm::vec2& worldPosition) const noexcept;
 
 		private:
+
+			static constexpr size_t MAX_EAGLES = 15;
+			static constexpr size_t MAX_BUGS = 5;
+			double mouseX;
+			double mouseY;
+
 			Window* window;
 			Registry* registry;
 			AudioSystem* audioEngine;

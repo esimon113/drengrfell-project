@@ -238,20 +238,30 @@ namespace df {
 		}
 	}
 
-	void WorldSystem::onMouseButtonCallback(GLFWwindow*, int button, int action, int /* mods */) noexcept {
+	double WorldSystem::getMouseX() {
+		return mouseX;
+	}
+	double WorldSystem::getMouseY() {
+		return mouseY;
+	}
+
+	void WorldSystem::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int /* mods */) noexcept {
 		auto* step = this->gameState->getCurrentTutorialStep();
-		if (button == GLFW_MOUSE_BUTTON_LEFT) {
-			//action 1: press left mouse button
-			//action 0: release left mouse button
-			fmt::println("LMB pressed, action: {}", action);
+
+		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+			// LMB gedrückt
+			glfwGetCursorPos(this->window->getHandle(), &mouseX, &mouseY);
+			fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
+
 			// Update Tutorial if finished
-			if ((step && step->id == TutorialStepId::END) || (step && step->id == TutorialStepId::WELCOME && action == GLFW_PRESS)) {
+			if ((step && step->id == TutorialStepId::END) || (step && step->id == TutorialStepId::WELCOME)) {
 				this->gameState->completeCurrentTutorialStep();
 			}
-		} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-			//action 1: press right mouse button
-			//action 0: release right mouse button
-			fmt::println("RMB pressed, action: {}", action);
+		}
+		else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+			// RMB gedrückt
+			glfwGetCursorPos(windowParam, &mouseX, &mouseY);
+			fmt::println("RMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 		}
 	}
 
