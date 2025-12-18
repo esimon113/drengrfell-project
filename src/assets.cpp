@@ -47,7 +47,12 @@ namespace df {
 		// add "*.png"-files that contain the textures here
 		"tiles/tileAtlas.png",
 		"settlements/viking-wood/viking-wood-settlement1.png",
+		"settlements/viking-wood/viking-wood-settlement2.png",
+		"settlements/viking-wood/viking-wood-settlement3.png",
+		"settlements/viking-wood/viking-wood-settlement4.png",
+		"settlements/viking-wood/viking-wood-settlement5.png",
 		"roads/dirtRoad/dirt_road_diagonal_up.png",
+		"roads/pathRoad/path_road_vertical.png",
 		"mainMenu/temp_menu_background.png",
 		"mainMenu/temp_menu_title.png",
 		"mainMenu/temp_menu_start.png",

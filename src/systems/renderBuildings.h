@@ -21,6 +21,10 @@ namespace df {
 
 			void renderSettlementPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
 			void renderRoadPreview(const glm::vec2& worldPosition, bool active, float time = 0.0f) noexcept;
+			
+			// Render actual buildings (not previews)
+			void renderSettlements(float time = 0.0f) noexcept;
+			void renderRoads(float time = 0.0f) noexcept;
 
 
 			void updateViewport(const glm::uvec2& origin, const glm::uvec2& size) noexcept {
@@ -40,8 +44,11 @@ namespace df {
 
 			Shader buildingHoverShader;
 			Shader buildingShadowShader;
+			Shader spriteShader; // For placed buildings (no pulsing effect)
 			Texture settlementTexture;
 			Texture roadPreviewTexture;
+			Texture roadTexture; // For actual roads
+			std::array<Texture, 5> settlementTextures; // All 5 viking-wood settlement textures
 
 			GLuint m_quad_vao;
 			GLuint m_quad_ebo;
