@@ -34,6 +34,10 @@ namespace df {
         glGenBuffers(1, &this->tileVbo);
         glGenBuffers(1, &this->tileInstanceVbo);
 
+        glBindBuffer(GL_ARRAY_BUFFER, this->tileInstanceVbo);
+        glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
+        this->tileInstancesBufferSize = 0;
+
         initVao(this->tileVao, this->tileVbo, this->tileMesh);
     }
 
@@ -53,8 +57,6 @@ namespace df {
 
         // Define instance attributes
         glBindBuffer(GL_ARRAY_BUFFER, this->tileInstanceVbo);
-        glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
-        this->tileInstancesBufferSize = 0;
 
         // layout(location = 2) in vec2 instancePosition;
         glEnableVertexAttribArray(2);
