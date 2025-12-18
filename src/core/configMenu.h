@@ -54,6 +54,8 @@ namespace df {
         int worldGenerationMode = -1;
         float warningTimer = 0;
         std::string warningMessage = "";
+        glm::vec2 infoPos;
+        glm::vec2 warningPos;
 
 
         Shader menuShader;

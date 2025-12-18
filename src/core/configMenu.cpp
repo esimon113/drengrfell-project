@@ -141,6 +141,9 @@ namespace df {
         startButton.y = absTopButtonOffsetY - 3 * (absButtonDistanceY + absButtonHeight);
         startButton.w = absButtonWidth;
         startButton.h = absButtonHeight;
+
+        warningPos = { winW * 0.1f, winH * 0.95f };
+        infoPos = { titlePos - glm::vec2{0.0f, winH * 0.03f} };
     }
 
     void ConfigMenu::render() noexcept {
@@ -220,15 +223,17 @@ namespace df {
             // renders the user keyboard-input
             textSystem->renderText(
                 inputString,
-                { 20.0f, 27.0f }, // window->getWindowExtent().y - 120.0f
+                { 20.0f, 27.0f },
                 0.5f,
                 { 1.0f, 1.0f, 1.0f }
             );
 
             if(seedButton.hovered) {
                 textSystem->renderText(
-                    "Click this button to start the seed input.\nYou can type a number between 1 and 100 and confirm with enter.",
-                    { titlePos - glm::vec2{0.0f, winH * 0.03f} },
+                    "Click this button to start the seed input.\n"
+                    "You can type a number between 1 and 100 \n"
+                    "and confirm with enter.",
+                    infoPos,
                     0.4f,
                     { 1.0f, 0.0f, 0.0f }
                 );
@@ -236,7 +241,7 @@ namespace df {
             if (insularButton.hovered) {
                 textSystem->renderText(
                     "Click this button to select the generation mode insular.",
-                    { titlePos - glm::vec2{0.0f, winH * 0.03f} },
+                    infoPos,
                     0.4f,
                     { 1.0f, 0.0f, 0.0f }
                 );
@@ -244,23 +249,27 @@ namespace df {
             if (perlinButton.hovered) {
                 textSystem->renderText(
                     "Click this button to select the generation mode perlin.",
-                    { titlePos - glm::vec2{0.0f, winH * 0.03f} },
+                    infoPos,
                     0.4f,
                     { 1.0f, 0.0f, 0.0f }
                 );
             }
             if (widthButton.hovered) {
                 textSystem->renderText(
-                    "Click this button to start the map-size input.\nYou can type a number between 1 and 100 and confirm with enter.",
-                    { titlePos - glm::vec2{0.0f, winH * 0.03f} },
+                    "Click this button to start the map-size input.\n"
+                    "You can type a number between 1 and 100 \n"
+                    "and confirm with enter.",
+                    infoPos,
                     0.4f,
                     { 1.0f, 0.0f, 0.0f }
                 );
             }
             if (startButton.hovered) {
                 textSystem->renderText(
-                    "Click this button to start the game.\n Not selecting parameters will use the ones from the previous map.",
-                    { titlePos - glm::vec2{0.0f, winH * 0.03f} },
+                    "Click this button to start the game.\n"
+                    "Not selecting parameters will \n"
+                    "use the ones from the previous map.",
+                    infoPos,
                     0.4f,
                     { 1.0f, 0.0f, 0.0f }
                 );
@@ -322,15 +331,12 @@ namespace df {
     }
 
     void ConfigMenu::renderWarning() noexcept {
-        glm::uvec2 extent = window->getWindowExtent();
-        float winW = static_cast<float>(extent.x);
-        float winH = static_cast<float>(extent.y);
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
             // renders a warning - input too small
             textSystem->renderText(
                 warningMessage,
-                { winW * 0.1f, winH * 0.95f },
+                warningPos,
                 0.5f,
                 { 1.0f, 0.0f, 0.0f }
             );
@@ -419,6 +425,10 @@ namespace df {
         // Update viewport
         glViewport(0, 0, width, height);
 
+        
+        if (auto* textSystem = registry->getSystem<RenderTextSystem>()) {
+            textSystem->updateViewport({ 0, 0 },{ static_cast<unsigned>(width), static_cast<unsigned>(height) });
+        }
         calcLayout();
     }
 
