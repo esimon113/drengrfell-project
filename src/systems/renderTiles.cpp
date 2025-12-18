@@ -137,11 +137,11 @@ namespace df {
                         this->updateRequired = true;
                         fmt::println("Set fow rendering to {}", this->renderFogOfWar ? "true" : "false");
                     } break;
-                    case GLFW_KEY_H: {
+                    /*case GLFW_KEY_H: {
                         this->useHex ^= true;
                         this->updateRequired = true;
                         fmt::println("Set hex rendering to {}", this->useHex ? "true" : "false");
-                    } break;
+                    } break;*/
                     case GLFW_KEY_P: {
                         double xpos, ypos;
                         glfwGetCursorPos(this->window->getHandle(), &xpos, &ypos);
