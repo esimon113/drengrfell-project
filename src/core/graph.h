@@ -114,6 +114,8 @@ namespace df {
             bool doesEdgeExist(const Edge& edge);
             bool doesVertexExist(const Vertex& vertex);
 
+            void populate();
+
             std::vector<size_t> getNeighborIds(size_t id) const;
 
             // Methods for using the graph as a rectangular map
