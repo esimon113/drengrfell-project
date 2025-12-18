@@ -164,13 +164,13 @@ namespace df {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDisable(GL_DEPTH_TEST);
-
-        glm::vec2 worldDims = calculateWorldDimensions(this->columns, this->rows);
-        glm::mat4 projection = glm::ortho(
-            cam.position.x, cam.position.x + worldDims.x / cam.zoom,
-            cam.position.y, cam.position.y + worldDims.y / cam.zoom,
-            -1.f, 1.f
+        
+        const glm::mat4 projection = glm::ortho(
+            cam.minX(), cam.maxX(),
+            cam.minY(), cam.maxY(),
+            -1.0f, 1.0f
         );
+
         glm::mat4 view = glm::mat4(1.f);
 
         glBindVertexArray(m_quad_vao);
@@ -190,7 +190,7 @@ namespace df {
             glm::vec2 heroPos = registry->positions.get(e);
             glm::vec2 worldScale = registry->scales.get(e);
 
-            glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(heroPos - cam.position, 0.f));
+            glm::mat4 model = glm::translate(glm::mat4(1.f), glm::vec3(heroPos, 0.f));
             model = glm::scale(model, glm::vec3(worldScale, 1.f));
 
             Shader& shader = heroShader;
