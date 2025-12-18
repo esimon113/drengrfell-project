@@ -1,5 +1,4 @@
 #include <array>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -261,7 +260,7 @@ namespace df {
                     if (this->edgeVertices.contains(edge.getId())) {
                         const auto& v = this->edgeVertices.at(edge.getId());
                         edgesJson[std::to_string(edge.getId())] = { v.at(0).getId(), v.at(1).getId() };
-                        
+
                     } else fmt::println("Edge vertices not found for edge {}", edge.getId());
                 }
 
@@ -605,9 +604,234 @@ namespace df {
 		if (const Result<std::vector<Tile>, ResultError> generatedTiles = WorldGenerator::generateTiles(worldGeneratorConfig); generatedTiles.isOk()) {
 			setMapWidth(worldGeneratorConfig.columns);
 			tiles = generatedTiles.unwrap();
+			try { this->populate(); }
+			catch (const std::exception& e) { std::cerr << "Error populating graph: " << e.what() << std::endl; }
 			this->renderUpdateRequested = true;
 		} else {
 			std::cerr << generatedTiles.unwrapErr() << std::endl;
+		}
+	}
+
+
+	// populates the graph with edges and vertices for all tiles.
+	// this function also regards the fact that some tiles share edges and/or vertices
+	void Graph::populate() {
+		if (this->tiles.empty() || this->mapWidth == 0) return;
+
+		this->edges.clear();
+		this->vertices.clear();
+		this->tileEdges.clear();
+		this->tileVertices.clear();
+		this->edgeVertices.clear();
+		this->vertexEdges.clear();
+		this->vertexTiles.clear();
+
+		const size_t columns = this->mapWidth;
+		const size_t rows = this->tiles.size() / columns;
+
+		// use hash as map key
+		struct PairHash {
+			size_t operator()(const std::pair<size_t, size_t>& p) const {
+				return std::hash<size_t>{}(p.first) ^ (std::hash<size_t>{}(p.second) << 1);
+			}
+		};
+
+		// track created edges/vertexes to avoid duplicates
+		// format: key=(canonical tile id, index), value=id for vertex/edge
+		// canonical tile id: smallest tile id that shares this element
+		std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash> edgeIdMap;
+		std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash> vertexIdMap;
+
+		// helper to get neighbouring tile id at some offset (dRow, dCol)
+		auto getNeighbour = [columns, rows, this](size_t tileId, int dRow, int dCol) -> std::optional<size_t> {
+			size_t row = tileId / columns;
+			size_t col = tileId % columns;
+			int newRow = static_cast<int>(row) + dRow;
+			int newCol = static_cast<int>(col) + dCol;
+
+			// Check bounds
+			if (newRow < 0 || newRow >= static_cast<int>(rows) || newCol < 0 || newCol >= static_cast<int>(columns)) return std::nullopt;
+
+			size_t neighbourId = static_cast<size_t>(newRow) * columns + static_cast<size_t>(newCol);
+			return (neighbourId < this->tiles.size()) ? std::optional<size_t>(neighbourId) : std::nullopt;
+		};
+
+		// make sure shared vertices (by tiles) get same id -> no duplicats
+		// use "canonical key" for a vertex -> "refrence" tile with smallest id
+		auto getVertexKey = [&getNeighbour, columns](size_t tileId, size_t vertexIndex) -> std::pair<size_t, size_t> {
+			size_t row = tileId / columns;
+			bool isOdd = (row & 1) == 1; //odd rows have different neighbours -> hexagonal represented by row/col
+			size_t minTileId = tileId;
+			std::vector<size_t> sharingTiles = { tileId };
+
+			switch (vertexIndex) {
+				case 0: // Top
+					if (isOdd) {
+						// Odd row: top-left (row-1, col), top-right (row-1, col+1)
+						if (auto n = getNeighbour(tileId, -1, 0)) sharingTiles.push_back(*n);
+						if (auto n = getNeighbour(tileId, -1, 1)) sharingTiles.push_back(*n);
+					} else {
+						// Even row: top-left (row-1, col-1), top-right (row-1, col)
+						if (auto n = getNeighbour(tileId, -1, -1)) sharingTiles.push_back(*n);
+						if (auto n = getNeighbour(tileId, -1, 0)) sharingTiles.push_back(*n);
+					}
+					break;
+				case 1: // Top-right
+					if (auto n = getNeighbour(tileId, 0, 1)) sharingTiles.push_back(*n);
+					break;
+				case 2: // Bottom-right -> right flat edge (sharde with right neighbour)
+					if (auto n = getNeighbour(tileId, 0, 1)) sharingTiles.push_back(*n);
+					break;
+				case 3: // Bottom vertex
+					if (isOdd) {
+						// Odd row: bottom-left (row+1, col), bottom-right (row+1, col+1)
+						if (auto n = getNeighbour(tileId, 1, 0)) sharingTiles.push_back(*n);
+						if (auto n = getNeighbour(tileId, 1, 1)) sharingTiles.push_back(*n);
+					} else {
+						// Even row: bottom-left (row+1, col-1), bottom-right (row+1, col)
+						if (auto n = getNeighbour(tileId, 1, -1)) sharingTiles.push_back(*n);
+						if (auto n = getNeighbour(tileId, 1, 0)) sharingTiles.push_back(*n);
+					}
+					break;
+				case 4: //bottom-left -> shared with left neighbuor
+					if (auto n = getNeighbour(tileId, 0, -1)) sharingTiles.push_back(*n);
+					break;
+				case 5: // top-left vertex ->left neighboor
+					if (auto n = getNeighbour(tileId, 0, -1)) sharingTiles.push_back(*n);
+					break;
+			}
+
+			// get canconical tile
+			for (size_t tid : sharingTiles) if (tid < minTileId) minTileId = tid;
+
+			// (canonicalTileId, vertexIndex)
+			return { minTileId, vertexIndex };
+		};
+
+		// similar to above, just for edges (shard among at most 2 tiles)
+		auto getEdgeKey = [&getNeighbour, columns](size_t tileId, size_t edgeIndex) -> std::pair<size_t, size_t> {
+			size_t row = tileId / columns;
+			bool isOdd = (row & 1) == 1;
+			size_t minTileId = tileId;
+			std::optional<size_t> neighbour;
+
+			switch (edgeIndex) {
+				case 0:
+					neighbour = isOdd ? getNeighbour(tileId, -1, 1) : getNeighbour(tileId, -1, 0);
+					break;
+				case 1:
+					neighbour = getNeighbour(tileId, 0, 1);
+					break;
+				case 2:
+					neighbour = isOdd ? getNeighbour(tileId, 1, 1) : getNeighbour(tileId, 1, 0);
+					break;
+				case 3:
+					neighbour = isOdd ? getNeighbour(tileId, 1, 0) : getNeighbour(tileId, 1, -1);
+					break;
+				case 4:
+					neighbour = getNeighbour(tileId, 0, -1);
+					break;
+				case 5:
+					neighbour = isOdd ? getNeighbour(tileId, -1, 0) : getNeighbour(tileId, -1, -1);
+					break;
+			}
+
+			if (neighbour && *neighbour < minTileId) minTileId = *neighbour;
+
+			return { minTileId, edgeIndex };
+		};
+
+		// Calculate the maximum tile ID to avoid ID conflicts
+		// Vertex IDs will start at maxTileId + 1, edge IDs at maxTileId + 1000000 -> TODO: make more flexible (although this sould be enough)
+		size_t maxTileId = 0;
+		for (const auto& tile : this->tiles) if (tile.getId() > maxTileId) maxTileId = tile.getId();
+
+		size_t nextVertexId = maxTileId + 1;
+		size_t nextEdgeId = maxTileId + 1000000;
+
+		for (const auto& tile : this->tiles) {
+			size_t tileId = tile.getId();
+			std::array<Edge, 6> tileEdgesArray{};
+			std::array<Vertex, 6> tileVerticesArray{};
+
+			for (size_t vi = 0; vi < 6; ++vi) {
+				// canonical key for vertex
+				auto key = getVertexKey(tileId, vi);
+				size_t vertexId;
+
+				// check if already exists
+				if (vertexIdMap.find(key) != vertexIdMap.end()) {
+					vertexId = vertexIdMap[key];
+				} else {
+					vertexId = nextVertexId++;
+					Vertex vertex(vertexId);
+					this->addVertex(vertex);
+					vertexIdMap[key] = vertexId;
+				}
+
+				// store in tileVertices array and connect to tile
+				tileVerticesArray[vi] = Vertex(vertexId);
+				this->connectVertexToTile(Vertex(vertexId), tile);
+			}
+
+			// simliar to above
+			for (size_t ei = 0; ei < 6; ++ei) {
+				auto key = getEdgeKey(tileId, ei);
+				size_t edgeId;
+
+				if (edgeIdMap.find(key) != edgeIdMap.end()) {
+					edgeId = edgeIdMap[key];
+				} else {
+					edgeId = nextEdgeId++;
+					Edge edge(edgeId);
+					this->addEdge(edge);
+					edgeIdMap[key] = edgeId;
+				}
+
+				tileEdgesArray[ei] = Edge(edgeId);
+				this->connectEdgeToTile(tile, Edge(edgeId));
+
+				//connect edge to the 2 vertices
+				// Edge i connects vertex i to vertex (i+1) % 6
+				auto vertex1Key = getVertexKey(tileId, ei);
+				auto vertex2Key = getVertexKey(tileId, (ei + 1) % 6);
+				this->connectVertexToEdge(Edge(edgeId), Vertex(vertexIdMap[vertex1Key]));
+				this->connectVertexToEdge(Edge(edgeId), Vertex(vertexIdMap[vertex2Key]));
+			}
+
+			// store for this tile
+			this->tileEdges[tileId] = tileEdgesArray;
+			this->tileVertices[tileId] = tileVerticesArray;
+		}
+
+		// populate reverse lookup maps
+		for (const auto& vertex : this->vertices) {
+			size_t vertexId = vertex.getId();
+			std::array<Edge, 3> vertexEdgesArray{};
+			std::array<Tile, 3> vertexTilesArray{};
+			size_t edgeCount = 0;
+			size_t tileCount = 0;
+
+			for (const auto& edge : this->edges) {
+				for (const auto& v : this->getEdgeVertices(edge)) {
+					if (v.getId() == vertexId && edgeCount < 3) {
+						vertexEdgesArray[edgeCount++] = edge;
+						break;
+					}
+				}
+			}
+
+			for (const auto& tile : this->tiles) {
+				for (const auto& v : this->getTileVertices(tile)) {
+					if (v.getId() == vertexId && tileCount < 3) {
+						vertexTilesArray[tileCount++] = tile;
+						break;
+					}
+				}
+			}
+
+			this->vertexEdges[vertexId] = vertexEdgesArray;
+			this->vertexTiles[vertexId] = vertexTilesArray;
 		}
 	}
 }
