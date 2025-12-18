@@ -2,11 +2,12 @@
 
 namespace df {
 
-	RenderBuildingsSystem RenderBuildingsSystem::init(Window* window, Registry* registry) noexcept {
+	RenderBuildingsSystem RenderBuildingsSystem::init(Window* window, Registry* registry, GameState& gameState) noexcept {
 		RenderBuildingsSystem self;
 
         self.window = window;
         self.registry = registry;
+		self.gameState = &gameState;
 
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();
@@ -78,7 +79,7 @@ namespace df {
 		// Set viewport = game viewport
 		glViewport(this->viewport.origin.x, this->viewport.origin.y, this->viewport.size.x, this->viewport.size.y);
 
-		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
+		const glm::vec2 worldDimensions = calculateWorldDimensions(RenderCommon::getMapColumns<int>(gameState->getMap()), RenderCommon::getMapRows<int>(gameState->getMap()));
 		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
 		const glm::mat4 view = glm::identity<glm::mat4>();
 
@@ -125,7 +126,7 @@ namespace df {
 
 		glViewport(this->viewport.origin.x, this->viewport.origin.y, this->viewport.size.x, this->viewport.size.y);
 
-		const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
+		const glm::vec2 worldDimensions = calculateWorldDimensions(RenderCommon::getMapColumns<int>(gameState->getMap()), RenderCommon::getMapRows<int>(gameState->getMap()));
 		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
 		const glm::mat4 view = glm::identity<glm::mat4>();
 
