@@ -193,18 +193,34 @@ namespace df {
 					case GLFW_KEY_RIGHT_BRACKET:
 						// This case is the key which can produce +, *, ~ on the german keyboard layout, so a plus
 						calcNewCameraZoom(1.0f);
+						// if current step is ZOOM_CAMERA -> complete step
+						if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 						break;
 					case GLFW_KEY_SLASH:
 						// This case is the key which can produce -, _ on the german keyboard layout, so a minus
 						calcNewCameraZoom(-1.0f);
+						// if current step is ZOOM_CAMERA -> complete step
+						if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 						break;
 					case GLFW_KEY_KP_ADD:
 						// This case is the + key on the numpad
 						calcNewCameraZoom(1.0f);
+						// if current step is ZOOM_CAMERA -> complete step
+						if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 						break;
 					case GLFW_KEY_KP_SUBTRACT:
 						// This case is the - key on the numpad
 						calcNewCameraZoom(-1.0f);
+						// if current step is ZOOM_CAMERA -> complete step
+						if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 						break;
 					default:
 						break;
@@ -241,7 +257,7 @@ namespace df {
 			//action 0: release left mouse button
 			fmt::println("LMB pressed, action: {}", action);
 			// Update Tutorial if finished
-			if (step && step->id == TutorialStepId::END) {
+			if (step && step->id == TutorialStepId::END || step && step->id == TutorialStepId::WELCOME && action == GLFW_PRESS) {
 				this->gameState->completeCurrentTutorialStep();
 			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
@@ -254,6 +270,12 @@ namespace df {
 	void WorldSystem::onScrollCallback(GLFWwindow*, double /* xoffset */, double yoffset) noexcept {
 		fmt::println("Scrolled: {}", yoffset);
 		calcNewCameraZoom(yoffset);
+		// if current step is ZOOM_CAMERA -> complete step
+		auto* step = this->gameState->getCurrentTutorialStep();
+		if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
+			this->gameState->completeCurrentTutorialStep();
+		}
+
 	}
 
 	void WorldSystem::calcNewCameraZoom(double yoffset) noexcept {
