@@ -6,7 +6,6 @@
 #include "utils/shader.h"
 #include "utils/texture.h"
 #include "types.h"
-#include "gamestate.h"
 
 namespace df {
 
@@ -27,10 +26,7 @@ namespace df {
         void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
         void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 
-        // DEL void setGameState(GameState* state) { this->gameState = state; }
-        // DEL GameState* getGameState() {return this->gameState; }
-
-        void setStartCallback(std::function<void()> callback) { onStart = std::move(callback); }
+        void setStartCallback(std::function<void()> callback) { onStartConfig = std::move(callback); }
         void setExitCallback(std::function<void()> callback) { onExit = std::move(callback); }
 
     private:
@@ -58,8 +54,7 @@ namespace df {
         glm::vec2 titlePos{}; // bottom-left of title quad
         glm::vec2 titleSize{};
 
-        // DEL GameState* gameState = nullptr;
-        std::function<void()> onStart;
+        std::function<void()> onStartConfig;
         std::function<void()> onExit;
 
         // helper functions

@@ -78,6 +78,23 @@ namespace df {
 			COUNT,
 		};
 
+		enum struct MenuTexture {
+			CONFIG_AI,
+			CONFIG_BACKGROUND,
+			CONFIG_EASY,
+			CONFIG_HARD,
+			CONFIG_HEIGHT,
+			CONFIG_INSULAR,
+			CONFIG_MEDIUM,
+			CONFIG_MULTIPLAYER,
+			CONFIG_PERLIN,
+			CONFIG_SEED,
+			CONFIG_START,
+			CONFIG_TITLE,
+			CONFIG_WIDTH,
+			count
+		};
+
 
 		template<typename AssetType>
 		std::string getAssetPath(const AssetType assetId) noexcept;

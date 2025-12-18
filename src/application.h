@@ -4,6 +4,8 @@
 #include <utils/commandLineOptions.h>
 #include "core/gamestate.h"
 #include "core/mainMenu.h"
+#include "core/configMenu.h"
+#include "worldGeneratorConfig.h"
 
 #include <miniaudio.h>
 #include <utils/mesh.h>
@@ -46,7 +48,11 @@ namespace df {
 
 			void reset() noexcept;
 
-			void startGame() noexcept;
+			void startGame(int seed, int width, int height, int mode) noexcept;
+			void configurateGame() noexcept;
+			void setInsular() noexcept;
+			void setPerlin() noexcept;
+			void generateMap(WorldGeneratorConfig config) noexcept;
 
 			void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
 			void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
@@ -57,5 +63,8 @@ namespace df {
 			std::shared_ptr<GameState> gameState;
 			// MainMenu
 			MainMenu mainMenu;
+			// ConfigMenu
+			ConfigMenu configMenu;
+
 	};
 }
