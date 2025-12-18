@@ -2,8 +2,6 @@
 #include "hero.h"
 #include <iostream>
 #include "fmt/base.h"
-#
-
 
 namespace df {
 	WorldSystem WorldSystem::init(Window* window, Registry *registry, AudioSystem *audioEngine, GameState& gameState) noexcept {
@@ -39,6 +37,7 @@ namespace df {
 		//window->setTitle(title.c_str());
 
 		Camera& cam = registry->cameras.get(registry->getCamera());
+		cam.updateView(window->getWindowExtent());
 		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
 
 		//each settlement is one point so we update score -> once multiplayer 
@@ -46,26 +45,23 @@ namespace df {
 		//score = player.getSettlementIds().size();
 
 
-		// The world min and max values would need to be set dynamically depending on the world dimensions, once we save that outside the render.cpp
-		// these values are just placeholders which work well for now, but are determined by testing alone
-		float worldXMin = 0.0f;
-		float worldYMin = 0.0f;
-		float worldXMax = 3.5f;
-		float worldYMax = 3.0f;
+
+		Graph map = gameState->getMap();
+		int mapWidth = map.getMapWidth();
+		int mapHeight = map.getTileCount() / mapWidth;
+		float worldWidth = 2.0f * mapWidth;
+		float worldHeight = (mapHeight - 1) * 1.5f + 1.0f;
+
 		float offset = cam.camOffset;
-		float camMinX = worldXMin - offset;
-		float camMinY = worldYMin - offset;
-		// the offset is scaled by the zoom so the map is not cut off at high zoom and not too much blank space is visible at low zoom
-		float camMaxX = worldXMax + offset * cam.zoom;
-		float camMaxY = worldYMax + offset * cam.zoom;
+		float camMinX = 0.0f - offset;
+		float camMinY = 0.0f - offset;
+		float camMaxX = worldWidth - cam.viewWidth + offset / 2;
+		float camMaxY = worldHeight - cam.viewHeight + offset;
 
-
-		// scaling with cam.zoom makes the camera move faster when zoomed in and slower when zoomed out
-		// we may want to test what scaling feels best
-		if (input.up)    cam.position.y += cam.scrollSpeed * cam.zoom * delta;
-		if (input.down)  cam.position.y -= cam.scrollSpeed * cam.zoom * delta;
-		if (input.left)  cam.position.x -= cam.scrollSpeed * cam.zoom * delta;
-		if (input.right) cam.position.x += cam.scrollSpeed * cam.zoom * delta;
+		if (input.up)    cam.position.y += cam.scrollSpeed * delta;
+		if (input.down)  cam.position.y -= cam.scrollSpeed * delta;
+		if (input.left)  cam.position.x -= cam.scrollSpeed * delta;
+		if (input.right) cam.position.x += cam.scrollSpeed * delta;
 		if (cam.position.x > camMaxX)	cam.position.x = camMaxX;
 		if (cam.position.y > camMaxY)	cam.position.y = camMaxY;
 		if (cam.position.x < camMinX)	cam.position.x = camMinX;
