@@ -256,10 +256,16 @@ namespace df {
 			tileJson["meta"] = tile.serialize();
 
 			json edgesJson;
-			for (const auto& edge : this->tileEdges.at(tile.getId())) {
-				const auto& v = this->edgeVertices.at(edge.getId());
-				edgesJson[std::to_string(edge.getId())] = { v.at(0).getId(), v.at(1).getId() };
-			}
+            if (this->tileEdges.contains(tile.getId())) {
+                for (const auto& edge : this->tileEdges.at(tile.getId())) {
+                    if (this->edgeVertices.contains(edge.getId())) {
+                        const auto& v = this->edgeVertices.at(edge.getId());
+                        edgesJson[std::to_string(edge.getId())] = { v.at(0).getId(), v.at(1).getId() };
+                        
+                    } else fmt::println("Edge vertices not found for edge {}", edge.getId());
+                }
+
+            } else fmt::println("Tile edges not found for tile {}", tile.getId());
 
 			tileJson["edges"] = edgesJson;
 			j[std::to_string(tile.getId())] = tileJson;
