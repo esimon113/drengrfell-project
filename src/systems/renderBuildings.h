@@ -13,7 +13,7 @@ namespace df {
 			RenderBuildingsSystem() = default;
 			~RenderBuildingsSystem() = default;
 
-			static RenderBuildingsSystem init(Window* window, Registry* registry) noexcept;
+			static RenderBuildingsSystem init(Window* window, Registry* registry, GameState& gameState) noexcept;
 			void deinit() noexcept;
 			void step(float dt) noexcept;
 			void reset() noexcept;
@@ -33,6 +33,7 @@ namespace df {
 		private:
 			Registry* registry;
 			Window* window;
+			GameState* gameState;
 
 			Framebuffer intermediateFramebuffer;
 
