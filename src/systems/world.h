@@ -28,6 +28,8 @@ namespace df {
 			bool isSettlementPreviewActive = false;
 			bool isRoadPreviewActive = false;
 
+			glm::vec2 getTileWorldPosition(size_t tileIndex) const noexcept;
+			size_t getTileIndexFromPosition(const glm::vec2& worldPosition) const noexcept;
 
 		private:
 			static constexpr size_t MAX_EAGLES = 15;
