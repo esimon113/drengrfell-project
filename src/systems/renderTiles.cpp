@@ -247,6 +247,7 @@ namespace df {
             .setMat4("projection", projection)
             .setFloat("time", timeInSeconds)
             .setInt("frames", 4)
+            .setInt("selectedTile", this->selectedTile)
             .setSampler("tileAtlas", 0);
 
         glBindVertexArray(useHex ? hexVao : tileVao);

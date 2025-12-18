@@ -33,6 +33,8 @@ namespace df {
         [[nodiscard]] int tileIdToMapId(unsigned tileId) const noexcept;
 
         [[nodiscard]] int getMapIdAtMouse() noexcept;
+
+        int selectedTile = -1;
     private:
         Registry* registry = nullptr;
         Window* window = nullptr;
