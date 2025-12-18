@@ -10,9 +10,8 @@ namespace df {
     }
 
     glm::vec2 calculateWorldDimensions(const int columns, const int rows) noexcept {
-        // 1,732050808 is sqrt(3)
         return {
-            1.732050808f * (static_cast<float>(columns) + 0.5f),
+            2.0f * (static_cast<float>(columns) + 0.5f),
             1.5f * (static_cast<float>(rows) + 1.0f)
         };
     }

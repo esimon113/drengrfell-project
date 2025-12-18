@@ -3,12 +3,12 @@
 
 namespace df {
 
-    RenderHudSystem RenderHudSystem::init(Window* window, Registry* registry, GameState& gameState) noexcept {
+    RenderHudSystem RenderHudSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept {
         RenderHudSystem self;
 
         self.window = window;
         self.registry = registry;
-        self.gameState = &gameState;
+        self.gameState = gameState;
 
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();

@@ -61,7 +61,7 @@ namespace df {
 		self.gameController = std::make_shared<GameController>(*self.gameState);
 		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
+		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
 		// Create main menu
 		self.mainMenu.init(self.window);
 		// for testing hero movement until we have a triggerpoint

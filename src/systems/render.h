@@ -21,7 +21,7 @@ namespace df {
 			RenderSystem() = default;
 			~RenderSystem() = default;
 
-			static RenderSystem init(Window* window, Registry* registry, GameState& gameState) noexcept;
+			static RenderSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
 			void deinit() noexcept;
 
 			void step(float dt) noexcept;

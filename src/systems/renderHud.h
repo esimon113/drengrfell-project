@@ -11,7 +11,7 @@ namespace df {
         RenderHudSystem() = default;
         ~RenderHudSystem() = default;
 
-        static RenderHudSystem init(Window* window, Registry* registry, GameState& gameState) noexcept;
+        static RenderHudSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
         void deinit() noexcept;
         void step(float dt) noexcept;
         void reset() noexcept;
@@ -29,7 +29,7 @@ namespace df {
     private:
         Registry* registry = nullptr;
         Window* window = nullptr;
-        GameState* gameState;
+        std::shared_ptr<GameState> gameState;
         Viewport viewport;
 
         Shader rectShader;

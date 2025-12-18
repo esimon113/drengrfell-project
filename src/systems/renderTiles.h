@@ -15,7 +15,7 @@ namespace df {
         RenderTilesSystem() = default;
         ~RenderTilesSystem() = default;
 
-        static RenderTilesSystem init(Window& window, Registry& registry, GameState& gameState) noexcept;
+        static RenderTilesSystem init(Window& window, Registry& registry, std::shared_ptr<GameState> gameState) noexcept;
         void deinit() noexcept;
 
         void step(float delta) noexcept;
@@ -29,7 +29,7 @@ namespace df {
     private:
         Registry* registry = nullptr;
         Window* window = nullptr;
-        GameState* gameState = nullptr;
+        std::shared_ptr<GameState> gameState = nullptr;
         Framebuffer intermediateFramebuffer;
 
         Shader tileShader{};

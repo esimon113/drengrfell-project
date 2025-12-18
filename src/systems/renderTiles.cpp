@@ -8,12 +8,12 @@
 
 namespace df {
 
-    RenderTilesSystem RenderTilesSystem::init(Window& window, Registry& registry, GameState& gameState) noexcept {
+    RenderTilesSystem RenderTilesSystem::init(Window& window, Registry& registry, std::shared_ptr<GameState> gameState) noexcept {
         RenderTilesSystem self;
 
         self.window = &window;
         self.registry = &registry;
-        self.gameState = &gameState;
+        self.gameState = gameState;
 
         const glm::uvec2 extent = self.window->getWindowExtent();
         self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
