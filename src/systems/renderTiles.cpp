@@ -17,6 +17,7 @@ namespace df {
 
         // load resources for rendering
         self.tileShader = Shader::init(assets::Shader::tile).value();
+        self.tilePickerShader = Shader::init(assets::Shader::tilePicker).value();
         self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
 
         self.initMap();
@@ -65,6 +66,11 @@ namespace df {
             glVertexAttribIPointer(4, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, explored));
             glVertexAttribDivisor(4, 1);
 
+            // layout(location = 5) in uint tileIndex;
+            glEnableVertexAttribArray(5);
+            glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, index));
+            glVertexAttribDivisor(5, 1);
+
             glBindVertexArray(0);
         }
     }
@@ -87,8 +93,8 @@ namespace df {
             return Err(ResultError(ResultError::Kind::DomainError, fmt::format("RenderTilesSystem::updateMap() width and tileCount are inconsistent. Cannot allocate render buffer.")));
         }
 
-        this->tileColumns = map.getMapWidth();
-        this->tileRows = map.getTileCount() / this->tileColumns;
+        this->tileColumns = RenderCommon::getMapColumns<unsigned>(map);
+        this->tileRows = RenderCommon::getMapRows<unsigned>(map);
         auto tileInstanceResult = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
         if (tileInstanceResult.isOk()) {
             this->tileInstances = tileInstanceResult.unwrap<>();
@@ -172,8 +178,8 @@ namespace df {
         model = glm::translate(model, glm::vec3(-camPos, 0.0f));
         model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
 
-        tileAtlas.bind(0);
-        tileShader.use()
+        this->tileAtlas.bind(0);
+        this->tileShader.use()
             .setMat4("model", model)
             .setMat4("projection", projection)
             .setFloat("time", timeInSeconds)
@@ -187,6 +193,45 @@ namespace df {
 
 
     void RenderTilesSystem::reset() noexcept {}
+
+
+    std::vector<RenderTilesSystem::TileVertex> RenderTilesSystem::createHexagonalTileMesh() noexcept {
+        // Appends the hexagons corners counter-clockwise to the vertices array.
+        // The center of the hexagon is at the origin.
+        // It is rotated by 30 degrees in order to have a corner at the top,
+        // as the tile textures already created have also the corner at the top.
+
+        constexpr float SQRT_3_DIV_2 = 0.866025404f; //sqrt(3.0) / 2.0f;
+        std::vector<TileVertex> vertices;
+        for (int vertex = 0; vertex < 6; vertex++) {
+            const float angle = M_PI / 180.0f * (60.0f * static_cast<float>(vertex) - 30.0f);
+            const float x = std::cos(angle);
+            const float y = std::sin(angle);
+            const float u = (x + SQRT_3_DIV_2) / (2.0f * SQRT_3_DIV_2);
+            const float v = (y + 1.0f) / 2.0f;
+            vertices.emplace_back(glm::vec2(x, y), glm::vec2(u, v));
+        }
+
+        // This is a triangulation I've come up with on my ipad.
+        // The triangles are counter-clockwise as the vertices above
+        // are counter-clockwise around the origin.
+
+        std::vector<TileVertex> meshData;
+
+        // Big center triangle
+        for (int i = 0; i < 6; i += 2) {
+            meshData.push_back(vertices[i]);
+        }
+
+        // Three side triangles
+        for (int i = 0; i < 3; i++) {
+            meshData.push_back(vertices[2 * i + 0]);
+            meshData.push_back(vertices[2 * i + 1]);
+            meshData.push_back(vertices[(2 * i + 2) % 6]);
+        }
+
+        return meshData;
+    }
 
 
     std::vector<RenderTilesSystem::TileVertex> RenderTilesSystem::createRectangularTileMesh() noexcept {
@@ -215,15 +260,15 @@ namespace df {
         const int rows = static_cast<int>(tiles.size()) / columns;
         std::vector<TileInstance> instances;
 
+        // For tile picking. 0 = None
+        std::uint32_t index = 1;
         // The iteration order is important!
         for (int row = rows - 1; row >= 0; row--) {
             for (int column = 0; column < columns; column++) {
-                glm::vec2 position;
-                position.x = 2.0f * (static_cast<float>(column) + 0.5f * static_cast<float>(row & 1));
-                position.y = static_cast<float>(row) * 1.5f;
-
+                const glm::vec2 position = RenderCommon::rowColToWorldCoordinates(column, row);
                 const Tile& tile = tiles[row * columns + column];
-                instances.push_back({position, static_cast<int>(tile.getType()), 0, player == nullptr});
+                instances.push_back({position, static_cast<int>(tile.getType()), 0, player == nullptr, index});
+                index++;
             }
         }
 
