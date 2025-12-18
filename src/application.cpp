@@ -246,23 +246,11 @@ namespace df {
 		cam.isActive = true;
 		registry->cameraInputs.emplace(camEntity);
 
-		Entity playerEntity = registry->getPlayer();
-		registry->players.emplace(playerEntity);
-		
-		registry->positions.emplace(playerEntity, 0.5f, 0.5f);
-		registry->velocities.emplace(playerEntity, 0, 0);
-		registry->scales.emplace(playerEntity, -0.1f, 0.1f);
-		registry->angles.emplace(playerEntity, 0.f);
-		registry->collisionRadius.emplace(playerEntity, 0.1f);
-
 		registry->getScreenDarkness() = 1.f;
 
 		gameState->setRoundNumber(0);
 		gameState->setCurrentPlayerId(0);
-
-		registry->animations.emplace(playerEntity);
 		
-
 		world.reset();
 		render.reset();
 	}
