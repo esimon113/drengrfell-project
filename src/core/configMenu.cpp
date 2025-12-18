@@ -231,8 +231,8 @@ namespace df {
             if(seedButton.hovered) {
                 textSystem->renderText(
                     "Click this button to start the seed input.\n"
-                    "You can type a number between 1 and 100 \n"
-                    "and confirm with enter.",
+                    "You can enter any number and confirm with enter.\n"
+                    "0 as seed generates a random world.",
                     infoPos,
                     0.4f,
                     { 1.0f, 0.0f, 0.0f }
