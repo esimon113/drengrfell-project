@@ -148,6 +148,7 @@ namespace df {
                         auto extent = this->window->getWindowExtent();
 
                         auto tileId = getTileIdAtPosition(xpos, extent.y - ypos);
+                        this->selectedTile = tileId;
                         auto mapId = tileIdToMapId(tileId);
                         fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, xpos, ypos);
                     } break;
@@ -225,21 +226,17 @@ namespace df {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        const glm::vec2 worldDimensions = calculateWorldDimensions(this->tileColumns, this->tileRows);
-
         Camera& cam = registry->cameras.get(registry->getCamera());
-        glm::vec2 camPos = cam.position;
-        float camZoom = cam.zoom;
 
         const glm::mat4 projection = glm::ortho(
-            camPos.x, camPos.x + worldDimensions.x / camZoom,
-            camPos.y, camPos.y + worldDimensions.y / camZoom,
+            cam.minX(), cam.maxX(),
+            cam.minY(), cam.maxY(),
             -1.0f, 1.0f
         );
 
         glm::mat4 model = glm::identity<glm::mat4>();
-        model = glm::translate(model, glm::vec3(-camPos, 0.0f));
-        model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
+        //model = glm::translate(model, glm::vec3(-camPos, 0.0f));
+        //model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
 
         this->tileAtlas.bind(0);
         this->tileShader.use()
@@ -247,6 +244,7 @@ namespace df {
             .setMat4("projection", projection)
             .setFloat("time", timeInSeconds)
             .setInt("frames", 4)
+            .setInt("selectedTile", this->selectedTile)
             .setSampler("tileAtlas", 0);
 
         glBindVertexArray(useHex ? hexVao : tileVao);
@@ -263,21 +261,15 @@ namespace df {
             glDisable(GL_BLEND);
         }
 
-        const glm::vec2 worldDimensions = calculateWorldDimensions(this->tileColumns, this->tileRows);
-
         Camera& cam = registry->cameras.get(registry->getCamera());
-        glm::vec2 camPos = cam.position;
-        float camZoom = cam.zoom;
 
         const glm::mat4 projection = glm::ortho(
-            camPos.x, camPos.x + worldDimensions.x / camZoom,
-            camPos.y, camPos.y + worldDimensions.y / camZoom,
+            cam.minX(), cam.maxX(),
+            cam.minY(), cam.maxY(),
             -1.0f, 1.0f
         );
 
         glm::mat4 model = glm::identity<glm::mat4>();
-        model = glm::translate(model, glm::vec3(-camPos, 0.0f));
-        model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
 
         this->tilePickerShader.use()
             .setMat4("model", model)
