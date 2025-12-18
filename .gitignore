@@ -1,5 +1,8 @@
 build
 
+# config
+*/world_generation.json
+
 .DS_Store
 .cache
 .vscode
