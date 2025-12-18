@@ -191,15 +191,15 @@ namespace df {
 								static_cast<float>(world.getMouseY())
 							);
 
-							// relative Mausposition zum Viewport
-							auto viewport = render.renderBuildingsSystem.getViewport();
-							glm::vec2 mouseRelToViewport = mouseScreen - glm::vec2(viewport.origin);
-
-							glm::vec2 worldDims = calculateWorldDimensions(
-								RenderCommon::getMapColumns<int>(gameState->getMap()),
-								RenderCommon::getMapRows<int>(gameState->getMap())
+							int mapId = render.renderTilesSystem.tileIdToMapId(
+								render.renderTilesSystem.getTileIdAtPosition(
+									static_cast<int>(mouseScreen.x),
+									static_cast<int>(mouseScreen.y)
+								)
 							);
-							glm::vec2 mouseWorld = screenToWorldCoordinates(mouseRelToViewport, viewport, worldDims);
+							fmt::println("test {} ", mapId);
+
+							glm::vec2 mouseWorld = movementSystem.getTileWorldPosition(static_cast<size_t>(mapId));
 
 							size_t tileIndex = 24; // falls 24x24 World
 							glm::vec2 worldPos = movementSystem.getTileWorldPosition(tileIndex);

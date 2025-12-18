@@ -4,20 +4,15 @@
         "octaves": 6,
         "persistence": 0.5
     },
-    "columns": 10,
+    "columns": 24,
     "generationMode": 1,
     "precipitationNoise": {
         "frequency": 0.10000000149011612,
         "octaves": 6,
         "persistence": 0.5
     },
-<<<<<<< HEAD
     "rows": 24,
     "seed": 24,
-=======
-    "rows": 10,
-    "seed": 0,
->>>>>>> main
     "temperatureNoise": {
         "frequency": 0.10000000149011612,
         "octaves": 6,
