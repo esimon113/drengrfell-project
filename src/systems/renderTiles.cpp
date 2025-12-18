@@ -159,11 +159,14 @@ namespace df {
     void RenderTilesSystem::deinit() noexcept {
         tileShader.deinit();
         tileAtlas.deinit();
+        intermediateFramebuffer.deinit();
 
         glDeleteBuffers(1, &tileInstanceVbo);
         glDeleteBuffers(1, &tileVbo);
+        glDeleteBuffers(1, &hexVbo);
         glDeleteVertexArrays(1, &tileVao);
-        tileInstanceVbo = tileVbo = tileVao = 0;
+        glDeleteVertexArrays(1, &hexVao);
+        tileInstanceVbo = tileVbo = tileVao = hexVbo = hexVao = 0;
     }
 
 
