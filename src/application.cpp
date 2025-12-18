@@ -238,18 +238,19 @@ namespace df {
 
 	void Application::reset() noexcept {
 		registry->clear();
+		
 
-		// initialize the player
-		registry->players.emplace(registry->getPlayer());
-		registry->positions.emplace(registry->getPlayer(), 0.5f, 0.5f);
-		registry->velocities.emplace(registry->getPlayer(), 0, 0);
-		registry->scales.emplace(registry->getPlayer(), -0.1f, 0.1f);
-		registry->angles.emplace(registry->getPlayer(), 0.f);
-		registry->collisionRadius.emplace(registry->getPlayer(), 0.1f);
+		Entity camEntity = registry->getCamera();
+		
+		Camera& cam = registry->cameras.emplace(camEntity);
+		cam.isActive = true;
+		registry->cameraInputs.emplace(camEntity);
 
 		registry->getScreenDarkness() = 1.f;
 
-		// reset systems
+		gameState->setRoundNumber(0);
+		gameState->setCurrentPlayerId(0);
+		
 		world.reset();
 		render.reset();
 	}
@@ -325,11 +326,21 @@ namespace df {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
 		{
-			Player player{};
-			player.addResources(types::TileType::FOREST, 100);				// give player 100 wood
-			player.addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
-			player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
-			gameState->addPlayer(player);
+			// only supports one player for now. TODO: if we do multplayer update this.
+			if (gameState->getPlayer(0)) {
+				Player* player = gameState->getPlayer(0);
+				player->reset();
+				player->addResources(types::TileType::FOREST, 100);				// give player 100 wood
+				player->addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
+				player->addResources(types::TileType::FIELD, 50);				// give player 50 grain
+			}
+			else {
+				Player player{};
+				player.addResources(types::TileType::FOREST, 100);				// give player 100 wood
+				player.addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
+				player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
+				gameState->addPlayer(player);
+			}
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
 
