@@ -60,5 +60,7 @@ namespace df {
 			std::shared_ptr<GameController> gameController;
 			// MainMenu
 			MainMenu mainMenu;
+			// TODO: adjust for multiple players + ending game + reentering
+			types::GamePhase previousGamePhase = types::GamePhase::START;
 	};
 }

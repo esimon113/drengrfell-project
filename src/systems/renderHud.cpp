@@ -161,18 +161,14 @@ namespace df {
             mouse.y <= endTurnButton.y + endTurnButton.h;
     }
 
-    bool RenderHudSystem::onMouseButton(glm::vec2 mouse, int button, int action) noexcept
-    {
-        if (button == GLFW_MOUSE_BUTTON_LEFT &&
-            action == GLFW_PRESS &&
-            isMouseOverEndTurn(mouse))
-        {
-            //gameState->endTurn(); TODO: use when endTurn exists.
-            gameState->setRoundNumber(gameState->getRoundNumber() + 1);
-            gameState->setTurnCount(gameState->getTurnCount() + 1);
-            return true;
-        }
-        return false;
+    bool RenderHudSystem::wasEndTurnClicked(glm::vec2 mouse, int button, int action) const noexcept {
+        bool result = button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && isMouseOverEndTurn(mouse);
+        return result;
+    }
+    
+
+    bool RenderHudSystem::onMouseButton(glm::vec2 mouse, int button, int action) noexcept {
+        return wasEndTurnClicked(mouse, button, action) ? true : false; // endTurn() will be called by Application
     }
 
     void RenderHudSystem::onResizeCallback(GLFWwindow* /*window*/, int width, int height) noexcept {

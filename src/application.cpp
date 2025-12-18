@@ -151,6 +151,12 @@ namespace df {
 
 			types::GamePhase gamePhase = gameState->getPhase();
 
+			// Start turn when first entering PLAY phase -> future TODO: adjust for multiple players + ending game + reentering
+			if (gamePhase == types::GamePhase::PLAY && previousGamePhase != types::GamePhase::PLAY) {
+				gameController->startTurn();
+				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
+			}
+
 			switch (gamePhase) {
 				case types::GamePhase::START:
 					mainMenu.update(delta_time);
@@ -225,6 +231,8 @@ namespace df {
 					break;
 			}
 
+			// Update previous phase for next iteration -> future TODO: adjust for multiple players + ending game + reentering
+			previousGamePhase = gamePhase;
 
 			window->swapBuffers();
 		}
@@ -309,6 +317,13 @@ namespace df {
 				mouseX,
 				static_cast<float>(window->getWindowExtent().y) - mouseY 
 			};
+
+			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
+			if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
+				gameController->endTurn();
+				gameController->startTurn(); // Start turn for the next player
+				return;
+			}
 
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
 				return;
