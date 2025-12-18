@@ -8,5 +8,16 @@
     "frequency": 0.1,
     "persistence": 0.5,
     "octaves": 6
+  },
+  "useWhittakerBiomes": true,
+  "temperatureNoise": {
+    "frequency": 0.1,
+    "persistence": 0.5,
+    "octaves": 6
+  },
+  "precipitationNoise": {
+    "frequency": 0.1,
+    "persistence": 0.5,
+    "octaves": 6
   }
 }

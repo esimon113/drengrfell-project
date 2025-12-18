@@ -28,6 +28,7 @@ namespace df {
 			void reset() noexcept;
 
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
+			void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
 
 			RenderTilesSystem renderTilesSystem;
 			RenderHeroSystem renderHeroSystem;

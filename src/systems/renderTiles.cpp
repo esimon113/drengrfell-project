@@ -109,6 +109,20 @@ namespace df {
         return Ok();
     }
 
+    void RenderTilesSystem::onKeyCallback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/) noexcept {
+        switch (action) {
+            case GLFW_PRESS: {
+                switch (key) {
+                    case GLFW_KEY_F: {
+                        this->renderFogOfWar ^= true;
+                        this->updateRequired = true;
+                        fmt::println("Set fow rendering to {}", this->renderFogOfWar ? "true" : "false");
+                    }
+                }
+            }
+        }
+    }
+
 
     void RenderTilesSystem::deinit() noexcept {
         tileShader.deinit();
@@ -127,11 +141,12 @@ namespace df {
         if (accumulator > 1.0) {
             accumulator = 0.0f;
         }
-        if (Graph& map = this->gameState->getMap(); map.isRenderUpdateRequested()) {
+        if (Graph& map = this->gameState->getMap(); map.isRenderUpdateRequested() or this->updateRequired) {
             if (const Result<void, ResultError> result = updateMap(); result.isErr()) {
                 std::cerr << result.unwrapErr() << std::endl;
             }
             map.setRenderUpdateRequested(false);
+            this->updateRequired = false;
         }
         renderMap(accumulator);
     }
@@ -192,7 +207,11 @@ namespace df {
     }
 
 
-    Result<std::vector<RenderTilesSystem::TileInstance>, ResultError> RenderTilesSystem::makeTileInstances(const std::vector<Tile>& tiles, const int columns, const Player* player) noexcept {
+    Result<std::vector<RenderTilesSystem::TileInstance>, ResultError> RenderTilesSystem::makeTileInstances(const std::vector<Tile>& tiles, const int columns, const Player* player) const noexcept {
+        if (!this->renderFogOfWar) {
+            player = nullptr;
+        }
+
         const int rows = static_cast<int>(tiles.size()) / columns;
         std::vector<TileInstance> instances;
 

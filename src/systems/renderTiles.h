@@ -23,6 +23,8 @@ namespace df {
 
         // Call this only if map size has changed. Everything else is handled in step()
         [[nodiscard]] Result<void, ResultError> updateMap() noexcept;
+
+        void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
     private:
         Registry* registry = nullptr;
         Window* window = nullptr;
@@ -56,6 +58,9 @@ namespace df {
         void initMap() noexcept;
         void renderMap(float timeInSeconds = 0.0) const noexcept;
 
-        static Result<std::vector<TileInstance>, ResultError> makeTileInstances(const std::vector<Tile>& tiles, int columns, const Player* player = nullptr) noexcept;
+        Result<std::vector<TileInstance>, ResultError> makeTileInstances(const std::vector<Tile>& tiles, int columns, const Player* player = nullptr) const noexcept;
+
+        bool renderFogOfWar = true;
+        bool updateRequired = false;
     };
 }
