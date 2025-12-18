@@ -78,7 +78,7 @@ namespace df {
     WhittakerBiome calculateBiome(const double temperature, const double precipitation) noexcept {
         // Biomes are based on https://commons.wikimedia.org/wiki/File:Climate_influence_on_terrestrial_biome.svg
 
-        const double celsius = temperature * 43.0 - 10.0;
+        const double celsius = temperature * 40.0 - 10.0;
         const double precipCm = precipitation * 400.0;
 
         if (celsius > 20) {
@@ -89,7 +89,7 @@ namespace df {
             } else {
                 return WhittakerBiome::SUBTROPICAL_DESERT;
             }
-        } else if (celsius > 10) {
+        } else if (celsius > 8) {
             if (precipCm > 200) {
                 return WhittakerBiome::TEMPERATE_RAINFOREST;
             } else if (precipCm > 100) {
@@ -100,7 +100,13 @@ namespace df {
                 return WhittakerBiome::TEMPERATE_GRASSLAND;
             }
         } else if (celsius > 0) {
-            return WhittakerBiome::BOREAL_FOREST;;
+            if (precipCm > 30) {
+                return WhittakerBiome::BOREAL_FOREST;
+            } else if (precipCm > 15) {
+                return WhittakerBiome::SHRUBLAND;
+            } else {
+                return WhittakerBiome::TEMPERATE_GRASSLAND;
+            }
         } else {
             return WhittakerBiome::TUNDRA;
         }
@@ -192,7 +198,7 @@ namespace df {
                                 break;
                         }
                     } else {
-                        if ((temperature * 43.0 - 10.0) < 0) {
+                        if ((temperature * 40.0 - 10.0) < 0) {
                             type = types::TileType::ICE;
                         } else {
                             type = types::TileType::WATER;

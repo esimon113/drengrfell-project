@@ -13,6 +13,10 @@
 #include "core/road.h"
 
 #include <iostream>
+#include <fstream>
+
+#include "worldGenerator.h"
+
 
 
 namespace df {
@@ -57,39 +61,12 @@ namespace df {
 		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
-		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
-			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
-			self.gameState->getMap().regenerate();
-		} else {
-			self.gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
-		}
-		{
-			Player player{};
-			self.gameState->addPlayer(player);
-			const int width = self.gameState->getMap().getMapWidth();
-			const int height = self.gameState->getMap().getTileCount() / width;
-
-			auto randomEngine = std::default_random_engine(std::random_device()());
-			auto uniformDistribution = std::uniform_int_distribution();
-
-			for (int row = 0; row < height; ++row) {
-				for (int col = 0; col < width; ++col) {
-					if (uniformDistribution(randomEngine) % 4 != 0) {
-						self.gameState->getPlayer(0)->exploreTile(row * width + col);
-					}
-				}
-			}
-		}
-		if (const auto result = self.render.renderTilesSystem.updateMap(); result.isErr()) {
-			std::cerr << result.unwrapErr() << std::endl;
-		}
-		self.render.renderHeroSystem.updateDimensionsFromMap();
-
-
 		// Create main menu
 		self.mainMenu.init(self.window);
 		// for testing hero movement until we have a triggerpoint
 		self.movementSystem = EntityMovementSystem::init(self.registry, *self.gameState);
+		// Create config menu
+		self.configMenu.init(self.window, self.registry);
 
 		return self;
 	}
@@ -129,7 +106,22 @@ namespace df {
 
 		// callbacks so menu can change phase / close window
 		mainMenu.setExitCallback([&]() { glfwSetWindowShouldClose(window->getHandle(), true); });
-		mainMenu.setStartCallback([&]() { startGame(); });
+		mainMenu.setStartCallback([&]() { configurateGame(); });
+
+		// callbacks so the config menu can change phase, set world parameters etc.
+		//configMenu.setStartCallback([&]() { startGame(); });
+		configMenu.setStartCallback(
+			[&](int seed,
+				int width,
+				int height,
+				int mode)
+			{
+				startGame(seed, width, height, mode);
+			}
+		);
+
+		//configMenu.setInsularCallback([&]() { setInsular(); });
+		//configMenu.setPerlinCallback([&]() { setPerlin(); });
 
 		float delta_time = 0;
 		float last_time = static_cast<float>(glfwGetTime());
@@ -139,12 +131,12 @@ namespace df {
 		int fbWidth, fbHeight;
 		glfwGetFramebufferSize(window->getHandle(), &fbWidth, &fbHeight);
 		onResizeCallback(window->getHandle(), fbWidth, fbHeight);
-		
+
 
 
 		while (!window->shouldClose()) {
 			glfwPollEvents();
-			
+
 			float time = static_cast<float>(glfwGetTime());
 			delta_time = time - last_time;
 			last_time = time;
@@ -163,6 +155,8 @@ namespace df {
 					mainMenu.render();
 					break;
 				case types::GamePhase::CONFIG:
+					configMenu.update(delta_time);
+					configMenu.render();
 					break;
 				case types::GamePhase::PLAY:
 				{
@@ -173,7 +167,7 @@ namespace df {
 					window->makeContextCurrent();
 					glClearColor(0.5f,0.5f,0.5f,1.0f);
 					glClear(GL_COLOR_BUFFER_BIT);
-					
+
 					render.step(delta_time);
 					// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
 					if (world.isTestMovementActive()) {
@@ -193,36 +187,26 @@ namespace df {
 
 					if (this->world.isSettlementPreviewActive) {
 						glm::vec2 cursorPos = window->getCursorPosition();
-						// Convert screen coordinates to world coordinates accounting for camera position and zoom
-						Camera& cam = registry->cameras.get(registry->getCamera());
-						const Graph& map = gameState->getMap();
-						const unsigned tileColumns = map.getMapWidth();
-						const unsigned tileRows = map.getTileCount() / tileColumns;
-						const glm::vec2 worldDimensions = calculateWorldDimensions(tileColumns, tileRows);
-						
-						const Viewport viewport = renderBuildingsSystem.getViewport();
-						const glm::vec2 viewportPos = cursorPos - glm::vec2(viewport.origin);
-						glm::vec2 normalizedPos = viewportPos / glm::vec2(viewport.size);
-						normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
-						
-						glm::vec2 worldPos = cam.position + normalizedPos * (worldDimensions / cam.zoom);
+						glm::vec2 worldPos = screenToWorldCoordinates(
+							cursorPos,
+							renderBuildingsSystem.getViewport(),
+							calculateWorldDimensions(
+								RenderCommon::getMapColumns<int>(gameState->getMap()),
+								RenderCommon::getMapRows<int>(gameState->getMap())
+							)
+						);
 						renderBuildingsSystem.renderSettlementPreview(worldPos, true, time);
 					}
 					else if (this->world.isRoadPreviewActive) {
 						glm::vec2 cursorPos = window->getCursorPosition();
-						// Convert screen coordinates to world coordinates accounting for camera position and zoom
-						Camera& cam = registry->cameras.get(registry->getCamera());
-						const Graph& map = gameState->getMap();
-						const unsigned tileColumns = map.getMapWidth();
-						const unsigned tileRows = map.getTileCount() / tileColumns;
-						const glm::vec2 worldDimensions = calculateWorldDimensions(tileColumns, tileRows);
-						
-						const Viewport viewport = renderBuildingsSystem.getViewport();
-						const glm::vec2 viewportPos = cursorPos - glm::vec2(viewport.origin);
-						glm::vec2 normalizedPos = viewportPos / glm::vec2(viewport.size);
-						normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
-						
-						glm::vec2 worldPos = cam.position + normalizedPos * (worldDimensions / cam.zoom);
+						glm::vec2 worldPos = screenToWorldCoordinates(
+							cursorPos,
+							renderBuildingsSystem.getViewport(),
+							calculateWorldDimensions(
+								RenderCommon::getMapColumns<int>(gameState->getMap()),
+									RenderCommon::getMapRows<int>(gameState->getMap())
+							)
+						);
 						renderBuildingsSystem.renderRoadPreview(worldPos, true, time);
 					}
 				}
@@ -256,11 +240,103 @@ namespace df {
 		render.reset();
 	}
 
-	void Application::startGame() noexcept {
-		// For now instantly starts the game. Later on could set the phase to
-		// CONFIG first and after the configurations are done, the phase would be set to PLAY
-		this->gameState->initTutorial();	// Init the Tutorial
-		this->gameState->setPhase(types::GamePhase::PLAY);
+	void Application::configurateGame() noexcept {
+		gameState->setPhase(types::GamePhase::CONFIG);
+	}
+
+	void Application::startGame(int seedParam, int widthParam, int heightParam, int mode) noexcept {
+		std::string seedName = std::to_string(seedParam);
+		std::string widthName = std::to_string(widthParam);
+		std::string heightName = std::to_string(heightParam);
+		std::string modeName = "";
+
+
+		// read config from json file
+		WorldGeneratorConfig config;
+		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
+			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
+		}
+		else {
+			config = worldGenConfResult.unwrap<>();
+		}
+
+		// set config to user input or keep existing config-values if no input was made (== -1)
+		if (mode == -1) {
+			if (config.generationMode == WorldGeneratorConfig::GenerationMode::INSULAR) {
+				modeName = "kept as insular";
+			}
+			else if (config.generationMode == WorldGeneratorConfig::GenerationMode::PERLIN) {
+				modeName = "kept as perlin";
+			}
+		} else if (mode == 0) {
+			config.generationMode = WorldGeneratorConfig::GenerationMode::INSULAR;
+			modeName = "insular";
+		}
+		else if (mode == 1) {
+			config.generationMode = WorldGeneratorConfig::GenerationMode::PERLIN;
+			modeName = "perlin";
+		}
+
+		if (seedParam != -1) {config.seed = static_cast<unsigned>(seedParam);}
+		else {seedName = "kept as " + std::to_string(config.seed);}
+
+		if (widthParam != -1) {config.columns = static_cast<unsigned>(widthParam);}
+		else {widthName = "kept as " + std::to_string(config.columns);}
+
+		if (widthParam != -1) {config.rows = static_cast<unsigned>(heightParam);}
+		else {heightName = "kept as " + std::to_string(config.rows);}
+
+		fmt::println("set worldGen parameters to seed: {}, width: {}, height: {}, mode: {}", seedName, widthName, heightName, modeName);
+
+
+		// write config to json
+		const auto path = assets::getAssetPath(assets::JsonFile::WORLD_GENERATION_CONFIGURATION);
+
+		{	// open the stream in an extra block, so the stream gets closed before deserialize tries to open the json
+			std::ofstream file(path);
+			if (!file) {
+				std::cerr << "Could not open config file: " << path << '\n';
+				return;
+			}
+			file << config.serialize().dump(4);
+		}
+
+
+		// generate map with the WorldGeneratorConfig
+		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
+			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
+			gameState->getMap().regenerate();
+		}
+		else {
+			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
+		}
+		{
+			Player player{};
+			player.addResources(types::TileType::FOREST, 100);				// give player 100 wood
+			player.addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
+			player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
+			gameState->addPlayer(player);
+			const int width = gameState->getMap().getMapWidth();
+			const int height = gameState->getMap().getTileCount() / width;
+
+			auto randomEngine = std::default_random_engine(std::random_device()());
+			auto uniformDistribution = std::uniform_int_distribution();
+
+			for (int row = 0; row < height; ++row) {
+				for (int col = 0; col < width; ++col) {
+					if (uniformDistribution(randomEngine) % 4 != 0) {
+						gameState->getPlayer(0)->exploreTile(row * width + col);
+					}
+				}
+			}
+		}
+		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
+			std::cerr << result.unwrapErr() << std::endl;
+		}
+		render.renderHeroSystem.updateDimensionsFromMap();
+
+		gameState->initTutorial();	// Init the Tutorial
+		gameState->setPhase(types::GamePhase::PLAY);
 	}
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
@@ -271,6 +347,7 @@ namespace df {
 			mainMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::CONFIG:
+			configMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::PLAY:
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
@@ -295,6 +372,7 @@ namespace df {
 			mainMenu.onMouseButtonCallback(windowParam, button, action, mods);
 			break;
 		case types::GamePhase::CONFIG:
+			configMenu.onMouseButtonCallback(windowParam, button, action, mods);
 			break;
 		case types::GamePhase::PLAY: {
 			double xpos, ypos;
@@ -315,7 +393,7 @@ namespace df {
 
 			glm::vec2 mouse{
 				mouseX,
-				static_cast<float>(window->getWindowExtent().y) - mouseY 
+				static_cast<float>(window->getWindowExtent().y) - mouseY
 			};
 
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
@@ -347,16 +425,16 @@ namespace df {
 					const unsigned tileColumns = map.getMapWidth();
 					const unsigned tileRows = map.getTileCount() / tileColumns;
 					const glm::vec2 worldDimensions = calculateWorldDimensions(tileColumns, tileRows);
-					
+
 					const Viewport viewport = this->render.renderBuildingsSystem.getViewport();
 					const glm::vec2 viewportPos = mouse - glm::vec2(viewport.origin);
 					glm::vec2 normalizedPos = viewportPos / glm::vec2(viewport.size);
 					normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
-					
+
 					glm::vec2 worldPos = cam.position + normalizedPos * (worldDimensions / cam.zoom);
-					
+
 					size_t currentPlayerId = this->gameState->getCurrentPlayerId();
-					
+
 					// TODO: This is just temporary...
 					// Settlement: 1 WOOD, 1 CLAY, 1 GRASS
 					const std::vector<int> settlementCost = {
@@ -380,7 +458,7 @@ namespace df {
 						0,  // CLAY
 						0   // ICE
 					};
-					
+
 					if (this->world.isSettlementPreviewActive) {
 						fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
 						// Find closest vertex for settlement placement
@@ -428,7 +506,7 @@ namespace df {
 
 						} else fmt::println("No closest edge found");
 					}
-					
+
 					return; // ignore other mouse callbacks when placing buildings...
 				}
 			}
@@ -464,8 +542,10 @@ namespace df {
 			mainMenu.onResizeCallback(windowParam, width, height);
 			render.onResizeCallback(windowParam, width, height);
 			render.renderHudSystem.onResizeCallback(windowParam, width, height);
+			configMenu.onResizeCallback(windowParam, width, height);
 			break;
 		case types::GamePhase::CONFIG:
+			configMenu.onResizeCallback(windowParam, width, height);
 			break;
 		case types::GamePhase::PLAY:
 			render.onResizeCallback(windowParam, width, height);

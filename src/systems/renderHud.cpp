@@ -40,15 +40,18 @@ namespace df {
 
         glBindVertexArray(0);
 
+        // Hud Settings
+        self.hudPos = { window->getWindowExtent().x * 0.02f, window->getWindowExtent().y * 0.02f }; // hud starts 2% right and 2% of the bottom
+        self.hudSize = {
+            window->getWindowExtent().x * 0.96f,    // 2% space to the right corner
+            window->getWindowExtent().y * 0.08f     // 6% in height starting from 2% window height
+        };
         // End Turn Button
-        float buttonWidth = 0.20f;
-        float buttonHeight = 0.07f;
-        float winW = static_cast<float>(extent.x);
-        float winH = static_cast<float>(extent.y);
-        self.endTurnButton.w = winW * buttonWidth;
-        self.endTurnButton.h = winH * buttonHeight;
-        self.endTurnButton.x = (winW - self.endTurnButton.w) * 0.94f;
-        self.endTurnButton.y = winH * 0.025f;
+        float paddingX = self.hudSize.x * 0.02f;    // ensure black hud layout below endTurn button
+        self.endTurnButton.w = self.hudSize.x * 0.20f;
+        self.endTurnButton.h = self.hudSize.y * 0.7f;
+        self.endTurnButton.x = self.hudPos.x + self.hudSize.x - self.endTurnButton.w - paddingX;
+        self.endTurnButton.y = self.hudPos.y + (self.hudSize.y - self.endTurnButton.h) / 2.0f;
 
         return self;
     }
@@ -58,79 +61,81 @@ namespace df {
     }
 
     void RenderHudSystem::step(float /*dt*/) noexcept {
-
-        renderHud();
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
-            /*//     TODO: format tutorial view
+            // Render Tutorial
+            //     TODO: format tutorial view
             if (gameState->isTutorialActive()) {
+                // get next tutorial step
                 TutorialStep* step = gameState->getCurrentTutorialStep();
                 if (!step)
                     return;
-                //glm::vec2 pos = step->screenPosition.value_or(glm::vec2{ 20.f, 60.f });
-                glm::vec2 pos = { 150.0f, 150.0f };
+                // box position/size
+                float boxPosPaddingX = 10.f;
+                float boxPosPaddingY = 10.f;
+                float scale = 0.4f;
+                glm::vec2 textSize = textSystem->measureText(step->text, scale);
+                glm::vec2 rectBoxSize = {
+                    textSize.x + boxPosPaddingX,
+                    textSize.y + boxPosPaddingY
+                };
+                glm::vec2 pos = { 10.0f, window->getWindowExtent().y - rectBoxSize.y - 10.0f };     // box position always top left
+                // Tutorial box
                 if (step->renderBox) {
-                    renderRectBox(pos, { 420.f, 70.f }, {0.0f, 0.0f, 0.0f});
+                    renderRectBox(pos, rectBoxSize, {0.0f, 0.0f, 0.0f});
                 }
-                // Tutorial-Text
-                textSystem->renderText(
-                    step->text,
-                    pos + glm::vec2{ 10.f, 20.f },
-                    0.6f,
-                    { 1.f, 1.f, 1.f }
-                );
-            }*/
 
+                // center text in the middle of the box
+                float offset = 15.0f;
+                glm::vec2 textPos = {
+                    pos.x + (rectBoxSize.x - textSize.x) / 2.0f,
+                    pos.y + (rectBoxSize.y + textSize.y) / 2.0f - offset
+                };
+                // Tutorial-Text
+                textSystem->renderText(step->text, textPos, scale, { 1.f, 1.f, 1.f });
+            }
+
+            // Render HUD
             // TODO: update for multiple player if we do multiplayer
             Player& player = *gameState->getPlayer(0);
             std::map<types::TileType, int> resources = player.getResources();
-            textSystem->renderText(
-                "Wood: " + std::to_string(resources[types::TileType::FOREST]) +
+            std::string hudTextToPrint = "Wood: " + std::to_string(resources[types::TileType::FOREST]) +
                 "; Stone: " + std::to_string(resources[types::TileType::MOUNTAIN]) +
                 "; Grain: " + std::to_string(resources[types::TileType::FIELD]) +
-                "; Round: " + std::to_string(gameState->getRoundNumber()),
-                { 20.0f, 27.0f },
-                0.5f,
+                "; Round: " + std::to_string(gameState->getRoundNumber());
+            float scale = 0.4f;
+            glm::vec2 hudTextSize = textSystem->measureText(hudTextToPrint, scale);
+            glm::vec2 hudTextPos = {
+                hudPos.x + 10.0f,
+                hudPos.y + (hudSize.y - hudTextSize.y) / 2.0f
+            };
+            // Render Box for HUD
+            renderRectBox(hudPos, hudSize, {0.0f, 0.0f, 0.0f});
+            // Render Text for HUD
+            textSystem->renderText(
+                hudTextToPrint,
+                hudTextPos,
+                scale,
                 { 1.0f, 1.0f, 1.0f }
             );
 
             // End Turn Button
             renderRectBox({ endTurnButton.x , endTurnButton.y }, { endTurnButton.w, endTurnButton.h }, {0.0f, 0.0f, 1.0f});
-            textSystem->renderText("End Turn", { endTurnButton.x +10 , endTurnButton.y +10 }, 0.5f, {1.0f, 1.0f, 1.0f});
+            glm::vec2 textSizeEndTurn = textSystem->measureText("End Turn", 0.5f);
+            glm::vec2 buttonTextPos = {
+                endTurnButton.x + (endTurnButton.w - textSizeEndTurn.x) / 2.0f,
+                endTurnButton.y + (endTurnButton.h - textSizeEndTurn.y) / 2.0f
+            };
+            textSystem->renderText("End Turn", buttonTextPos, 0.5f, { 1.f, 1.f, 1.f });
+
         }
     }
 
     void RenderHudSystem::reset() noexcept {
-        renderHud();
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
             textSystem->renderText(" ", { 0.0f, 0.0f }, 0.5f, { 1.0f, 1.0f, 1.0f });
         }
-    }
-
-    void RenderHudSystem::renderHud() const noexcept {
-
-        const float width = viewport.size.x;
-        const float height = viewport.size.y;
-        
-        glm::mat4 projection = glm::ortho(0.f, width, 0.f, height, -1.f, 1.f);
-
-        // Modellmatrix
-        glm::vec2 pos = { 10.f, 10.f };
-        glm::vec2 size = { 580.f, 50.f };       // Size of the HUD
-
-        glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), glm::vec3(pos, 0.f));
-        model = glm::scale(model, glm::vec3(size, 1.f));
-
-        rectShader.use()
-            .setMat4("projection", projection)
-            .setMat4("view", glm::identity<glm::mat4>())
-            .setMat4("model", model)
-            .setVec3("fcolor", glm::vec3(0.f, 0.f, 0.f));  
-
-        glBindVertexArray(quadVao);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        glBindVertexArray(0);
     }
 
     void RenderHudSystem::renderRectBox(glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept {
@@ -174,18 +179,17 @@ namespace df {
     void RenderHudSystem::onResizeCallback(GLFWwindow* /*window*/, int width, int height) noexcept {
        
         this->viewport.size = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+        hudSize = {
+            window->getWindowExtent().x * 0.96f,    // 2% space to the right corner
+            window->getWindowExtent().y * 0.08f     // 6% in height starting from 2% window height
+        };
+        hudPos = { window->getWindowExtent().x * 0.02f, window->getWindowExtent().y * 0.02f };  // hud starts 2% right and 2% of the bottom
+        float paddingX = hudSize.x * 0.02f;         // ensure black hud layout below endTurn button
+        endTurnButton.w = hudSize.x * 0.20f; 
+        endTurnButton.h = hudSize.y * 0.7f;   
+        endTurnButton.x = hudPos.x + hudSize.x - endTurnButton.w - paddingX;
+        endTurnButton.y = hudPos.y + (hudSize.y - endTurnButton.h) / 2.0f; 
 
-        
-        float winW = static_cast<float>(width);
-        float winH = static_cast<float>(height);
-
-        float buttonWidth = 0.20f;
-        float buttonHeight = 0.07f;
-        
-        endTurnButton.w = winW * buttonWidth;
-        endTurnButton.h = winH * buttonHeight;
-        endTurnButton.x = (winW - endTurnButton.w) * 0.94f;
-        endTurnButton.y = winH * 0.025f;
     }
 
 }

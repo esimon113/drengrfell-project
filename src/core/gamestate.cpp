@@ -212,8 +212,28 @@ namespace df {
         tutorialSteps.clear();
 
         tutorialSteps.push_back({
+            .id = TutorialStepId::WELCOME,
+            .text =
+                "Welcome to Drengrfell.\n"
+                "You are a lone hero in a harsh land.\n"
+                "Lets start by looking around.\n"
+                "Press left mouse button to continue.",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = true
+            });
+
+        tutorialSteps.push_back({
             .id = TutorialStepId::MOVE_CAMERA,
-            .text = "Use WASD or move the camera. Use the mousewheel to zoom out/in. This is also possible with +/-.",
+            .text = "Use WASD to move the camera. Just try it now!",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = true
+            });
+
+        tutorialSteps.push_back({
+            .id = TutorialStepId::ZOOM_CAMERA,
+            .text = "Use the mousewheel to zoom in/out.\nThis is also possible with +/-.",
             .completed = false,
             .screenPosition = std::nullopt,
             .renderBox = true
@@ -221,7 +241,11 @@ namespace df {
 
         tutorialSteps.push_back({
             .id = TutorialStepId::BUILD_SETTLEMENT,
-            .text = "Build your first settlement using the b Button to create the hover view. Then click any free tile close to your hero to build the settlement.",
+            .text = 
+                "Build your first settlement using the n Button.\n"
+                "Then you get the hover view.\n"
+                "Here click any free tile close to your hero to build the settlement.\n"
+                "Settlements generate resources from nearby tiles each round.",
             .completed = false,
             .screenPosition = std::nullopt,
             .renderBox = true
@@ -229,7 +253,7 @@ namespace df {
 
         tutorialSteps.push_back({
             .id = TutorialStepId::BUILD_ROAD,
-            .text = "Build a road to expand using n Button to create the hover view. Then select any free edge close to your hero to build the road.",
+            .text = "Build a road to expand using b Button to create the hover view.\nThen select any free edge close to your hero to build the road.",
             .completed = false,
             .screenPosition = std::nullopt,
             .renderBox = true
@@ -237,10 +261,10 @@ namespace df {
 
         tutorialSteps.push_back({
             .id = TutorialStepId::END,
-            .text = "Tutorial completed!",
+            .text = "Tutorial completed! \nPress left mouse button to exit the tutorial.",
             .completed = false,
             .screenPosition = std::nullopt,
-            .renderBox = false
+            .renderBox = true
             });
     }
 

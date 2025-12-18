@@ -84,6 +84,7 @@ namespace df {
 		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
 		Entity hero = registry->animations.entities.front();
 		auto& animComp = registry->animations.get(hero);
+		auto* step = this->gameState->getCurrentTutorialStep();
 		switch (action) {
 			case GLFW_PRESS:
 				switch (key) {
@@ -147,6 +148,10 @@ namespace df {
     					if (this->isSettlementPreviewActive) {
     						this->isRoadPreviewActive = false;
     					}
+						// if current step is BUILD_SETTLEMENT -> complete step
+						if (step && step->id == TutorialStepId::BUILD_SETTLEMENT) {
+							this->gameState->completeCurrentTutorialStep();
+						}
     					break;
     				case GLFW_KEY_B:
     					this->isRoadPreviewActive = !this->isRoadPreviewActive;
@@ -154,6 +159,10 @@ namespace df {
     					if (this->isRoadPreviewActive) {
     						this->isSettlementPreviewActive = false;
     					}
+						// if current step is BUILD_ROAD -> complete step
+						if (step && step->id == TutorialStepId::BUILD_ROAD) {
+							this->gameState->completeCurrentTutorialStep();
+						}
     					break;
 					case GLFW_KEY_G: {
 						Graph& map = this->gameState->getMap();
@@ -181,18 +190,34 @@ namespace df {
 					case GLFW_KEY_RIGHT_BRACKET:
 						// This case is the key which can produce +, *, ~ on the german keyboard layout, so a plus
 						calcNewCameraZoom(1.0f);
+						// if current step is ZOOM_CAMERA -> complete step
+						if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 						break;
 					case GLFW_KEY_SLASH:
 						// This case is the key which can produce -, _ on the german keyboard layout, so a minus
 						calcNewCameraZoom(-1.0f);
+						// if current step is ZOOM_CAMERA -> complete step
+						if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 						break;
 					case GLFW_KEY_KP_ADD:
 						// This case is the + key on the numpad
 						calcNewCameraZoom(1.0f);
+						// if current step is ZOOM_CAMERA -> complete step
+						if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 						break;
 					case GLFW_KEY_KP_SUBTRACT:
 						// This case is the - key on the numpad
 						calcNewCameraZoom(-1.0f);
+						// if current step is ZOOM_CAMERA -> complete step
+						if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 						break;
 					default:
 						break;
@@ -223,11 +248,15 @@ namespace df {
 	}
 
 	void WorldSystem::onMouseButtonCallback(GLFWwindow*, int button, int action, int /* mods */) noexcept {
-
+		auto* step = this->gameState->getCurrentTutorialStep();
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			//action 1: press left mouse button
 			//action 0: release left mouse button
 			fmt::println("LMB pressed, action: {}", action);
+			// Update Tutorial if finished
+			if ((step && step->id == TutorialStepId::END) || (step && step->id == TutorialStepId::WELCOME && action == GLFW_PRESS)) {
+				this->gameState->completeCurrentTutorialStep();
+			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 			//action 1: press right mouse button
 			//action 0: release right mouse button
@@ -238,6 +267,12 @@ namespace df {
 	void WorldSystem::onScrollCallback(GLFWwindow*, double /* xoffset */, double yoffset) noexcept {
 		fmt::println("Scrolled: {}", yoffset);
 		calcNewCameraZoom(yoffset);
+		// if current step is ZOOM_CAMERA -> complete step
+		auto* step = this->gameState->getCurrentTutorialStep();
+		if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
+			this->gameState->completeCurrentTutorialStep();
+		}
+
 	}
 
 	void WorldSystem::calcNewCameraZoom(double yoffset) noexcept {

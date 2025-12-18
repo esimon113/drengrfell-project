@@ -28,6 +28,7 @@ namespace df {
 			particle,
 			text,
 			hud,
+			tilePicker,
 			count
 		};
 
@@ -76,6 +77,23 @@ namespace df {
 		enum struct JsonFile {
 			WORLD_GENERATION_CONFIGURATION,
 			COUNT,
+		};
+
+		enum struct MenuTexture {
+			CONFIG_AI,
+			CONFIG_BACKGROUND,
+			CONFIG_EASY,
+			CONFIG_HARD,
+			CONFIG_HEIGHT,
+			CONFIG_INSULAR,
+			CONFIG_MEDIUM,
+			CONFIG_MULTIPLAYER,
+			CONFIG_PERLIN,
+			CONFIG_SEED,
+			CONFIG_START,
+			CONFIG_TITLE,
+			CONFIG_WIDTH,
+			count
 		};
 
 

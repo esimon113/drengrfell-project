@@ -115,10 +115,18 @@ namespace df {
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(vao);
 
+        float startX = pos.x;
+        float lineHeight = 48.0f * scale;    // same value as FT_Set_Pixel_Sizes
+
         // iterate through all characters
         for (unsigned char c : text) {
             const Character& ch = characters.at(c);
 
+            if (c == '\n') {
+                pos.x = startX;
+                pos.y -= lineHeight;
+                continue;
+            }
             float xpos = pos.x + ch.bearing.x * scale;
             float ypos = pos.y - (ch.size.y - ch.bearing.y) * scale;
 
@@ -172,6 +180,33 @@ namespace df {
     void RenderTextSystem::deinit() noexcept {
         textShader.deinit();
     }
+
+    // measures the size of the text to compute the corresponding box
+    glm::vec2 RenderTextSystem::measureText(const std::string text, float scale) const noexcept {
+        float maxWidth = 0.0f;
+        float currentWidth = 0.0f;
+
+        float lineHeight = 48.0f * scale;   // same value as FT_Set_Pixel_Sizes
+        float totalHeight = lineHeight;     // at least one line
+
+        for (char c : text) {
+
+            if (c == '\n') {
+                maxWidth = std::max(maxWidth, currentWidth);
+                currentWidth = 0.0f;
+                totalHeight += lineHeight;  // new line -> add another row of lines
+                continue;
+            }
+
+            const Character& ch = characters.at(c);
+            currentWidth += (ch.advance >> 6) * scale;  // Add the width of this character (after scaling) to the current line width
+        }
+
+        maxWidth = std::max(maxWidth, currentWidth);
+
+        return { maxWidth, totalHeight };
+    }
+
 
 }
 
