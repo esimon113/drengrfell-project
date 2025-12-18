@@ -113,19 +113,24 @@ namespace df {
         const int columns = static_cast<int>(config.columns);
         const int rows = static_cast<int>(config.rows);
 
-        auto randomEngine = std::default_random_engine(std::random_device()());
-        auto uniformTileTypeDistribution = std::uniform_int_distribution(2, static_cast<int>(types::TileType::COUNT) - 1);
+        auto randomEngine = std::default_random_engine(config.seed);
 
-        const siv::PerlinNoise perlin{ config.seed };
+        const siv::PerlinNoise altitudePerlin{ config.seed };
+        const siv::PerlinNoise temperaturePerlin{ randomEngine() };
+        const siv::PerlinNoise precipitationPerlin{ randomEngine() };
+
+        auto uniformTileTypeDistribution = std::uniform_int_distribution(2, static_cast<int>(types::TileType::COUNT) - 1);
 
         for (int row = 0; row < rows; row++) {
             for (int column = 0; column < columns; column++) {
-                const double altitude = perlin.normalizedOctave2D_01(
+                double altitude = altitudePerlin.normalizedOctave2D_01(
                     static_cast<float>(row) * config.altitudeNoise.frequency,
                     static_cast<float>(column) * config.altitudeNoise.frequency,
                     static_cast<int>(config.altitudeNoise.octaves),
                     config.altitudeNoise.persistence
                 );
+                // Bigger exponents make the map more flat, less mountainous
+                //altitude = pow(altitude, 1.0);
 
                 types::TileType type;
                 if (config.useWhittakerBiomes) {
@@ -134,15 +139,13 @@ namespace df {
                     // and https://en.wikipedia.org/wiki/Biome#Whittaker_(1962,_1970,_1975)_biome-types
                     // and https://commons.wikimedia.org/wiki/File:Climate_influence_on_terrestrial_biome.svg
 
-                    const double latitude = std::abs((row / static_cast<double>(rows)) * 180.0 - 90.0);
-                    const double equatorProximity = (90.0 - latitude) / 90.0;
-                    const double temperature = perlin.normalizedOctave2D_01(
+                    const double temperature = temperaturePerlin.normalizedOctave2D_01(
                         static_cast<float>(row) * config.temperatureNoise.frequency,
                         static_cast<float>(column) * config.temperatureNoise.frequency,
                         static_cast<int>(config.temperatureNoise.octaves),
                         config.temperatureNoise.persistence
-                    ) * equatorProximity;
-                    double precipitation = perlin.normalizedOctave2D_01(
+                    );
+                    double precipitation = precipitationPerlin.normalizedOctave2D_01(
                         static_cast<float>(row) * config.precipitationNoise.frequency,
                         static_cast<float>(column) * config.precipitationNoise.frequency,
                         static_cast<int>(config.precipitationNoise.octaves),
@@ -154,10 +157,9 @@ namespace df {
                     if (altitude > 0.60f) {
                         type = types::TileType::MOUNTAIN;
                     } else if (altitude > 0.42) {
-                        auto biome = calculateBiome(temperature, precipitation);
-                        switch (biome) {
+                        switch (calculateBiome(temperature, precipitation)) {
                             case WhittakerBiome::TUNDRA:
-                                type = types::TileType::GRASS;
+                                type = types::TileType::ICE;
                                 break;
                             case WhittakerBiome::BOREAL_FOREST:
                                 type = types::TileType::FOREST;
@@ -175,10 +177,10 @@ namespace df {
                                 type = types::TileType::FOREST;
                                 break;
                             case WhittakerBiome::SUBTROPICAL_DESERT:
-                                type = types::TileType::CLAY;
+                                type = types::TileType::FIELD;
                                 break;
                             case WhittakerBiome::SAVANNA:
-                                type = types::TileType::FIELD;
+                                type = types::TileType::CLAY;
                                 break;
                             case WhittakerBiome::TROPICAL_RAINFOREST:
                                 type = types::TileType::FOREST;
