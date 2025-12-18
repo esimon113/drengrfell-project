@@ -7,6 +7,7 @@
  * This header provides common functionality for render systems.
  */
 
+
 namespace df {
 
     struct Viewport {
@@ -14,7 +15,7 @@ namespace df {
         glm::uvec2 size;
     };
 
-    glm::vec2 screenToWorldCoordinates(const glm::vec2& screenPos, Viewport viewport) noexcept;
+    glm::vec2 screenToWorldCoordinates(const glm::vec2& screenPos, Viewport viewport, glm::vec2 worldDimensions) noexcept;
     glm::vec2 calculateWorldDimensions(int columns, int rows) noexcept;
 
     namespace RenderCommon {
