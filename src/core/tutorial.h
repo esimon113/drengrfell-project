@@ -4,7 +4,9 @@
 namespace df {
 
     enum class TutorialStepId {
+        WELCOME,
         MOVE_CAMERA,
+        ZOOM_CAMERA,
         BUILD_SETTLEMENT,
         BUILD_ROAD,
         END
