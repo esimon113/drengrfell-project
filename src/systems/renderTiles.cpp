@@ -332,12 +332,14 @@ namespace df {
         // as the tile textures already created have also the corner at the top.
 
         constexpr float SQRT_3_DIV_2 = 0.866025404f; //sqrt(3.0) / 2.0f;
+        constexpr float C2_DIV_SQRT_3 = 1.154700538f; // inverse of the above
         std::vector<TileVertex> vertices;
         for (int vertex = 0; vertex < 6; vertex++) {
             const float angle = M_PI / 180.0f * (60.0f * static_cast<float>(vertex) - 30.0f);
-            const float x = std::cos(angle);
+            const float x = std::cos(angle) * C2_DIV_SQRT_3;
             const float y = std::sin(angle);
-            const float u = (x + SQRT_3_DIV_2) / (2.0f * SQRT_3_DIV_2);
+            constexpr float halfWidth = SQRT_3_DIV_2 * 1.15f;
+            const float u = (x + halfWidth) / (2.0f * halfWidth);
             const float v = (y + 1.0f) / 2.0f;
             vertices.emplace_back(glm::vec2(x, y), glm::vec2(u, v));
         }
