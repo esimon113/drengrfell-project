@@ -238,18 +238,31 @@ namespace df {
 
 	void Application::reset() noexcept {
 		registry->clear();
+		
 
-		// initialize the player
-		registry->players.emplace(registry->getPlayer());
-		registry->positions.emplace(registry->getPlayer(), 0.5f, 0.5f);
-		registry->velocities.emplace(registry->getPlayer(), 0, 0);
-		registry->scales.emplace(registry->getPlayer(), -0.1f, 0.1f);
-		registry->angles.emplace(registry->getPlayer(), 0.f);
-		registry->collisionRadius.emplace(registry->getPlayer(), 0.1f);
+		Entity camEntity = registry->getCamera();
+		
+		Camera& cam = registry->cameras.emplace(camEntity);
+		cam.isActive = true;
+		registry->cameraInputs.emplace(camEntity);
+
+		Entity playerEntity = registry->getPlayer();
+		registry->players.emplace(playerEntity);
+		
+		registry->positions.emplace(playerEntity, 0.5f, 0.5f);
+		registry->velocities.emplace(playerEntity, 0, 0);
+		registry->scales.emplace(playerEntity, -0.1f, 0.1f);
+		registry->angles.emplace(playerEntity, 0.f);
+		registry->collisionRadius.emplace(playerEntity, 0.1f);
 
 		registry->getScreenDarkness() = 1.f;
 
-		// reset systems
+		gameState->setRoundNumber(0);
+		gameState->setCurrentPlayerId(0);
+
+		registry->animations.emplace(playerEntity);
+		
+
 		world.reset();
 		render.reset();
 	}
