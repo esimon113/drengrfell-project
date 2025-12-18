@@ -65,6 +65,11 @@ namespace df {
             glVertexAttribIPointer(4, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, explored));
             glVertexAttribDivisor(4, 1);
 
+            // layout(location = 5) in uint tileIndex;
+            glEnableVertexAttribArray(5);
+            glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, index));
+            glVertexAttribDivisor(5, 1);
+
             glBindVertexArray(0);
         }
     }
@@ -216,11 +221,13 @@ namespace df {
         std::vector<TileInstance> instances;
 
         // The iteration order is important!
+        std::uint32_t index = 0;
         for (int row = rows - 1; row >= 0; row--) {
             for (int column = 0; column < columns; column++) {
                 const glm::vec2 position = RenderCommon::rowColToWorldCoordinates(column, row);
                 const Tile& tile = tiles[row * columns + column];
-                instances.push_back({position, static_cast<int>(tile.getType()), 0, player == nullptr});
+                instances.push_back({position, static_cast<int>(tile.getType()), 0, player == nullptr, index});
+                index++;
             }
         }
 

@@ -46,6 +46,7 @@ namespace df {
             std::int32_t type;
             std::int32_t padding;
             std::int32_t explored; // 0 = unexplored, 1 = explored
+            std::uint32_t index; // used for mouse picking
         };
 
         std::vector<TileVertex> tileMesh;
