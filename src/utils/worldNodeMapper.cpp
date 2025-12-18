@@ -1,4 +1,5 @@
 #include "worldNodeMapper.h"
+#include "fmt/base.h"
 
 #include <cstdint>
 #include <array>
@@ -58,13 +59,20 @@ namespace df {
 
 
 	std::optional<size_t> WorldNodeMapper::findClosestVertexToWorldPos(const glm::vec2 &worldPos, const Graph &map) noexcept {
-		if (map.getVertexCount() == 0) return std::nullopt;
+		fmt::println("[WorldNodeMapper] findClosestVertexToWorldPos: searching for vertex near world position ({}, {})", worldPos.x, worldPos.y);
+		
+		if (map.getVertexCount() == 0) {
+			fmt::println("[WorldNodeMapper] No vertices in map, returning nullopt");
+			return std::nullopt;
+		}
 
 		const float hexagonRadius = 1.0f;
 		const uint32_t columns = map.getMapWidth();
 		float minDistance = std::numeric_limits<float>::max();
 		size_t closestVertexId = SIZE_MAX;
 		std::unordered_set<size_t> processedVertexIds;
+		
+		fmt::println("[WorldNodeMapper] Map has {} tiles, {} columns", map.getTileCount(), columns);
 
 		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
 			const Tile& tile = map.getTile(tileId);
@@ -87,28 +95,42 @@ namespace df {
 				processedVertexIds.insert(vertexId);
 
 				glm::vec2 vertexPosition = tileCenterPos + vertexOffsets[i];
-
 				float distance = glm::distance(worldPos, vertexPosition);
+				
 				if (distance < minDistance) {
+					fmt::println("[WorldNodeMapper] New closest vertex found: vertexId={}, distance={:.3f}, position=({:.3f}, {:.3f})", 
+						vertexId, distance, vertexPosition.x, vertexPosition.y);
 					minDistance = distance;
 					closestVertexId = vertexId;
 				}
 			}
 		}
 
-		if (closestVertexId != SIZE_MAX) return closestVertexId;
+		if (closestVertexId != SIZE_MAX) {
+			fmt::println("[WorldNodeMapper] Closest vertex: vertexId={}, distance={:.3f}", closestVertexId, minDistance);
+			return closestVertexId;
+		}
+		
+		fmt::println("[WorldNodeMapper] No valid vertex found, returning nullopt");
 		return std::nullopt;
 	};
 
 
 	std::optional<size_t> WorldNodeMapper::findClosestEdgeToWorldPos(const glm::vec2 &worldPos, const Graph &map) noexcept {
-		if (map.getEdgeCount() == 0) return std::nullopt;
+		fmt::println("[WorldNodeMapper] findClosestEdgeToWorldPos: searching for edge near world position ({}, {})", worldPos.x, worldPos.y);
+		
+		if (map.getEdgeCount() == 0) {
+			fmt::println("[WorldNodeMapper] No edges in map, returning nullopt");
+			return std::nullopt;
+		}
 
 		const float hexagonRadius = 1.0f;
 		const uint32_t columns = map.getMapWidth();
 		float minDistance = std::numeric_limits<float>::max();
 		size_t closestEdgeId = SIZE_MAX;
 		std::unordered_set<size_t> processedEdgeIds;
+		
+		fmt::println("[WorldNodeMapper] Map has {} tiles, {} columns", map.getTileCount(), columns);
 
 		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
 			const Tile& tile = map.getTile(tileId);
@@ -137,13 +159,20 @@ namespace df {
 
 				float distance = glm::distance(worldPos, edgePosition);
 				if (distance < minDistance) {
+					fmt::println("[WorldNodeMapper] New closest edge found: edgeId={}, distance={:.3f}, position=({:.3f}, {:.3f})", 
+						edgeId, distance, edgePosition.x, edgePosition.y);
 					minDistance = distance;
 					closestEdgeId = edgeId;
 				}
 			}
 		}
 
-		if (closestEdgeId != SIZE_MAX) return closestEdgeId;
+		if (closestEdgeId != SIZE_MAX) {
+			fmt::println("[WorldNodeMapper] Closest edge: edgeId={}, distance={:.3f}", closestEdgeId, minDistance);
+			return closestEdgeId;
+		}
+		
+		fmt::println("[WorldNodeMapper] No valid edge found, returning nullopt");
 		return std::nullopt;
 	};
 }
