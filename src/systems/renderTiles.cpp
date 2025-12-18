@@ -15,6 +15,9 @@ namespace df {
         self.registry = &registry;
         self.gameState = &gameState;
 
+        const glm::uvec2 extent = self.window->getWindowExtent();
+        self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
+
         // load resources for rendering
         self.tileShader = Shader::init(assets::Shader::tile).value();
         self.tilePickerShader = Shader::init(assets::Shader::tilePicker).value();
@@ -124,6 +127,7 @@ namespace df {
         return Ok();
     }
 
+
     void RenderTilesSystem::onKeyCallback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/) noexcept {
         switch (action) {
             case GLFW_PRESS: {
@@ -137,6 +141,9 @@ namespace df {
                         this->useHex ^= true;
                         this->updateRequired = true;
                         fmt::println("Set hex rendering to {}", this->useHex ? "true" : "false");
+                    } break;
+                    case GLFW_KEY_P: {
+                        fmt::println("Picked: {}", getTileIdAtPosition(100, 100));
                     } break;
                 }
             }
@@ -168,7 +175,8 @@ namespace df {
             map.setRenderUpdateRequested(false);
             this->updateRequired = false;
         }
-        renderMap(accumulator);
+        //renderMap(accumulator);
+        renderPickerMap(true);
     }
 
 
@@ -203,6 +211,56 @@ namespace df {
         glBindVertexArray(useHex ? hexVao : tileVao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>((useHex ? this->hexMesh : this->tileMesh).size()), static_cast<GLsizei>(this->tileInstances.size()));
         glBindVertexArray(0);
+    }
+
+
+    void RenderTilesSystem::renderPickerMap(bool blend) const noexcept {
+        if (blend) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        } else {
+            glDisable(GL_BLEND);
+        }
+
+        const glm::vec2 worldDimensions = calculateWorldDimensions(this->tileColumns, this->tileRows);
+
+        Camera& cam = registry->cameras.get(registry->getCamera());
+        glm::vec2 camPos = cam.position;
+        float camZoom = cam.zoom;
+
+        const glm::mat4 projection = glm::ortho(
+            camPos.x, camPos.x + worldDimensions.x / camZoom,
+            camPos.y, camPos.y + worldDimensions.y / camZoom,
+            -1.0f, 1.0f
+        );
+
+        glm::mat4 model = glm::identity<glm::mat4>();
+        model = glm::translate(model, glm::vec3(-camPos, 0.0f));
+        model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
+
+        this->tilePickerShader.use()
+            .setMat4("model", model)
+            .setMat4("projection", projection);
+
+        glBindVertexArray(hexVao);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(hexMesh.size()), static_cast<GLsizei>(this->tileInstances.size()));
+        glBindVertexArray(0);
+    }
+
+
+    unsigned RenderTilesSystem::getTileIdAtPosition(const int x, const int y) const noexcept {
+        // See https://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-an-opengl-hack/
+
+        renderPickerMap(false);
+
+        glFlush();
+        glFinish();
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        unsigned char data[4];
+        glReadPixels(x, y,1,1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        return data[0] +
+               data[1] * 256 +
+               data[2] * 256*256;
     }
 
 

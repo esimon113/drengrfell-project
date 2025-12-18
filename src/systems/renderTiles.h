@@ -23,12 +23,14 @@ namespace df {
 
         // Call this only if map size has changed. Everything else is handled in step()
         [[nodiscard]] Result<void, ResultError> updateMap() noexcept;
+        unsigned getTileIdAtPosition(int x, int y) const noexcept;
 
         void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
     private:
         Registry* registry = nullptr;
         Window* window = nullptr;
         GameState* gameState = nullptr;
+        Framebuffer intermediateFramebuffer;
 
         Shader tileShader{};
         Shader tilePickerShader{};
@@ -64,6 +66,7 @@ namespace df {
         void initMap() noexcept;
         void initVao(GLuint vao, GLuint vbo, const std::vector<TileVertex>& mesh) noexcept;
         void renderMap(float timeInSeconds = 0.0) const noexcept;
+        void renderPickerMap(bool blend = false) const noexcept;
 
         Result<std::vector<TileInstance>, ResultError> makeTileInstances(const std::vector<Tile>& tiles, int columns, const Player* player = nullptr) const noexcept;
 
