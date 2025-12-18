@@ -29,7 +29,7 @@ namespace df {
         self.registry = registry;
         self.gameState = gamestate;
         
-        self.maxParticles = 20000;
+        self.maxParticles = 50000;
         self.particlesCount = 0;
         
         self.particlesContainer.resize(self.maxParticles);
@@ -115,16 +115,16 @@ namespace df {
         
         float visibleHeight = worldDimensions.y / cam.zoom;
 
-        int newparticles = 1;
+        int newparticles = 3;
         float spawnY = camPos2D.y + visibleHeight + 2.0f;
         
         for(int i = 0; i < newparticles; i++){
             int particleIndex = findUnusedParticle();
             Particle& p = particlesContainer[particleIndex];
             
-            p.life = (20.0f + (rand() % 20)); 
+            p.life = (50.0f + (rand() % 20)); 
             p.pos = glm::vec3(
-                cameraPos.x + (rand() %  80 ) - 20.0f,
+                cameraPos.x + (rand() %  200 ) - 20.0f,
                 spawnY,
                 0.0f
             );
