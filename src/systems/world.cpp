@@ -143,10 +143,10 @@ namespace df {
     					if (this->isSettlementPreviewActive) {
     						this->isRoadPreviewActive = false;
     					}
-						// if current step is BUILD_SETTLEMENT -> complete step
-						if (step && step->id == TutorialStepId::BUILD_SETTLEMENT) {
-							this->gameState->completeCurrentTutorialStep();
-						}
+						// if current step is BUILD_SETTLEMENT -> complete step TODO: delete once buildSettlement runs
+						//if (step && step->id == TutorialStepId::BUILD_SETTLEMENT) {
+						//	this->gameState->completeCurrentTutorialStep();
+						//}
     					break;
     				case GLFW_KEY_B:
     					this->isRoadPreviewActive = !this->isRoadPreviewActive;
@@ -154,10 +154,10 @@ namespace df {
     					if (this->isRoadPreviewActive) {
     						this->isSettlementPreviewActive = false;
     					}
-						// if current step is BUILD_ROAD -> complete step
-						if (step && step->id == TutorialStepId::BUILD_ROAD) {
-							this->gameState->completeCurrentTutorialStep();
-						}
+						// if current step is BUILD_ROAD -> complete step TODO: delete once buildRoad runs
+						//if (step && step->id == TutorialStepId::BUILD_ROAD) {
+						//	this->gameState->completeCurrentTutorialStep();
+						//}
     					break;
 					case GLFW_KEY_G: {
 						Graph& map = this->gameState->getMap();

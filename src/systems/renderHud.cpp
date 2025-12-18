@@ -64,7 +64,6 @@ namespace df {
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
             // Render Tutorial
-            //     TODO: format tutorial view
             if (gameState->isTutorialActive()) {
                 // get next tutorial step
                 TutorialStep* step = gameState->getCurrentTutorialStep();
@@ -94,16 +93,17 @@ namespace df {
                 // Tutorial-Text
                 textSystem->renderText(step->text, textPos, scale, { 1.f, 1.f, 1.f });
             }
-
             // Render HUD
             // TODO: update for multiple player if we do multiplayer
             Player& player = *gameState->getPlayer(0);
             std::map<types::TileType, int> resources = player.getResources();
             std::string hudTextToPrint = "Wood: " + std::to_string(resources[types::TileType::FOREST]) +
                 "; Stone: " + std::to_string(resources[types::TileType::MOUNTAIN]) +
+                "; Clay: " + std::to_string(resources[types::TileType::CLAY]) +
+                "; Grass: " + std::to_string(resources[types::TileType::GRASS]) +
                 "; Grain: " + std::to_string(resources[types::TileType::FIELD]) +
                 "; Round: " + std::to_string(gameState->getRoundNumber());
-            float scale = 0.4f;
+            float scale = viewport.size.x * 0.05f / 100.f;  // scale text size for fullscreen
             glm::vec2 hudTextSize = textSystem->measureText(hudTextToPrint, scale);
             glm::vec2 hudTextPos = {
                 hudPos.x + 10.0f,
