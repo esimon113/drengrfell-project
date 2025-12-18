@@ -1,6 +1,7 @@
 #include "application.h"
 #include "GL/gl3w.h"
 #include "GL/glcorearb.h"
+#include "glm/fwd.hpp"
 #include "hero.h"
 #include "animationSystem.h"
 #include "types.h"
@@ -8,6 +9,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 // test for entityMovement
 #include "entityMovement.h"
+#include "systems/renderCommon.h"
+#include "utils/worldNodeMapper.h"
+#include "core/road.h"
 
 #include <iostream>
 #include <fstream>
@@ -54,9 +58,10 @@ namespace df {
 
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
+		self.gameController = std::make_shared<GameController>(*self.gameState);
 		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
+		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
 		// Create main menu
 		self.mainMenu.init(self.window);
 		// for testing hero movement until we have a triggerpoint
@@ -127,17 +132,23 @@ namespace df {
 		int fbWidth, fbHeight;
 		glfwGetFramebufferSize(window->getHandle(), &fbWidth, &fbHeight);
 		onResizeCallback(window->getHandle(), fbWidth, fbHeight);
-		
+
 
 
 		while (!window->shouldClose()) {
 			glfwPollEvents();
-			
+
 			float time = static_cast<float>(glfwGetTime());
 			delta_time = time - last_time;
 			last_time = time;
 
 			types::GamePhase gamePhase = gameState->getPhase();
+
+			// Start turn when first entering PLAY phase -> future TODO: adjust for multiple players + ending game + reentering
+			if (gamePhase == types::GamePhase::PLAY && previousGamePhase != types::GamePhase::PLAY) {
+				gameController->startTurn();
+				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
+			}
 
 			switch (gamePhase) {
 				case types::GamePhase::START:
@@ -153,11 +164,19 @@ namespace df {
 					world.step(delta_time);
 					// physics.step(delta_time);
 					// physics.handleCollisions(delta_time);
+
+					if(gameState->isGameOver()){
+						fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
+						this->reset();
+						gameState->setPhase(types::GamePhase::START);
+						break;
+					}
+
 					df::AnimationSystem::update(registry, delta_time);
 					window->makeContextCurrent();
 					glClearColor(0.5f,0.5f,0.5f,1.0f);
 					glClear(GL_COLOR_BUFFER_BIT);
-					
+
 					render.step(delta_time);
 					// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
 					if (world.isTestMovementActive()) {
@@ -176,13 +195,32 @@ namespace df {
 					auto renderBuildingsSystem = this->render.renderBuildingsSystem;
 
 					if (this->world.isSettlementPreviewActive) {
-						glm::vec2 cursorPos = window->getCursorPosition();
-						glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
+						Camera& cam = registry->cameras.get(registry->getCamera());
+						const Graph& map = gameState->getMap();
+
+						// offset by cam pos
+						glm::vec2 worldPos = cam.position + screenToWorldCoordinates(
+							this->window->getCursorPosition(),
+							renderBuildingsSystem.getViewport(),
+							calculateWorldDimensions(
+								RenderCommon::getMapColumns<int>(map),
+								RenderCommon::getMapRows<int>(map)
+							) / cam.zoom
+						);
 						renderBuildingsSystem.renderSettlementPreview(worldPos, true, time);
 					}
 					else if (this->world.isRoadPreviewActive) {
-						glm::vec2 cursorPos = window->getCursorPosition();
-						glm::vec2 worldPos = screenToWorldCoordinates(cursorPos, renderBuildingsSystem.getViewport());
+						Camera& cam = registry->cameras.get(registry->getCamera());
+						const Graph& map = gameState->getMap();
+
+						glm::vec2 worldPos = cam.position + screenToWorldCoordinates(
+							this->window->getCursorPosition(),
+							renderBuildingsSystem.getViewport(),
+							calculateWorldDimensions(
+								RenderCommon::getMapColumns<int>(map),
+								RenderCommon::getMapRows<int>(map)
+							) / cam.zoom
+						);
 						renderBuildingsSystem.renderRoadPreview(worldPos, true, time);
 					}
 				}
@@ -191,6 +229,8 @@ namespace df {
 					break;
 			}
 
+			// Update previous phase for next iteration -> future TODO: adjust for multiple players + ending game + reentering
+			previousGamePhase = gamePhase;
 
 			window->swapBuffers();
 		}
@@ -223,7 +263,7 @@ namespace df {
 		std::string widthName = std::to_string(widthParam);
 		std::string heightName = std::to_string(heightParam);
 		std::string modeName = "";
-		
+
 
 		// read config from json file
 		WorldGeneratorConfig config;
@@ -261,7 +301,7 @@ namespace df {
 		else {heightName = "kept as " + std::to_string(config.rows);}
 
 		fmt::println("set worldGen parameters to seed: {}, width: {}, height: {}, mode: {}", seedName, widthName, heightName, modeName);
-		
+
 
 		// write config to json
 		const auto path = assets::getAssetPath(assets::JsonFile::WORLD_GENERATION_CONFIGURATION);
@@ -286,6 +326,9 @@ namespace df {
 		}
 		{
 			Player player{};
+			player.addResources(types::TileType::FOREST, 100);				// give player 100 wood
+			player.addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
+			player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
 			gameState->addPlayer(player);
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
@@ -364,11 +407,123 @@ namespace df {
 
 			glm::vec2 mouse{
 				mouseX,
-				static_cast<float>(window->getWindowExtent().y) - mouseY 
+				static_cast<float>(window->getWindowExtent().y) - mouseY
 			};
+
+			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
+			if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
+				gameController->endTurn();
+				gameController->startTurn(); // Start turn for the next player
+				return;
+			}
 
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
 				return;
+
+			// TODO: refactor...
+			// Handle building placement -> ONLY possible when preview is active
+			if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+				if (this->world.isSettlementPreviewActive || this->world.isRoadPreviewActive) {
+					fmt::println("Building placement started...");
+
+					// Convert screen coordinates to world coordinates
+					Camera& cam = this->registry->cameras.get(this->registry->getCamera());
+					const Graph& map = this->gameState->getMap();
+					fmt::println("Checking Game state");
+					fmt::println("--------------------------------");
+					fmt::println("Map: {}", map.serialize().dump());
+					fmt::println("Map width: {}", map.getMapWidth());
+					fmt::println("Map height: {}", map.getTileCount() / map.getMapWidth());
+					fmt::println("Map tile count: {}", map.getTileCount());
+					fmt::println("--------------------------------");
+					const unsigned tileColumns = map.getMapWidth();
+					const unsigned tileRows = map.getTileCount() / tileColumns;
+					const glm::vec2 worldDimensions = calculateWorldDimensions(tileColumns, tileRows);
+
+					const Viewport viewport = this->render.renderBuildingsSystem.getViewport();
+					const glm::vec2 viewportPos = mouse - glm::vec2(viewport.origin);
+					glm::vec2 normalizedPos = viewportPos / glm::vec2(viewport.size);
+					normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
+
+					glm::vec2 worldPos = cam.position + normalizedPos * (worldDimensions / cam.zoom);
+
+					size_t currentPlayerId = this->gameState->getCurrentPlayerId();
+
+					// TODO: This is just temporary...
+					// Settlement: 1 WOOD, 1 CLAY, 1 GRASS
+					const std::vector<int> settlementCost = {
+						0,  // EMPTY
+						0,  // WATER
+						1,  // FOREST (wood)
+						1,  // GRASS
+						0,  // MOUNTAIN
+						0,  // FIELD
+						1,  // CLAY
+						0   // ICE
+					};
+					// Road: 1 WOOD
+					const std::vector<int> roadCost = {
+						0,  // EMPTY
+						0,  // WATER
+						1,  // FOREST (wood)
+						0,  // GRASS
+						0,  // MOUNTAIN
+						0,  // FIELD
+						0,  // CLAY
+						0   // ICE
+					};
+
+					if (this->world.isSettlementPreviewActive) {
+						fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
+						// Find closest vertex for settlement placement
+						auto vertexIdOpt = WorldNodeMapper::findClosestVertexToWorldPos(worldPos, map);
+						if (vertexIdOpt.has_value()) {
+							fmt::println("Closest vertex found at {}", vertexIdOpt.value());
+							size_t vertexId = vertexIdOpt.value();
+								if (gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
+								fmt::println("Player can build settlement at vertex {}", vertexId);
+								bool success = gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
+
+								if (success) {
+									fmt::println("Settlement built at vertex {}", vertexId);
+									this->world.isSettlementPreviewActive = false;
+								} else {
+									fmt::println("Failed to build settlement at vertex {}", vertexId);
+								}
+
+							} else {
+								fmt::println("Cannot build settlement at vertex {}: insufficient resources or invalid placement", vertexId);
+							}
+						} else fmt::println("No closest vertex found");
+
+					} else if (this->world.isRoadPreviewActive) {
+						fmt::println("Checking if player can build road at world position {},{}", worldPos.x, worldPos.y);
+						// Find closest edge for road placement
+						auto edgeIdOpt = WorldNodeMapper::findClosestEdgeToWorldPos(worldPos, map);
+						if (edgeIdOpt.has_value()) {
+							fmt::println("Closest edge found at {}", edgeIdOpt.value());
+							size_t edgeId = edgeIdOpt.value();
+
+							if (gameController->canBuildRoad(currentPlayerId, edgeId)) { // validate player can build road
+								fmt::println("Player can build road at edge {}", edgeId);
+								bool success = gameController->buildRoad(currentPlayerId, edgeId, RoadLevel::Path, roadCost);
+								if (success) {
+									fmt::println("Road built at edge {}", edgeId);
+									this->world.isRoadPreviewActive = false;
+								} else {
+									fmt::println("Failed to build road at edge {}", edgeId);
+								}
+
+							} else {
+								fmt::println("Cannot build road at edge {}: insufficient resources or invalid placement", edgeId);
+							}
+
+						} else fmt::println("No closest edge found");
+					}
+
+					return; // ignore other mouse callbacks when placing buildings...
+				}
+			}
 
 			world.onMouseButtonCallback(windowParam, button, action, mods);
 		} break;
@@ -394,24 +549,10 @@ namespace df {
 	}
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
-		types::GamePhase gamePhase = gameState->getPhase();
-
-		switch (gamePhase) {
-		case types::GamePhase::START:
-			mainMenu.onResizeCallback(windowParam, width, height);
-			render.onResizeCallback(windowParam, width, height);
-			render.renderHudSystem.onResizeCallback(windowParam, width, height);
-			configMenu.onResizeCallback(windowParam, width, height);
-			break;
-		case types::GamePhase::CONFIG:
-			configMenu.onResizeCallback(windowParam, width, height);
-			break;
-		case types::GamePhase::PLAY:
-			render.onResizeCallback(windowParam, width, height);
-			render.renderHudSystem.onResizeCallback(windowParam, width, height);
-			break;
-		case types::GamePhase::END:
-			break;
-		}
+		mainMenu.onResizeCallback(windowParam, width, height);
+		render.onResizeCallback(windowParam, width, height);
+		render.renderHudSystem.onResizeCallback(windowParam, width, height);
+		configMenu.onResizeCallback(windowParam, width, height);
+		
 	}
 }

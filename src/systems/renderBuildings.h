@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gamestate.h"
 #include "renderCommon.h"
 #include <registry.h>
 #include <window.h>
@@ -13,7 +14,7 @@ namespace df {
 			RenderBuildingsSystem() = default;
 			~RenderBuildingsSystem() = default;
 
-			static RenderBuildingsSystem init(Window* window, Registry* registry) noexcept;
+			static RenderBuildingsSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
 			void deinit() noexcept;
 			void step(float dt) noexcept;
 			void reset() noexcept;
@@ -33,6 +34,7 @@ namespace df {
 		private:
 			Registry* registry;
 			Window* window;
+			std::shared_ptr<GameState> gamestate;
 
 			Framebuffer intermediateFramebuffer;
 

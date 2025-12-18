@@ -22,7 +22,7 @@ namespace df {
 			void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
 			void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 			void calcNewCameraZoom(double yoffset) noexcept;
-			bool isTestMovementActive() const { return testMovement; }
+			bool isTestMovementActive() const { return heroMovementState; }
 
 			// for rendering building previews on selection
 			bool isSettlementPreviewActive = false;
@@ -30,9 +30,6 @@ namespace df {
 
 
 		private:
-			static constexpr size_t MAX_EAGLES = 15;
-			static constexpr size_t MAX_BUGS = 5;
-
 			Window* window;
 			Registry* registry;
 			AudioSystem* audioEngine;
@@ -41,7 +38,7 @@ namespace df {
 			size_t score;
 			Entity heroEntity;
 			bool m_reset;
-			bool testMovement = false;
+			bool heroMovementState = false;
 
 			std::default_random_engine randomEngine;
 			std::uniform_real_distribution<float> uniformDistribution;

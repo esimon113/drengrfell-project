@@ -28,6 +28,7 @@ namespace df {
 			particle,
 			text,
 			hud,
+			tilePicker,
 			count
 		};
 

@@ -6,13 +6,13 @@
 
 namespace df {
 
-    RenderHeroSystem RenderHeroSystem::init(Window* window, Registry* registry, GameState& gameState) noexcept {
+    RenderHeroSystem RenderHeroSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept {
 
         RenderHeroSystem self;
 
         self.window = window;
         self.registry = registry;
-        self.gameState = &gameState;
+        self.gameState = gameState;
 
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();
