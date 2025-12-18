@@ -177,6 +177,18 @@ namespace df {
     }
 
 
+    int RenderTilesSystem::getMapIdAtMouse() noexcept {
+        double xpos, ypos;
+        glfwGetCursorPos(this->window->getHandle(), &xpos, &ypos);
+        const auto extent = this->window->getWindowExtent();
+
+        const auto tileId = getTileIdAtPosition(xpos, extent.y - ypos);
+        const auto mapId = tileIdToMapId(tileId);
+
+        return mapId;
+    }
+
+
     void RenderTilesSystem::deinit() noexcept {
         tileShader.deinit();
         tileAtlas.deinit();
