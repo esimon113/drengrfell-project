@@ -12,6 +12,7 @@ namespace df {
 
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& targetPos, float deltaTime) noexcept {
 		if (!registry) return;
+
 		auto& animComp = registry->animations.get(entity);
 		glm::vec2& currentPos = registry->positions.get(entity);
 
@@ -20,11 +21,13 @@ namespace df {
 		// if we are already there
 		if (distance == 0.0f) {
 			moving = false;
+			movementState = false;
 			return;
 		}
 
+
 		direction = glm::normalize(direction);
-		float speed = 5.0f; // speed in tiles per second
+		float speed = 0.7f; // speed in tiles per second
 		glm::vec2 movement = direction * speed * deltaTime;
 
 		moving = true;
@@ -35,7 +38,7 @@ namespace df {
 			animComp.currentType = Hero::AnimationType::Idle;
 			animComp.anim.setCurrentFrameIndex(0);
 			moving = false;
-			toggleMovementState();
+			movementState = false;
 		}
 		else {
 			if (animComp.currentType == Hero::AnimationType::Idle) {
