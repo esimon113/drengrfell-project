@@ -3,6 +3,7 @@
 #include <common.h>
 #include <utils/commandLineOptions.h>
 #include "core/gamestate.h"
+#include "core/gamecontroller.h"
 #include "core/mainMenu.h"
 
 #include <miniaudio.h>
@@ -55,6 +56,8 @@ namespace df {
 
 			// GameState
 			std::shared_ptr<GameState> gameState;
+			// GameController
+			std::shared_ptr<GameController> gameController;
 			// MainMenu
 			MainMenu mainMenu;
 	};
