@@ -163,8 +163,15 @@ namespace df {
 					if (world.isTestMovementActive()) {
 						if (!registry->animations.entities.empty()) {
 
+
+							size_t tileIndex = 24; // falls 24x24 World
+							glm::vec2 worldPos = movementSystem.getTileWorldPosition(tileIndex);
+							fmt::println("TileIndex {} -> WorldPosition: ({}, {})", tileIndex, worldPos.x, worldPos.y);
+							size_t calculatedIndex = movementSystem.getTileIndexFromPosition(worldPos);
+							fmt::println("WorldPosition ({}, {}) -> TileIndex: {}", worldPos.x, worldPos.y, calculatedIndex);
+
 							Entity hero = registry->animations.entities.front();
-							glm::vec2 targetPos = glm::vec2(6,6);
+							glm::vec2 targetPos = glm::vec2(1,1.5);
 							movementSystem.moveEntityTo(hero, targetPos, delta_time);
 						}
 						else {
