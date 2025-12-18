@@ -88,6 +88,7 @@ namespace df {
         TutorialStep* getCurrentTutorialStep();
         void completeCurrentTutorialStep();
         bool isTutorialActive() const;
+        bool isGameOver() const;
 
     private:
         // TODO: discuss ownership model for game...

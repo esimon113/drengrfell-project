@@ -287,5 +287,10 @@ namespace df {
         return currentTutorialStep < tutorialSteps.size();
     }
 
+    bool GameState::isGameOver() const {
+        const size_t MAX_ROUNDS = 20; // Or whatever limit you want
+        return this->roundNumber >= MAX_ROUNDS;
+    }
+
 
 } // namespace df
