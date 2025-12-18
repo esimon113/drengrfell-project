@@ -22,13 +22,14 @@ namespace df {
 
     void RenderSnowSystem::reset(){}
 
-    RenderSnowSystem RenderSnowSystem::init(Window* window, Registry* registry) noexcept {
+    RenderSnowSystem RenderSnowSystem::init(Window* window, Registry* registry,std::shared_ptr<GameState> gamestate) noexcept {
         RenderSnowSystem self;
         
         self.window = window;
         self.registry = registry;
+        self.gameState = gamestate;
         
-        self.maxParticles = 10000;
+        self.maxParticles = 20000;
         self.particlesCount = 0;
         
         self.particlesContainer.resize(self.maxParticles);
@@ -101,6 +102,7 @@ namespace df {
 
     void RenderSnowSystem::step(float deltaTime) noexcept {
         // Get camera position from registry
+        
         Camera& cam = registry->cameras.get(registry->getCamera());
         glm::vec3 cameraPos = glm::vec3(cam.position.x, cam.position.y, 0.0f);
 
@@ -115,7 +117,7 @@ namespace df {
             p.life = (20.0f + (rand() % 20)); 
             p.pos = glm::vec3(
                 cameraPos.x + (rand() %  80 ) - 20.0f,
-                cameraPos.y + 25.0f,
+                cameraPos.y + 35.0f,
                 0.0f
             );
             
@@ -161,7 +163,8 @@ namespace df {
             }
         }
                 
-        const glm::vec2 worldDimensions = calculateWorldDimensions(10, 10);
+        const glm::vec2 worldDimensions = calculateWorldDimensions(RenderCommon::getMapColumns<int>(this->gameState->getMap()), RenderCommon::getMapRows<int>(this->gameState->getMap()));
+
         
         glm::vec2 camPos2D = cam.position;
         

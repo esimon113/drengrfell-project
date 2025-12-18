@@ -3,6 +3,7 @@
 #include <common.h>
 #include <utils/commandLineOptions.h>
 #include "core/gamestate.h"
+#include "core/gamecontroller.h"
 #include "core/mainMenu.h"
 #include "core/configMenu.h"
 #include "worldGeneratorConfig.h"
@@ -35,7 +36,7 @@ namespace df {
 			Window* window;
 			Window* debugWindow = nullptr;
 			Registry* registry;
-			
+
 			// AudioSystem* audioEngine;
 
 			WorldSystem world;
@@ -61,10 +62,15 @@ namespace df {
 
 			// GameState
 			std::shared_ptr<GameState> gameState;
+			// GameController
+			std::shared_ptr<GameController> gameController;
 			// MainMenu
 			MainMenu mainMenu;
 			// ConfigMenu
 			ConfigMenu configMenu;
+
+			// TODO: adjust for multiple players + ending game + reentering
+			types::GamePhase previousGamePhase = types::GamePhase::START;
 
 	};
 }

@@ -15,7 +15,7 @@ namespace df {
         RenderTilesSystem() = default;
         ~RenderTilesSystem() = default;
 
-        static RenderTilesSystem init(Window& window, Registry& registry, GameState& gameState) noexcept;
+        static RenderTilesSystem init(Window& window, Registry& registry, std::shared_ptr<GameState> gameState) noexcept;
         void deinit() noexcept;
 
         void step(float delta) noexcept;
@@ -25,15 +25,24 @@ namespace df {
         [[nodiscard]] Result<void, ResultError> updateMap() noexcept;
 
         void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+
+        // Render tile id. 0 = no tile
+        unsigned getTileIdAtPosition(int x, int y) noexcept;
+
+        // Map tile id. Equal to index in Graph::tiles. -1 = no tile / error.
+        [[nodiscard]] int tileIdToMapId(unsigned tileId) const noexcept;
     private:
         Registry* registry = nullptr;
         Window* window = nullptr;
-        GameState* gameState = nullptr;
+        std::shared_ptr<GameState> gameState = nullptr;
+        Framebuffer intermediateFramebuffer;
 
         Shader tileShader{};
         Shader tilePickerShader{};
         GLuint tileVao = 0;
         GLuint tileVbo = 0;
+        GLuint hexVao = 0;
+        GLuint hexVbo = 0;
         GLuint tileInstanceVbo = 0;
         TextureArray tileAtlas{};
 
@@ -51,6 +60,7 @@ namespace df {
         };
 
         std::vector<TileVertex> tileMesh;
+        std::vector<TileVertex> hexMesh;
         std::vector<TileInstance> tileInstances;
         size_t tileInstancesBufferSize = 0;
         unsigned tileColumns = 0;
@@ -59,11 +69,14 @@ namespace df {
         static std::vector<TileVertex> createHexagonalTileMesh() noexcept;
         static std::vector<TileVertex> createRectangularTileMesh() noexcept;
         void initMap() noexcept;
+        void initVao(GLuint vao, GLuint vbo, const std::vector<TileVertex>& mesh) noexcept;
         void renderMap(float timeInSeconds = 0.0) const noexcept;
+        void renderPickerMap(bool blend = false) const noexcept;
 
         Result<std::vector<TileInstance>, ResultError> makeTileInstances(const std::vector<Tile>& tiles, int columns, const Player* player = nullptr) const noexcept;
 
         bool renderFogOfWar = true;
         bool updateRequired = false;
+        bool useHex = false;
     };
 }

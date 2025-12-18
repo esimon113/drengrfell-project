@@ -14,7 +14,7 @@ namespace df {
 			RenderHeroSystem() = default;
 			~RenderHeroSystem() = default;
 
-			static RenderHeroSystem init(Window* window, Registry* registry, GameState& gameState) noexcept;
+			static RenderHeroSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
 			void updateDimensionsFromMap() noexcept;
 			void deinit() noexcept;
 
@@ -25,7 +25,7 @@ namespace df {
 		private:
 			Registry* registry;
 			Window* window;
-			GameState* gameState;
+			std::shared_ptr<GameState> gameState;
 
 			Framebuffer intermediateFramebuffer;
 			Shader heroShader;

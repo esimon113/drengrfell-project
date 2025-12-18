@@ -1,13 +1,14 @@
 #include "renderBuildings.h"
+#include "core/camera.h"
 
 namespace df {
 
-	RenderBuildingsSystem RenderBuildingsSystem::init(Window* window, Registry* registry, GameState& gameState) noexcept {
+	RenderBuildingsSystem RenderBuildingsSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept {
 		RenderBuildingsSystem self;
 
         self.window = window;
         self.registry = registry;
-		self.gameState = &gameState;
+        self.gamestate = gameState;
 
         self.viewport.origin = glm::uvec2(0);
         self.viewport.size = self.window->getWindowExtent();
@@ -79,8 +80,20 @@ namespace df {
 		// Set viewport = game viewport
 		glViewport(this->viewport.origin.x, this->viewport.origin.y, this->viewport.size.x, this->viewport.size.y);
 
-		const glm::vec2 worldDimensions = calculateWorldDimensions(RenderCommon::getMapColumns<int>(gameState->getMap()), RenderCommon::getMapRows<int>(gameState->getMap()));
-		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
+		// camera for zoom-factor
+		Camera& cam = registry->cameras.get(registry->getCamera());
+
+		const auto map = this->gamestate->getMap();
+		uint32_t columns = map.getMapWidth();
+		uint32_t rows = map.getTileCount() / columns;
+		const glm::vec2 worldDimensions = calculateWorldDimensions(columns, rows);
+
+		// projection with zoom-factor
+		const glm::mat4 projection = glm::ortho(
+			cam.position.x, cam.position.x + worldDimensions.x / cam.zoom,
+			cam.position.y, cam.position.y + worldDimensions.y / cam.zoom,
+			-1.0f, 1.0f
+		);
 		const glm::mat4 view = glm::identity<glm::mat4>();
 
 		const float settlementSize = 0.5f;
@@ -126,13 +139,25 @@ namespace df {
 
 		glViewport(this->viewport.origin.x, this->viewport.origin.y, this->viewport.size.x, this->viewport.size.y);
 
-		const glm::vec2 worldDimensions = calculateWorldDimensions(RenderCommon::getMapColumns<int>(gameState->getMap()), RenderCommon::getMapRows<int>(gameState->getMap()));
-		const glm::mat4 projection = glm::ortho(0.0f, worldDimensions.x, 0.0f, worldDimensions.y, -1.0f, 1.0f);
+		// camera for zoom-factor
+		Camera& cam = registry->cameras.get(registry->getCamera());
+
+		const auto map = this->gamestate->getMap();
+		uint32_t columns = map.getMapWidth();
+		uint32_t rows = map.getTileCount() / columns;
+		const glm::vec2 worldDimensions = calculateWorldDimensions(columns, rows);
+
+		// projection with zoom-factor
+		const glm::mat4 projection = glm::ortho(
+			cam.position.x, cam.position.x + worldDimensions.x / cam.zoom,
+			cam.position.y, cam.position.y + worldDimensions.y / cam.zoom,
+			-1.0f, 1.0f
+		);
 		const glm::mat4 view = glm::identity<glm::mat4>();
 
 		const glm::vec2 baseRoadScale = glm::vec2(1.0f, 0.5f);
-		const glm::vec2 roadScale = baseRoadScale * 2.5f;
-		const float roadShadowOffsetY = -0.2f;
+		const glm::vec2 roadScale = baseRoadScale * 1.7f;
+		const float roadShadowOffsetY = -0.13f;
 		const float roadShadowScale = 1.1f;
 
 		// TODO: get shadow gradient to work (and look good, similar to settlement) -> wasted to much time on this for now

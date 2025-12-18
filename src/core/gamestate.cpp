@@ -35,6 +35,19 @@ namespace df {
     json GameState::serialize() const {
         json j;
 
+        fmt::println("Serializing Game state");
+        fmt::println("---------");
+        fmt::println("Map: {}", this->map.serialize().dump());
+        fmt::println("---------");
+        fmt::println("Players: {}", this->players.size());
+        fmt::println("---------");
+        fmt::println("Settlements: {}", this->settlements.size());
+        fmt::println("---------");
+        fmt::println("Roads: {}", this->roads.size());
+        fmt::println("---------");
+        fmt::println("Current player id: {}", this->currentPlayerId);
+        fmt::println("---------");
+
         // map
         j["map"] = this->map.serialize();
 
@@ -272,6 +285,11 @@ namespace df {
 
     bool GameState::isTutorialActive() const {
         return currentTutorialStep < tutorialSteps.size();
+    }
+
+    bool GameState::isGameOver() const {
+        const size_t MAX_ROUNDS = 20; // Or whatever limit you want
+        return this->roundNumber >= MAX_ROUNDS;
     }
 
 

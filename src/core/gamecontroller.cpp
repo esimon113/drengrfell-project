@@ -39,12 +39,23 @@ namespace df {
         if (nextPlayerId == 0) {
             this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
         }
-
-        this->startTurn(); // next player
     }
 
 
     void GameController::giveResourcesTo(Player& player) {
+        // resources are given to the player based on the settlements they have
+        // for testing purposes, players receive some resources every turn
+        bool test = true;
+        if (test) {
+            player.addResources(types::TileType::FOREST, 1);
+            player.addResources(types::TileType::CLAY, 1);
+            player.addResources(types::TileType::GRASS, 1);
+            player.addResources(types::TileType::FIELD, 1);
+            player.addResources(types::TileType::MOUNTAIN, 1);
+
+            return;
+        }
+
         for (size_t settlementId : player.getSettlementIds()) {
             const Settlement* settlement = this->findSettlementById(settlementId);
             if (!settlement) { continue; }

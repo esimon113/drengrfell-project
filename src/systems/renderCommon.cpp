@@ -10,12 +10,10 @@ namespace df {
     }
 
     glm::vec2 calculateWorldDimensions(const int columns, const int rows) noexcept {
-        float hexWidth = 2.f;   // passt zum Rendering
-        float hexHeight = 2.f * 3.f / 4.f;  // Höhe für pointy-topped: 3/4 * width
-
+        // 1,732050808 is sqrt(3)
         return {
-            hexWidth * (columns + 0.5f),
-            hexHeight * (rows + 1.f)
+            1.732050808f * (static_cast<float>(columns) + 0.5f),
+            1.5f * (static_cast<float>(rows) + 1.0f)
         };
     }
 }

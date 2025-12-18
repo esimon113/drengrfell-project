@@ -12,7 +12,7 @@ namespace df {
 
 class RenderSnowSystem {
 public:
-    static RenderSnowSystem init(Window* window, Registry* registry) noexcept;
+    static RenderSnowSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept;
     
     void step(float deltaTime) noexcept;
     void render(const glm::mat4& view, const glm::mat4& projection) noexcept;
@@ -22,6 +22,7 @@ public:
 private:
     Window* window;
     Registry* registry;
+    std::shared_ptr<GameState> gameState;
     
     GLuint billboard_vertex_buffer;
     GLuint particles_position_buffer;

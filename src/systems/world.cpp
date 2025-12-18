@@ -45,11 +45,6 @@ namespace df {
 		//Player& player = registry->players.get(registry->getPlayer()); 
 		//score = player.getSettlementIds().size();
 
-		if(score>=10){
-			fmt::println("End of the game, you win!");
-			// Implement proper game ending logic here -> close the window for now
-			window->close();
-		}
 
 		// The world min and max values would need to be set dynamically depending on the world dimensions, once we save that outside the render.cpp
 		// these values are just placeholders which work well for now, but are determined by testing alone
@@ -117,14 +112,11 @@ namespace df {
 					animComp.anim.setCurrentFrameIndex(0);
 					fmt::println("Debug: Run animation activated");
 					break;
-				case GLFW_KEY_F5:
-					if (action == GLFW_PRESS) {
-						testMovement = !testMovement;
-						fmt::println("They hero should be moving now!");
-						break;
-					}
-					// ------------------------------------------------------------
+				case GLFW_KEY_H:
+					heroMovementState = !heroMovementState;
+					fmt::println("Hero movement mode toggled: {}", heroMovementState ? "ON" : "OFF");
 					break;
+					// ------------------------------------------------------------
 
 					case GLFW_KEY_R: // pressing the 'r' key triggers a reset of the game
 						m_reset = true;
