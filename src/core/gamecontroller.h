@@ -19,6 +19,8 @@ namespace df {
      */
     class GameController {
     public:
+        GameController() = default;
+        ~GameController() = default;
         explicit GameController(GameState& state)
             : gameState(state), rng(std::random_device{}()) {};
 

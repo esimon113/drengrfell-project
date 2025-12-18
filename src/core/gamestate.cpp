@@ -35,6 +35,19 @@ namespace df {
     json GameState::serialize() const {
         json j;
 
+        fmt::println("Serializing Game state");
+        fmt::println("---------");
+        fmt::println("Map: {}", this->map.serialize().dump());
+        fmt::println("---------");
+        fmt::println("Players: {}", this->players.size());
+        fmt::println("---------");
+        fmt::println("Settlements: {}", this->settlements.size());
+        fmt::println("---------");
+        fmt::println("Roads: {}", this->roads.size());
+        fmt::println("---------");
+        fmt::println("Current player id: {}", this->currentPlayerId);
+        fmt::println("---------");
+
         // map
         j["map"] = this->map.serialize();
 

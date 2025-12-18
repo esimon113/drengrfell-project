@@ -39,8 +39,6 @@ namespace df {
         if (nextPlayerId == 0) {
             this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
         }
-
-        this->startTurn(); // next player
     }
 
 
