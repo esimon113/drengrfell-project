@@ -257,7 +257,7 @@ namespace df {
 			//action 0: release left mouse button
 			fmt::println("LMB pressed, action: {}", action);
 			// Update Tutorial if finished
-			if (step && step->id == TutorialStepId::END || step && step->id == TutorialStepId::WELCOME && action == GLFW_PRESS) {
+			if ((step && step->id == TutorialStepId::END) || (step && step->id == TutorialStepId::WELCOME && action == GLFW_PRESS)) {
 				this->gameState->completeCurrentTutorialStep();
 			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
