@@ -28,51 +28,55 @@ namespace df {
 
     void RenderTilesSystem::initMap() noexcept {
         this->tileMesh = createRectangularTileMesh();
+        this->hexMesh = createHexagonalTileMesh();
 
-        glGenVertexArrays(1, &tileVao);
-        glGenBuffers(1, &tileVbo);
-        glGenBuffers(1, &tileInstanceVbo);
+        glGenVertexArrays(1, &this->tileVao);
+        glGenBuffers(1, &this->tileVbo);
+        glGenBuffers(1, &this->tileInstanceVbo);
 
-        {
-            glBindVertexArray(tileVao);
-            glBindBuffer(GL_ARRAY_BUFFER, tileVbo);
-            glBufferData(GL_ARRAY_BUFFER, this->tileMesh.size() * sizeof(TileVertex), this->tileMesh.data(), GL_STATIC_DRAW);
+        initVao(this->tileVao, this->tileVbo, this->tileMesh);
+    }
 
-            // layout(location = 0) in vec2 position;
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, position));
 
-            // layout(location = 1) in vec2 vertexUv;
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, uv));
+    void RenderTilesSystem::initVao(const GLuint vao, const GLuint vbo, const std::vector<TileVertex>& mesh) noexcept {
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, mesh.size() * sizeof(TileVertex), mesh.data(), GL_STATIC_DRAW);
 
-            // Define instance attributes
-            glBindBuffer(GL_ARRAY_BUFFER, tileInstanceVbo);
-            glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
-            this->tileInstancesBufferSize = 0;
+        // layout(location = 0) in vec2 position;
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, position));
 
-            // layout(location = 2) in vec2 instancePosition;
-            glEnableVertexAttribArray(2);
-            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void*)offsetof(TileInstance, position));
-            glVertexAttribDivisor(2, 1);
+        // layout(location = 1) in vec2 vertexUv;
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TileVertex), (void*)offsetof(TileVertex, uv));
 
-            // layout(location = 3) in int type;
-            glEnableVertexAttribArray(3);
-            glVertexAttribIPointer(3, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
-            glVertexAttribDivisor(3, 1);
+        // Define instance attributes
+        glBindBuffer(GL_ARRAY_BUFFER, this->tileInstanceVbo);
+        glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_DYNAMIC_DRAW);
+        this->tileInstancesBufferSize = 0;
 
-            // layout(location = 4) in int explored;
-            glEnableVertexAttribArray(4);
-            glVertexAttribIPointer(4, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, explored));
-            glVertexAttribDivisor(4, 1);
+        // layout(location = 2) in vec2 instancePosition;
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void*)offsetof(TileInstance, position));
+        glVertexAttribDivisor(2, 1);
 
-            // layout(location = 5) in uint tileIndex;
-            glEnableVertexAttribArray(5);
-            glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, index));
-            glVertexAttribDivisor(5, 1);
+        // layout(location = 3) in int type;
+        glEnableVertexAttribArray(3);
+        glVertexAttribIPointer(3, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, type));
+        glVertexAttribDivisor(3, 1);
 
-            glBindVertexArray(0);
-        }
+        // layout(location = 4) in int explored;
+        glEnableVertexAttribArray(4);
+        glVertexAttribIPointer(4, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, explored));
+        glVertexAttribDivisor(4, 1);
+
+        // layout(location = 5) in uint tileIndex;
+        glEnableVertexAttribArray(5);
+        glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, index));
+        glVertexAttribDivisor(5, 1);
+
+        glBindVertexArray(0);
     }
 
 
