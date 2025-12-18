@@ -31,7 +31,9 @@ namespace df {
         this->hexMesh = createHexagonalTileMesh();
 
         glGenVertexArrays(1, &this->tileVao);
+        glGenVertexArrays(1, &this->hexVao);
         glGenBuffers(1, &this->tileVbo);
+        glGenBuffers(1, &this->hexVbo);
         glGenBuffers(1, &this->tileInstanceVbo);
 
         glBindBuffer(GL_ARRAY_BUFFER, this->tileInstanceVbo);
@@ -39,6 +41,7 @@ namespace df {
         this->tileInstancesBufferSize = 0;
 
         initVao(this->tileVao, this->tileVbo, this->tileMesh);
+        initVao(this->hexVao, this->hexVbo, this->hexMesh);
     }
 
 
