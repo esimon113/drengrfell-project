@@ -1,6 +1,7 @@
 #include "application.h"
 #include "GL/gl3w.h"
 #include "GL/glcorearb.h"
+#include "glm/fwd.hpp"
 #include "hero.h"
 #include "animationSystem.h"
 #include "types.h"
@@ -186,26 +187,31 @@ namespace df {
 					auto renderBuildingsSystem = this->render.renderBuildingsSystem;
 
 					if (this->world.isSettlementPreviewActive) {
-						glm::vec2 cursorPos = window->getCursorPosition();
-						glm::vec2 worldPos = screenToWorldCoordinates(
-							cursorPos,
+						Camera& cam = registry->cameras.get(registry->getCamera());
+						const Graph& map = gameState->getMap();
+
+						// offset by cam pos
+						glm::vec2 worldPos = cam.position + screenToWorldCoordinates(
+							this->window->getCursorPosition(),
 							renderBuildingsSystem.getViewport(),
 							calculateWorldDimensions(
-								RenderCommon::getMapColumns<int>(gameState->getMap()),
-								RenderCommon::getMapRows<int>(gameState->getMap())
-							)
+								RenderCommon::getMapColumns<int>(map),
+								RenderCommon::getMapRows<int>(map)
+							) / cam.zoom
 						);
 						renderBuildingsSystem.renderSettlementPreview(worldPos, true, time);
 					}
 					else if (this->world.isRoadPreviewActive) {
-						glm::vec2 cursorPos = window->getCursorPosition();
-						glm::vec2 worldPos = screenToWorldCoordinates(
-							cursorPos,
+						Camera& cam = registry->cameras.get(registry->getCamera());
+						const Graph& map = gameState->getMap();
+
+						glm::vec2 worldPos = cam.position + screenToWorldCoordinates(
+							this->window->getCursorPosition(),
 							renderBuildingsSystem.getViewport(),
 							calculateWorldDimensions(
-								RenderCommon::getMapColumns<int>(gameState->getMap()),
-									RenderCommon::getMapRows<int>(gameState->getMap())
-							)
+								RenderCommon::getMapColumns<int>(map),
+								RenderCommon::getMapRows<int>(map)
+							) / cam.zoom
 						);
 						renderBuildingsSystem.renderRoadPreview(worldPos, true, time);
 					}
