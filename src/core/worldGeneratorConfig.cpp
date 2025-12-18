@@ -18,7 +18,18 @@ namespace df {
                 {"frequency", altitudeNoise.frequency},
                 {"persistence", altitudeNoise.persistence},
                 {"octaves", altitudeNoise.octaves},
-            }}
+            }},
+            {"useWhittakerBiomes", useWhittakerBiomes},
+            {"temperatureNoise", {
+                {"frequency", temperatureNoise.frequency},
+                {"persistence", temperatureNoise.persistence},
+                {"octaves", temperatureNoise.octaves},
+            }},
+            {"precipitationNoise", {
+                {"frequency", precipitationNoise.frequency},
+                {"persistence", precipitationNoise.persistence},
+                {"octaves", precipitationNoise.octaves},
+            }},
         };
     }
 
@@ -35,11 +46,22 @@ namespace df {
         overwrite(j, "rows", self.rows);
         overwrite(j, "generationMode", self.generationMode);
         overwrite(j, "seed", self.seed);
+        overwrite(j, "useWhittakerBiomes", self.useWhittakerBiomes);
 
         const auto a = j.value("altitudeNoise", json::object());
         overwrite(a, "frequency", self.altitudeNoise.frequency);
         overwrite(a, "persistence", self.altitudeNoise.persistence);
         overwrite(a, "octaves", self.altitudeNoise.octaves);
+
+        const auto t = j.value("temperatureNoise", json::object());
+        overwrite(t, "frequency", self.temperatureNoise.frequency);
+        overwrite(t, "persistence", self.temperatureNoise.persistence);
+        overwrite(t, "octaves", self.temperatureNoise.octaves);
+
+        const auto p = j.value("precipitationNoise", json::object());
+        overwrite(p, "frequency", self.precipitationNoise.frequency);
+        overwrite(p, "persistence", self.precipitationNoise.persistence);
+        overwrite(p, "octaves", self.precipitationNoise.octaves);
 
         return self;
     }

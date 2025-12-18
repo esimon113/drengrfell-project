@@ -94,4 +94,8 @@ namespace df {
 		intermediateFramebuffer = Framebuffer::init({ (GLsizei)size.x, (GLsizei)size.y, 1, true });
         
 	}
+
+    void RenderSystem::onKeyCallback(GLFWwindow *pwindow, int key, int scancode, int action, int mods) noexcept {
+    	this->renderTilesSystem.onKeyCallback(pwindow, key, scancode, action, mods);
+    }
 }

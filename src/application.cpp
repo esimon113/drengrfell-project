@@ -238,6 +238,7 @@ namespace df {
 			break;
 		case types::GamePhase::PLAY:
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
+			render.onKeyCallback(windowParam, key, scancode, action, mods);
 			// Update Tutorial if step == moveCamera
 			if (step && step->id == TutorialStepId::MOVE_CAMERA) {
 				if (action == GLFW_PRESS && (key == GLFW_KEY_W || key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_D)) {

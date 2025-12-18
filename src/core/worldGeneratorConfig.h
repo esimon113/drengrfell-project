@@ -30,6 +30,20 @@ namespace df {
             unsigned octaves = 6; // The "granularity" of the map. Look up Fractal Brownian Motion
         } altitudeNoise;
 
+        bool useWhittakerBiomes = true;
+
+        struct TemperatureNoiseConfig {
+            float frequency = 0.1f;
+            float persistence = 0.5f;
+            unsigned octaves = 6;
+        } temperatureNoise;
+
+        struct PrecipitationNoiseConfig {
+            float frequency = 0.1f;
+            float persistence = 0.5f;
+            unsigned octaves = 6;
+        } precipitationNoise;
+
         nlohmann::json serialize() const;
         static WorldGeneratorConfig deserialize(const nlohmann::json& j);
         static Result<WorldGeneratorConfig, ResultError> deserialize(assets::JsonFile asset = assets::JsonFile::WORLD_GENERATION_CONFIGURATION);
