@@ -106,9 +106,17 @@ namespace df {
         Camera& cam = registry->cameras.get(registry->getCamera());
         glm::vec3 cameraPos = glm::vec3(cam.position.x, cam.position.y, 0.0f);
 
+        const glm::vec2 worldDimensions = calculateWorldDimensions(RenderCommon::getMapColumns<int>(this->gameState->getMap()), RenderCommon::getMapRows<int>(this->gameState->getMap()));
+
+        
+        glm::vec2 camPos2D = cam.position;
+
         float camZoom = cam.zoom;
         
+        float visibleHeight = worldDimensions.y / cam.zoom;
+
         int newparticles = 1;
+        float spawnY = camPos2D.y + visibleHeight + 2.0f;
         
         for(int i = 0; i < newparticles; i++){
             int particleIndex = findUnusedParticle();
@@ -117,7 +125,7 @@ namespace df {
             p.life = (20.0f + (rand() % 20)); 
             p.pos = glm::vec3(
                 cameraPos.x + (rand() %  80 ) - 20.0f,
-                cameraPos.y + 35.0f,
+                spawnY,
                 0.0f
             );
             
@@ -163,10 +171,7 @@ namespace df {
             }
         }
                 
-        const glm::vec2 worldDimensions = calculateWorldDimensions(RenderCommon::getMapColumns<int>(this->gameState->getMap()), RenderCommon::getMapRows<int>(this->gameState->getMap()));
-
         
-        glm::vec2 camPos2D = cam.position;
         
         
         const glm::mat4 projection = glm::ortho(
