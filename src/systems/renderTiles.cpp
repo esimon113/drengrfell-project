@@ -87,8 +87,8 @@ namespace df {
             return Err(ResultError(ResultError::Kind::DomainError, fmt::format("RenderTilesSystem::updateMap() width and tileCount are inconsistent. Cannot allocate render buffer.")));
         }
 
-        this->tileColumns = map.getMapWidth();
-        this->tileRows = map.getTileCount() / this->tileColumns;
+        this->tileColumns = RenderCommon::getMapColumns<unsigned>(map);
+        this->tileRows = RenderCommon::getMapRows<unsigned>(map);
         auto tileInstanceResult = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
         if (tileInstanceResult.isOk()) {
             this->tileInstances = tileInstanceResult.unwrap<>();
@@ -218,10 +218,7 @@ namespace df {
         // The iteration order is important!
         for (int row = rows - 1; row >= 0; row--) {
             for (int column = 0; column < columns; column++) {
-                glm::vec2 position;
-                position.x = 2.0f * (static_cast<float>(column) + 0.5f * static_cast<float>(row & 1));
-                position.y = static_cast<float>(row) * 1.5f;
-
+                const glm::vec2 position = RenderCommon::rowColToWorldCoordinates(column, row);
                 const Tile& tile = tiles[row * columns + column];
                 instances.push_back({position, static_cast<int>(tile.getType()), 0, player == nullptr});
             }
