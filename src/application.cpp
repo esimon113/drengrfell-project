@@ -286,6 +286,9 @@ namespace df {
 		}
 		{
 			Player player{};
+			player.addResources(types::TileType::FOREST, 100);				// give player 100 wood
+			player.addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
+			player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
 			gameState->addPlayer(player);
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;

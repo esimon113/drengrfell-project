@@ -199,11 +199,28 @@ namespace df {
         tutorialSteps.clear();
 
         tutorialSteps.push_back({
-            .id = TutorialStepId::MOVE_CAMERA,
+            .id = TutorialStepId::WELCOME,
             .text =
-                "Use WASD to move the camera.\n"
-                "Use the mousewheel to zoom in/out.\n"
-                "This is also possible with +/-.",
+                "Welcome to Drengrfell.\n"
+                "You are a lone hero in a harsh land.\n"
+                "Lets start by looking around.\n"
+                "Press left mouse button to continue.",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = true
+            });
+
+        tutorialSteps.push_back({
+            .id = TutorialStepId::MOVE_CAMERA,
+            .text = "Use WASD to move the camera. Just try it now!",
+            .completed = false,
+            .screenPosition = std::nullopt,
+            .renderBox = true
+            });
+
+        tutorialSteps.push_back({
+            .id = TutorialStepId::ZOOM_CAMERA,
+            .text = "Use the mousewheel to zoom in/out.\nThis is also possible with +/-.",
             .completed = false,
             .screenPosition = std::nullopt,
             .renderBox = true
@@ -214,7 +231,8 @@ namespace df {
             .text = 
                 "Build your first settlement using the n Button.\n"
                 "Then you get the hover view.\n"
-                "Here click any free tile close to your hero to build the settlement.",
+                "Here click any free tile close to your hero to build the settlement.\n"
+                "Settlements generate resources from nearby tiles each round.",
             .completed = false,
             .screenPosition = std::nullopt,
             .renderBox = true
