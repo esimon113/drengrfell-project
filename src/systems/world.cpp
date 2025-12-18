@@ -250,7 +250,7 @@ namespace df {
 
 		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 			// LMB gedrückt
-			glfwGetCursorPos(windowParam, &mouseX, &mouseY);
+			glfwGetCursorPos(this->window->getHandle(), &mouseX, &mouseY);
 			fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
 			// Update Tutorial if finished
@@ -264,7 +264,6 @@ namespace df {
 			fmt::println("RMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 		}
 	}
-
 
 	void WorldSystem::onScrollCallback(GLFWwindow*, double /* xoffset */, double yoffset) noexcept {
 		fmt::println("Scrolled: {}", yoffset);

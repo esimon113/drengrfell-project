@@ -185,53 +185,24 @@ namespace df {
 					// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
 					if (world.isTestMovementActive()) {
 						if (!registry->animations.entities.empty()) {
-							Camera& cam = this->registry->cameras.get(this->registry->getCamera());
+							
 
-							double xpos, ypos;
-							glfwGetCursorPos(window->getHandle(), &xpos, &ypos);
+							glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
+							auto extent = this->window->getWindowExtent();
 
-							int winWidth, winHeight;
-							glfwGetWindowSize(window->getHandle(), &winWidth, &winHeight);
+							auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+							auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+							fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
-							glfwGetFramebufferSize(window->getHandle(), &fbWidth, &fbHeight);
+							glm::vec2 tilePosition = movementSystem.getTileWorldPosition(mapId);
+							fmt::println("Tile Position: ({},{})", tilePosition.x, tilePosition.y);
 
-							// Skalierung für HiDPI Displays
-							float xScale = (winWidth > 0) ? (float)fbWidth / winWidth : 1.f;
-							float yScale = (winHeight > 0) ? (float)fbHeight / winHeight : 1.f;
 
-							float mouseX = static_cast<float>(xpos * xScale);
-							float mouseY = static_cast<float>(ypos * yScale);
-
-							// Flip Y für World-Koordinaten
-							mouseY = static_cast<float>(fbHeight) - mouseY;
-
-							glm::vec2 mouseScreen(mouseX, mouseY);
-
-							Viewport viewport = render.renderBuildingsSystem.getViewport(); // x,y,sizeX,sizeY
-							glm::vec2 viewportPos = mouseScreen - glm::vec2(viewport.origin);
-							glm::vec2 normalizedPos = viewportPos / glm::vec2(viewport.size);
-							normalizedPos.y = 1.0f - normalizedPos.y;
-
-							const Graph& map = gameState->getMap();
-							unsigned tileColumns = map.getMapWidth();             
-							unsigned tileRows = map.getTileCount() / tileColumns;
-
-							glm::vec2 worldDimensions = calculateWorldDimensions(tileColumns, tileRows);
-							glm::vec2 mousePosi = cam.position + normalizedPos * (worldDimensions / cam.zoom);
-
-							size_t test = movementSystem.getTileIndexFromPosition(mousePosi);
-							fmt::println("TileID: {}", test);
-
-							size_t tileIndex = 24; // falls 24x24 World
-							glm::vec2 worldPos = movementSystem.getTileWorldPosition(tileIndex);
-							fmt::println("TileIndex {} -> WorldPosition: ({}, {})", tileIndex, worldPos.x, worldPos.y);
-							size_t calculatedIndex = movementSystem.getTileIndexFromPosition(worldPos);
-							fmt::println("WorldPosition ({}, {}) -> TileIndex: {}", worldPos.x, worldPos.y, calculatedIndex);
-							fmt::println("Maus coordinates ({}, {}) -> world ({}, {}) ", mouseScreen.x, mouseScreen.y, mousePosi.x, mousePosi.y);
+							
 
 
 							Entity hero = registry->animations.entities.front();
-							glm::vec2 targetPos = glm::vec2(1,1.5);
+							glm::vec2 targetPos = tilePosition;
 							movementSystem.moveEntityTo(hero, targetPos, delta_time);
 						}
 						else {
