@@ -35,7 +35,7 @@ namespace df {
 	std::optional<size_t> WorldNodeMapper::findClosestTileToWorldPos(const glm::vec2 &worldPos, const Graph& map) noexcept {
 		if (map.getTileCount() == 0) return std::nullopt;
 
-		float minDistance = std::numeric_limits<float>::max();
+		float minDistance = (std::numeric_limits<float>::max)();
 		size_t closestTileId = SIZE_MAX;
 		uint32_t columns = map.getMapWidth();
 
@@ -68,7 +68,7 @@ namespace df {
 
 		const float hexagonRadius = 1.0f;
 		const uint32_t columns = map.getMapWidth();
-		float minDistance = std::numeric_limits<float>::max();
+		float minDistance = (std::numeric_limits<float>::max)();
 		size_t closestVertexId = SIZE_MAX;
 		std::unordered_set<size_t> processedVertexIds;
 		
@@ -126,7 +126,7 @@ namespace df {
 
 		const float hexagonRadius = 1.0f;
 		const uint32_t columns = map.getMapWidth();
-		float minDistance = std::numeric_limits<float>::max();
+		float minDistance = (std::numeric_limits<float>::max)();
 		size_t closestEdgeId = SIZE_MAX;
 		std::unordered_set<size_t> processedEdgeIds;
 		
