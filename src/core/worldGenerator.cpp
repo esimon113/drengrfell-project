@@ -152,6 +152,11 @@ namespace df {
                         config.precipitationNoise.persistence
                     );
 
+                    // Make it a triangle
+                    // See why: https://commons.wikimedia.org/wiki/File:Climate_influence_on_terrestrial_biome.svg
+                    // Also the humidity air can transport is determined by its temperature.
+                    // This makes downfall/precipitation in cold regions (Arctic) less likely,
+                    // and more likely in tropical regions (Monsoon)
                     precipitation *= temperature;
 
                     if (altitude > 0.60f) {
