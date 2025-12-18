@@ -198,6 +198,59 @@ namespace df {
     void RenderTilesSystem::reset() noexcept {}
 
 
+    std::vector<float> RenderTilesSystem::createTileMesh() noexcept {
+        // Appends the hexagons corners counter-clockwise to the vertices array.
+        // The center of the hexagon is at the origin.
+        // It is rotated by 30 degrees in order to have a corner at the top,
+        // as the tile textures already created have also the corner at the top.
+
+        constexpr float SQRT_3_DIV_2 = 0.866025404f; //sqrt(3.0) / 2.0f;
+        std::vector<TileVertex> vertices;
+        for (int vertex = 0; vertex < 6; vertex++) {
+            const float angle = M_PI / 180.0f * (60.0f * static_cast<float>(vertex) - 30.0f);
+            float x = std::cos(angle);
+            float y = std::sin(angle);
+            float u = (x + SQRT_3_DIV_2) / (2.0f * SQRT_3_DIV_2);
+            float v = (y + 1.0f) / 2.0f;
+            vertices.emplace_back(glm::vec2(x, y), glm::vec2(u, v));
+        }
+
+        // This is a triangulation I've come up with on my ipad.
+        // The triangles are counter-clockwise as the vertices above
+        // are counter-clockwise around the origin.
+
+        std::vector<float> meshData;
+
+        // Big center triangle
+        for (int i = 0; i < 6; i += 2) {
+            meshData.push_back(vertices[i].position.x);
+            meshData.push_back(vertices[i].position.y);
+            meshData.push_back(vertices[i].uv.x);
+            meshData.push_back(vertices[i].uv.y);
+        }
+
+        // Three side triangles
+        for (int i = 0; i < 3; i++) {
+            meshData.push_back(vertices[2 * i + 0].position.x);
+            meshData.push_back(vertices[2 * i + 0].position.y);
+            meshData.push_back(vertices[2 * i + 0].uv.x);
+            meshData.push_back(vertices[2 * i + 0].uv.y);
+
+            meshData.push_back(vertices[2 * i + 1].position.x);
+            meshData.push_back(vertices[2 * i + 1].position.y);
+            meshData.push_back(vertices[2 * i + 1].uv.x);
+            meshData.push_back(vertices[2 * i + 1].uv.y);
+
+            meshData.push_back(vertices[(2 * i + 2) % 6].position.x);
+            meshData.push_back(vertices[(2 * i + 2) % 6].position.y);
+            meshData.push_back(vertices[(2 * i + 2) % 6].uv.x);
+            meshData.push_back(vertices[(2 * i + 2) % 6].uv.y);
+        }
+
+        return meshData;
+    }
+
+
     std::vector<RenderTilesSystem::TileVertex> RenderTilesSystem::createRectangularTileMesh() noexcept {
         std::vector<TileVertex> vertices;
         vertices.push_back({{1, -1}, {1, 0}});
