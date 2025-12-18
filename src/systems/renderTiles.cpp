@@ -158,7 +158,7 @@ namespace df {
     }
 
 
-    void RenderTilesSystem::renderMap(const float /*timeInSeconds*/) const noexcept {
+    void RenderTilesSystem::renderMap(const float timeInSeconds) const noexcept {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -179,15 +179,12 @@ namespace df {
         model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
 
         this->tileAtlas.bind(0);
-        /*this->tileShader.use()
+        this->tileShader.use()
             .setMat4("model", model)
             .setMat4("projection", projection)
             .setFloat("time", timeInSeconds)
             .setInt("frames", 4)
-            .setSampler("tileAtlas", 0);*/
-        this->tilePickerShader.use()
-            .setMat4("model", model)
-            .setMat4("projection", projection);
+            .setSampler("tileAtlas", 0);
 
         glBindVertexArray(tileVao);
         glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(this->tileMesh.size()), static_cast<GLsizei>(this->tileInstances.size()));
@@ -263,8 +260,9 @@ namespace df {
         const int rows = static_cast<int>(tiles.size()) / columns;
         std::vector<TileInstance> instances;
 
+        // For tile picking. 0 = None
+        std::uint32_t index = 1;
         // The iteration order is important!
-        std::uint32_t index = 0;
         for (int row = rows - 1; row >= 0; row--) {
             for (int column = 0; column < columns; column++) {
                 const glm::vec2 position = RenderCommon::rowColToWorldCoordinates(column, row);
