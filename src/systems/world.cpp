@@ -84,6 +84,7 @@ namespace df {
 		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
 		Entity hero = registry->animations.entities.front();
 		auto& animComp = registry->animations.get(hero);
+		auto* step = this->gameState->getCurrentTutorialStep();
 		switch (action) {
 			case GLFW_PRESS:
 				switch (key) {
@@ -150,6 +151,10 @@ namespace df {
     					if (this->isSettlementPreviewActive) {
     						this->isRoadPreviewActive = false;
     					}
+						// if current step is BUILD_SETTLEMENT -> complete step
+						if (step && step->id == TutorialStepId::BUILD_SETTLEMENT) {
+							this->gameState->completeCurrentTutorialStep();
+						}
     					break;
     				case GLFW_KEY_B:
     					this->isRoadPreviewActive = !this->isRoadPreviewActive;
@@ -157,6 +162,10 @@ namespace df {
     					if (this->isRoadPreviewActive) {
     						this->isSettlementPreviewActive = false;
     					}
+						// if current step is BUILD_ROAD -> complete step
+						if (step && step->id == TutorialStepId::BUILD_ROAD) {
+							this->gameState->completeCurrentTutorialStep();
+						}
     					break;
 					case GLFW_KEY_G: {
 						Graph& map = this->gameState->getMap();
@@ -226,11 +235,15 @@ namespace df {
 	}
 
 	void WorldSystem::onMouseButtonCallback(GLFWwindow*, int button, int action, int /* mods */) noexcept {
-
+		auto* step = this->gameState->getCurrentTutorialStep();
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			//action 1: press left mouse button
 			//action 0: release left mouse button
 			fmt::println("LMB pressed, action: {}", action);
+			// Update Tutorial if finished
+			if (step && step->id == TutorialStepId::END) {
+				this->gameState->completeCurrentTutorialStep();
+			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 			//action 1: press right mouse button
 			//action 0: release right mouse button
