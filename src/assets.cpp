@@ -94,4 +94,25 @@ namespace df {
 	template<> std::string assets::getAssetPath<assets::JsonFile>(const assets::JsonFile assetId) noexcept {
 		return getBasePath() + "/assets/jsons/" + JSON_FILES[static_cast<size_t>(assetId)];
 	}
+
+	static constexpr std::array<const char*, static_cast<size_t>(assets::MenuTexture::count)> MENU_TEXTURE_FILES = {
+		"configMenu/temp_configMenu_ai.png",
+		"configMenu/temp_configMenu_background.png",
+		"configMenu/temp_configMenu_easy.png",
+		"configMenu/temp_configMenu_hard.png",
+		"configMenu/temp_configMenu_height.png",
+		"configMenu/temp_configMenu_insular.png",
+		"configMenu/temp_configMenu_medium.png",
+		"configMenu/temp_configMenu_multiplayer.png",
+		"configMenu/temp_configMenu_perlin.png",
+		"configMenu/temp_configMenu_seed.png",
+		"configMenu/temp_configMenu_start.png",
+		"configMenu/temp_configMenu_title.png",
+		"configMenu/temp_configMenu_width.png"
+	};
+
+
+	template<> std::string assets::getAssetPath<assets::MenuTexture>(const assets::MenuTexture assetId) noexcept {
+		return getBasePath() + "/assets/textures/" + MENU_TEXTURE_FILES[static_cast<size_t>(assetId)];
+	}
 }
