@@ -190,8 +190,8 @@ namespace df {
 						Camera& cam = registry->cameras.get(registry->getCamera());
 						const Graph& map = gameState->getMap();
 
-						// offset by cam pos
-						glm::vec2 worldPos = cam.position + screenToWorldCoordinates(
+						// Get cursor world position
+						glm::vec2 cursorWorldPos = cam.position + screenToWorldCoordinates(
 							this->window->getCursorPosition(),
 							renderBuildingsSystem.getViewport(),
 							calculateWorldDimensions(
@@ -199,13 +199,39 @@ namespace df {
 								RenderCommon::getMapRows<int>(map)
 							) / cam.zoom
 						);
-						renderBuildingsSystem.renderSettlementPreview(worldPos, true, time);
+						
+						// Snap to nearest vertex position for settlement preview
+						auto vertexIdOpt = WorldNodeMapper::findClosestVertexToWorldPos(cursorWorldPos, map);
+						glm::vec2 previewPos = cursorWorldPos; // fallback to cursor position
+						if (vertexIdOpt.has_value()) {
+							// Get the actual vertex world position
+							const float hexagonRadius = 1.0f;
+							const uint32_t columns = map.getMapWidth();
+							bool found = false;
+							for (size_t tileId = 0; tileId < map.getTileCount() && !found; ++tileId) {
+								const Tile& tile = map.getTile(tileId);
+								const auto vertices = map.getTileVertices(tile);
+								for (size_t i = 0; i < vertices.size(); ++i) {
+									if (vertices[i].getId() == vertexIdOpt.value()) {
+										uint32_t row = tileId / columns;
+										uint32_t col = tileId % columns;
+										glm::vec2 tileCenterPos = WorldNodeMapper::getTilePosition(row, col);
+										std::array<glm::vec2, 6> vertexOffsets = WorldNodeMapper::getVertexOffsets(hexagonRadius);
+										previewPos = tileCenterPos + vertexOffsets[i];
+										found = true;
+										break;
+									}
+								}
+							}
+						}
+						renderBuildingsSystem.renderSettlementPreview(previewPos, true, time);
 					}
 					else if (this->world.isRoadPreviewActive) {
 						Camera& cam = registry->cameras.get(registry->getCamera());
 						const Graph& map = gameState->getMap();
 
-						glm::vec2 worldPos = cam.position + screenToWorldCoordinates(
+						// Get cursor world position
+						glm::vec2 cursorWorldPos = cam.position + screenToWorldCoordinates(
 							this->window->getCursorPosition(),
 							renderBuildingsSystem.getViewport(),
 							calculateWorldDimensions(
@@ -213,7 +239,34 @@ namespace df {
 								RenderCommon::getMapRows<int>(map)
 							) / cam.zoom
 						);
-						renderBuildingsSystem.renderRoadPreview(worldPos, true, time);
+						
+						// Snap to nearest edge position for road preview
+						auto edgeIdOpt = WorldNodeMapper::findClosestEdgeToWorldPos(cursorWorldPos, map);
+						glm::vec2 previewPos = cursorWorldPos; // fallback to cursor position
+						if (edgeIdOpt.has_value()) {
+							// Get the actual edge world position
+							const float hexagonRadius = 1.0f;
+							const uint32_t columns = map.getMapWidth();
+							bool found = false;
+							for (size_t tileId = 0; tileId < map.getTileCount() && !found; ++tileId) {
+								const Tile& tile = map.getTile(tileId);
+								const auto edges = map.getTileEdges(tile);
+								for (size_t i = 0; i < edges.size(); ++i) {
+									if (edges[i].getId() == edgeIdOpt.value()) {
+										uint32_t row = tileId / columns;
+										uint32_t col = tileId % columns;
+										glm::vec2 tileCenterPos = WorldNodeMapper::getTilePosition(row, col);
+										std::array<glm::vec2, 6> vertexOffsets = WorldNodeMapper::getVertexOffsets(hexagonRadius);
+										glm::vec2 vertex1Position = tileCenterPos + vertexOffsets[i];
+										glm::vec2 vertex2Position = tileCenterPos + vertexOffsets[(i + 1) % 6];
+										previewPos = (vertex1Position + vertex2Position) / 2.0f;
+										found = true;
+										break;
+									}
+								}
+							}
+						}
+						renderBuildingsSystem.renderRoadPreview(previewPos, true, time);
 					}
 				}
 					break;
@@ -418,26 +471,19 @@ namespace df {
 				if (this->world.isSettlementPreviewActive || this->world.isRoadPreviewActive) {
 					fmt::println("Building placement started...");
 
-					// Convert screen coordinates to world coordinates
+					// Convert screen coordinates to world coordinates (same method as preview)
 					Camera& cam = this->registry->cameras.get(this->registry->getCamera());
 					const Graph& map = this->gameState->getMap();
-					fmt::println("Checking Game state");
-					fmt::println("--------------------------------");
-					fmt::println("Map: {}", map.serialize().dump());
-					fmt::println("Map width: {}", map.getMapWidth());
-					fmt::println("Map height: {}", map.getTileCount() / map.getMapWidth());
-					fmt::println("Map tile count: {}", map.getTileCount());
-					fmt::println("--------------------------------");
-					const unsigned tileColumns = map.getMapWidth();
-					const unsigned tileRows = map.getTileCount() / tileColumns;
-					const glm::vec2 worldDimensions = calculateWorldDimensions(tileColumns, tileRows);
-
-					const Viewport viewport = this->render.renderBuildingsSystem.getViewport();
-					const glm::vec2 viewportPos = mouse - glm::vec2(viewport.origin);
-					glm::vec2 normalizedPos = viewportPos / glm::vec2(viewport.size);
-					normalizedPos.y = 1.0f - normalizedPos.y; // flip y: screen-y increases downwards, world-y up
-
-					glm::vec2 worldPos = cam.position + normalizedPos * (worldDimensions / cam.zoom);
+					
+					// Use the same coordinate conversion as the preview for consistency
+					glm::vec2 worldPos = cam.position + screenToWorldCoordinates(
+						this->window->getCursorPosition(),
+						this->render.renderBuildingsSystem.getViewport(),
+						calculateWorldDimensions(
+							RenderCommon::getMapColumns<int>(map),
+							RenderCommon::getMapRows<int>(map)
+						) / cam.zoom
+					);
 
 					size_t currentPlayerId = this->gameState->getCurrentPlayerId();
 
@@ -472,7 +518,7 @@ namespace df {
 						if (vertexIdOpt.has_value()) {
 							fmt::println("Closest vertex found at {}", vertexIdOpt.value());
 							size_t vertexId = vertexIdOpt.value();
-								if (gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
+							if (gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
 								fmt::println("Player can build settlement at vertex {}", vertexId);
 								bool success = gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
 

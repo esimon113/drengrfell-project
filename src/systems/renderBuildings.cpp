@@ -120,9 +120,12 @@ namespace df {
 		const float shadowOffsetY = -0.15f;
 		const float shadowScale = 1.4f; // shadow is a bit larger than actual settlement
 
+		// Convert to camera-relative coordinates (same as actual building rendering)
+		glm::vec2 pos = worldPosition - cam.position;
+
 		// render shadow first = below settlement-textrue
 		glm::mat4 shadowModel = glm::identity<glm::mat4>();
-		shadowModel = glm::translate(shadowModel, glm::vec3(worldPosition.x, worldPosition.y + shadowOffsetY, -0.01f)); // Slightly behind
+		shadowModel = glm::translate(shadowModel, glm::vec3(pos.x, pos.y + shadowOffsetY, -0.01f)); // Slightly behind
 		shadowModel = glm::scale(shadowModel, glm::vec3(settlementSize * shadowScale, settlementSize * shadowScale, 1.0f));
 
 		this->settlementTexture.bind(0);
@@ -137,7 +140,7 @@ namespace df {
 
 		// render settlement on top of shadow
 		glm::mat4 hoverModel = glm::identity<glm::mat4>();
-		hoverModel = glm::translate(hoverModel, glm::vec3(worldPosition, 0.0f));
+		hoverModel = glm::translate(hoverModel, glm::vec3(pos.x, pos.y, 0.0f));
 		hoverModel = glm::scale(hoverModel, glm::vec3(settlementSize, settlementSize, 1.0f));
 
 		this->settlementTexture.bind(0);
@@ -180,9 +183,12 @@ namespace df {
 		const float roadShadowOffsetY = -0.13f;
 		const float roadShadowScale = 1.1f;
 
+		// Convert to camera-relative coordinates (same as actual building rendering)
+		glm::vec2 pos = worldPosition - cam.position;
+
 		// TODO: get shadow gradient to work (and look good, similar to settlement) -> wasted to much time on this for now
 		glm::mat4 shadowModel = glm::identity<glm::mat4>();
-		shadowModel = glm::translate(shadowModel, glm::vec3(worldPosition.x, worldPosition.y + roadShadowOffsetY, -0.01f));
+		shadowModel = glm::translate(shadowModel, glm::vec3(pos.x, pos.y + roadShadowOffsetY, -0.01f));
 		shadowModel = glm::scale(shadowModel, glm::vec3(roadScale * roadShadowScale, 1.0f));
 
 		this->roadPreviewTexture.bind(0);
@@ -197,7 +203,7 @@ namespace df {
 
 		// Road sprite pass
 		glm::mat4 model = glm::identity<glm::mat4>();
-		model = glm::translate(model, glm::vec3(worldPosition, 0.0f));
+		model = glm::translate(model, glm::vec3(pos.x, pos.y, 0.0f));
 		model = glm::scale(model, glm::vec3(roadScale, 1.0f));
 
 		this->roadPreviewTexture.bind(0);
