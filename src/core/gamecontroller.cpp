@@ -1,5 +1,6 @@
 #include <map>
 #include <optional>
+#include "fmt/base.h"
 
 #include "hero.h"
 #include "gamecontroller.h"
@@ -159,14 +160,17 @@ namespace df {
 
     bool GameController::buildSettlement(size_t playerId, size_t vertexId, const std::vector<int>& buildingCost) {
         if (!this->canBuildSettlement(playerId, vertexId)) { 
+            fmt::println("[GameController] buildSettlement failed: canBuildSettlement returned false");
             return false; 
         }
 
         Player* player = this->getPlayerbyId(playerId);
         if (!player) { 
+            fmt::println("[GameController] buildSettlement failed: player {} not found", playerId);
             return false; 
         }
         if (!this->hasEnoughResources(*player, buildingCost)) { 
+            fmt::println("[GameController] buildSettlement failed: player {} does not have enough resources", playerId);
             return false; 
         }
 
@@ -183,15 +187,28 @@ namespace df {
             }
             
             if (!vertex) {
+                fmt::println("[GameController] buildSettlement failed: vertex {} not found in map", vertexId);
                 return false; // Vertex with this ID not found
             }
             
             // Double-check vertex doesn't already have a settlement (race condition protection)
             if (vertex->hasSettlement()) {
+                fmt::println("[GameController] buildSettlement failed: vertex {} already has a settlement", vertexId);
                 return false;
             }
             
-            size_t newSettlementId = this->gameState.getSettlements().size();
+            size_t newSettlementId = 0;
+            const auto& existingSettlements = this->gameState.getSettlements();
+            if (!existingSettlements.empty()) {
+                size_t maxId = 0;
+                for (const auto& s : existingSettlements) {
+                    if (s && s->getId() > maxId) {
+                        maxId = s->getId();
+                    }
+                }
+                newSettlementId = maxId + 1;
+            }
+            
             auto newSettlement = std::make_shared<Settlement>(newSettlementId, playerId, vertexId, buildingCost);
 
             vertex->setSettlementId(newSettlementId);
@@ -200,9 +217,11 @@ namespace df {
 
             this->chargeResourceCost(*player, buildingCost);
 
+            fmt::println("[GameController] buildSettlement succeeded: settlement {} built at vertex {} for player {}",  newSettlementId, vertexId, playerId);
             return true;
 
         } catch (const std::exception& e) { 
+            fmt::println("[GameController] buildSettlement failed: exception - {}", e.what());
             return false; 
         }
     }
@@ -232,12 +251,21 @@ namespace df {
 
 
     bool GameController::buildRoad(size_t playerId, size_t edgeId, RoadLevel level, const std::vector<int>& buildingCost) {
-        if (!this->canBuildRoad(playerId, edgeId)) { return false; }
+        if (!this->canBuildRoad(playerId, edgeId)) { 
+            fmt::println("[GameController] buildRoad failed: canBuildRoad returned false");
+            return false; 
+        }
 
         Player* player = this->getPlayerbyId(playerId);
-        if (!player) { return false; }
+        if (!player) { 
+            fmt::println("[GameController] buildRoad failed: player {} not found", playerId);
+            return false; 
+        }
 
-        if (!this->hasEnoughResources(*player, buildingCost)) { return false; }
+        if (!this->hasEnoughResources(*player, buildingCost)) { 
+            fmt::println("[GameController] buildRoad failed: player {} does not have enough resources", playerId);
+            return false; 
+        }
 
         Graph& map = this->gameState.getMap();
         try {
@@ -249,12 +277,26 @@ namespace df {
                     break;
                 }
             }
-            if (!edge) { return false; }
+            if (!edge) { 
+                fmt::println("[GameController] buildRoad failed: edge {} not found in map", edgeId);
+                return false; 
+            }
             
             // Double-check edge doesn't already have a road
-            if (edge->hasRoad()) { return false; }
+            if (edge->hasRoad()) { 
+                fmt::println("[GameController] buildRoad failed: edge {} already has a road", edgeId);
+                return false; 
+            }
             
-            size_t roadId = this->gameState.getRoads().size();
+            // generate unique road id -> use the max existing id + 1, or 0 if no roads exist
+            size_t roadId = 0;
+            const auto& existingRoads = this->gameState.getRoads();
+            if (!existingRoads.empty()) {
+                size_t maxId = 0;
+                for (const auto& r : existingRoads) if (r && r->getId() > maxId) maxId = r->getId();
+                roadId = maxId + 1;
+            }
+            
             auto road = std::make_shared<Road>(roadId, playerId, edgeId, level, buildingCost);
 
             edge->setRoadId(roadId);
@@ -263,9 +305,11 @@ namespace df {
 
             this->chargeResourceCost(*player, buildingCost);
 
+            fmt::println("[GameController] buildRoad succeeded: road {} built at edge {} for player {}", roadId, edgeId, playerId);
             return true;
 
-        } catch (const std::exception&) {
+        } catch (const std::exception& e) {
+            fmt::println("[GameController] buildRoad failed: exception - {}", e.what());
             return false;
         }
     }
