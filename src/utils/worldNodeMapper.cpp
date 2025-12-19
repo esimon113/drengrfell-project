@@ -22,12 +22,12 @@ namespace df {
 		const float sqrt3 = 1.732050808f;
 
 		return {
-			glm::vec2(-hexagonRadius, 0.0f),								// left
-			glm::vec2(-0.5f * hexagonRadius, 0.5f * sqrt3 * hexagonRadius),	// top-left
-			glm::vec2(0.5f * hexagonRadius, 0.5f * sqrt3 * hexagonRadius),	// top-right
-			glm::vec2(hexagonRadius, 0.0f),									// right
-			glm::vec2(0.5f * hexagonRadius, -0.5f * sqrt3 * hexagonRadius),	// bottom-right
-			glm::vec2(-0.5f * hexagonRadius, -0.5f * sqrt3 * hexagonRadius)	// bottom-left
+			glm::vec2(0.0f, hexagonRadius),									// top
+			glm::vec2(0.5f * sqrt3 * hexagonRadius, 0.5f * hexagonRadius),	// top-right
+			glm::vec2(0.5f * sqrt3 * hexagonRadius, -0.5f * hexagonRadius),	// bottom-right
+			glm::vec2(0.0f, -hexagonRadius),								// bottom
+			glm::vec2(-0.5f * sqrt3 * hexagonRadius, -0.5f * hexagonRadius),// bottom-left
+			glm::vec2(-0.5f * sqrt3 * hexagonRadius, 0.5f * hexagonRadius)	// top-left
 		};
 	}
 
