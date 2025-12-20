@@ -159,6 +159,7 @@ add_executable(${PROJECT_NAME}
 
 	${PROJECT_SOURCE_DIR}/src/systems/renderHero.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderBuildings.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/buildingPreview.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderTiles.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderCommon.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderHud.cpp
