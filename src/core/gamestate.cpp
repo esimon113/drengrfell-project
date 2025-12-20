@@ -1,4 +1,5 @@
 #include "gamestate.h"
+#include "utils/worldNodeMapper.h"
 #include <fstream>
 #include <stdexcept>
 
@@ -178,13 +179,18 @@ namespace df {
     }
 
     void GameState::addSettlement(std::shared_ptr<Settlement> settlement) {
-        if (!settlement) { return; }
+        if (!settlement || !registry) { return; }
         
         // Also add to ECS registry for rendering/systems
         Entity e;
         Settlement& s = registry->settlements.emplace(e);
         s = *settlement; // Copy data to ECS
         
+        // Add position and scale components for rendering
+        const Graph& map = this->map;
+        glm::vec2 worldPosition = WorldNodeMapper::getVertexWorldPosition(settlement->getVertexId(), map);
+        registry->positions.emplace(e) = worldPosition;
+        registry->scales.emplace(e) = glm::vec2(0.5f, 0.5f);
         
         settlements.push_back(settlement);
     }
@@ -192,13 +198,18 @@ namespace df {
 
     // roads
     void GameState::addRoad(std::shared_ptr<Road> road) {
-        if (!road) { return; }
+        if (!road || !registry) { return; }
         
         // Also add to ECS registry for rendering/systems
         Entity e;
         Road& r = registry->roads.emplace(e);
         r = *road; // Copy data to ECS
         
+        // Add position and scale components for rendering
+        const Graph& map = this->map;
+        glm::vec2 worldPosition = WorldNodeMapper::getEdgeWorldPosition(road->getEdgeId(), map);
+        registry->positions.emplace(e) = worldPosition;
+        registry->scales.emplace(e) = glm::vec2(1.7f, 0.85f); // baseRoadScale * 1.7f
         
         roads.push_back(road);
     }
