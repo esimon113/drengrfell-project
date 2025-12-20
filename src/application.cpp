@@ -2,21 +2,18 @@
 #include "GL/gl3w.h"
 #include "GL/glcorearb.h"
 #include "glm/fwd.hpp"
-#include "hero.h"
 #include "animationSystem.h"
 #include "types.h"
 #include "core/camera.h"
 #include <glm/gtc/matrix_transform.hpp>
 // test for entityMovement
 #include "entityMovement.h"
-#include "systems/renderCommon.h"
 #include "utils/worldNodeMapper.h"
 #include "core/road.h"
 
 #include <iostream>
 #include <fstream>
 
-#include "worldGenerator.h"
 
 
 
@@ -66,6 +63,8 @@ namespace df {
 		self.mainMenu.init(self.window);
 		// for testing hero movement until we have a triggerpoint
 		self.movementSystem = EntityMovementSystem::init(self.registry, *self.gameState);
+		// building preview system
+		self.buildingPreviewSystem = BuildingPreviewSystem::init(self.window, self.registry, *self.gameState);
 		// Create config menu
 		self.configMenu.init(self.window, self.registry);
 
@@ -165,6 +164,12 @@ namespace df {
 					// physics.step(delta_time);
 					// physics.handleCollisions(delta_time);
 					df::AnimationSystem::update(registry, delta_time);
+
+					// update building preview BEFORE rendering
+					buildingPreviewSystem.setSettlementPreviewActive(this->world.isSettlementPreviewActive);
+					buildingPreviewSystem.setRoadPreviewActive(this->world.isRoadPreviewActive);
+					buildingPreviewSystem.step(delta_time);
+
 					window->makeContextCurrent();
 					glClearColor(0.5f,0.5f,0.5f,1.0f);
 					glClear(GL_COLOR_BUFFER_BIT);
@@ -183,91 +188,6 @@ namespace df {
 						}
 					}
 					// ------------------------------------------------------------
-					// Render previews (only one at a time)
-					auto renderBuildingsSystem = this->render.renderBuildingsSystem;
-
-					if (this->world.isSettlementPreviewActive) {
-						Camera& cam = registry->cameras.get(registry->getCamera());
-						const Graph& map = gameState->getMap();
-
-						// Get cursor world position
-						glm::vec2 cursorWorldPos = cam.position + screenToWorldCoordinates(
-							this->window->getCursorPosition(),
-							renderBuildingsSystem.getViewport(),
-							calculateWorldDimensions(
-								RenderCommon::getMapColumns<int>(map),
-								RenderCommon::getMapRows<int>(map)
-							) / cam.zoom
-						);
-						
-						// Snap to nearest vertex position for settlement preview
-						auto vertexIdOpt = WorldNodeMapper::findClosestVertexToWorldPos(cursorWorldPos, map);
-						glm::vec2 previewPos = cursorWorldPos; // fallback to cursor position
-						if (vertexIdOpt.has_value()) {
-							// Get the actual vertex world position
-							const float hexagonRadius = 1.0f;
-							const uint32_t columns = map.getMapWidth();
-							bool found = false;
-							for (size_t tileId = 0; tileId < map.getTileCount() && !found; ++tileId) {
-								const Tile& tile = map.getTile(tileId);
-								const auto vertices = map.getTileVertices(tile);
-								for (size_t i = 0; i < vertices.size(); ++i) {
-									if (vertices[i].getId() == vertexIdOpt.value()) {
-										uint32_t row = tileId / columns;
-										uint32_t col = tileId % columns;
-										glm::vec2 tileCenterPos = WorldNodeMapper::getTilePosition(row, col);
-										std::array<glm::vec2, 6> vertexOffsets = WorldNodeMapper::getVertexOffsets(hexagonRadius);
-										previewPos = tileCenterPos + vertexOffsets[i];
-										found = true;
-										break;
-									}
-								}
-							}
-						}
-						renderBuildingsSystem.renderSettlementPreview(previewPos, true, time);
-					}
-					else if (this->world.isRoadPreviewActive) {
-						Camera& cam = registry->cameras.get(registry->getCamera());
-						const Graph& map = gameState->getMap();
-
-						// Get cursor world position
-						glm::vec2 cursorWorldPos = cam.position + screenToWorldCoordinates(
-							this->window->getCursorPosition(),
-							renderBuildingsSystem.getViewport(),
-							calculateWorldDimensions(
-								RenderCommon::getMapColumns<int>(map),
-								RenderCommon::getMapRows<int>(map)
-							) / cam.zoom
-						);
-						
-						// Snap to nearest edge position for road preview
-						auto edgeIdOpt = WorldNodeMapper::findClosestEdgeToWorldPos(cursorWorldPos, map);
-						glm::vec2 previewPos = cursorWorldPos; // fallback to cursor position
-						if (edgeIdOpt.has_value()) {
-							// Get the actual edge world position
-							const float hexagonRadius = 1.0f;
-							const uint32_t columns = map.getMapWidth();
-							bool found = false;
-							for (size_t tileId = 0; tileId < map.getTileCount() && !found; ++tileId) {
-								const Tile& tile = map.getTile(tileId);
-								const auto edges = map.getTileEdges(tile);
-								for (size_t i = 0; i < edges.size(); ++i) {
-									if (edges[i].getId() == edgeIdOpt.value()) {
-										uint32_t row = tileId / columns;
-										uint32_t col = tileId % columns;
-										glm::vec2 tileCenterPos = WorldNodeMapper::getTilePosition(row, col);
-										std::array<glm::vec2, 6> vertexOffsets = WorldNodeMapper::getVertexOffsets(hexagonRadius);
-										glm::vec2 vertex1Position = tileCenterPos + vertexOffsets[i];
-										glm::vec2 vertex2Position = tileCenterPos + vertexOffsets[(i + 1) % 6];
-										previewPos = (vertex1Position + vertex2Position) / 2.0f;
-										found = true;
-										break;
-									}
-								}
-							}
-						}
-						renderBuildingsSystem.renderRoadPreview(previewPos, true, time);
-					}
 				}
 					break;
 				case types::GamePhase::END:
@@ -471,19 +391,18 @@ namespace df {
 				if (this->world.isSettlementPreviewActive || this->world.isRoadPreviewActive) {
 					fmt::println("Building placement started...");
 
-					// Convert screen coordinates to world coordinates (same method as preview)
-					Camera& cam = this->registry->cameras.get(this->registry->getCamera());
+					Entity previewEntity = buildingPreviewSystem.getPreviewEntity();
+					if (!registry->positions.has(previewEntity)) {
+						fmt::println("No preview entity found");
+						return;
+					}
+					const glm::vec2& cameraRelativePos = registry->positions.get(previewEntity);
+
+					// Reconstruct absolute world position from camera-relative position
+					Camera& cam = registry->cameras.get(registry->getCamera());
+					glm::vec2 worldPos = cam.position + cameraRelativePos;
+
 					const Graph& map = this->gameState->getMap();
-					
-					// Use the same coordinate conversion as the preview for consistency
-					glm::vec2 worldPos = cam.position + screenToWorldCoordinates(
-						this->window->getCursorPosition(),
-						this->render.renderBuildingsSystem.getViewport(),
-						calculateWorldDimensions(
-							RenderCommon::getMapColumns<int>(map),
-							RenderCommon::getMapRows<int>(map)
-						) / cam.zoom
-					);
 
 					size_t currentPlayerId = this->gameState->getCurrentPlayerId();
 

@@ -16,6 +16,7 @@
 #include "entityMovement.h"
 
 #include <systems/systems.h>
+#include <systems/buildingPreview.h>
 
 #include <registry.h>
 #include <window.h>
@@ -46,6 +47,7 @@ namespace df {
 			RenderSnowSystem renderSnowSystem;
 
 			EntityMovementSystem movementSystem;
+			BuildingPreviewSystem buildingPreviewSystem;
 
 			void reset() noexcept;
 
