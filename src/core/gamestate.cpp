@@ -180,18 +180,18 @@ namespace df {
 
     void GameState::addSettlement(std::shared_ptr<Settlement> settlement) {
         if (!settlement || !registry) { return; }
-        
+
         // Also add to ECS registry for rendering/systems
         Entity e;
         Settlement& s = registry->settlements.emplace(e);
         s = *settlement; // Copy data to ECS
-        
+
         // Add position and scale components for rendering
         const Graph& map = this->map;
-        glm::vec2 worldPosition = WorldNodeMapper::getVertexWorldPosition(settlement->getVertexId(), map);
+        glm::vec2 worldPosition = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), map);
         registry->positions.emplace(e) = worldPosition;
         registry->scales.emplace(e) = glm::vec2(0.5f, 0.5f);
-        
+
         settlements.push_back(settlement);
     }
 
@@ -199,18 +199,18 @@ namespace df {
     // roads
     void GameState::addRoad(std::shared_ptr<Road> road) {
         if (!road || !registry) { return; }
-        
+
         // Also add to ECS registry for rendering/systems
         Entity e;
         Road& r = registry->roads.emplace(e);
         r = *road; // Copy data to ECS
-        
+
         // Add position and scale components for rendering
         const Graph& map = this->map;
-        glm::vec2 worldPosition = WorldNodeMapper::getEdgeWorldPosition(road->getEdgeId(), map);
+        glm::vec2 worldPosition = WorldNodeMapper::getWorldPositionForEdge(road->getEdgeId(), map);
         registry->positions.emplace(e) = worldPosition;
         registry->scales.emplace(e) = glm::vec2(1.7f, 0.85f); // baseRoadScale * 1.7f
-        
+
         roads.push_back(road);
     }
 
@@ -252,7 +252,7 @@ namespace df {
 
         tutorialSteps.push_back({
             .id = TutorialStepId::BUILD_SETTLEMENT,
-            .text = 
+            .text =
                 "Build your first settlement using the n Button.\n"
                 "Then you get the hover view.\n"
                 "Here click any free tile close to your hero to build the settlement.\n"
