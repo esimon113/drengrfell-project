@@ -40,6 +40,7 @@ namespace df {
 			ComponentContainer<glm::vec3> colors;
 			ComponentContainer<Road> roads;
 			ComponentContainer<Settlement> settlements;
+			ComponentContainer<BuildingPreviewComponent> buildingPreviews;
 
 			ComponentContainer<Camera> cameras;
 			ComponentContainer<CameraInput> cameraInputs;
@@ -67,7 +68,7 @@ namespace df {
 
 
 		private:
-			std::array<ContainerInterface*, 12> containers;
+			std::array<ContainerInterface*, 13> containers;
 
 			Entity player;
 			Entity camera;
