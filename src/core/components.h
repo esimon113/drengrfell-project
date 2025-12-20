@@ -11,4 +11,13 @@ namespace df {
         std::string currentFrame() const { return anim.getCurrentFrame(); }
     };
 
+    enum class BuildingPreviewType {
+        Settlement,
+        Road
+    };
+
+    struct BuildingPreviewComponent {
+        BuildingPreviewType type = BuildingPreviewType::Settlement;
+    };
+
 }
