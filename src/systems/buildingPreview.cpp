@@ -74,7 +74,7 @@ namespace df {
 				preview.type = BuildingPreviewType::Settlement;
 
 				glm::vec2& scale = registry->scales.emplace(previewEntity);
-				scale = glm::vec2(0.5f, 0.5f); // TODO: make dynamic?!
+				scale = glm::vec2(1.5f, 1.5f); // TODO: make dynamic?!
 
 				hasPreviewEntity = true;
 			} else {
@@ -83,7 +83,7 @@ namespace df {
 					registry->buildingPreviews.get(previewEntity).type = BuildingPreviewType::Settlement;
 				}
 				if (registry->scales.has(previewEntity)) {
-					registry->scales.get(previewEntity) = glm::vec2(0.5f, 0.5f);
+					registry->scales.get(previewEntity) = glm::vec2(1.5f, 1.5f);
 				}
 			}
 		} else {
@@ -109,7 +109,7 @@ namespace df {
 
 				// Set default scale for road
 				glm::vec2& scale = registry->scales.emplace(previewEntity);
-				scale = glm::vec2(1.7f, 0.85f); // baseRoadScale * 1.7f
+				scale = glm::vec2(3.5f, 3.5f);
 
 				hasPreviewEntity = true;
 			} else {
@@ -118,7 +118,7 @@ namespace df {
 					registry->buildingPreviews.get(previewEntity).type = BuildingPreviewType::Road;
 				}
 				if (registry->scales.has(previewEntity)) {
-					registry->scales.get(previewEntity) = glm::vec2(1.7f, 0.85f);
+					registry->scales.get(previewEntity) = glm::vec2(3.5f, 3.5f);
 				}
 			}
 		} else {

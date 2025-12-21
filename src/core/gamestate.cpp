@@ -190,7 +190,7 @@ namespace df {
         const Graph& map = this->map;
         glm::vec2 worldPosition = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), map);
         registry->positions.emplace(e) = worldPosition;
-        registry->scales.emplace(e) = glm::vec2(0.5f, 0.5f);
+        registry->scales.emplace(e) = glm::vec2(1.5f, 1.5f);
 
         settlements.push_back(settlement);
     }
@@ -209,7 +209,7 @@ namespace df {
         const Graph& map = this->map;
         glm::vec2 worldPosition = WorldNodeMapper::getWorldPositionForEdge(road->getEdgeId(), map);
         registry->positions.emplace(e) = worldPosition;
-        registry->scales.emplace(e) = glm::vec2(1.7f, 0.85f); // baseRoadScale * 1.7f
+        registry->scales.emplace(e) = glm::vec2(3.5f, 3.5f);
 
         roads.push_back(road);
     }
