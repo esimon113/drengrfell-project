@@ -12,7 +12,7 @@
         "persistence": 0.5
     },
     "rows": 24,
-    "seed": 0,
+    "seed": 24,
     "temperatureNoise": {
         "frequency": 0.10000000149011612,
         "octaves": 6,

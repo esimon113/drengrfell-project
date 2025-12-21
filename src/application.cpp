@@ -11,6 +11,7 @@
 #include "utils/worldNodeMapper.h"
 #include "core/road.h"
 
+
 #include <iostream>
 #include <fstream>
 
@@ -58,7 +59,7 @@ namespace df {
 		self.gameController = std::make_shared<GameController>(*self.gameState);
 		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-		self.render = RenderSystem::init(self.window, self.registry, *self.gameState);
+		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
 		// Create main menu
 		self.mainMenu.init(self.window);
 		// for testing hero movement until we have a triggerpoint
@@ -163,6 +164,14 @@ namespace df {
 					world.step(delta_time);
 					// physics.step(delta_time);
 					// physics.handleCollisions(delta_time);
+
+					if(gameState->isGameOver()){
+						fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
+						this->reset();
+						gameState->setPhase(types::GamePhase::START);
+						break;
+					}
+
 					df::AnimationSystem::update(registry, delta_time);
 
 					// update building preview BEFORE rendering
@@ -176,11 +185,23 @@ namespace df {
 
 					render.step(delta_time);
 					// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
-					if (world.isTestMovementActive()) {
+					if (movementSystem.getMovementState()) {
 						if (!registry->animations.entities.empty()) {
 
+							glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
+							auto extent = this->window->getWindowExtent();
+
+							auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+							auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+							//fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+
+							glm::vec2 tilePosition = movementSystem.getTileWorldPosition(mapId);
+							//fmt::println("Tile Position: ({},{})", tilePosition.x, tilePosition.y);
+
 							Entity hero = registry->animations.entities.front();
-							glm::vec2 targetPos = glm::vec2(6,6);
+							glm::vec2 targetPos = tilePosition;
+							//glm::vec2 currentTargetPos = targetPos;
+
 							movementSystem.moveEntityTo(hero, targetPos, delta_time);
 						}
 						else {
@@ -201,20 +222,37 @@ namespace df {
 		}
 	}
 
+	void Application::toggleMovement() noexcept {
+		test = !test;
+	}
+
 	void Application::reset() noexcept {
 		registry->clear();
 
-		// initialize the player
-		registry->players.emplace(registry->getPlayer());
-		registry->positions.emplace(registry->getPlayer(), 0.5f, 0.5f);
-		registry->velocities.emplace(registry->getPlayer(), 0, 0);
-		registry->scales.emplace(registry->getPlayer(), -0.1f, 0.1f);
-		registry->angles.emplace(registry->getPlayer(), 0.f);
-		registry->collisionRadius.emplace(registry->getPlayer(), 0.1f);
+
+		Entity camEntity = registry->getCamera();
+
+		Camera& cam = registry->cameras.emplace(camEntity);
+		cam.isActive = true;
+		registry->cameraInputs.emplace(camEntity);
+
+		Entity playerEntity = registry->getPlayer();
+		registry->players.emplace(playerEntity);
+
+		registry->positions.emplace(playerEntity, 0.5f, 0.5f);
+		registry->velocities.emplace(playerEntity, 0, 0);
+		registry->scales.emplace(playerEntity, 1.f, 1.f);
+		registry->angles.emplace(playerEntity, 0.f);
+		registry->collisionRadius.emplace(playerEntity, 0.1f);
 
 		registry->getScreenDarkness() = 1.f;
 
-		// reset systems
+		gameState->setRoundNumber(0);
+		gameState->setCurrentPlayerId(0);
+
+		registry->animations.emplace(playerEntity);
+
+
 		world.reset();
 		render.reset();
 	}
@@ -290,11 +328,21 @@ namespace df {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
 		{
-			Player player{};
-			player.addResources(types::TileType::FOREST, 100);				// give player 100 wood
-			player.addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
-			player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
-			gameState->addPlayer(player);
+			// only supports one player for now. TODO: if we do multplayer update this.
+			if (gameState->getPlayer(0)) {
+				Player* player = gameState->getPlayer(0);
+				player->reset();
+				player->addResources(types::TileType::FOREST, 100);				// give player 100 wood
+				player->addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
+				player->addResources(types::TileType::FIELD, 50);				// give player 50 grain
+			}
+			else {
+				Player player{};
+				player.addResources(types::TileType::FOREST, 100);				// give player 100 wood
+				player.addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
+				player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
+				gameState->addPlayer(player);
+			}
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
 
@@ -376,10 +424,13 @@ namespace df {
 			};
 
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
-			if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
-				gameController->endTurn();
-				gameController->startTurn(); // Start turn for the next player
-				return;
+			if (!movementSystem.getMovementState()) {
+				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
+					gameController->endTurn();
+					movementSystem.toggleMovementState();
+					gameController->startTurn(); // Start turn for the next player
+					return;
+				}
 			}
 
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
@@ -506,24 +557,10 @@ namespace df {
 	}
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
-		types::GamePhase gamePhase = gameState->getPhase();
+		mainMenu.onResizeCallback(windowParam, width, height);
+		render.onResizeCallback(windowParam, width, height);
+		render.renderHudSystem.onResizeCallback(windowParam, width, height);
+		configMenu.onResizeCallback(windowParam, width, height);
 
-		switch (gamePhase) {
-		case types::GamePhase::START:
-			mainMenu.onResizeCallback(windowParam, width, height);
-			render.onResizeCallback(windowParam, width, height);
-			render.renderHudSystem.onResizeCallback(windowParam, width, height);
-			configMenu.onResizeCallback(windowParam, width, height);
-			break;
-		case types::GamePhase::CONFIG:
-			configMenu.onResizeCallback(windowParam, width, height);
-			break;
-		case types::GamePhase::PLAY:
-			render.onResizeCallback(windowParam, width, height);
-			render.renderHudSystem.onResizeCallback(windowParam, width, height);
-			break;
-		case types::GamePhase::END:
-			break;
-		}
 	}
 }

@@ -17,7 +17,7 @@ namespace df {
 			RenderBuildingsSystem() = default;
 			~RenderBuildingsSystem() = default;
 
-			static RenderBuildingsSystem init(Window* window, Registry* registry, GameState& gameState) noexcept;
+			static RenderBuildingsSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
 			void deinit() noexcept;
 			void step(float dt) noexcept;
 			void reset() noexcept;
@@ -42,7 +42,7 @@ namespace df {
 
 			Registry* registry;
 			Window* window;
-			GameState* gamestate;
+			std::shared_ptr<GameState> gamestate;
 
 			Framebuffer intermediateFramebuffer;
 

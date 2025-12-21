@@ -10,12 +10,12 @@
 
 namespace df {
 
-	RenderBuildingsSystem RenderBuildingsSystem::init(Window* window, Registry* registry, GameState& gamestate) noexcept {
+	RenderBuildingsSystem RenderBuildingsSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept {
 		RenderBuildingsSystem self;
 
 		self.window = window;
 		self.registry = registry;
-		self.gamestate = &gamestate;
+		self.gamestate = gameState;
 
 		self.viewport.origin = glm::uvec2(0);
 		self.viewport.size = self.window->getWindowExtent();

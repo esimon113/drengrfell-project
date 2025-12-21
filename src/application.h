@@ -32,6 +32,7 @@ namespace df {
 			static ::std::optional<Application> init(const CommandLineOptions& options) noexcept;
 			void deinit() noexcept;
 			void run() noexcept;
+			void toggleMovement() noexcept;
 
 		private:
 			Window* window;
@@ -61,6 +62,9 @@ namespace df {
 			void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
 			void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
+
+
+			bool test = false;
 
 			// GameState
 			std::shared_ptr<GameState> gameState;
