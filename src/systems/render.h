@@ -10,6 +10,7 @@
 
 #include "renderTiles.h"
 #include "renderBuildings.h"
+#include "renderBuildingPreviews.h"
 #include "renderHero.h"
 #include "renderHud.h"
 #include "renderText.h"
@@ -33,6 +34,7 @@ namespace df {
 			RenderTilesSystem renderTilesSystem;
 			RenderHeroSystem renderHeroSystem;
 			RenderBuildingsSystem renderBuildingsSystem;
+			RenderBuildingPreviewsSystem renderBuildingPreviewsSystem;
 			RenderTextSystem renderTextSystem;
 			RenderHudSystem renderHudSystem;
 			RenderSnowSystem renderSnowSystem; 

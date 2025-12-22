@@ -20,6 +20,7 @@ namespace df {
         self.renderTilesSystem = RenderTilesSystem::init(*window, *registry, gameState);
     	self.renderHeroSystem = RenderHeroSystem::init(window, registry, gameState);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry, gameState);
+		self.renderBuildingPreviewsSystem = RenderBuildingPreviewsSystem::init(window, registry, gameState);
         self.renderHudSystem = RenderHudSystem::init(window, registry, gameState);
         self.renderTextSystem = RenderTextSystem::init(window, registry);
         self.renderSnowSystem = RenderSnowSystem::init(window,registry, gameState);
@@ -31,6 +32,7 @@ namespace df {
 	void RenderSystem::deinit() noexcept {
     	this->renderTilesSystem.deinit();
     	this->renderBuildingsSystem.deinit();
+    	this->renderBuildingPreviewsSystem.deinit();
     	this->renderHeroSystem.deinit();
     	this->renderHudSystem.deinit();
     	this->renderTextSystem.deinit();
@@ -40,6 +42,7 @@ namespace df {
     void RenderSystem::step(const float dt) noexcept {
     	this->renderTilesSystem.step(dt);
     	this->renderBuildingsSystem.step(dt);
+    	this->renderBuildingPreviewsSystem.step(dt);
     	this->renderHeroSystem.step(dt);
     	this->renderTextSystem.step(dt);
         this->renderSnowSystem.step(dt);
@@ -51,6 +54,7 @@ namespace df {
     void RenderSystem::reset() noexcept {
     	this->renderTilesSystem.reset();
     	this->renderBuildingsSystem.reset();
+    	this->renderBuildingPreviewsSystem.reset();
     	this->renderHeroSystem.reset();
     	this->renderHudSystem.reset();
     	this->renderTextSystem.reset();
@@ -86,6 +90,7 @@ namespace df {
 
 
         this->renderBuildingsSystem.updateViewport(origin, size);
+        this->renderBuildingPreviewsSystem.updateViewport(origin, size);
         this->renderTextSystem.updateViewport(origin, size);
         this->renderHudSystem.updateViewport(origin,size);
 

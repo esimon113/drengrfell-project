@@ -1,10 +1,10 @@
 #include "renderBuildings.h"
+#include "GL/glcorearb.h"
 #include "core/camera.h"
-#include "core/components.h"
+#include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_uint2.hpp"
 #include "systems/renderCommon.h"
 #include <GLFW/glfw3.h>
-#include <cstdint>
 
 
 
@@ -20,11 +20,7 @@ namespace df {
 		self.viewport.origin = glm::uvec2(0);
 		self.viewport.size = self.window->getWindowExtent();
 
-		self.buildingHoverShader = Shader::init(assets::Shader::buildingHover).value();
-		self.buildingShadowShader = Shader::init(assets::Shader::buildingShadow).value();
 		self.spriteShader = Shader::init(assets::Shader::sprite).value();
-		self.settlementTexture = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT1);
-		self.roadPreviewTexture = Texture::init(assets::Texture::DIRT_ROAD_DIAGONAL_UP);
 		self.roadTexture = Texture::init(assets::Texture::PATH_ROAD_VERTICAL);
 
 		// Load all settlement textures
@@ -75,12 +71,9 @@ namespace df {
 
 
 	void RenderBuildingsSystem::deinit() noexcept {
-		buildingHoverShader.deinit();
-		buildingShadowShader.deinit();
 		spriteShader.deinit();
-		settlementTexture.deinit();
-		roadPreviewTexture.deinit();
 		roadTexture.deinit();
+
 		for (auto& tex : settlementTextures) {
 			tex.deinit();
 		}
@@ -89,7 +82,6 @@ namespace df {
 
 	void RenderBuildingsSystem::step(float /*dt*/) noexcept {
 		float time = static_cast<float>(glfwGetTime());
-		renderPreviews(time);
 		renderBuildings(time);
 	}
 
@@ -98,17 +90,12 @@ namespace df {
 
 
 	const glm::mat4 RenderBuildingsSystem::calculateProjection(const Camera& cam) const {
-		const Graph& map = this->gamestate->getMap();
-		const uint32_t columns = map.getMapWidth();
-		const uint32_t rows = map.getTileCount() / columns;
-
 		glm::uvec2 extent = window->getWindowExtent();
 		glViewport(0, 0, extent.x, extent.y);
-		const glm::vec2 worldDimensions = calculateWorldDimensions(columns, rows);
 
 		return glm::ortho(
-			cam.position.x, cam.position.x + worldDimensions.x / cam.zoom,
-			cam.position.y, cam.position.y + worldDimensions.y / cam.zoom,
+			cam.minX(), cam.maxX(),
+			cam.minY(), cam.maxY(),
 			-1.0f, 1.0f
 		);
 	}
@@ -118,9 +105,9 @@ namespace df {
 		if (!registry || !gamestate) return;
 
 		glBindVertexArray(m_quad_vao);
+		Camera& cam = registry->cameras.get(registry->getCamera());
 
 		const glm::mat4 view = glm::identity<glm::mat4>();
-		Camera& cam = registry->cameras.get(registry->getCamera());
 		const glm::mat4 projection = this->calculateProjection(cam);
 
 		// Render settlements from ECS
@@ -131,11 +118,8 @@ namespace df {
 			const glm::vec2& worldPos = registry->positions.get(e);
 			const glm::vec2& scale = registry->scales.get(e);
 
-			// Use camera-relative coordinates
-			glm::vec2 pos = worldPos - cam.position;
-
 			glm::mat4 model = glm::identity<glm::mat4>();
-			model = glm::translate(model, glm::vec3(pos.x, pos.y, 0.0f));
+			model = glm::translate(model, glm::vec3(worldPos, 0.0f));
 			model = glm::scale(model, glm::vec3(scale, 1.0f));
 
 			// Use a settlement texture -> TODO: use for animation
@@ -144,10 +128,10 @@ namespace df {
 			settlementTextures[textureIndex].bind(0);
 			spriteShader.use()
 				.setMat4("view", view)
-				.setMat4("projection", projection)
 				.setMat4("model[0]", model)
+				.setMat4("projection", projection)
 				.setSampler("sprite", 0)
-				.setVec3("fcolor", glm::vec3(1.0f, 1.0f, 1.0f));
+				.setVec3("fcolor", glm::vec3(1.0f));
 
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		}
@@ -159,113 +143,21 @@ namespace df {
 			const glm::vec2& worldPos = registry->positions.get(e);
 			const glm::vec2& scale = registry->scales.get(e);
 
-			// Use camera-relative coordinates
-			glm::vec2 pos = worldPos - cam.position;
-
 			glm::mat4 model = glm::identity<glm::mat4>();
-			model = glm::translate(model, glm::vec3(pos.x, pos.y, 0.0f));
+			model = glm::translate(model, glm::vec3(worldPos, 0.0f));
 			model = glm::scale(model, glm::vec3(scale, 1.0f));
 
 			roadTexture.bind(0);
 			spriteShader.use()
+				.setMat4("model[0]", model)
 				.setMat4("view", view)
 				.setMat4("projection", projection)
-				.setMat4("model[0]", model)
 				.setSampler("sprite", 0)
 				.setVec3("fcolor", glm::vec3(1.0f));
 
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		}
 
-		glBindVertexArray(0);
-	}
-
-
-	void RenderBuildingsSystem::renderPreviews(float time) noexcept {
-		if (!registry || !window || !gamestate) return;
-
-		const glm::mat4 view = glm::identity<glm::mat4>();
-		Camera& cam = registry->cameras.get(registry->getCamera());
-		const glm::mat4 projection = this->calculateProjection(cam);
-
-		glBindVertexArray(m_quad_vao);
-
-		// Render building previews from ECS
-		for (Entity e : registry->buildingPreviews.entities) {
-			if (!registry->scales.has(e) || !registry->positions.has(e)) continue;
-
-			const BuildingPreviewComponent& preview = registry->buildingPreviews.get(e);
-			const glm::vec2& scale = registry->scales.get(e);
-			const glm::vec2& pos = registry->positions.get(e);
-
-			if (preview.type == BuildingPreviewType::Settlement) { // settlement
-				const float shadowOffsetY = -0.15f;
-				const float shadowScale = 1.4f;
-
-				// Render shadow
-				glm::mat4 shadowModel = glm::identity<glm::mat4>();
-				shadowModel = glm::translate(shadowModel, glm::vec3(pos.x, pos.y + shadowOffsetY, -0.01f));
-				shadowModel = glm::scale(shadowModel, glm::vec3(scale.x * shadowScale, scale.y * shadowScale, 1.0f));
-
-				settlementTexture.bind(0);
-				buildingShadowShader.use()
-					.setMat4("view", view)
-					.setMat4("projection", projection)
-					.setMat4("model[0]", shadowModel)
-					.setSampler("sprite", 0);
-
-				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-				// Render settlement preview
-				glm::mat4 model = glm::identity<glm::mat4>();
-				model = glm::translate(model, glm::vec3(pos.x, pos.y, 0.0f));
-				model = glm::scale(model, glm::vec3(scale, 1.0f));
-
-				settlementTexture.bind(0);
-				buildingHoverShader.use()
-					.setMat4("view", view)
-					.setMat4("projection", projection)
-					.setMat4("model[0]", model)
-					.setSampler("sprite", 0)
-					.setVec3("fcolor", glm::vec3(1.0f, 1.0f, 1.0f))
-					.setFloat("time", time);
-				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-			} else if (preview.type == BuildingPreviewType::Road) { // road
-				const float roadShadowOffsetY = -0.1f;
-				const float roadShadowScale = 1.1f;
-
-				// Render shadow -> TODO: road shadow needs some refinement
-				glm::mat4 shadowModel = glm::identity<glm::mat4>();
-				shadowModel = glm::translate(shadowModel, glm::vec3(pos.x, pos.y + roadShadowOffsetY, -0.01f));
-				shadowModel = glm::scale(shadowModel, glm::vec3(scale * roadShadowScale, 1.0f));
-
-				roadPreviewTexture.bind(0);
-				buildingShadowShader.use()
-					.setMat4("view", view)
-					.setMat4("projection", projection)
-					.setMat4("model[0]", shadowModel)
-					.setSampler("sprite", 0);
-
-				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-				// Render road preview
-				glm::mat4 model = glm::identity<glm::mat4>();
-				model = glm::translate(model, glm::vec3(pos.x, pos.y, 0.0f));
-				model = glm::scale(model, glm::vec3(scale, 1.0f));
-
-				roadPreviewTexture.bind(0);
-				buildingHoverShader.use()
-					.setMat4("view", view)
-					.setMat4("projection", projection)
-					.setMat4("model[0]", model)
-					.setSampler("sprite", 0)
-					.setVec3("fcolor", glm::vec3(1.0f))
-					.setFloat("time", time);
-
-				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-			}
-		}
 		glBindVertexArray(0);
 	}
 }

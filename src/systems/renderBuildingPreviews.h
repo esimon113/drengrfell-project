@@ -10,20 +10,18 @@
 
 
 
-
 namespace df {
-	class RenderBuildingsSystem {
+	class RenderBuildingPreviewsSystem {
 		public:
-			RenderBuildingsSystem() = default;
-			~RenderBuildingsSystem() = default;
+			RenderBuildingPreviewsSystem() = default;
+			~RenderBuildingPreviewsSystem() = default;
 
-			static RenderBuildingsSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
+			static RenderBuildingPreviewsSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
 			void deinit() noexcept;
 			void step(float dt) noexcept;
 			void reset() noexcept;
 
-			void renderBuildings(float time = 0.0f) noexcept;
-
+			void renderPreviews(float time = 0.0f) noexcept;
 
 			void updateViewport(const glm::uvec2& origin, const glm::uvec2& size) noexcept {
 				this->viewport.origin = origin;
@@ -32,7 +30,7 @@ namespace df {
 
 
 		private:
-		const glm::mat4 calculateProjection(const Camera& cam) const;
+			const glm::mat4 calculateProjection(const Camera& cam) const;
 
 			Registry* registry;
 			Window* window;
@@ -40,9 +38,10 @@ namespace df {
 
 			Framebuffer intermediateFramebuffer;
 
-			Shader spriteShader; // For placed buildings (no pulsing effect)
-			Texture roadTexture; // For actual roads
-			std::array<Texture, 5> settlementTextures; // All 5 viking-wood settlement textures -> will be used for settlement animation
+			Shader buildingHoverShader;
+			Shader buildingShadowShader;
+			Texture settlementTexture;
+			Texture roadPreviewTexture;
 
 			GLuint m_quad_vao;
 			GLuint m_quad_ebo;
