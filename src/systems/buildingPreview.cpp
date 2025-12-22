@@ -39,23 +39,19 @@ namespace df {
 		if (!hasPreviewEntity || !registry || !window || !gamestate) return;
 
 		Camera& cam = registry->cameras.get(registry->getCamera());
-		const Graph& map = gamestate->getMap();
-
-		uint32_t columns = map.getMapWidth();
-		uint32_t rows = map.getTileCount() / columns;
-		const glm::vec2 worldDimensions = calculateWorldDimensions(columns, rows);
 
 		Viewport viewport;
 		viewport.origin = glm::uvec2(0);
 		viewport.size = window->getWindowExtent();
 
 		glm::vec2 cursorScreenPos = window->getCursorPosition();
-		glm::vec2 cursorWorldOffset = cam.position + screenToWorldCoordinates(
+		glm::vec2 cursorWorldOffset = screenToWorldCoordinates(
 			cursorScreenPos,
 			viewport,
-			worldDimensions / cam.zoom
+			glm::vec2(cam.viewWidth, cam.viewHeight) // world-dimensions...
 		);
 
+		// savee position relative to camera
 		if (registry->positions.has(previewEntity)) {
 			registry->positions.get(previewEntity) = cursorWorldOffset;
 		} else {
@@ -74,7 +70,7 @@ namespace df {
 				preview.type = BuildingPreviewType::Settlement;
 
 				glm::vec2& scale = registry->scales.emplace(previewEntity);
-				scale = glm::vec2(1.5f, 1.5f); // TODO: make dynamic?!
+				scale = glm::vec2(0.5f, 0.5f);
 
 				hasPreviewEntity = true;
 			} else {
@@ -83,7 +79,7 @@ namespace df {
 					registry->buildingPreviews.get(previewEntity).type = BuildingPreviewType::Settlement;
 				}
 				if (registry->scales.has(previewEntity)) {
-					registry->scales.get(previewEntity) = glm::vec2(1.5f, 1.5f);
+					registry->scales.get(previewEntity) = glm::vec2(0.5f, 0.5f);
 				}
 			}
 		} else {
@@ -109,7 +105,7 @@ namespace df {
 
 				// Set default scale for road
 				glm::vec2& scale = registry->scales.emplace(previewEntity);
-				scale = glm::vec2(3.5f, 3.5f);
+				scale = glm::vec2(1.0f, 1.0f);
 
 				hasPreviewEntity = true;
 			} else {
@@ -118,7 +114,7 @@ namespace df {
 					registry->buildingPreviews.get(previewEntity).type = BuildingPreviewType::Road;
 				}
 				if (registry->scales.has(previewEntity)) {
-					registry->scales.get(previewEntity) = glm::vec2(3.5f, 3.5f);
+					registry->scales.get(previewEntity) = glm::vec2(1.0f, 1.0f);
 				}
 			}
 		} else {

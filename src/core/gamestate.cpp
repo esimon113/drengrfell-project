@@ -190,7 +190,7 @@ namespace df {
         const Graph& map = this->map;
         glm::vec2 worldPosition = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), map);
         registry->positions.emplace(e) = worldPosition;
-        registry->scales.emplace(e) = glm::vec2(0.3f, 0.3f); // Scale to match hexagon size -> 1/3rd hex radius
+        registry->scales.emplace(e) = glm::vec2(0.5f, 0.5f); // Scale to match hexagon size -> 1/2 hex radius
 
         settlements.push_back(settlement);
     }
