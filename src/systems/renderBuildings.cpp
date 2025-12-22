@@ -101,7 +101,7 @@ namespace df {
 	}
 
 
-	void RenderBuildingsSystem::renderBuildings(float /*time*/) noexcept {
+	void RenderBuildingsSystem::renderBuildings(float time) noexcept {
 		if (!registry || !gamestate) return;
 
 		glBindVertexArray(m_quad_vao);
@@ -110,11 +110,16 @@ namespace df {
 		const glm::mat4 view = glm::identity<glm::mat4>();
 		const glm::mat4 projection = this->calculateProjection(cam);
 
+		// TODO: use consistent FPS for animations
+		constexpr float animationSpeed = 5.0f; // fps
+		constexpr int numFrames = 5; // how many frames per animation run
+		int textureIndex = static_cast<int>(time * animationSpeed) % numFrames;
+
 		// Render settlements from ECS
 		for (Entity e : registry->settlements.entities) {
 			if (!registry->positions.has(e) || !registry->scales.has(e)) continue;
 
-			const Settlement& settlement = registry->settlements.get(e);
+			// const Settlement& settlement = registry->settlements.get(e);
 			const glm::vec2& worldPos = registry->positions.get(e);
 			const glm::vec2& scale = registry->scales.get(e);
 
@@ -122,9 +127,7 @@ namespace df {
 			model = glm::translate(model, glm::vec3(worldPos, 0.0f));
 			model = glm::scale(model, glm::vec3(scale, 1.0f));
 
-			// Use a settlement texture -> TODO: use for animation
-			// currently a different frame is used for each placed settlemetn
-			size_t textureIndex = settlement.getId() % 5;
+			// Use animated settlement texture
 			settlementTextures[textureIndex].bind(0);
 			spriteShader.use()
 				.setMat4("view", view)

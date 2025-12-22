@@ -23,7 +23,13 @@ namespace df {
 
 		self.buildingHoverShader = Shader::init(assets::Shader::buildingHover).value();
 		self.buildingShadowShader = Shader::init(assets::Shader::buildingShadow).value();
-		self.settlementTexture = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT1);
+		
+		// Load all settlement textures for animation
+		self.settlementTextures[0] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT1);
+		self.settlementTextures[1] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT2);
+		self.settlementTextures[2] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT3);
+		self.settlementTextures[3] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT4);
+		self.settlementTextures[4] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT5);
 		self.roadPreviewTexture = Texture::init(assets::Texture::DIRT_ROAD_DIAGONAL_UP);
 
 		glm::uvec2 extent = self.window->getWindowExtent();
@@ -69,7 +75,7 @@ namespace df {
 	void RenderBuildingPreviewsSystem::deinit() noexcept {
 		buildingHoverShader.deinit();
 		buildingShadowShader.deinit();
-		settlementTexture.deinit();
+		for (auto& tex : settlementTextures) tex.deinit();
 		roadPreviewTexture.deinit();
 	}
 
@@ -117,12 +123,17 @@ namespace df {
 				const float shadowOffsetY = -0.15f;
 				const float shadowScale = 1.4f;
 
+				// TODO: use consistent FPS for animations
+				constexpr float animationSpeed = 5.0f; // fps
+				constexpr int numFrames = 5; // how many frames per animation run
+				int textureIndex = static_cast<int>(time * animationSpeed) % numFrames;
+
 				// Render shadow
 				glm::mat4 shadowModel = glm::identity<glm::mat4>();
 				shadowModel = glm::translate(shadowModel, glm::vec3(pos.x, pos.y + shadowOffsetY, -0.01f));
 				shadowModel = glm::scale(shadowModel, glm::vec3(scale.x * shadowScale, scale.y * shadowScale, 1.0f));
 
-				settlementTexture.bind(0);
+				settlementTextures[textureIndex].bind(0);
 				buildingShadowShader.use()
 					.setMat4("view", view)
 					.setMat4("projection", projection)
@@ -136,7 +147,7 @@ namespace df {
 				model = glm::translate(model, glm::vec3(pos.x, pos.y, 0.0f));
 				model = glm::scale(model, glm::vec3(scale, 1.0f));
 
-				settlementTexture.bind(0);
+				settlementTextures[textureIndex].bind(0);
 				buildingHoverShader.use()
 					.setMat4("view", view)
 					.setMat4("projection", projection)

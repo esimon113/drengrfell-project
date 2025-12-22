@@ -7,6 +7,7 @@
 #include <utils/shader.h>
 #include <utils/texture.h>
 #include "framebuffer.h"
+#include <array>
 
 
 
@@ -40,7 +41,7 @@ namespace df {
 
 			Shader buildingHoverShader;
 			Shader buildingShadowShader;
-			Texture settlementTexture;
+			std::array<Texture, 5> settlementTextures; // wood settlement textures for animation
 			Texture roadPreviewTexture;
 
 			GLuint m_quad_vao;

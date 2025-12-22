@@ -7,6 +7,7 @@
 #include <utils/shader.h>
 #include <utils/texture.h>
 #include "framebuffer.h"
+#include <array>
 
 
 
@@ -42,7 +43,7 @@ namespace df {
 
 			Shader spriteShader; // For placed buildings (no pulsing effect)
 			Texture roadTexture; // For actual roads
-			std::array<Texture, 5> settlementTextures; // All 5 viking-wood settlement textures -> will be used for settlement animation
+			std::array<Texture, 5> settlementTextures; // wood settlement textures for animation
 
 			GLuint m_quad_vao;
 			GLuint m_quad_ebo;
