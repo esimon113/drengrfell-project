@@ -43,8 +43,8 @@ namespace df {
 
 			Shader spriteShader; // For placed buildings (no pulsing effect)
 			// different texture for different edge angles:
-			Texture roadTextureDiagonalUp; // 0, 3
-			Texture roadTextureDiagonalDown; // 2, 5
+			Texture roadTextureDiagonalDown; // 0, 3
+			Texture roadTextureDiagonalUp; // 2, 5
 			Texture roadTextureVertical; // 1, 4
 			std::array<Texture, 5> settlementTextures; // wood settlement textures for animation
 
