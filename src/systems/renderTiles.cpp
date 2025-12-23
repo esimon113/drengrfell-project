@@ -5,14 +5,8 @@
 #include "utils/textureArray.h"
 #include "common.h"
 #include "worldGenerator.h"
-#include "events/eventBus.h"
 
 namespace df {
-
-	void onSomethingHappened(std::string text) noexcept {
-		fmt::print("Something happened: {}\n", text);
-	}
-
     RenderTilesSystem RenderTilesSystem::init(Window& window, Registry& registry, std::shared_ptr<GameState> gameState) noexcept {
         RenderTilesSystem self;
 
@@ -29,10 +23,6 @@ namespace df {
         self.tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
 
         self.initMap();
-
-		EventBus::getInstance().somethingHappened.connect(onSomethingHappened);
-		EventBus::getInstance().somethingHappened.emit("Hallo, Welt!");
-		EventBus::getInstance().somethingHappened.emit("Hallo, Test!");
 
         return self;
     }
