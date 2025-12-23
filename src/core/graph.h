@@ -3,6 +3,7 @@
 #include <common.h>
 #include <cstddef>
 #include <filesystem>
+#include <memory>
 #include <vector>
 #include <unordered_map>
 #include <array>
@@ -23,105 +24,109 @@ using json = nlohmann::json;
 namespace df {
 
 
-    // make sure T has id
-    template<typename T>
-    concept HasIdProperty = requires (T t) {
-    	{ t.getId() } -> std::convertible_to<size_t>;
-    };
+	// make sure T has id
+	template<typename T>
+	concept HasIdProperty = requires (T t) {
+		{ t.getId() } -> std::convertible_to<size_t>;
+	};
 
 
+	class Graph {
+		public:
+			Graph() = default;
+			~Graph() = default;
+
+			void addTile(std::unique_ptr<Tile> tile);
+			void addEdge(std::unique_ptr<Edge> edge);
+			void addVertex(std::unique_ptr<Vertex> vertex);
+
+			TileHandle getTile(size_t index);
+			EdgeHandle getEdge(size_t index);
+			VertexHandle getVertex(size_t index);
+
+			void removeTile(const TileHandle tile);
+			void removeEdge(const EdgeHandle edge);
+			void removeVertex(const VertexHandle vertex);
+
+			void connectEdgeToTile(const TileHandle tile, const EdgeHandle edge);
+			void connectVertexToEdge(const EdgeHandle edge, const VertexHandle vertex);
+			void connectVertexToTile(const VertexHandle vertex, const TileHandle tile);
+
+			std::optional<std::array<EdgeHandle, 6>> getTileEdges(const TileHandle tile);
+			std::optional<std::array<VertexHandle, 6>> getTileVertices(const TileHandle tile);
+			std::optional<std::array<VertexHandle, 2>> getEdgeVertices(const EdgeHandle edge);
+			std::optional<std::array<EdgeHandle, 3>> getVertexEdges(const VertexHandle vertex);
+			std::optional<std::array<TileHandle, 3>> getVertexTiles(const VertexHandle vertex);
+
+			size_t getEdgeIndex(size_t edgeId);
+
+			const std::vector<std::unique_ptr<Tile>>& getTiles() const { return this->tiles; }
+			const std::vector<std::unique_ptr<Edge>>& getEdges() const { return this->edges; }
+			const std::vector<std::unique_ptr<Vertex>>& getVertices() const { return this->vertices; }
+
+			size_t getTileCount() const { return this->tiles.size(); }
+			size_t getEdgeCount() const { return this->edges.size(); }
+			size_t getVertexCount() const { return this->vertices.size(); }
+
+			// Allow for storing and loading:
+			json serialize() const;
+			void deserialize(const std::string& data);
+
+			// no game state included, only map topology...
+			void save(std::filesystem::path& to);
+			void load(std::filesystem::path& from);
 
 
-    class Graph {
-        public:
-            Graph() = default;
-            ~Graph() = default;
+			// Algorithms that might come in handy;
+			template<HasIdProperty T>
+			std::vector<T> breadthFirstSearch(const T& start) const;
+			template<HasIdProperty T>
+			std::vector<T> depthFirstSearch(const T& start) const;
+			template<HasIdProperty T>
+			std::vector<T> dijkstra(const T& start) const;
 
-            void addTile(const Tile& tile);
-            void addEdge(const Edge& edge);
-            void addVertex(const Vertex& vertex);
+			template<HasIdProperty T>
+			size_t getDistanceBetween(const T& start, const T& end) const;
 
-            Tile& getTile(size_t index);
-            const Tile& getTile(size_t index) const;
-            Edge& getEdge(size_t index);
-            const Edge& getEdge(size_t index) const;
-            Vertex& getVertex(size_t index);
-            const Vertex& getVertex(size_t index) const;
-
-            void removeTile(const Tile& tile);
-            void removeEdge(const Edge& edge);
-            void removeVertex(const Vertex& vertex);
-
-            void connectEdgeToTile(const Tile& tile, const Edge& edge);
-            void connectVertexToEdge(const Edge& edge, const Vertex& vertex);
-            void connectVertexToTile(const Vertex& vertex, const Tile& tile);
-
-            std::array<Edge, 6> getTileEdges(const Tile& tile) const;
-            std::array<Vertex, 6> getTileVertices(const Tile& tile) const;
-            std::array<Vertex, 2> getEdgeVertices(const Edge& edge) const;
-            std::array<Edge, 3> getVertexEdges(const Vertex& vertex) const;
-            std::array<Tile, 3> getVertexTiles(const Vertex& vertex) const;
-
-            int getEdgeIndex(size_t edgeId) const;
-
-            const std::vector<Tile>& getTiles() const { return this->tiles; }
-            const std::vector<Edge>& getEdges() const { return this->edges; }
-            const std::vector<Vertex>& getVertices() const { return this->vertices; }
-
-            size_t getTileCount() const { return this->tiles.size(); }
-            size_t getEdgeCount() const { return this->edges.size(); }
-            size_t getVertexCount() const { return this->vertices.size(); }
-
-            // Allow for storing and loading:
-            json serialize() const;
-            void deserialize(const std::string& data);
-
-            // no game state included, only map topology...
-            void save(std::filesystem::path& to);
-            void load(std::filesystem::path& from);
+			// Methods for using the graph as a rectangular map
+			void regenerate(const WorldGeneratorConfig &worldGeneratorConfig = WorldGeneratorConfig());
+			unsigned getMapWidth() const { return this->mapWidth; }
+			void setMapWidth(const unsigned width) { this->mapWidth = width; }
+			bool isRenderUpdateRequested() const { return this->renderUpdateRequested; }
+			void setRenderUpdateRequested(const bool value) { this->renderUpdateRequested = value; }
 
 
-            // Algorithms that might come in handy;
-            template<HasIdProperty T>
-            std::vector<T> breadthFirstSearch(const T& start) const;
-            template<HasIdProperty T>
-            std::vector<T> depthFirstSearch(const T& start) const;
-            template<HasIdProperty T>
-            std::vector<T> dijkstra(const T& start) const;
+		private:
+			// nodes OWNED by the graph
+			std::vector<std::unique_ptr<Tile>> tiles;
+			std::vector<std::unique_ptr<Edge>> edges;
+			std::vector<std::unique_ptr<Vertex>> vertices;
 
-            template<HasIdProperty T>
-            size_t getDistanceBetween(const T& start, const T& end) const;
+			// size_t = ids
+			std::unordered_map<size_t, std::array<EdgeHandle, 6>> tileEdges;
+			std::unordered_map<size_t, std::array<VertexHandle, 6>> tileVertices;
 
-            // Methods for using the graph as a rectangular map
-            void regenerate(const WorldGeneratorConfig &worldGeneratorConfig = WorldGeneratorConfig());
-            unsigned getMapWidth() const { return this->mapWidth; }
-            void setMapWidth(const unsigned width) { this->mapWidth = width; }
-            bool isRenderUpdateRequested() const { return this->renderUpdateRequested; }
-            void setRenderUpdateRequested(const bool value) { this->renderUpdateRequested = value; }
-        private:
-            std::vector<Tile> tiles;
-            std::vector<Edge> edges;
-            std::vector<Vertex> vertices;
+			// would it be worth it to add edgeTiles?!
+			std::unordered_map<size_t, std::array<VertexHandle, 2>> edgeVertices;
 
-            // size_t = ids
-            std::unordered_map<size_t, std::array<Edge, 6>> tileEdges;
-            std::unordered_map<size_t, std::array<Vertex, 6>> tileVertices;
+			std::unordered_map<size_t, std::array<EdgeHandle, 3>> vertexEdges;
+			std::unordered_map<size_t, std::array<TileHandle, 3>> vertexTiles;
 
-            std::unordered_map<size_t, std::array<Vertex, 2>> edgeVertices;
+			bool doesTileExist(const TileHandle tile);
+			bool doesTileExist(size_t tileId);
+			bool doesEdgeExist(const EdgeHandle edge);
+			bool doesEdgeExist(size_t edgeId);
+			bool doesVertexExist(const VertexHandle vertex);
+			bool doesVertexExist(size_t vertexId);
 
-            std::unordered_map<size_t, std::array<Edge, 3>> vertexEdges;
-            std::unordered_map<size_t, std::array<Tile, 3>> vertexTiles;
+			// write tiles from vector into graph
+			void initializeTilesForGraph(std::vector<Tile> newTiles);
+			void populate();
 
-            bool doesTileExist(const Tile& tile);
-            bool doesEdgeExist(const Edge& edge);
-            bool doesVertexExist(const Vertex& vertex);
+			std::vector<size_t> getNeighborIds(size_t id) const;
 
-            void populate();
-
-            std::vector<size_t> getNeighborIds(size_t id) const;
-
-            // Methods for using the graph as a rectangular map
-            unsigned mapWidth = 0;
-            bool renderUpdateRequested = false;
-    };
+			// Methods for using the graph as a rectangular map
+			unsigned mapWidth = 0;
+			bool renderUpdateRequested = false;
+	};
 }

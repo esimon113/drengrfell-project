@@ -1,297 +1,352 @@
-#include <array>
-#include <cstddef>
+#include "graph.h"
+
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
+#include <unordered_set>
 #include <utility>
-#include <vector>
 #include <algorithm>
 #include <queue>
-#include <stack>
-#include <unordered_set>
 #include <fstream>
 
-#include "graph.h"
-
+#include "fmt/base.h"
 #include "worldGenerator.h"
 
 
 namespace df {
-    void Graph::addTile(const Tile& tile) {
-        if (std::find(this->tiles.begin(), this->tiles.end(), tile) == this->tiles.end()) {
-            this->tiles.push_back(tile);
+	void Graph::addTile(std::unique_ptr<Tile> tile) {
+		if (std::find(this->tiles.begin(), this->tiles.end(), tile) == this->tiles.end()) {
+			this->tiles.push_back(std::move(tile));
 
-            std::array<Edge, 6> edgesToAdd{};
-            std::array<Vertex, 6> verticesToAdd{};
+			std::array<EdgeHandle, 6> edgesToAdd{};
+			std::array<VertexHandle, 6> verticesToAdd{};
 
-            // added with default values (from constructors)
-            this->tileEdges[tile.getId()] = edgesToAdd;
-            this->tileVertices[tile.getId()] = verticesToAdd;
-        }
-    }
-
-
-    void Graph::addEdge(const Edge& edge) {
-        if (std::find(this->edges.begin(), this->edges.end(), edge) == this->edges.end()) {
-            this->edges.push_back(edge);
-
-            std::array<Vertex, 2> verticesToAdd{};
-
-            this->edgeVertices[edge.getId()] = verticesToAdd;
-        }
-    }
+			// added with default values (from constructors)
+			this->tileEdges[tile->getId()] = edgesToAdd;
+			this->tileVertices[tile->getId()] = verticesToAdd;
+		}
+	}
 
 
-    void Graph::addVertex(const Vertex& vertex) {
-        if (std::find(this->vertices.begin(), this->vertices.end(), vertex) == this->vertices.end()) {
-            this->vertices.push_back(vertex);
+	void Graph::addEdge(std::unique_ptr<Edge> edge) {
+		if (std::find(this->edges.begin(), this->edges.end(), edge) == this->edges.end()) {
+			this->edges.push_back(std::move(edge));
 
-            std::array<Edge, 3> edgesToAdd{};
-            std::array<Tile, 3> tilesToAdd{};
+			std::array<VertexHandle, 2> verticesToAdd{};
 
-            this->vertexEdges[vertex.getId()] = edgesToAdd;
-            this->vertexTiles[vertex.getId()] = tilesToAdd;
-        }
-    }
+			this->edgeVertices[edge->getId()] = verticesToAdd;
+		}
+	}
 
 
-    Tile& Graph::getTile(size_t index) {
-    	if (index >= this->tiles.size()) {
-    		throw std::out_of_range("Tile index out of range");
-    	}
+	void Graph::addVertex(std::unique_ptr<Vertex> vertex) {
+		if (std::find(this->vertices.begin(), this->vertices.end(), vertex) == this->vertices.end()) {
+			this->vertices.push_back(std::move(vertex));
 
-    	return this->tiles[index];
-    }
+			std::array<EdgeHandle, 3> edgesToAdd{};
+			std::array<TileHandle, 3> tilesToAdd{};
 
-    const Tile& Graph::getTile(size_t index) const {
-    	if (index >= this->tiles.size()) {
-    		throw std::out_of_range("Tile index out of range");
-    	}
-
-    	return this->tiles[index];
-    }
+			this->vertexEdges[vertex->getId()] = edgesToAdd;
+			this->vertexTiles[vertex->getId()] = tilesToAdd;
+		}
+	}
 
 
-    Edge& Graph::getEdge(size_t index) {
-    	if (index >= this->edges.size()) {
-    		throw std::out_of_range("Edge index out of range");
-    	}
+	// TODO: use optional here?!
+	// Throws out_of_range if no tile with id
+	TileHandle Graph::getTile(size_t index) {
+		if (!this->doesTileExist(index)) {
+			throw std::out_of_range("Tile index out of range");
+		}
 
-    	return this->edges[index];
-    }
-
-    const Edge& Graph::getEdge(size_t index) const {
-    	if (index >= this->edges.size()) {
-    		throw std::out_of_range("Edge index out of range");
-    	}
-
-    	return this->edges[index];
-    }
+		return this->tiles[index].get();
+	}
 
 
-    Vertex& Graph::getVertex(size_t index) {
-    	if (index >= this->vertices.size()) {
-     		throw std::out_of_range("Vertex index out of range");
-     	}
+	// Throws out_of_range if no edge with id
+	EdgeHandle Graph::getEdge(size_t index) {
+		if (!this->doesEdgeExist(index)) {
+			throw std::out_of_range("Edge index out of range");
+		}
 
-    	return this->vertices[index];
-    }
-
-    const Vertex& Graph::getVertex(size_t index) const {
-    	if (index >= this->vertices.size()) {
-     		throw std::out_of_range("Vertex index out of range");
-     	}
-
-    	return this->vertices[index];
-    }
+		return this->edges[index].get();
+	}
 
 
-    bool Graph::doesTileExist(const Tile& tile) {
-        return std::find(this->tiles.begin(), this->tiles.end(), tile) != this->tiles.end();
-    }
+	// Throws out_of_range if no vertex with id
+	VertexHandle Graph::getVertex(size_t index) {
+		if (!this->doesTileExist(index)) {
+			throw std::out_of_range("Vertex index out of range");
+		}
+
+		return this->vertices[index].get();
+	}
 
 
-    bool Graph::doesEdgeExist(const Edge& edge) {
-        return std::find(this->edges.begin(), this->edges.end(), edge) != this->edges.end();
-    }
+	bool Graph::doesTileExist(const TileHandle tile) {
+		if (!tile) return false;
+
+		return std::any_of(
+			this->tiles.begin(),
+			this->tiles.end(),
+			[&](const std::unique_ptr<Tile>& t) { return t.get() == tile; }
+		);
+	}
+
+	bool Graph::doesTileExist(size_t tileId) {
+		return tileId < this->tiles.size() && this->tiles[tileId] != nullptr;
+	}
 
 
-    bool Graph::doesVertexExist(const Vertex& vertex) {
-        return std::find(this->vertices.begin(), this->vertices.end(), vertex) != this->vertices.end();
-    }
+	bool Graph::doesEdgeExist(const EdgeHandle edge) {
+		if (!edge) return false;
+
+		return std::any_of(
+			this->edges.begin(),
+			this->edges.end(),
+			[&](const std::unique_ptr<Edge>& e) { return e.get() == edge; }
+		);
+	}
 
 
-    void Graph::removeTile(const Tile& tile) {
-        if (auto it = std::find(this->tiles.begin(), this->tiles.end(), tile); it != this->tiles.end()) {
-            this->tiles.erase(it);
-            this->tileEdges.erase(it->getId());
-            this->tileVertices.erase(it->getId());
-        }
-    }
+	bool Graph::doesEdgeExist(size_t edgeId) {
+		return edgeId < this->edges.size() && this->edges[edgeId] != nullptr;
+	}
 
 
-    void Graph::removeEdge(const Edge& edge) {
-        if (auto it = std::find(this->edges.begin(), this->edges.end(), edge); it != this->edges.end()) {
-            this->edges.erase(it);
-            this->edgeVertices.erase(it->getId());
-        }
-    }
+	bool Graph::doesVertexExist(const VertexHandle vertex) {
+		if (!vertex) return false;
+
+		return std::any_of(
+			this->vertices.begin(),
+			this->vertices.end(),
+			[&](const std::unique_ptr<Vertex>& v) { return v.get() == vertex; }
+		);
+	}
 
 
-    void Graph::removeVertex(const Vertex& vertex) {
-        if (auto it = std::find(this->vertices.begin(), this->vertices.end(), vertex); it != this->vertices.end()) {
-            this->vertices.erase(it);
-            this->vertexEdges.erase(it->getId());
-            this->vertexTiles.erase(it->getId());
-        }
-    }
+	bool Graph::doesVertexExist(size_t vertexId) {
+		return vertexId < this->vertices.size() && this->vertices[vertexId] != nullptr;
+	}
 
 
-    void Graph::connectEdgeToTile(const Tile& tile, const Edge& edge) {
-    	if (!this->doesTileExist(tile)) { throw std::invalid_argument("Tile not found"); }
-    	if (!this->doesEdgeExist(edge)) { throw std::invalid_argument("Edge not found"); }
+	void Graph::removeTile(const TileHandle tile) {
+		if (!this->doesTileExist(tile)) return;
 
-  		auto& localEdges = this->tileEdges[tile.getId()];
-    	for (size_t i = 0; i < 6; ++i) {
-     		if (localEdges[i].getId() == SIZE_MAX) {
-    			localEdges[i] = edge;
-    			break;
-       		}
-     	}
-    }
+		auto it = std::find_if(
+			this->tiles.begin(),
+			this->tiles.end(),
+			[&](const std::unique_ptr<Tile>& t) { return t.get() == tile; }
+		);
+		if (it == this->tiles.end()) return;
 
+		const size_t tileId = it->get()->getId();
 
-    void Graph::connectVertexToEdge(const Edge& edge, const Vertex& vertex) {
-    	if (!this->doesEdgeExist(edge)) { throw std::invalid_argument("Edge not found"); }
-    	if (!this->doesVertexExist(vertex)) { throw std::invalid_argument("Vertex not found"); }
-
-  		auto& localVertices = this->edgeVertices[edge.getId()];
-    	for (size_t i = 0; i < 2; ++i) {
-     		if (localVertices[i].getId() == SIZE_MAX) {
-    			localVertices[i] = vertex;
-       			break;
-       		}
-     	}
-    }
+		this->tileEdges.erase(tileId);
+		this->tileVertices.erase(tileId);
+		this->tiles.erase(it);
+	}
 
 
-    void Graph::connectVertexToTile(const Vertex& vertex, const Tile& tile) {
-    	if (!this->doesVertexExist(vertex)) { throw std::invalid_argument("Vertex not found"); }
-    	if (!this->doesTileExist(tile)) { throw std::invalid_argument("Tile not found"); }
+	void Graph::removeEdge(const EdgeHandle edge) {
+		if (!this->doesEdgeExist(edge)) return;
 
-  		auto& localVertices = this->tileVertices[tile.getId()];
-        for (size_t i = 0; i < 6; ++i) {
-      		if (localVertices[i].getId() == SIZE_MAX) {
-     			localVertices[i] = vertex;
-        		break;
-        	}
-        }
-    }
+		auto it = std::find_if(
+			this->edges.begin(),
+			this->edges.end(),
+			[&](const std::unique_ptr<Edge>& e) { return e.get() == edge; }
+		);
+		if (it == this->edges.end()) return;
 
+		size_t edgeId = it->get()->getId();
 
-    /**
-     * Returns an empty array {} if the tile is not found.
-     */
-    std::array<Edge, 6> Graph::getTileEdges(const Tile& tile) const {
-        if (auto it = this->tileEdges.find(tile.getId()); it != this->tileEdges.end()) {
-            return it->second;
-        }
-        return {};
-    }
+		this->edgeVertices.erase(edgeId);
+		this->edges.erase(it);
+	}
 
 
-    /**
-     * Returns an empty array {} if the tile is not found.
-     */
-    std::array<Vertex, 6> Graph::getTileVertices(const Tile& tile) const {
-        if (auto it = this->tileVertices.find(tile.getId()); it != this->tileVertices.end()) {
-            return it->second;
-        }
-        return {};
-    }
+	void Graph::removeVertex(const VertexHandle vertex) {
+		if (!this->doesVertexExist(vertex)) return;
+
+		auto it = std::find_if(
+			this->vertices.begin(),
+			this->vertices.end(),
+			[&](const std::unique_ptr<Vertex>& v) { return v.get() == vertex; }
+		);
+		if (it == this->vertices.end()) return;
+
+		size_t vertexId = it->get()->getId();
+
+		this->vertexEdges.erase(vertexId);
+		this->vertexTiles.erase(vertexId);
+		this->vertices.erase(it);
+	}
 
 
-    /**
-     * Returns an empty array {} if the edge is not found.
-     */
-    std::array<Vertex, 2> Graph::getEdgeVertices(const Edge& edge) const {
-        if (auto it = this->edgeVertices.find(edge.getId()); it != this->edgeVertices.end()) {
-            return it->second;
-        }
-        return {};
-    }
+	void Graph::connectEdgeToTile(const TileHandle tile, const EdgeHandle edge) {
+		if (!this->doesTileExist(tile)) return;
+		if (!this->doesEdgeExist(edge)) return;
+
+		auto& localEdges = this->tileEdges[tile->getId()];
+		for (size_t i = 0; i < 6; ++i) {
+			if (localEdges[i]->getId() == SIZE_MAX) {
+				localEdges[i] = edge;
+				break;
+			}
+		}
+	}
 
 
-    /**
-     * Returns an empty array {} if the vertex is not found.
-     */
-    std::array<Edge, 3> Graph::getVertexEdges(const Vertex& vertex) const {
-        if (auto it = this->vertexEdges.find(vertex.getId()); it != this->vertexEdges.end()) {
-            return it->second;
-        }
-        return {};
-    }
+	void Graph::connectVertexToEdge(const EdgeHandle edge, const VertexHandle vertex) {
+		if (!this->doesEdgeExist(edge)) return;
+		if (!this->doesVertexExist(vertex)) return;
+
+		auto& localVertices = this->edgeVertices[edge->getId()];
+		for (size_t i = 0; i < 2; ++i) {
+			if (localVertices[i]->getId() == SIZE_MAX) {
+				localVertices[i] = vertex;
+				break;
+			}
+		}
+	}
 
 
-    /**
-     * Returns an empty array {} if the vertex is not found.
-     */
-    std::array<Tile, 3> Graph::getVertexTiles(const Vertex& vertex) const {
-        if (auto it = this->vertexTiles.find(vertex.getId()); it != this->vertexTiles.end()) {
-            return it->second;
-        }
-        return {};
-    }
+	void Graph::connectVertexToTile(const VertexHandle vertex, const TileHandle tile) {
+		if (!this->doesVertexExist(vertex)) return;
+		if (!this->doesTileExist(tile)) return;
+
+		auto& localVertices = this->tileVertices[tile->getId()];
+		for (size_t i = 0; i < 6; ++i) {
+			if (localVertices[i]->getId() == SIZE_MAX) {
+				localVertices[i] = vertex;
+				break;
+			}
+		}
+	}
 
 
-    // get the edge index (0-5) by the "global" edgeId
-    int Graph::getEdgeIndex(size_t edgeId) const {
-        for (const auto& tile : this->tiles) {
-            const auto localTileEdges = this->getTileEdges(tile);
-            for (int i = 0; i < 6; ++i) {
-                if (localTileEdges[i].getId() == edgeId) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
+	/**
+	* Returns std::nullopt if the tile is not found.
+	*/
+	std::optional<std::array<EdgeHandle, 6>> Graph::getTileEdges(const TileHandle tile) {
+		if (!this->doesTileExist(tile)) return std::nullopt;
+
+		auto it = this->tileEdges.find(tile->getId());
+		if (it != this->tileEdges.end()) return it->second;
+
+		return std::nullopt;
+	}
 
 
-    json Graph::serialize() const {
-    	json j;
+	/**
+	* Returns std::nullopt if the tile is not found.
+	*/
+	std::optional<std::array<VertexHandle, 6>> Graph::getTileVertices(const TileHandle tile) {
+		if (!this->doesTileExist(tile)) return std::nullopt;
 
-     	for (const auto& tile : this->tiles) {
-      		json tileJson;
-        	tileJson["id"] = tile.getId();
-			tileJson["meta"] = tile.serialize();
+		auto it = this->tileVertices.find(tile->getId());
+		if (it != this->tileVertices.end()) return it->second;
+
+		return std::nullopt;
+	}
+
+
+	/**
+	* Returns std::nullopt if the edge is not found.
+	*/
+	std::optional<std::array<VertexHandle, 2>> Graph::getEdgeVertices(const EdgeHandle edge) {
+		if (!this->doesEdgeExist(edge)) return std::nullopt;
+
+		auto it = this->edgeVertices.find(edge->getId());
+		if (it != this->edgeVertices.end()) return it->second;
+
+		return std::nullopt;
+	}
+
+
+	/**
+	* Returns std::nullopt if the vertex is not found.
+	*/
+	std::optional<std::array<EdgeHandle, 3>> Graph::getVertexEdges(const VertexHandle vertex) {
+		if (!this->doesVertexExist(vertex)) return std::nullopt;
+
+		auto it = this->vertexEdges.find(vertex->getId());
+		if (it != this->vertexEdges.end()) return it->second;
+
+		return std::nullopt;
+	}
+
+
+	/**
+	* Returns std::nullopt if the vertex is not found.
+	*/
+	std::optional<std::array<TileHandle, 3>> Graph::getVertexTiles(const VertexHandle vertex) {
+		if (!this->doesVertexExist(vertex)) return std::nullopt;
+
+		auto it = this->vertexTiles.find(vertex->getId());
+		if (it != this->vertexTiles.end()) return it->second;
+
+		return std::nullopt;
+	}
+
+
+	// get the edge index (0-5) by the "global" edgeId
+	size_t Graph::getEdgeIndex(size_t edgeId) {
+		if (!this->doesEdgeExist(edgeId)) return SIZE_MAX;
+
+		for (const auto& tile : this->tiles) {
+			if (auto localTileEdgesOpt = this->getTileEdges(tile.get()); localTileEdgesOpt) {
+				auto& localTileEdges = *localTileEdgesOpt;
+				auto it = std::ranges::find_if(
+					localTileEdges,
+					[&](EdgeHandle e) { return e->getId() == edgeId; }
+				);
+
+				if (it != localTileEdges.end()) return std::distance(localTileEdges.begin(), it);
+			}
+		}
+		return SIZE_MAX;
+	}
+
+
+	json Graph::serialize() const {
+		json j;
+
+		for (const auto& tile : this->tiles) {
+			json tileJson;
+			tileJson["id"] = tile->getId();
+			tileJson["meta"] = tile->serialize();
 
 			json edgesJson;
-            if (this->tileEdges.contains(tile.getId())) {
-                for (const auto& edge : this->tileEdges.at(tile.getId())) {
-                    if (this->edgeVertices.contains(edge.getId())) {
-                        const auto& v = this->edgeVertices.at(edge.getId());
-                        edgesJson[std::to_string(edge.getId())] = { v.at(0).getId(), v.at(1).getId() };
-
-                    } else fmt::println("Edge vertices not found for edge {}", edge.getId());
-                }
-
-            } else fmt::println("Tile edges not found for tile {}", tile.getId());
+			if (this->tileEdges.contains(tile->getId())) {
+				for (const auto& edge : this->tileEdges.at(tile->getId())) {
+					if (this->edgeVertices.contains(edge->getId())) {
+						const auto& v = this->edgeVertices.at(edge->getId());
+						edgesJson[std::to_string(edge->getId())] = { v.at(0)->getId(), v.at(1)->getId() };
+					} else {
+						fmt::println("Edge vertices not found for edge {}", edge->getId());
+					}
+				}
+			} else {
+				fmt::println("Tile edges not found for tile {}", tile->getId());
+			}
 
 			tileJson["edges"] = edgesJson;
-			j[std::to_string(tile.getId())] = tileJson;
-      	}
+			j[std::to_string(tile->getId())] = tileJson;
+		}
 
-      	return j;
-    }
+		return j;
+	}
 
 
-    // TODO: add error handling + sanity checks
-    // -> currently assumes correct JSON structure
-    void Graph::deserialize(const std::string& data) {
-    	json j = json::parse(data);
+	// TODO: CHECK / FIX THIS
+	// also: add error handling + sanity checks
+	// -> currently assumes correct JSON structure
+	// can throw...
+	void Graph::deserialize(const std::string& data) {
+		json j = json::parse(data);
 
 		auto& self = *this; // be able to modify members
 		self.tiles.clear();
@@ -300,221 +355,221 @@ namespace df {
 		self.tileEdges.clear();
 		self.edgeVertices.clear();
 
-        std::unordered_map<size_t, Vertex> verticesMap;
-        std::unordered_map<size_t, Edge> edgesMap;
+		std::unordered_map<size_t, VertexHandle> verticesMap;
+		std::unordered_map<size_t, EdgeHandle> edgesMap;
 
-        for (auto it = j.begin(); it != j.end(); ++it) {
-       		size_t tileId = std::stoul(it.key());
-         	const json& tileJson = it.value();
+		for (auto it = j.begin(); it != j.end(); ++it) {
+			size_t tileId = std::stoul(it.key());
+			const json& tileJson = it.value();
 
-          	// TODO: add robust input validation
-          	if (!tileJson.contains("edges") || !tileJson["edges"].is_object()) {
-           		throw std::runtime_error("Invalid JSON structure");
-           	}
+			// TODO: add robust input validation
+			if (!tileJson.contains("edges") || !tileJson["edges"].is_object()) {
+				throw std::runtime_error("Invalid JSON structure");
+			}
 
-          	Tile tile;
-          	tile.setId(tileId);
+			std::unique_ptr<Tile> tile = std::make_unique<Tile>();
+			tile->setId(tileId);
+			tile->deserialize(tileJson["meta"]);
+			self.addTile(std::move(tile));
 
-           	tile.deserialize(tileJson["meta"]);
-           	self.tiles.push_back(tile);
+			const auto& edgesJson = tileJson["edges"];
 
-            const auto& edgesJson = tileJson["edges"];
+			std::array<EdgeHandle, 6> tileEdgesArray{};
+			size_t edgeIndex = 0;
 
-            std::array<Edge, 6> tileEdgesArray{};
-            size_t edgeIndex = 0;
+			for (auto edgeIt = edgesJson.begin(); edgeIt != edgesJson.end(); ++edgeIt) {
+				if (!edgeIt.value().is_array() || edgeIt.value().size() != 2) {
+					throw std::runtime_error("Invalid JSON structure");
+				}
 
-            for (auto edgeIt = edgesJson.begin(); edgeIt != edgesJson.end(); ++edgeIt) {
-            	if (!edgeIt.value().is_array() || edgeIt.value().size() != 2) {
-           			throw std::runtime_error("Invalid JSON structure");
-             	}
+				size_t edgeId = std::stoul(edgeIt.key());
+				const json& verticesJson = edgeIt.value();
 
-           		size_t edgeId = std::stoul(edgeIt.key());
-             	const json& verticesJson = edgeIt.value();
+				Edge edge;
+				edge.setId(edgeId);
+				edgesMap.emplace(edgeId, &edge);
 
-              	Edge edge{edgeId};
-               	edgesMap.emplace(edgeId, edge);
+				size_t vId0 = verticesJson.at(0).get<size_t>();
+				size_t vId1 = verticesJson.at(1).get<size_t>();
 
-                size_t vId0 = verticesJson.at(0).get<size_t>();
-                size_t vId1 = verticesJson.at(1).get<size_t>();
+				Vertex v0(vId0);
+				Vertex v1(vId1);
 
-                Vertex v0{vId0};
-                Vertex v1{vId1};
+				verticesMap.emplace(vId0, &v0);
+				verticesMap.emplace(vId1, &v1);
 
-                verticesMap.emplace(vId0, v0);
-                verticesMap.emplace(vId1, v1);
+				self.edgeVertices[edgeId] = { verticesMap[vId0], verticesMap[vId1] };
+				if (edgeIndex < 6) { tileEdgesArray[edgeIndex++] = edgesMap.at(edgeId); }
+			}
 
-                self.edgeVertices[edgeId] = { verticesMap[vId0], verticesMap[vId1] };
-
-                if (edgeIndex < 6) { tileEdgesArray[edgeIndex++] = edgesMap.at(edgeId); }
-            }
-
-            self.tileEdges[tileId] = tileEdgesArray;
-        }
-
-        for (auto& [id, vertex] : verticesMap) { self.vertices.push_back(vertex); }
-        for (auto& [id, edge] : edgesMap) { self.edges.push_back(edge); }
-    }
-
-
-    /**
-     * Serialized the graph topology and stores it in json format into the specified file location.
-     */
-    void Graph::save(std::filesystem::path& to) {
-        std::ofstream file(to);
-
-        if (!file.is_open()) { throw std::runtime_error("Failed to open file for writing"); }
-
-        file << this->serialize().dump(4);
-        file.close();
-    }
+			self.tileEdges[tileId] = tileEdgesArray;
+		}
+		// TODO:
+		// for (auto& [id, vertex] : verticesMap) { self.vertices.push_back(vertex); }
+		// for (auto& [id, edge] : edgesMap) { self.edges.push_back(edge); }
+	}
 
 
-    /**
-     * Reads data from the specified file and deserializes it into the graph data type.
-     */
-    void Graph::load(std::filesystem::path& from) {
-        std::ifstream file(from);
+	/**
+	* Serialized the graph topology and stores it in json format into the specified file location.
+	* Throws if file could not be opened.
+	*/
+	void Graph::save(std::filesystem::path& to) {
+		std::ofstream file(to);
 
-        if (!file.is_open()) { throw std::runtime_error("Failed to open file for reading"); }
+		if (!file.is_open()) { throw std::runtime_error("Failed to open file for writing"); }
 
-        std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        file.close();
-
-        this->deserialize(data);
-    }
-
+		file << this->serialize().dump(4);
+		file.close();
+	}
 
 
+	/**
+	* Reads data from the specified file and deserializes it into the graph data type.
+	* Throws if file could not be opened.
+	*/
+	void Graph::load(std::filesystem::path& from) {
+		std::ifstream file(from);
 
-    /**
-     * Gets ids of *all* neighbors, regardless of node-type.
-     * This means that ids must be unique over all node-types
-     */
-    std::vector<size_t> Graph::getNeighborIds(size_t id) const {
-        std::vector<size_t> neighbors;
+		if (!file.is_open()) { throw std::runtime_error("Failed to open file for reading"); }
 
-        // Check for id being of a Tile:
-        if (auto it = this->tileEdges.find(id); it != this->tileEdges.end()) {
-            for (const auto& edge : it->second) {
-                if (edge.getId() != SIZE_MAX) {
-                	neighbors.push_back(edge.getId());
-                }
-            }
-        }
-        if (auto it = this->tileVertices.find(id); it != this->tileVertices.end()) {
-            for (const auto& vertex : it->second) {
-                if (vertex.getId() != SIZE_MAX) {
-                	neighbors.push_back(vertex.getId());
-                }
-            }
-        }
+		std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+		file.close();
 
-        // Check for id being of an edge:
-        if (auto it = this->edgeVertices.find(id); it != this->edgeVertices.end()) {
-            for (const auto& vertex : it->second) {
-                if (vertex.getId() != SIZE_MAX) {
-                	neighbors.push_back(vertex.getId());
-                }
-            }
-        }
-
-        // Check for id being of a vertex:
-        if (auto it = this->vertexEdges.find(id); it != this->vertexEdges.end()) {
-            for (const auto& edge : it->second) {
-                if (edge.getId() != SIZE_MAX) {
-                	neighbors.push_back(edge.getId());
-                }
-            }
-        }
-        if (auto it = this->vertexTiles.find(id); it != this->vertexTiles.end()) {
-            for (const auto& tile : it->second) {
-                if (tile.getId() != SIZE_MAX) {
-                	neighbors.push_back(tile.getId());
-                }
-            }
-        }
-
-        return neighbors;
-    }
+		this->deserialize(data);
+	}
 
 
-    // TODO: make sure that T has attribute "id"
-    /**
-     * BFS finds shortest number of hops between nodes.
-     * This can be used for checking road distances etc.
-     * Search the graph into the breadth first -> first all nodes with distance 1,
-     * then all with distance 2, etc.
-     */
-    template <HasIdProperty T>
-    std::vector<T> Graph::breadthFirstSearch(const T& start) const {
-        std::vector<T> sequence;
-        std::unordered_set<size_t> visitedIds;
-        std::queue<size_t> q;
-
-        q.push(start.getId());
-        visitedIds.insert(start.getId());
-
-        while (!q.empty()) {
-            const size_t currentId = q.front();
-            q.pop();
-            sequence.push_back(T{currentId});
-
-            for (size_t neighbor : this->getNeighborIds(currentId)) {
-                if (!visitedIds.count(neighbor)) {
-                    visitedIds.insert(neighbor);
-                    q.push(neighbor);
-                }
-            }
-        }
-
-        return sequence;
-    }
 
 
-    // same as with BFS: make sure that T has "id"
-    template <HasIdProperty T>
-    std::vector<T> Graph::depthFirstSearch(const T& start) const {
-        std::vector<T> sequence;
-        std::unordered_set<size_t> visited;
-        std::stack<size_t> s;
+	/**
+	* Gets ids of *all* neighbors, regardless of node-type.
+	* This means that ids must be unique over all node-types
+	*/
+	std::vector<size_t> Graph::getNeighborIds(size_t id) const {
+		std::vector<size_t> neighbors;
 
-        s.push(start.getId());
+		// Check for id being of a Tile:
+		if (auto it = this->tileEdges.find(id); it != this->tileEdges.end()) {
+			for (const auto& edge : it->second) {
+				if (edge->getId() != SIZE_MAX) {
+					neighbors.push_back(edge->getId());
+				}
+			}
+		}
+		if (auto it = this->tileVertices.find(id); it != this->tileVertices.end()) {
+			for (const auto& vertex : it->second) {
+				if (vertex->getId() != SIZE_MAX) {
+					neighbors.push_back(vertex->getId());
+				}
+			}
+		}
 
-        while (!s.empty()) {
-            const size_t currentId = s.top();
-            s.pop();
+		// Check for id being of an edge:
+		if (auto it = this->edgeVertices.find(id); it != this->edgeVertices.end()) {
+			for (const auto& vertex : it->second) {
+				if (vertex->getId() != SIZE_MAX) {
+					neighbors.push_back(vertex->getId());
+				}
+			}
+		}
 
-            if (visited.count(currentId)) {
-                continue;
-            }
+		// Check for id being of a vertex:
+		if (auto it = this->vertexEdges.find(id); it != this->vertexEdges.end()) {
+			for (const auto& edge : it->second) {
+				if (edge->getId() != SIZE_MAX) {
+					neighbors.push_back(edge->getId());
+				}
+			}
+		}
 
-            visited.insert(currentId);
-            sequence.push_back(T{currentId});
+		if (auto it = this->vertexTiles.find(id); it != this->vertexTiles.end()) {
+			for (const auto& tile : it->second) {
+				if (tile->getId() != SIZE_MAX) {
+					neighbors.push_back(tile->getId());
+				}
+			}
+		}
 
-            auto neighbors = this->getNeighborIds(currentId);
-            std::reverse(neighbors.begin(), neighbors.end());
-
-            for (size_t neighbor : neighbors) {
-                if (!visited.count(neighbor)) {
-                    s.push(neighbor);
-                }
-            }
-        }
-
-        return sequence;
-    }
+		return neighbors;
+	}
 
 
-    // works for weighted graphs -> could be useful later when different terrain yields different
-    // difficulties for travel. Also rule-based AI might use this for building roads and stuff...
-    // Algorithm calculates shortest paths to nodes *of same type*; TODO: need to think about this more
-    template<HasIdProperty T>
-    std::vector<T> Graph::dijkstra(const T& start) const {
-   		constexpr double INF = std::numeric_limits<double>::infinity();
+	/**
+	 * BFS finds shortest number of hops between nodes.
+	 * This can be used for checking road distances etc.
+	 * Search the graph into the breadth first -> first all nodes with distance 1,
+	 * then all with distance 2, etc.
+	 */
+	template <HasIdProperty T>
+	std::vector<T> Graph::breadthFirstSearch(const T& start) const {
+		std::vector<T> sequence;
+		std::unordered_set<size_t> visitedIds;
+		std::queue<size_t> q;
 
-     	// map nodeId -> current best distance
-     	std::unordered_map<size_t, double> distance;
-      	std::unordered_map<size_t, size_t> previous;
+		q.push(start.getId());
+		visitedIds.insert(start.getId());
+
+		while (!q.empty()) {
+			const size_t currentId = q.front();
+			q.pop();
+			sequence.push_back(T{currentId});
+
+			for (size_t neighbor : this->getNeighborIds(currentId)) {
+				if (!visitedIds.count(neighbor)) {
+					visitedIds.insert(neighbor);
+					q.push(neighbor);
+				}
+			}
+		}
+
+		return sequence;
+	}
+
+
+	template <HasIdProperty T>
+	std::vector<T> Graph::depthFirstSearch(const T& start) const {
+		std::vector<T> sequence;
+		std::unordered_set<size_t> visited;
+		std::stack<size_t> s;
+
+		s.push(start.getId());
+
+		while (!s.empty()) {
+			const size_t currentId = s.top();
+			s.pop();
+
+			if (visited.count(currentId)) {
+				continue;
+			}
+
+			visited.insert(currentId);
+			sequence.push_back(T{currentId});
+
+			auto neighbors = this->getNeighborIds(currentId);
+			std::reverse(neighbors.begin(), neighbors.end());
+
+			for (size_t neighbor : neighbors) {
+				if (!visited.count(neighbor)) {
+					s.push(neighbor);
+				}
+			}
+		}
+
+		return sequence;
+	}
+
+
+	// works for weighted graphs -> could be useful later when different terrain yields different
+	// difficulties for travel. Also rule-based AI might use this for building roads and stuff...
+	// Algorithm calculates shortest paths to nodes *of same type*; TODO: need to think about this more
+	template<HasIdProperty T>
+	std::vector<T> Graph::dijkstra(const T& start) const {
+		constexpr double INF = std::numeric_limits<double>::infinity();
+
+		// map nodeId -> current best distance
+		std::unordered_map<size_t, double> distance;
+		std::unordered_map<size_t, size_t> previous;
 
 		// regard only certain type of nodes -> decide what T actually is
 		const std::vector<T>& nodes = [this]() -> const std::vector<T>& {
@@ -571,58 +626,71 @@ namespace df {
 		}
 
 		return reachableNodes;
-    }
+	}
 
-    // Get the distance between two nodes (of same type) using basic BFS implementaiton
-    template<HasIdProperty T>
-    size_t Graph::getDistanceBetween(const T& start, const T& end) const {
-        const size_t startId = start.getId();
-        const size_t endId = end.getId();
 
-        if (startId == endId) return 0;
+	// Get the distance between two nodes (of same type) using basic BFS implementaiton
+	template<HasIdProperty T>
+	size_t Graph::getDistanceBetween(const T& start, const T& end) const {
+		const size_t startId = start.getId();
+		const size_t endId = end.getId();
 
-        std::queue<size_t> q;
-        std::unordered_map<size_t, size_t> distances;
-        std::unordered_set<size_t> visited;
+		if (startId == endId) return 0;
 
-        q.push(startId);
-        visited.insert(startId);
-        distances[startId] = 0;
+		std::queue<size_t> q;
+		std::unordered_map<size_t, size_t> distances;
+		std::unordered_set<size_t> visited;
 
-        while (!q.empty()) {
-            size_t currentId = q.front();
-            q.pop();
+		q.push(startId);
+		visited.insert(startId);
+		distances[startId] = 0;
 
-            for (size_t neighbourId : this->getNeighborIds(currentId)) {
-                if (visited.find(neighbourId) == visited.end()) {
-                    visited.insert(neighbourId);
-                    distances[neighbourId] = distances[currentId] + 1;
+		while (!q.empty()) {
+			size_t currentId = q.front();
+			q.pop();
 
-                    if (neighbourId == endId) {
-                        return distances[neighbourId];
-                    }
+			for (size_t neighbourId : this->getNeighborIds(currentId)) {
+				if (visited.find(neighbourId) == visited.end()) {
+					visited.insert(neighbourId);
+					distances[neighbourId] = distances[currentId] + 1;
 
-                    q.push(neighbourId);
-                }
-            }
-        }
+					if (neighbourId == endId) {
+						return distances[neighbourId];
+					}
 
-        return SIZE_MAX; // no path
-    }
+					q.push(neighbourId);
+				}
+			}
+		}
 
-    // Explicit template instantiation for Tile (currently only used for Tile)
-    template size_t Graph::getDistanceBetween<Tile>(const Tile& start, const Tile& end) const;
+		return SIZE_MAX; // no path
+	}
 
-    // Map methods
+
+	// Explicit template instantiation for Tile (currently only used for Tile)
+	template size_t Graph::getDistanceBetween<Tile>(const Tile& start, const Tile& end) const;
+
+	// Map methods
 	void Graph::regenerate(const WorldGeneratorConfig &worldGeneratorConfig) {
 		if (const Result<std::vector<Tile>, ResultError> generatedTiles = WorldGenerator::generateTiles(worldGeneratorConfig); generatedTiles.isOk()) {
 			setMapWidth(worldGeneratorConfig.columns);
-			tiles = generatedTiles.unwrap();
+			// tiles = generatedTiles.unwrap();
+			this->initializeTilesForGraph(generatedTiles.unwrap());
 			try { this->populate(); }
 			catch (const std::exception& e) { std::cerr << "Error populating graph: " << e.what() << std::endl; }
 			this->renderUpdateRequested = true;
 		} else {
 			std::cerr << generatedTiles.unwrapErr() << std::endl;
+		}
+	}
+
+
+	void Graph::initializeTilesForGraph(std::vector<Tile> newTiles) {
+		if (newTiles.empty()) return;
+
+		for (auto newTile : newTiles) {
+			std::unique_ptr<Tile> tile = std::make_unique<Tile>(newTile.getId(), newTile.getType(), newTile.getPotency());
+			this->addTile(std::move(tile));
 		}
 	}
 
@@ -758,59 +826,79 @@ namespace df {
 		// Calculate the maximum tile ID to avoid ID conflicts
 		// Vertex IDs will start at maxTileId + 1, edge IDs at maxTileId + 1000000 -> TODO: make more flexible (although this sould be enough)
 		size_t maxTileId = 0;
-		for (const auto& tile : this->tiles) if (tile.getId() > maxTileId) maxTileId = tile.getId();
+		for (const auto& tile : this->tiles) if (tile->getId() > maxTileId) maxTileId = tile->getId();
 
 		size_t nextVertexId = maxTileId + 1;
 		size_t nextEdgeId = maxTileId + 1000000;
 
 		for (const auto& tile : this->tiles) {
-			size_t tileId = tile.getId();
-			std::array<Edge, 6> tileEdgesArray{};
-			std::array<Vertex, 6> tileVerticesArray{};
+			size_t tileId = tile->getId();
+			std::array<EdgeHandle, 6> tileEdgesArray{};
+			std::array<VertexHandle, 6> tileVerticesArray{};
 
 			for (size_t vi = 0; vi < 6; ++vi) {
 				// canonical key for vertex
 				auto key = getVertexKey(tileId, vi);
+				VertexHandle tmpVertex = nullptr;
 				size_t vertexId;
 
-				// check if already exists
-				if (vertexIdMap.find(key) != vertexIdMap.end()) {
-					vertexId = vertexIdMap[key];
+				// if already exists, use existing vertex, else add unique new one
+				if (auto it = vertexIdMap.find(key); it != vertexIdMap.end()) {
+					vertexId = it->second;
+					try {
+						tmpVertex = this->getVertex(vertexId);
+					} catch (std::exception& e) {
+						fmt::println("Error while getting vertex by id ({}): {}", vertexId, e.what());
+						continue;
+					}
 				} else {
 					vertexId = nextVertexId++;
-					Vertex vertex(vertexId);
-					this->addVertex(vertex);
+
+					auto vertex = std::make_unique<Vertex>(vertexId);
+					tmpVertex = vertex.get();
+					this->addVertex(std::move(vertex));
+
 					vertexIdMap[key] = vertexId;
 				}
 
 				// store in tileVertices array and connect to tile
-				tileVerticesArray[vi] = Vertex(vertexId);
-				this->connectVertexToTile(Vertex(vertexId), tile);
+				tileVerticesArray[vi] = tmpVertex;
+				this->connectVertexToTile(tmpVertex, tile.get());
 			}
 
 			// simliar to above
 			for (size_t ei = 0; ei < 6; ++ei) {
 				auto key = getEdgeKey(tileId, ei);
+				EdgeHandle tmpEdge = nullptr;
 				size_t edgeId;
 
-				if (edgeIdMap.find(key) != edgeIdMap.end()) {
-					edgeId = edgeIdMap[key];
+				if (auto it = edgeIdMap.find(key); it != edgeIdMap.end()) {
+					edgeId = it->second;
+					try {
+						tmpEdge = this->getEdge(edgeId);
+					} catch (std::exception& e) {
+						fmt::println("Error while getting edge by id ({}): {}", edgeId, e.what());
+						continue;
+					}
 				} else {
 					edgeId = nextEdgeId++;
-					Edge edge(edgeId);
-					this->addEdge(edge);
+
+					auto edge = std::make_unique<Edge>(edgeId);
+					tmpEdge = edge.get();
+					this->addEdge(std::move(edge));
+
 					edgeIdMap[key] = edgeId;
 				}
 
-				tileEdgesArray[ei] = Edge(edgeId);
-				this->connectEdgeToTile(tile, Edge(edgeId));
+				tileEdgesArray[ei] = tmpEdge;
+				this->connectEdgeToTile(tile.get(), tmpEdge);
 
 				//connect edge to the 2 vertices
 				// Edge i connects vertex i to vertex (i+1) % 6
 				auto vertex1Key = getVertexKey(tileId, ei);
 				auto vertex2Key = getVertexKey(tileId, (ei + 1) % 6);
-				this->connectVertexToEdge(Edge(edgeId), Vertex(vertexIdMap[vertex1Key]));
-				this->connectVertexToEdge(Edge(edgeId), Vertex(vertexIdMap[vertex2Key]));
+				this->connectVertexToEdge(tmpEdge, this->getVertex(vertexIdMap[vertex1Key]));
+				this->connectVertexToEdge(tmpEdge, this->getVertex(vertexIdMap[vertex2Key]));
 			}
 
 			// store for this tile
@@ -820,26 +908,30 @@ namespace df {
 
 		// populate reverse lookup maps
 		for (const auto& vertex : this->vertices) {
-			size_t vertexId = vertex.getId();
-			std::array<Edge, 3> vertexEdgesArray{};
-			std::array<Tile, 3> vertexTilesArray{};
+			size_t vertexId = vertex->getId();
+			std::array<EdgeHandle, 3> vertexEdgesArray{};
+			std::array<TileHandle, 3> vertexTilesArray{};
 			size_t edgeCount = 0;
 			size_t tileCount = 0;
 
 			for (const auto& edge : this->edges) {
-				for (const auto& v : this->getEdgeVertices(edge)) {
-					if (v.getId() == vertexId && edgeCount < 3) {
-						vertexEdgesArray[edgeCount++] = edge;
-						break;
+				if (auto edgeVerticesOpt = this->getEdgeVertices(edge.get()); edgeVerticesOpt) {
+					for (const auto& v : *edgeVerticesOpt) {
+						if (v->getId() == vertexId && edgeCount < 3) {
+							vertexEdgesArray[edgeCount++] = edge.get();
+							break;
+						}
 					}
 				}
 			}
 
 			for (const auto& tile : this->tiles) {
-				for (const auto& v : this->getTileVertices(tile)) {
-					if (v.getId() == vertexId && tileCount < 3) {
-						vertexTilesArray[tileCount++] = tile;
-						break;
+				if (auto tileVerticesOpt = this->getTileVertices(tile.get()); tileVerticesOpt) {
+					for (const auto& v : *tileVerticesOpt) {
+						if (v->getId() == vertexId && tileCount < 3) {
+							vertexTilesArray[tileCount++] = tile.get();
+							break;
+						}
 					}
 				}
 			}
