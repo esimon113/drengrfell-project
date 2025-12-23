@@ -15,13 +15,13 @@ namespace df {
 			static AudioSystem init() noexcept;
 			void deinit() noexcept;
 
-			inline ma_sound* getBackgroundMusic() noexcept { return backgroundMusic; }
+			ma_sound* getBackgroundMusic() noexcept { return backgroundMusic; }
 
 
 		private:
 			ma_engine* engine;
 			ma_sound* backgroundMusic;
 
-			ma_sound* loadSound(const assets::Sound asset) noexcept;
+			ma_sound* loadSound(assets::Sound asset) noexcept;
 	};
 }

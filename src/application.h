@@ -39,7 +39,7 @@ namespace df {
 			Window* debugWindow = nullptr;
 			Registry* registry;
 
-			// AudioSystem* audioEngine;
+			AudioSystem* audioEngine;
 
 			WorldSystem world;
 			// PhysicsSystem physics;

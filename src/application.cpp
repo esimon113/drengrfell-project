@@ -54,10 +54,12 @@ namespace df {
 		}
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+		self.audioEngine = new AudioSystem;
+		*self.audioEngine = AudioSystem::init();
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
 		self.gameController = std::make_shared<GameController>(*self.gameState);
-		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
+		self.world = WorldSystem::init(self.window, self.registry, self.audioEngine, *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
 		// Create main menu
@@ -81,6 +83,10 @@ namespace df {
 	}
 
 	void Application::run() noexcept {
+		ma_sound* music = this->audioEngine->getBackgroundMusic();
+		ma_sound_set_looping(music, MA_TRUE);
+		ma_sound_start(music);
+
 		// Store RenderTextSystem in registry to use it in any other System.
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
 		if (!this->window || !this->window->getHandle()) {
