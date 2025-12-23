@@ -16,7 +16,7 @@
 #include <iostream>
 #include <fstream>
 
-
+#include "events/eventBus.h"
 
 
 namespace df {
@@ -55,8 +55,7 @@ namespace df {
 		}
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-		self.audioEngine = new AudioSystem;
-		*self.audioEngine = AudioSystem::init();
+		self.audioEngine = new AudioSystem();
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
 		self.gameController = std::make_shared<GameController>(*self.gameState);
@@ -76,6 +75,7 @@ namespace df {
 	}
 
 	void Application::deinit() noexcept {
+		delete audioEngine;
 		render.deinit();
 		delete registry;
 		window->deinit();
@@ -84,9 +84,7 @@ namespace df {
 	}
 
 	void Application::run() noexcept {
-		ma_sound* music = this->audioEngine->getBackgroundMusic();
-		ma_sound_set_looping(music, MA_TRUE);
-		ma_sound_start(music);
+		EventBus::getInstance().playSoundRequested.emit("music");
 
 		// Store RenderTextSystem in registry to use it in any other System.
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
