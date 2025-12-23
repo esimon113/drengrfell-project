@@ -249,9 +249,9 @@ namespace df {
     // get the edge index (0-5) by the "global" edgeId
     int Graph::getEdgeIndex(size_t edgeId) const {
         for (const auto& tile : this->tiles) {
-            const auto tileEdges = this->getTileEdges(tile);
+            const auto localTileEdges = this->getTileEdges(tile);
             for (int i = 0; i < 6; ++i) {
-                if (tileEdges[i].getId() == edgeId) {
+                if (localTileEdges[i].getId() == edgeId) {
                     return i;
                 }
             }

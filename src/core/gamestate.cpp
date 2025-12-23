@@ -187,8 +187,8 @@ namespace df {
         s = *settlement; // Copy data to ECS
 
         // Add position and scale components for rendering
-        const Graph& map = this->map;
-        glm::vec2 worldPosition = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), map);
+        const Graph& localMap = this->map;
+        glm::vec2 worldPosition = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), localMap);
         registry->positions.emplace(e) = worldPosition;
         registry->scales.emplace(e) = glm::vec2(0.5f, 0.5f); // Scale to match hexagon size -> 1/2 hex radius
 
@@ -206,13 +206,13 @@ namespace df {
         r = *road; // Copy data to ECS
 
         // Add position and scale components for rendering
-        const Graph& map = this->map;
-        glm::vec2 worldPosition = WorldNodeMapper::getWorldPositionForEdge(road->getEdgeId(), map);
+        const Graph& localMap = this->map;
+        glm::vec2 worldPosition = WorldNodeMapper::getWorldPositionForEdge(road->getEdgeId(), localMap);
         registry->positions.emplace(e) = worldPosition;
         registry->scales.emplace(e) = glm::vec2(1.0f, 1.0f);
 
         // edge index is required for selecting the correcxt texture
-        int edgeIndex = map.getEdgeIndex(road->getEdgeId());
+        int edgeIndex = localMap.getEdgeIndex(road->getEdgeId());
         registry->roadEdgeIndices.emplace(e) = edgeIndex;
 
         roads.push_back(road);
