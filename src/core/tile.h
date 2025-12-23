@@ -67,4 +67,7 @@ namespace df {
 			bool isResourceTile() const;
 			float getPotencyProbability(types::TilePotency potency) const;
 	};
+
+
+	using TileHandle = Tile*;
 }

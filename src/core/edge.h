@@ -43,4 +43,7 @@ namespace df {
 			std::optional<size_t> roadId;
 			types::EdgeDirection direction = types::EdgeDirection::VERTICAL;	// Standard direction, needs to be set inside the construction once the map layout is decided in the team
 	};
+
+
+	using EdgeHandle = Edge*;
 }

@@ -39,4 +39,7 @@ namespace df {
 			size_t id;
 			std::optional<size_t> settlementId;
 	};
+
+
+	using VertexHandle = Vertex*;
 }
