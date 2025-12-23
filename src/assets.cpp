@@ -52,6 +52,8 @@ namespace df {
 		"settlements/viking-wood/viking-wood-settlement4.png",
 		"settlements/viking-wood/viking-wood-settlement5.png",
 		"roads/dirtRoad/dirt_road_diagonal_up.png",
+		"roads/dirtRoad/dirt_road_diagonal_down.png",
+		"roads/dirtRoad/dirt_road_vertical.png",
 		"roads/pathRoad/path_road_vertical.png",
 		"mainMenu/temp_menu_background.png",
 		"mainMenu/temp_menu_title.png",

@@ -62,6 +62,8 @@ namespace df {
             std::array<Edge, 3> getVertexEdges(const Vertex& vertex) const;
             std::array<Tile, 3> getVertexTiles(const Vertex& vertex) const;
 
+            int getEdgeIndex(size_t edgeId) const;
+
             const std::vector<Tile>& getTiles() const { return this->tiles; }
             const std::vector<Edge>& getEdges() const { return this->edges; }
             const std::vector<Vertex>& getVertices() const { return this->vertices; }

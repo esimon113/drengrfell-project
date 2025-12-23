@@ -28,12 +28,13 @@ namespace df {
 
 		self->containers[6] = &self->colors;
 		self->containers[7] = &self->roads;
-		self->containers[8] = &self->settlements;
-		self->containers[9] = &self->buildingPreviews;
+		self->containers[8] = &self->roadEdgeIndices;
+		self->containers[9] = &self->settlements;
+		self->containers[10] = &self->buildingPreviews;
 
-		self->containers[10] = &self->cameras;
-		self->containers[11] = &self->cameraInputs;
-		self->containers[12] = &self->animations;
+		self->containers[11] = &self->cameras;
+		self->containers[12] = &self->cameraInputs;
+		self->containers[13] = &self->animations;
 
 		return self;
 	}

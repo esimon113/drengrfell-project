@@ -211,6 +211,10 @@ namespace df {
         registry->positions.emplace(e) = worldPosition;
         registry->scales.emplace(e) = glm::vec2(1.0f, 1.0f);
 
+        // edge index is required for selecting the correcxt texture
+        int edgeIndex = map.getEdgeIndex(road->getEdgeId());
+        registry->roadEdgeIndices.emplace(e) = edgeIndex;
+
         roads.push_back(road);
     }
 

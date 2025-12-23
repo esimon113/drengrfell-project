@@ -21,7 +21,9 @@ namespace df {
 		self.viewport.size = self.window->getWindowExtent();
 
 		self.spriteShader = Shader::init(assets::Shader::sprite).value();
-		self.roadTexture = Texture::init(assets::Texture::PATH_ROAD_VERTICAL);
+		self.roadTextureDiagonalUp = Texture::init(assets::Texture::DIRT_ROAD_DIAGONAL_UP);
+		self.roadTextureDiagonalDown = Texture::init(assets::Texture::DIRT_ROAD_DIAGONAL_DOWN);
+		self.roadTextureVertical = Texture::init(assets::Texture::DIRT_ROAD_VERTICAL);
 
 		// Load all settlement textures
 		self.settlementTextures[0] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT1);
@@ -72,7 +74,9 @@ namespace df {
 
 	void RenderBuildingsSystem::deinit() noexcept {
 		spriteShader.deinit();
-		roadTexture.deinit();
+		roadTextureDiagonalUp.deinit();
+		roadTextureDiagonalDown.deinit();
+		roadTextureVertical.deinit();
 
 		for (auto& tex : settlementTextures) {
 			tex.deinit();
@@ -146,11 +150,20 @@ namespace df {
 			const glm::vec2& worldPos = registry->positions.get(e);
 			const glm::vec2& scale = registry->scales.get(e);
 
+			int edgeIndex = this->registry->roadEdgeIndices.has(e) ? this->registry->roadEdgeIndices.get(e) : -1;
+
+			Texture* roadTexture = nullptr;
+			if (edgeIndex == 0 || edgeIndex == 3) roadTexture = &roadTextureDiagonalDown;
+			else if (edgeIndex == 2 || edgeIndex == 5) roadTexture = &roadTextureDiagonalUp;
+			else if (edgeIndex == 1 || edgeIndex == 4) roadTexture = &roadTextureVertical;
+			else roadTexture = &roadTextureVertical;
+
 			glm::mat4 model = glm::identity<glm::mat4>();
 			model = glm::translate(model, glm::vec3(worldPos, 0.0f));
 			model = glm::scale(model, glm::vec3(scale, 1.0f));
 
-			roadTexture.bind(0);
+			assert(roadTexture != nullptr); // should not fail
+			roadTexture->bind(0);
 			spriteShader.use()
 				.setMat4("model[0]", model)
 				.setMat4("view", view)

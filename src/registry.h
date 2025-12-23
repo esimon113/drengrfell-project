@@ -39,6 +39,7 @@ namespace df {
 
 			ComponentContainer<glm::vec3> colors;
 			ComponentContainer<Road> roads;
+			ComponentContainer<int> roadEdgeIndices; // autoselect correct road-texture for edge angle
 			ComponentContainer<Settlement> settlements;
 			ComponentContainer<BuildingPreviewComponent> buildingPreviews;
 
@@ -68,7 +69,7 @@ namespace df {
 
 
 		private:
-			std::array<ContainerInterface*, 13> containers;
+			std::array<ContainerInterface*, 14> containers;
 
 			Entity player;
 			Entity camera;

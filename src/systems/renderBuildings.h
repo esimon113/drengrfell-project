@@ -42,7 +42,10 @@ namespace df {
 			Framebuffer intermediateFramebuffer;
 
 			Shader spriteShader; // For placed buildings (no pulsing effect)
-			Texture roadTexture; // For actual roads
+			// different texture for different edge angles:
+			Texture roadTextureDiagonalUp; // 0, 3
+			Texture roadTextureDiagonalDown; // 2, 5
+			Texture roadTextureVertical; // 1, 4
 			std::array<Texture, 5> settlementTextures; // wood settlement textures for animation
 
 			GLuint m_quad_vao;
