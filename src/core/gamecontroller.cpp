@@ -1,8 +1,12 @@
 #include <map>
 #include <optional>
+#include <stdexcept>
+#include "edge.h"
 #include "fmt/base.h"
 
 #include "hero.h"
+#include "tile.h"
+#include "vertex.h"
 #include "gamecontroller.h"
 
 
@@ -63,9 +67,9 @@ namespace df {
 
             const auto tileIds = this->getSettlementTiles(*settlement);
             for (size_t tileId : tileIds) {
-                const Tile& tile = this->gameState.getMap().getTile(tileId);
-                if (tile.givesResourceThisTurn(this->rng)) {
-                    player.addResources(tile.getType(), 1); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
+                const TileHandle tile = this->gameState.getMap().getTile(tileId);
+                if (tile->givesResourceThisTurn(this->rng)) {
+                    player.addResources(tile->getType(), 1); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
                 }
             }
         }
@@ -87,10 +91,10 @@ namespace df {
         Graph& map = this->gameState.getMap();
 
         try {
-            Tile& tile = map.getTile(tileId);
+            TileHandle tile = map.getTile(tileId);
 
             if (!player.isTileExplored(tileId)) {
-                tile.addVisibleForPlayers(player.getId());
+                tile->addVisibleForPlayers(player.getId());
                 player.exploreTile(tileId);
             }
         } catch (const std::exception&) {} // invalid tile -> ignore
@@ -107,9 +111,9 @@ namespace df {
         const int currentTileId = hero->getTileID(); // TODO: use size_t in hero
         size_t distance = 0;
         if (currentTileId >= 0) {
-            const auto& map = this->gameState.getMap();
-            auto currentTile = map.getTile(currentTileId);
-            auto targetTile = map.getTile(targetTileId);
+            const Graph& map = this->gameState.getMap();
+            const TileHandle currentTile = map.getTile(currentTileId);
+            const TileHandle targetTile = map.getTile(targetTileId);
             distance = map.getDistanceBetween(currentTile, targetTile);
 
             if (distance == SIZE_MAX) { return false; }
@@ -140,10 +144,10 @@ namespace df {
         const Graph& map = this->gameState.getMap();
         try {
             // Find vertex by ID (not index)
-            const Vertex* vertex = nullptr;
+            VertexHandle vertex = nullptr;
             for (size_t i = 0; i < map.getVertexCount(); ++i) {
-                if (map.getVertex(i).getId() == vertexId) {
-                    vertex = &map.getVertex(i);
+                if (map.getVertex(i)->getId() == vertexId) {
+                    vertex = map.getVertex(i);
                     break;
                 }
             }
@@ -180,10 +184,10 @@ namespace df {
 
         try {
             // Find vertex by ID (not index) - vertexId is the ID stored in the Vertex object
-            Vertex* vertex = nullptr;
+            VertexHandle vertex = nullptr;
             for (size_t i = 0; i < map.getVertexCount(); ++i) {
-                if (map.getVertex(i).getId() == vertexId) {
-                    vertex = &map.getVertex(i);
+                if (map.getVertex(i)->getId() == vertexId) {
+                    vertex = map.getVertex(i);
                     break;
                 }
             }
@@ -211,6 +215,7 @@ namespace df {
                 newSettlementId = maxId + 1;
             }
 
+            // TODO: rethink ownership of settlement
             auto newSettlement = std::make_shared<Settlement>(newSettlementId, playerId, vertexId, buildingCost);
 
             vertex->setSettlementId(newSettlementId);
@@ -241,10 +246,10 @@ namespace df {
 
         try {
             // Find edge by ID (not index)
-            const Edge* edge = nullptr;
+            EdgeHandle edge = nullptr;
             for (size_t i = 0; i < map.getEdgeCount(); ++i) {
-                if (map.getEdge(i).getId() == edgeId) {
-                    edge = &map.getEdge(i);
+                if (map.getEdge(i)->getId() == edgeId) {
+                    edge = map.getEdge(i);
                     break;
                 }
             }
@@ -279,10 +284,10 @@ namespace df {
         auto* step = this->gameState.getCurrentTutorialStep();
         try {
             // Find edge by ID (not index)
-            Edge* edge = nullptr;
+            EdgeHandle edge = nullptr;
             for (size_t i = 0; i < map.getEdgeCount(); ++i) {
-                if (map.getEdge(i).getId() == edgeId) {
-                    edge = &map.getEdge(i);
+                if (map.getEdge(i)->getId() == edgeId) {
+                    edge = map.getEdge(i);
                     break;
                 }
             }
@@ -335,19 +340,22 @@ namespace df {
         const Graph& map = this->gameState.getMap();
         try {
             // Find vertex by ID (not index)
-            const Vertex* vertex = nullptr;
+            VertexHandle vertex = nullptr;
             for (size_t i = 0; i < map.getVertexCount(); ++i) {
-                if (map.getVertex(i).getId() == settlement.getVertexId()) {
-                    vertex = &map.getVertex(i);
+                if (map.getVertex(i)->getId() == settlement.getVertexId()) {
+                    vertex = map.getVertex(i);
                     break;
                 }
             }
             if (!vertex) { return tileIds; }
 
-            const auto tiles = map.getVertexTiles(*vertex);
-            for (const auto& tile : tiles) {
-                if (tile.getId() != SIZE_MAX) {
-                    tileIds.push_back(tile.getId());
+            const VertexHandle vh = vertex;
+            auto tilesOpt = map.getVertexTiles(vh);
+            if (!tilesOpt) return tileIds; // std::nullopt
+
+            for (const auto& tile : *tilesOpt) {
+                if (tile->getId() != SIZE_MAX) {
+                    tileIds.push_back(tile->getId());
                 }
             }
         } catch (const std::exception&) {} // ignore invalid vertex
@@ -363,23 +371,27 @@ namespace df {
 
         try {
             // Find vertex by ID (not index)
-            const Vertex* vertex = nullptr;
+            VertexHandle vertex = nullptr;
             for (size_t i = 0; i < map.getVertexCount(); ++i) {
-                if (map.getVertex(i).getId() == vertexId) {
-                    vertex = &map.getVertex(i);
+                if (map.getVertex(i)->getId() == vertexId) {
+                    vertex = map.getVertex(i);
                     break;
                 }
             }
             if (!vertex) { return true; }
 
-            const auto edges = map.getVertexEdges(*vertex);
-            for (const auto& edge : edges) {
-                if (edge.getId() == SIZE_MAX) { continue; }
+            const auto edgesOpt = map.getVertexEdges(vertex);
+            if (!edgesOpt) return false; // std::nullopt
 
-                const auto vertices = map.getEdgeVertices(edge);
-                for (const auto& neighbour : vertices) {
-                    if (neighbour.getId() == SIZE_MAX || neighbour.getId() == vertexId) { continue; }
-                    if (neighbour.hasSettlement()) { return true; }
+            for (const auto& edge : *edgesOpt) {
+                if (edge->getId() == SIZE_MAX) { continue; }
+
+                const auto verticesOpt = map.getEdgeVertices(edge);
+                if (!verticesOpt) return false; // std::nullopt
+
+                for (const auto& neighbour : *verticesOpt) {
+                    if (neighbour->getId() == SIZE_MAX || neighbour->getId() == vertexId) { continue; }
+                    if (neighbour->hasSettlement()) { return true; }
                 }
             }
         } catch (const std::exception&) { return true; }
@@ -396,21 +408,22 @@ namespace df {
 
         try {
             // Find edge by ID (not index)
-            const Edge* edge = nullptr;
+            EdgeHandle edge = nullptr;
             for (size_t i = 0; i < map.getEdgeCount(); ++i) {
-                if (map.getEdge(i).getId() == edgeId) {
-                    edge = &map.getEdge(i);
+                if (map.getEdge(i)->getId() == edgeId) {
+                    edge = map.getEdge(i);
                     break;
                 }
             }
             if (!edge) { return false; }
 
-            const auto vertices = map.getEdgeVertices(*edge);
+            const auto verticesOpt = map.getEdgeVertices(edge);
+            if (!verticesOpt) return false; // std::nullopt
 
-            for (const auto& vertex : vertices) {
-                if (vertex.hasSettlement()) {
+            for (const auto& vertex : *verticesOpt) {
+                if (vertex->hasSettlement()) {
 
-                    const auto settlementId = vertex.getSettlementId();
+                    const auto settlementId = vertex->getSettlementId();
                     if (settlementId.has_value()) {
 
                         const Settlement* settlement = this->findSettlementById(settlementId.value());
@@ -418,12 +431,14 @@ namespace df {
                     }
                 }
 
-                const auto edges = map.getVertexEdges(vertex);
-                for (const auto& neighbourEdge : edges) {
-                    if (neighbourEdge.getId() == SIZE_MAX || neighbourEdge.getId() == edgeId || !neighbourEdge.hasRoad()) {
+                const auto edgesOpt = map.getVertexEdges(vertex);
+                if (!edgesOpt) continue;
+
+                for (const auto& neighbourEdge : *edgesOpt) {
+                    if (neighbourEdge->getId() == SIZE_MAX || neighbourEdge->getId() == edgeId || !neighbourEdge->hasRoad()) {
                         continue;
                     }
-                    const auto roadId = neighbourEdge.getRoadId();
+                    const auto roadId = neighbourEdge->getRoadId();
                     if (!roadId.has_value()) { continue; }
 
                     const Road* road = this->findRoadById(roadId.value());
