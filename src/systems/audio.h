@@ -1,7 +1,6 @@
 #pragma once
 
 #include <common.h>
-#include <assets.h>
 #include <memory>
 #include <miniaudio.h>
 
@@ -43,6 +42,6 @@ namespace df {
 			std::unordered_map<std::string, std::unique_ptr<Sound>> sounds;
 
 			bool loadSound(const std::string& path);
-			void onPlaySoundRequested(const std::string& path);
+			void onPlaySoundRequested(const std::string& path, bool loop = false);
 	};
 }

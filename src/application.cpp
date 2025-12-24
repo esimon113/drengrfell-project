@@ -17,6 +17,7 @@
 #include <fstream>
 
 #include "events/eventBus.h"
+#include "events/signalDecoration.h"
 
 
 namespace df {
@@ -55,6 +56,7 @@ namespace df {
 		}
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+		SignalDecoration::initializeSignalDecoration();
 		self.audioEngine = new AudioSystem();
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
@@ -84,7 +86,7 @@ namespace df {
 	}
 
 	void Application::run() noexcept {
-		EventBus::getInstance().playSoundRequested.emit(assets::getAssetPath(assets::Sound::music));
+		EventBus::getInstance().applicationRunStarted.emit();
 
 		// Store RenderTextSystem in registry to use it in any other System.
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
