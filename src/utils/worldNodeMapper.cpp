@@ -1,5 +1,9 @@
 #include "worldNodeMapper.h"
+#include "edge.h"
 #include "fmt/base.h"
+#include "nlohmann/detail/string_concat.hpp"
+#include "tile.h"
+#include "vertex.h"
 
 #include <cstdint>
 #include <array>
@@ -75,18 +79,19 @@ namespace df {
 		fmt::println("[WorldNodeMapper] Map has {} tiles, {} columns", map.getTileCount(), columns);
 
 		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const Tile& tile = map.getTile(tileId);
+			const TileHandle tile = map.getTile(tileId);
 
 			uint32_t currentRow = tileId / columns;
 			uint32_t currentCol = tileId % columns;
 
 			glm::vec2 tileCenterPos(WorldNodeMapper::getTilePosition(currentRow, currentCol));
-			const auto vertices = map.getTileVertices(tile);
+			const auto verticesOpt = map.getTileVertices(tile);
+			if (!verticesOpt) continue;
 			std::array<glm::vec2, 6> vertexOffsets = WorldNodeMapper::getVertexOffsets(hexagonRadius);
 
-			for (size_t i = 0; i < vertices.size(); ++i) {
-				const Vertex& vertex = vertices[i];
-				size_t vertexId = vertex.getId();
+			for (size_t i = 0; i < (*verticesOpt).size(); ++i) {
+				const VertexHandle vertex = (*verticesOpt)[i];
+				size_t vertexId = vertex->getId();
 
 				if (vertexId == SIZE_MAX) continue;
 
@@ -133,18 +138,20 @@ namespace df {
 		fmt::println("[WorldNodeMapper] Map has {} tiles, {} columns", map.getTileCount(), columns);
 
 		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const Tile& tile = map.getTile(tileId);
+			const TileHandle tile = map.getTile(tileId);
 
 			uint32_t currentRow = tileId / columns;
 			uint32_t currentCol = tileId % columns;
 
 			glm::vec2 tileCenterPos(WorldNodeMapper::getTilePosition(currentRow, currentCol));
-			const auto edges = map.getTileEdges(tile);
+			const auto edgesOpt = map.getTileEdges(tile);
+			if (!edgesOpt) continue;
+
 			std::array<glm::vec2, 6> vertexOffsets = WorldNodeMapper::getVertexOffsets(hexagonRadius);
 
-			for (size_t i = 0; i < edges.size(); ++i) {
-				const Edge& edge = edges[i];
-				size_t edgeId = edge.getId();
+			for (size_t i = 0; i < edgesOpt->size(); ++i) {
+				const EdgeHandle edge = (*edgesOpt)[i];
+				size_t edgeId = edge->getId();
 
 				if (edgeId == SIZE_MAX) continue;
 
@@ -183,11 +190,14 @@ namespace df {
 
 		// find tiles that have this vertex
 		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const Tile& tile = map.getTile(tileId);
-			const auto vertices = map.getTileVertices(tile);
+			const TileHandle tile = map.getTile(tileId);
+
+			const auto verticesOpt = map.getTileVertices(tile);
+			if (!verticesOpt) continue;
+			auto vertices = *verticesOpt;
 
 			for (size_t i = 0; i < vertices.size(); ++i) {
-				if (vertices[i].getId() == vertexId) {
+				if (vertices[i]->getId() == vertexId) {
 					uint32_t row = tileId / columns;
 					uint32_t col = tileId % columns;
 
@@ -208,11 +218,13 @@ namespace df {
 
 		// Find tiles that have this edge
 		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const Tile& tile = map.getTile(tileId);
-			const auto edges = map.getTileEdges(tile);
+			const TileHandle tile = map.getTile(tileId);
+			const auto edgesOpt = map.getTileEdges(tile);
+			if (!edgesOpt) continue;
+			auto edges = *edgesOpt;
 
 			for (size_t i = 0; i < edges.size(); ++i) {
-				if (edges[i].getId() == edgeId) {
+				if (edges[i]->getId() == edgeId) {
 					uint32_t row = tileId / columns;
 					uint32_t col = tileId % columns;
 
