@@ -22,10 +22,18 @@ namespace df {
 			return instance;
 		}
 
+		// Application Events
+		Signal<> applicationRunStarted;
+
 		// Game Events
 		Signal<int> tilePicked;
 
 		// Technical
-		Signal<const std::string&> playSoundRequested;
+
+		// Do not emit playSoundRequested explicitly !
+		// Instead, use the signal decoration feature
+		// and add a new sound attachment to a signal
+		// from above in df::SignalDecoration::initializeSignalDecoration
+		Signal<const std::string&, bool> playSoundRequested;
 	};
 }

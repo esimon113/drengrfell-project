@@ -36,8 +36,8 @@ namespace df {
 		ma_engine_init(nullptr, this->engine.get());
 
 		EventBus::getInstance().playSoundRequested.connect(
-			[this](const std::string& path) {
-				this->onPlaySoundRequested(path);
+			[this](const std::string& path, bool loop) {
+				this->onPlaySoundRequested(path, loop);
 			}
 		);
 	}
@@ -48,7 +48,7 @@ namespace df {
 	}
 
 
-	void AudioSystem::onPlaySoundRequested(const std::string& path) {
+	void AudioSystem::onPlaySoundRequested(const std::string& path, const bool loop) {
 		fmt::print("Playing sound requested: {}\n", path);
 
 		if (!this->sounds.contains(path)) {
@@ -60,7 +60,7 @@ namespace df {
 		if (this->sounds.contains(path)) {
 			const Sound* sound = this->sounds[path].get();
 			ma_sound* music = sound->get();
-			ma_sound_set_looping(music, MA_FALSE);
+			ma_sound_set_looping(music, loop ? MA_TRUE : MA_FALSE);
 			ma_sound_start(music);
 		}
 	}
