@@ -83,7 +83,7 @@ namespace df {
 	}
 
 	void Application::run() noexcept {
-		EventBus::getInstance().playSoundRequested.emit("music");
+		EventBus::getInstance().playSoundRequested.emit(assets::getAssetPath(assets::Sound::music));
 
 		// Store RenderTextSystem in registry to use it in any other System.
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
