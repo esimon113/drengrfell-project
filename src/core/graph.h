@@ -25,9 +25,19 @@ namespace df {
 
 
 	// make sure T has id
+	namespace HasIdPropertyHelper {
+		inline size_t getId(const Tile& t) { return t.getId(); }
+		inline size_t getId(Tile* t) { return t->getId(); }
+
+		inline size_t getId(const Edge& t) { return t.getId(); }
+		inline size_t getId(Edge* t) { return t->getId(); }
+
+		inline size_t getId(const Vertex& t) { return t.getId(); }
+		inline size_t getId(Vertex* t) { return t->getId(); }
+	}
 	template<typename T>
 	concept HasIdProperty = requires (T t) {
-		{ t.getId() } -> std::convertible_to<size_t>;
+		{ HasIdPropertyHelper::getId(t) } -> std::convertible_to<size_t>;
 	};
 
 
@@ -40,9 +50,9 @@ namespace df {
 			void addEdge(std::unique_ptr<Edge> edge);
 			void addVertex(std::unique_ptr<Vertex> vertex);
 
-			TileHandle getTile(size_t index);
-			EdgeHandle getEdge(size_t index);
-			VertexHandle getVertex(size_t index);
+			TileHandle getTile(size_t index) const;
+			EdgeHandle getEdge(size_t index) const;
+			VertexHandle getVertex(size_t index) const;
 
 			void removeTile(const TileHandle tile);
 			void removeEdge(const EdgeHandle edge);
@@ -52,11 +62,11 @@ namespace df {
 			void connectVertexToEdge(const EdgeHandle edge, const VertexHandle vertex);
 			void connectVertexToTile(const VertexHandle vertex, const TileHandle tile);
 
-			std::optional<std::array<EdgeHandle, 6>> getTileEdges(const TileHandle tile);
-			std::optional<std::array<VertexHandle, 6>> getTileVertices(const TileHandle tile);
-			std::optional<std::array<VertexHandle, 2>> getEdgeVertices(const EdgeHandle edge);
-			std::optional<std::array<EdgeHandle, 3>> getVertexEdges(const VertexHandle vertex);
-			std::optional<std::array<TileHandle, 3>> getVertexTiles(const VertexHandle vertex);
+			std::optional<std::array<EdgeHandle, 6>> getTileEdges(const TileHandle tile) const;
+			std::optional<std::array<VertexHandle, 6>> getTileVertices(const TileHandle tile) const;
+			std::optional<std::array<VertexHandle, 2>> getEdgeVertices(const EdgeHandle edge) const;
+			std::optional<std::array<EdgeHandle, 3>> getVertexEdges(const VertexHandle vertex) const;
+			std::optional<std::array<TileHandle, 3>> getVertexTiles(const VertexHandle vertex) const;
 
 			size_t getEdgeIndex(size_t edgeId);
 
@@ -112,12 +122,12 @@ namespace df {
 			std::unordered_map<size_t, std::array<EdgeHandle, 3>> vertexEdges;
 			std::unordered_map<size_t, std::array<TileHandle, 3>> vertexTiles;
 
-			bool doesTileExist(const TileHandle tile);
-			bool doesTileExist(size_t tileId);
-			bool doesEdgeExist(const EdgeHandle edge);
-			bool doesEdgeExist(size_t edgeId);
-			bool doesVertexExist(const VertexHandle vertex);
-			bool doesVertexExist(size_t vertexId);
+			bool doesTileExist(const TileHandle tile) const;
+			bool doesTileExist(size_t tileId) const;
+			bool doesEdgeExist(const EdgeHandle edge) const;
+			bool doesEdgeExist(size_t edgeId) const;
+			bool doesVertexExist(const VertexHandle vertex) const;
+			bool doesVertexExist(size_t vertexId) const;
 
 			// write tiles from vector into graph
 			void initializeTilesForGraph(std::vector<Tile> newTiles);

@@ -56,7 +56,7 @@ namespace df {
 
 	// TODO: use optional here?!
 	// Throws out_of_range if no tile with id
-	TileHandle Graph::getTile(size_t index) {
+	TileHandle Graph::getTile(size_t index) const {
 		if (!this->doesTileExist(index)) {
 			throw std::out_of_range("Tile index out of range");
 		}
@@ -66,7 +66,7 @@ namespace df {
 
 
 	// Throws out_of_range if no edge with id
-	EdgeHandle Graph::getEdge(size_t index) {
+	EdgeHandle Graph::getEdge(size_t index) const {
 		if (!this->doesEdgeExist(index)) {
 			throw std::out_of_range("Edge index out of range");
 		}
@@ -76,7 +76,7 @@ namespace df {
 
 
 	// Throws out_of_range if no vertex with id
-	VertexHandle Graph::getVertex(size_t index) {
+	VertexHandle Graph::getVertex(size_t index) const {
 		if (!this->doesTileExist(index)) {
 			throw std::out_of_range("Vertex index out of range");
 		}
@@ -85,7 +85,7 @@ namespace df {
 	}
 
 
-	bool Graph::doesTileExist(const TileHandle tile) {
+	bool Graph::doesTileExist(const TileHandle tile) const {
 		if (!tile) return false;
 
 		return std::any_of(
@@ -95,12 +95,12 @@ namespace df {
 		);
 	}
 
-	bool Graph::doesTileExist(size_t tileId) {
+	bool Graph::doesTileExist(size_t tileId) const {
 		return tileId < this->tiles.size() && this->tiles[tileId] != nullptr;
 	}
 
 
-	bool Graph::doesEdgeExist(const EdgeHandle edge) {
+	bool Graph::doesEdgeExist(const EdgeHandle edge) const {
 		if (!edge) return false;
 
 		return std::any_of(
@@ -111,12 +111,12 @@ namespace df {
 	}
 
 
-	bool Graph::doesEdgeExist(size_t edgeId) {
+	bool Graph::doesEdgeExist(size_t edgeId) const {
 		return edgeId < this->edges.size() && this->edges[edgeId] != nullptr;
 	}
 
 
-	bool Graph::doesVertexExist(const VertexHandle vertex) {
+	bool Graph::doesVertexExist(const VertexHandle vertex) const {
 		if (!vertex) return false;
 
 		return std::any_of(
@@ -127,7 +127,7 @@ namespace df {
 	}
 
 
-	bool Graph::doesVertexExist(size_t vertexId) {
+	bool Graph::doesVertexExist(size_t vertexId) const {
 		return vertexId < this->vertices.size() && this->vertices[vertexId] != nullptr;
 	}
 
@@ -230,7 +230,7 @@ namespace df {
 	/**
 	* Returns std::nullopt if the tile is not found.
 	*/
-	std::optional<std::array<EdgeHandle, 6>> Graph::getTileEdges(const TileHandle tile) {
+	std::optional<std::array<EdgeHandle, 6>> Graph::getTileEdges(const TileHandle tile) const {
 		if (!this->doesTileExist(tile)) return std::nullopt;
 
 		auto it = this->tileEdges.find(tile->getId());
@@ -243,7 +243,7 @@ namespace df {
 	/**
 	* Returns std::nullopt if the tile is not found.
 	*/
-	std::optional<std::array<VertexHandle, 6>> Graph::getTileVertices(const TileHandle tile) {
+	std::optional<std::array<VertexHandle, 6>> Graph::getTileVertices(const TileHandle tile) const {
 		if (!this->doesTileExist(tile)) return std::nullopt;
 
 		auto it = this->tileVertices.find(tile->getId());
@@ -256,7 +256,7 @@ namespace df {
 	/**
 	* Returns std::nullopt if the edge is not found.
 	*/
-	std::optional<std::array<VertexHandle, 2>> Graph::getEdgeVertices(const EdgeHandle edge) {
+	std::optional<std::array<VertexHandle, 2>> Graph::getEdgeVertices(const EdgeHandle edge) const {
 		if (!this->doesEdgeExist(edge)) return std::nullopt;
 
 		auto it = this->edgeVertices.find(edge->getId());
@@ -269,7 +269,7 @@ namespace df {
 	/**
 	* Returns std::nullopt if the vertex is not found.
 	*/
-	std::optional<std::array<EdgeHandle, 3>> Graph::getVertexEdges(const VertexHandle vertex) {
+	std::optional<std::array<EdgeHandle, 3>> Graph::getVertexEdges(const VertexHandle vertex) const {
 		if (!this->doesVertexExist(vertex)) return std::nullopt;
 
 		auto it = this->vertexEdges.find(vertex->getId());
@@ -282,7 +282,7 @@ namespace df {
 	/**
 	* Returns std::nullopt if the vertex is not found.
 	*/
-	std::optional<std::array<TileHandle, 3>> Graph::getVertexTiles(const VertexHandle vertex) {
+	std::optional<std::array<TileHandle, 3>> Graph::getVertexTiles(const VertexHandle vertex) const {
 		if (!this->doesVertexExist(vertex)) return std::nullopt;
 
 		auto it = this->vertexTiles.find(vertex->getId());
