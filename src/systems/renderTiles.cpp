@@ -384,7 +384,7 @@ namespace df {
     }
 
 
-    Result<std::vector<RenderTilesSystem::TileInstance>, ResultError> RenderTilesSystem::makeTileInstances(const std::vector<Tile>& tiles, const int columns, const Player* player) const noexcept {
+    Result<std::vector<RenderTilesSystem::TileInstance>, ResultError> RenderTilesSystem::makeTileInstances(const std::vector<std::unique_ptr<Tile>>& tiles, const int columns, const Player* player) const noexcept {
         if (!this->renderFogOfWar) {
             player = nullptr;
         }
@@ -398,8 +398,8 @@ namespace df {
         for (int row = rows - 1; row >= 0; row--) {
             for (int column = 0; column < columns; column++) {
                 const glm::vec2 position = RenderCommon::rowColToWorldCoordinates(column, row);
-                const Tile& tile = tiles[row * columns + column];
-                instances.push_back({position, static_cast<int>(tile.getType()), 0, player == nullptr, index});
+                const TileHandle tile = tiles[row * columns + column].get();
+                instances.push_back({position, static_cast<int>(tile->getType()), 0, player == nullptr, index});
                 index++;
             }
         }

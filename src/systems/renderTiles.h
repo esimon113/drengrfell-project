@@ -77,7 +77,7 @@ namespace df {
         void renderMap(float timeInSeconds = 0.0) const noexcept;
         void renderPickerMap(bool blend = false) const noexcept;
 
-        Result<std::vector<TileInstance>, ResultError> makeTileInstances(const std::vector<Tile>& tiles, int columns, const Player* player = nullptr) const noexcept;
+        Result<std::vector<TileInstance>, ResultError> makeTileInstances(const std::vector<std::unique_ptr<Tile>>& tiles, int columns, const Player* player = nullptr) const noexcept;
 
         bool renderFogOfWar = true;
         bool updateRequired = false;
