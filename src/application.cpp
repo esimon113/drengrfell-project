@@ -1,6 +1,7 @@
 #include "application.h"
 #include "GL/gl3w.h"
 #include "GL/glcorearb.h"
+#include "fmt/base.h"
 #include "glm/fwd.hpp"
 #include "animationSystem.h"
 #include "types.h"
@@ -317,16 +318,19 @@ namespace df {
 			}
 			file << config.serialize().dump(4);
 		}
-
+		fmt::println("[DEBUG] config written to file: {}", path.c_str());
 
 		// generate map with the WorldGeneratorConfig
 		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
+			fmt::println("[DEBUG] config deserialized");
 			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
+			fmt::println("[DEBUG] start regenerating...");
 			gameState->getMap().regenerate();
 		}
 		else {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
+		fmt::println("[DEBUG] regenerated world");
 		{
 			// only supports one player for now. TODO: if we do multplayer update this.
 			if (gameState->getPlayer(0)) {
@@ -343,6 +347,7 @@ namespace df {
 				player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
 				gameState->addPlayer(player);
 			}
+			fmt::println("[DEBUG] resources distributed to player");
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
 
@@ -356,6 +361,7 @@ namespace df {
 					}
 				}
 			}
+			fmt::println("[DEBUG] randomly explored tiles for player");
 		}
 		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
@@ -364,6 +370,7 @@ namespace df {
 
 		gameState->initTutorial();	// Init the Tutorial
 		gameState->setPhase(types::GamePhase::PLAY);
+		fmt::println("[DEBUG] Application::startGame completed");
 	}
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {

@@ -32,7 +32,7 @@ namespace df {
 
         Graph& getMap() { return this->map; }
         const Graph& getMap() const { return this->map; }
-        void setMap(Graph newMap) { this->map = newMap; }
+        void setMap(Graph newMap) { this->map = std::move(newMap); }
 
 
         // players

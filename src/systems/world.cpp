@@ -46,7 +46,7 @@ namespace df {
 
 
 
-		Graph map = gameState->getMap();
+		const Graph& map = gameState->getMap();
 		int mapWidth = map.getMapWidth();
 		int mapHeight = map.getTileCount() / mapWidth;
 		float worldWidth = 2.0f * mapWidth;

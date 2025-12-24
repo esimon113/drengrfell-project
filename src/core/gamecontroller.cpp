@@ -144,13 +144,7 @@ namespace df {
         const Graph& map = this->gameState.getMap();
         try {
             // Find vertex by ID (not index)
-            VertexHandle vertex = nullptr;
-            for (size_t i = 0; i < map.getVertexCount(); ++i) {
-                if (map.getVertex(i)->getId() == vertexId) {
-                    vertex = map.getVertex(i);
-                    break;
-                }
-            }
+            VertexHandle vertex = map.findVertexById(vertexId);
             if (!vertex) { return false; }
 
             // Only check if vertex already has a settlement
@@ -184,13 +178,7 @@ namespace df {
 
         try {
             // Find vertex by ID (not index) - vertexId is the ID stored in the Vertex object
-            VertexHandle vertex = nullptr;
-            for (size_t i = 0; i < map.getVertexCount(); ++i) {
-                if (map.getVertex(i)->getId() == vertexId) {
-                    vertex = map.getVertex(i);
-                    break;
-                }
-            }
+            VertexHandle vertex = map.findVertexById(vertexId);
 
             if (!vertex) {
                 fmt::println("[GameController] buildSettlement failed: vertex {} not found in map", vertexId);
@@ -371,26 +359,20 @@ namespace df {
 
         try {
             // Find vertex by ID (not index)
-            VertexHandle vertex = nullptr;
-            for (size_t i = 0; i < map.getVertexCount(); ++i) {
-                if (map.getVertex(i)->getId() == vertexId) {
-                    vertex = map.getVertex(i);
-                    break;
-                }
-            }
+            VertexHandle vertex = map.findVertexById(vertexId);
             if (!vertex) { return true; }
 
             const auto edgesOpt = map.getVertexEdges(vertex);
             if (!edgesOpt) return false; // std::nullopt
 
             for (const auto& edge : *edgesOpt) {
-                if (edge->getId() == SIZE_MAX) { continue; }
+                if (!edge || edge->getId() == SIZE_MAX) { continue; }
 
                 const auto verticesOpt = map.getEdgeVertices(edge);
                 if (!verticesOpt) return false; // std::nullopt
 
                 for (const auto& neighbour : *verticesOpt) {
-                    if (neighbour->getId() == SIZE_MAX || neighbour->getId() == vertexId) { continue; }
+                    if (!neighbour || neighbour->getId() == SIZE_MAX || neighbour->getId() == vertexId) { continue; }
                     if (neighbour->hasSettlement()) { return true; }
                 }
             }

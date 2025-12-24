@@ -46,6 +46,14 @@ namespace df {
 			Graph() = default;
 			~Graph() = default;
 
+			// Delete copy constructor and copy assignment operator because Graph contains unique_ptr vectors which are non-copyable
+			Graph(const Graph&) = delete;
+			Graph& operator=(const Graph&) = delete;
+
+			// Allow move constructor and move assignment operator:
+			Graph(Graph&&) = default;
+			Graph& operator=(Graph&&) = default;
+
 			void addTile(std::unique_ptr<Tile> tile);
 			void addEdge(std::unique_ptr<Edge> edge);
 			void addVertex(std::unique_ptr<Vertex> vertex);
@@ -53,6 +61,11 @@ namespace df {
 			TileHandle getTile(size_t index) const;
 			EdgeHandle getEdge(size_t index) const;
 			VertexHandle getVertex(size_t index) const;
+
+			// Helper functions to find by ID (not index)
+			TileHandle findTileById(size_t tileId) const;
+			VertexHandle findVertexById(size_t vertexId) const;
+			EdgeHandle findEdgeById(size_t edgeId) const;
 
 			void removeTile(const TileHandle tile);
 			void removeEdge(const EdgeHandle edge);
