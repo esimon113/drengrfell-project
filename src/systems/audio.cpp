@@ -2,21 +2,15 @@
 
 #include <iostream>
 #include <ostream>
+#include <utility>
 
 #include "events/eventBus.h"
 
 
 namespace df {
-	AudioSystem::Sound::Sound(ma_engine* pEngine, const std::string &path) noexcept {
-		ma_sound* newSound = nullptr;
-
-		if ((newSound = (new ma_sound)) == nullptr) {
-			fmt::println(stderr, "Failed to allocate sound");
-			newSound = nullptr;
-		}
-
-		ma_result result;
-		if ((result = ma_sound_init_from_file(pEngine, path.c_str(), 0, nullptr, nullptr, newSound)) != MA_SUCCESS) {
+	AudioSystem::Sound::Sound(ma_engine* pEngine, const std::string& path) {
+		ma_sound* newSound = new ma_sound();
+		if (ma_result result; (result = ma_sound_init_from_file(pEngine, path.c_str(), 0, nullptr, nullptr, newSound)) != MA_SUCCESS) {
 			fmt::println(stderr, "Failed to load \"{}\": {}", path, ma_result_description(result));
 			delete newSound;
 			newSound = nullptr;
@@ -26,42 +20,50 @@ namespace df {
 	}
 
 
-	static bool constructed = false;
-	AudioSystem::AudioSystem() noexcept {
-		if (constructed) {
-			std::cerr << "WARNING: Audio system already constructed!" << std::endl;
-		}
-		constructed = true;
+	AudioSystem::AudioSystem(std::shared_ptr<EventBus> bus) : eventBus(bus) {
 		this->engine.reset(new ma_engine);
-		ma_engine_init(nullptr, this->engine.get());
+		if (ma_result result; (result = ma_engine_init(nullptr, this->engine.get())) != MA_SUCCESS) {
+			fmt::println(stderr, "Failed to initialize ma_engine: {}", ma_result_description(result));
+		}
 
-		EventBus::getInstance().playSoundRequested.connect(
-			[this](const std::string& path, bool loop) {
+		eventBus->playSoundRequested.connect(
+			[this](const std::string& path, const bool loop) {
 				this->onPlaySoundRequested(path, loop);
-			}
+			},
+			"AudioSystem::onPlaySoundRequested"
 		);
+	}
+
+	AudioSystem::~AudioSystem() noexcept {
+		eventBus->playSoundRequested.disconnect("AudioSystem::onPlaySoundRequested");
 	}
 
 
 	bool AudioSystem::loadSound(const std::string& path) {
-		return sounds.emplace(path, std::make_unique<Sound>(engine.get(), path)).second;
+		auto s = std::make_unique<Sound>(engine.get(), path);
+		if (s->get() == nullptr) {
+			return false;
+		}
+		return sounds.emplace(path, std::move(s)).second;
+	}
+
+
+	bool AudioSystem::isSoundLoaded(const std::string& path) const {
+		return sounds.contains(path);
 	}
 
 
 	void AudioSystem::onPlaySoundRequested(const std::string& path, const bool loop) {
-		fmt::print("Playing sound requested: {}\n", path);
+		fmt::println("Playing sound requested: {}\n", path);
 
-		if (!this->sounds.contains(path)) {
+		if (!isSoundLoaded(path)) {
 			if (!loadSound(path)) {
 				return;
 			}
 		}
-
-		if (this->sounds.contains(path)) {
-			const Sound* sound = this->sounds[path].get();
-			ma_sound* music = sound->get();
-			ma_sound_set_looping(music, loop ? MA_TRUE : MA_FALSE);
-			ma_sound_start(music);
-		}
+		ma_sound* music = sounds.at(path)->get();
+		if (!music) return;
+		ma_sound_set_looping(music, loop ? MA_TRUE : MA_FALSE);
+		ma_sound_start(music);
 	}
 }

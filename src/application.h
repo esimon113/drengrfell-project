@@ -39,7 +39,8 @@ namespace df {
 			Window* debugWindow = nullptr;
 			Registry* registry;
 
-			AudioSystem* audioEngine;
+			std::shared_ptr<EventBus> eventBus;
+			std::unique_ptr<AudioSystem> audioEngine;
 
 			WorldSystem world;
 			// PhysicsSystem physics;
