@@ -16,7 +16,7 @@
 #include <iostream>
 #include <fstream>
 
-
+#include "events/eventBus.h"
 
 
 namespace df {
@@ -55,10 +55,12 @@ namespace df {
 		}
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+		self.eventBus = std::make_shared<EventBus>();
+		self.audioEngine = std::make_unique<AudioSystem>(self.eventBus);
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
 		self.gameController = std::make_shared<GameController>(*self.gameState);
-		self.world = WorldSystem::init(self.window, self.registry, nullptr, *self.gameState);	// nullptr used to be self.audioEngine, as long as that is not yet needed, it is set to nullptr
+		self.world = WorldSystem::init(self.window, self.registry, self.audioEngine.get(), *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
 		// Create main menu
@@ -74,6 +76,7 @@ namespace df {
 	}
 
 	void Application::deinit() noexcept {
+		audioEngine.reset();
 		render.deinit();
 		delete registry;
 		window->deinit();
@@ -82,6 +85,8 @@ namespace df {
 	}
 
 	void Application::run() noexcept {
+		this->eventBus->applicationRunStarted.emit();
+
 		// Store RenderTextSystem in registry to use it in any other System.
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
 		if (!this->window || !this->window->getHandle()) {
