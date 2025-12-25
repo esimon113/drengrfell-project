@@ -20,7 +20,10 @@ namespace df {
 
 		void connect(Callback callback, const std::string& identifier) {
 			fmt::println("Connected callback {} to signal {}", identifier, name);
-			callbacks[identifier] = callback;
+			auto [iterator, inserted] = callbacks.emplace(identifier, callback);
+			if (!inserted) {
+				fmt::print("Callback {} is already connected to signal {}\n", identifier, name);
+			}
 		}
 
 		void disconnect(const std::string& identifier) {
@@ -28,9 +31,11 @@ namespace df {
 			callbacks.erase(identifier);
 		}
 
-		void emit(Arguments&&... arguments) {
+		template<typename... Arguments2>
+		void emit(Arguments2&&... arguments) {
 			fmt::println("Emitted signal {}", name);
-			for (auto const& [identifier, callback] : callbacks) {
+			const auto currentCallbacks = callbacks;
+			for (auto const& [identifier, callback] : currentCallbacks) {
 				callback(std::forward<Arguments>(arguments)...);
 			}
 		}

@@ -48,7 +48,7 @@ namespace df {
 		void attachSound(SignalType& signal, const std::string& path, const bool loop = false) {
 			signal.connect(
 				[this, path, loop](auto&&...) {
-					this->playSoundRequested.emit(path, std::move(loop));
+					this->playSoundRequested.emit(path, loop);
 				},
 				"EventBus::attachSound"
 			);
@@ -59,7 +59,7 @@ namespace df {
 			attachSound(signal, assets::getAssetPath(asset), loop);
 		}
 
-		inline void initializeSignalDecoration() {
+		void initializeSignalDecoration() {
 			attachSound(this->applicationRunStarted, assets::Sound::music, true);
 		}
 
