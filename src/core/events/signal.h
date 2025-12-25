@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <string>
 
 /*
  * This idea is inspired from Signals in Godot engine and the event bus pattern.
@@ -11,19 +12,31 @@ namespace df {
 	template<typename... Arguments>
 	class Signal {
 	public:
+		Signal() = default;
+		explicit Signal(std::string signalName) : name(std::move(signalName)) {}
+		~Signal() = default;
+
 		using Callback = std::function<void(Arguments...)>;
 
-		void connect(Callback callback) {
-			callbacks.push_back(callback);
+		void connect(Callback callback, const std::string& identifier) {
+			fmt::println("Connected callback {} to signal {}", identifier, name);
+			callbacks[identifier] = callback;
 		}
 
-		void emit(Arguments... arguments) {
-			for (auto& callback : callbacks) {
-				callback(arguments...);
+		void disconnect(const std::string& identifier) {
+			fmt::println("Disconnected callback {} from signal {}", identifier, name);
+			callbacks.erase(identifier);
+		}
+
+		void emit(Arguments&&... arguments) {
+			fmt::println("Emitted signal {}", name);
+			for (auto const& [identifier, callback] : callbacks) {
+				callback(std::forward<Arguments>(arguments)...);
 			}
 		}
 
+		std::string name{};
 	private:
-		std::vector<Callback> callbacks;
+		std::unordered_map<std::string, Callback> callbacks{};
 	};
 }

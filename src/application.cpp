@@ -17,7 +17,6 @@
 #include <fstream>
 
 #include "events/eventBus.h"
-#include "events/signalDecoration.h"
 
 
 namespace df {
@@ -56,12 +55,12 @@ namespace df {
 		}
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-		SignalDecoration::initializeSignalDecoration();
-		self.audioEngine = new AudioSystem();
+		self.eventBus = std::make_shared<EventBus>();
+		self.audioEngine = std::make_unique<AudioSystem>(self.eventBus);
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
 		self.gameController = std::make_shared<GameController>(*self.gameState);
-		self.world = WorldSystem::init(self.window, self.registry, self.audioEngine, *self.gameState);
+		self.world = WorldSystem::init(self.window, self.registry, self.audioEngine.get(), *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
 		// Create main menu
@@ -77,7 +76,7 @@ namespace df {
 	}
 
 	void Application::deinit() noexcept {
-		delete audioEngine;
+		audioEngine.reset();
 		render.deinit();
 		delete registry;
 		window->deinit();
@@ -86,7 +85,7 @@ namespace df {
 	}
 
 	void Application::run() noexcept {
-		EventBus::getInstance().applicationRunStarted.emit();
+		this->eventBus->applicationRunStarted.emit();
 
 		// Store RenderTextSystem in registry to use it in any other System.
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());

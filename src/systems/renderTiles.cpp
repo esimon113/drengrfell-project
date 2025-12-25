@@ -5,7 +5,6 @@
 #include "utils/textureArray.h"
 #include "common.h"
 #include "worldGenerator.h"
-#include "events/eventBus.h"
 
 namespace df {
 	RenderTilesSystem RenderTilesSystem::init(Window& window, Registry& registry, std::shared_ptr<GameState> gameState) noexcept {
@@ -151,8 +150,6 @@ namespace df {
 						this->selectedTile = tileId;
 						auto mapId = tileIdToMapId(tileId);
 						fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, xpos, ypos);
-
-						EventBus::getInstance().tilePicked.emit(mapId);
 					} break;
 				}
 			}
