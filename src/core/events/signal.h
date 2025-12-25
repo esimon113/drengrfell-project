@@ -26,6 +26,9 @@ namespace df {
 			}
 		}
 
+		// YOU HAVE TO DISCONNECT IF A CALLBACK CAPTURES A THIS-POINTER.
+		// (When the lifetime of an object is shorter than of the EventBus.
+		//  Do it in the destructor or deinit of the corresponding object)
 		void disconnect(const std::string& identifier) {
 			fmt::println("Disconnected callback {} from signal {}", identifier, name);
 			callbacks.erase(identifier);
