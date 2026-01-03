@@ -1,13 +1,14 @@
+#include "edge.h"
+#include "fmt/base.h"
 #include <map>
 #include <optional>
 #include <stdexcept>
-#include "edge.h"
-#include "fmt/base.h"
+#include <unordered_set>
 
+#include "gamecontroller.h"
 #include "hero.h"
 #include "tile.h"
 #include "vertex.h"
-#include "gamecontroller.h"
 
 
 
@@ -15,476 +16,724 @@
 
 namespace df {
 
-    Player* GameController::getCurrentPlayer() { return this->getPlayerbyId(this->gameState.getCurrentPlayerId()); }
-    const Player* GameController::getCurrentPlayer() const { return this->getPlayerById(this->gameState.getCurrentPlayerId()); }
-
-
-    Player* GameController::getPlayerbyId(size_t playerId) { return this->gameState.getPlayer(playerId); }
-    const Player* GameController::getPlayerById(size_t playerId) const { return this->gameState.getPlayer(playerId); }
-
-
-    void GameController::startTurn() {
-        Player* player = this->getCurrentPlayer();
-        if (!player) { return; }
-
-        this->giveResourcesTo(*player);
-        this->resetHeroMovement(*player);
-    }
-
-
-    void GameController::endTurn() {
-        const size_t playerCount = this->gameState.getPlayerCount();
-        if (playerCount == 0) { return; } // should not happen
-
-        // TODO: maybe add some "setNextTurn()" etc. functions
-        size_t nextPlayerId = (this->gameState.getCurrentPlayerId() + 1) % playerCount;
-        this->gameState.setCurrentPlayerId(nextPlayerId);
-        this->gameState.setTurnCount(this->gameState.getTurnCount() + 1);
-
-        if (nextPlayerId == 0) {
-            this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
-        }
-    }
-
-
-    void GameController::giveResourcesTo(Player& player) {
-        // resources are given to the player based on the settlements they have
-        // for testing purposes, players receive some resources every turn
-        bool test = true;
-        if (test) {
-            player.addResources(types::TileType::FOREST, 1);
-            player.addResources(types::TileType::CLAY, 1);
-            player.addResources(types::TileType::GRASS, 1);
-            player.addResources(types::TileType::FIELD, 1);
-            player.addResources(types::TileType::MOUNTAIN, 1);
-
-            return;
-        }
-
-        for (size_t settlementId : player.getSettlementIds()) {
-            const Settlement* settlement = this->findSettlementById(settlementId);
-            if (!settlement) { continue; }
-
-            const auto tileIds = this->getSettlementTiles(*settlement);
-            for (size_t tileId : tileIds) {
-                const TileHandle tile = this->gameState.getMap().getTile(tileId);
-                if (tile->givesResourceThisTurn(this->rng)) {
-                    player.addResources(tile->getType(), 1); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
-                }
-            }
-        }
-    }
-
-
-    void GameController::resetHeroMovement(Player& player) {
-        std::shared_ptr<Hero> hero = player.getHero();
-        if (hero) {
-            // TODO: something like this needs to be implemented in hero class:
-            // reset the available movement points, hero also needs to keep track of used range per turn
-            // hero->resetMovementPoints();
-            //hero->startIdleAnimation();
-        }
-    }
-
-
-    void GameController::exploreTile(Player& player, size_t tileId) {
-        Graph& map = this->gameState.getMap();
-
-        try {
-            TileHandle tile = map.getTile(tileId);
-
-            if (!player.isTileExplored(tileId)) {
-                tile->addVisibleForPlayers(player.getId());
-                player.exploreTile(tileId);
-            }
-        } catch (const std::exception&) {} // invalid tile -> ignore
-    }
-
-
-    bool GameController::moveHeroToTile(size_t playerId, size_t targetTileId) {
-        Player* player = this->getPlayerbyId(playerId);
-        if (!player) { return false; }
-
-        std::shared_ptr<Hero> hero = player->getHero();
-        if (!hero) { return false; }
-
-        const int currentTileId = hero->getTileID(); // TODO: use size_t in hero
-        size_t distance = 0;
-        if (currentTileId >= 0) {
-            const Graph& map = this->gameState.getMap();
-            const TileHandle currentTile = map.getTile(currentTileId);
-            const TileHandle targetTile = map.getTile(targetTileId);
-            distance = map.getDistanceBetween(currentTile, targetTile);
-
-            if (distance == SIZE_MAX) { return false; }
-        }
-
-        // TODO: hero class should implement moving the hero to a specified tile.
-        // TODO: use size_t in hero -> id and distance cannot be negative -> make this information explicit by used datatype
-        // if (!hero->moveToTile(targetTileId, distance)) { return false; }
-
-        auto range = hero->getBaseRange();
-        auto remainingRange = range - static_cast<int>(distance);
-        // TODO: set remaining range for the hero for the current turn
-        // otherwise we need to specify that the hero can be moved only once per turn
-        // something like this:
-        // hero->setRemainingRange(remainingRange);
-
-        // TODO: this is only a temporary workaround:
-        if (remainingRange < 0) { return false; }
-
-        this->exploreTile(*player, targetTileId);
-
-        return true; // success
-    }
-
-
-    bool GameController::canBuildSettlement(size_t playerId, size_t vertexId) const {
-        (void)playerId; // unused for now - simplified building rules
-        const Graph& map = this->gameState.getMap();
-        try {
-            // Find vertex by ID (not index)
-            VertexHandle vertex = map.findVertexById(vertexId);
-            if (!vertex) { return false; }
-
-            // Only check if vertex already has a settlement
-            if (vertex->hasSettlement()) { return false; }
-            // Also check that no adjacent vertices have settlements (basic rule)
-            if (this->doesVertexHaveNeighborSettlements(vertexId)) { return false; }
-            return true;
-        } catch (const std::exception&) { return false; }
-    }
-
-
-    bool GameController::buildSettlement(size_t playerId, size_t vertexId, const std::vector<int>& buildingCost) {
-        if (!this->canBuildSettlement(playerId, vertexId)) {
-            fmt::println("[GameController] buildSettlement failed: canBuildSettlement returned false");
-            return false;
-        }
-
-        Player* player = this->getPlayerbyId(playerId);
-        if (!player) {
-            fmt::println("[GameController] buildSettlement failed: player {} not found", playerId);
-            return false;
-        }
-        if (!this->hasEnoughResources(*player, buildingCost)) {
-            fmt::println("[GameController] buildSettlement failed: player {} does not have enough resources", playerId);
-            return false;
-        }
-
-        Graph& map = this->gameState.getMap();
-        // Tutorial
-        auto* step = this->gameState.getCurrentTutorialStep();
-
-        try {
-            // Find vertex by ID (not index) - vertexId is the ID stored in the Vertex object
-            VertexHandle vertex = map.findVertexById(vertexId);
-
-            if (!vertex) {
-                fmt::println("[GameController] buildSettlement failed: vertex {} not found in map", vertexId);
-                return false; // Vertex with this ID not found
-            }
-
-            // Double-check vertex doesn't already have a settlement (race condition protection)
-            if (vertex->hasSettlement()) {
-                fmt::println("[GameController] buildSettlement failed: vertex {} already has a settlement", vertexId);
-                return false;
-            }
-
-            size_t newSettlementId = 0;
-            const auto& existingSettlements = this->gameState.getSettlements();
-            if (!existingSettlements.empty()) {
-                size_t maxId = 0;
-                for (const auto& s : existingSettlements) {
-                    if (s && s->getId() > maxId) {
-                        maxId = s->getId();
-                    }
-                }
-                newSettlementId = maxId + 1;
-            }
-
-            // TODO: rethink ownership of settlement
-            auto newSettlement = std::make_shared<Settlement>(newSettlementId, playerId, vertexId, buildingCost);
-
-            vertex->setSettlementId(newSettlementId);
-            this->gameState.addSettlement(newSettlement);
-            player->addSettlement(newSettlement->getId());
-
-            this->chargeResourceCost(*player, buildingCost);
-
-            fmt::println("[GameController] buildSettlement succeeded: settlement {} built at vertex {} for player {}",  newSettlementId, vertexId, playerId);
-            // Finish Tutorial if step is BUILD_SETTLEMENT
-            if (step && step->id == TutorialStepId::BUILD_SETTLEMENT) {
-                this->gameState.completeCurrentTutorialStep();
-            }
-
-            return true;
-
-        } catch (const std::exception& e) {
-            fmt::println("[GameController] buildSettlement failed: exception - {}", e.what());
-            return false;
-        }
-    }
-
-
-    // TODO: validate this in edge class
-    bool GameController::canBuildRoad(size_t playerId, size_t edgeId) const {
-        (void)playerId; // unused for now - simplified building rules
-        const Graph& map = this->gameState.getMap();
-
-        try {
-            // Find edge by ID (not index)
-            EdgeHandle edge = nullptr;
-            for (size_t i = 0; i < map.getEdgeCount(); ++i) {
-                if (map.getEdge(i)->getId() == edgeId) {
-                    edge = map.getEdge(i);
-                    break;
-                }
-            }
-            if (!edge) { return false; }
-
-            // Only check if edge already has a road
-            if (edge->hasRoad()) { return false; }
-            return true;
-        } catch (const std::exception&) { return false; }
-    }
-
-
-    bool GameController::buildRoad(size_t playerId, size_t edgeId, RoadLevel level, const std::vector<int>& buildingCost) {
-        if (!this->canBuildRoad(playerId, edgeId)) {
-            fmt::println("[GameController] buildRoad failed: canBuildRoad returned false");
-            return false;
-        }
-
-        Player* player = this->getPlayerbyId(playerId);
-        if (!player) {
-            fmt::println("[GameController] buildRoad failed: player {} not found", playerId);
-            return false;
-        }
-
-        if (!this->hasEnoughResources(*player, buildingCost)) {
-            fmt::println("[GameController] buildRoad failed: player {} does not have enough resources", playerId);
-            return false;
-        }
-
-        Graph& map = this->gameState.getMap();
-        // Tutorial
-        auto* step = this->gameState.getCurrentTutorialStep();
-        try {
-            // Find edge by ID (not index)
-            EdgeHandle edge = nullptr;
-            for (size_t i = 0; i < map.getEdgeCount(); ++i) {
-                if (map.getEdge(i)->getId() == edgeId) {
-                    edge = map.getEdge(i);
-                    break;
-                }
-            }
-            if (!edge) {
-                fmt::println("[GameController] buildRoad failed: edge {} not found in map", edgeId);
-                return false;
-            }
-
-            // Double-check edge doesn't already have a road
-            if (edge->hasRoad()) {
-                fmt::println("[GameController] buildRoad failed: edge {} already has a road", edgeId);
-                return false;
-            }
-
-            // generate unique road id -> use the max existing id + 1, or 0 if no roads exist
-            size_t roadId = 0;
-            const auto& existingRoads = this->gameState.getRoads();
-            if (!existingRoads.empty()) {
-                size_t maxId = 0;
-                for (const auto& r : existingRoads) if (r && r->getId() > maxId) maxId = r->getId();
-                roadId = maxId + 1;
-            }
-
-            auto road = std::make_shared<Road>(roadId, playerId, edgeId, level, buildingCost);
-
-            edge->setRoadId(roadId);
-            this->gameState.addRoad(road);
-            player->addRoad(road->getId());
-
-            this->chargeResourceCost(*player, buildingCost);
-
-            fmt::println("[GameController] buildRoad succeeded: road {} built at edge {} for player {}", roadId, edgeId, playerId);
-            // Finish Tutorial if step is BUILD_ROAD
-            if (step && step->id == TutorialStepId::BUILD_ROAD) {
-                this->gameState.completeCurrentTutorialStep();
-            }
-
-            return true;
-
-        } catch (const std::exception& e) {
-            fmt::println("[GameController] buildRoad failed: exception - {}", e.what());
-            return false;
-        }
-    }
-
-
-    // TODO: move this functionality to settlement class
-    std::vector<size_t> GameController::getSettlementTiles(const Settlement& settlement) const {
-        std::vector<size_t> tileIds;
-        const Graph& map = this->gameState.getMap();
-        try {
-            // Find vertex by ID (not index)
-            VertexHandle vertex = nullptr;
-            for (size_t i = 0; i < map.getVertexCount(); ++i) {
-                if (map.getVertex(i)->getId() == settlement.getVertexId()) {
-                    vertex = map.getVertex(i);
-                    break;
-                }
-            }
-            if (!vertex) { return tileIds; }
-
-            const VertexHandle vh = vertex;
-            auto tilesOpt = map.getVertexTiles(vh);
-            if (!tilesOpt) return tileIds; // std::nullopt
-
-            for (const auto& tile : *tilesOpt) {
-                if (tile->getId() != SIZE_MAX) {
-                    tileIds.push_back(tile->getId());
-                }
-            }
-        } catch (const std::exception&) {} // ignore invalid vertex
-
-        return tileIds;
-    }
-
-
-    // TODO: discuss where to put this...
-    // Put this into vertex class? -> or better in settlement class as "hasNeighbourSettlement()"?!
-    bool GameController::doesVertexHaveNeighborSettlements(size_t vertexId) const {
-        const Graph& map = this->gameState.getMap();
-
-        try {
-            // Find vertex by ID (not index)
-            VertexHandle vertex = map.findVertexById(vertexId);
-            if (!vertex) { return true; }
-
-            const auto edgesOpt = map.getVertexEdges(vertex);
-            if (!edgesOpt) return false; // std::nullopt
-
-            for (const auto& edge : *edgesOpt) {
-                if (!edge || edge->getId() == SIZE_MAX) { continue; }
-
-                const auto verticesOpt = map.getEdgeVertices(edge);
-                if (!verticesOpt) return false; // std::nullopt
-
-                for (const auto& neighbour : *verticesOpt) {
-                    if (!neighbour || neighbour->getId() == SIZE_MAX || neighbour->getId() == vertexId) { continue; }
-                    if (neighbour->hasSettlement()) { return true; }
-                }
-            }
-        } catch (const std::exception&) { return true; }
-
-        return false;
-    }
-
-
-    // check if edge is connected with roads to a settlement from the player:
-    // either the edge is directly connected to a settlement form the player
-    // or the edge is connected to a road -> a road is always connected to a settlement
-    bool GameController::doesEdgeConnectToPlayer(size_t playerId, size_t edgeId) const {
-        const Graph& map = this->gameState.getMap();
-
-        try {
-            // Find edge by ID (not index)
-            EdgeHandle edge = nullptr;
-            for (size_t i = 0; i < map.getEdgeCount(); ++i) {
-                if (map.getEdge(i)->getId() == edgeId) {
-                    edge = map.getEdge(i);
-                    break;
-                }
-            }
-            if (!edge) { return false; }
-
-            const auto verticesOpt = map.getEdgeVertices(edge);
-            if (!verticesOpt) return false; // std::nullopt
-
-            for (const auto& vertex : *verticesOpt) {
-                if (vertex->hasSettlement()) {
-
-                    const auto settlementId = vertex->getSettlementId();
-                    if (settlementId.has_value()) {
-
-                        const Settlement* settlement = this->findSettlementById(settlementId.value());
-                        if (settlement && settlement->getPlayerId() == playerId) { return true; }
-                    }
-                }
-
-                const auto edgesOpt = map.getVertexEdges(vertex);
-                if (!edgesOpt) continue;
-
-                for (const auto& neighbourEdge : *edgesOpt) {
-                    if (neighbourEdge->getId() == SIZE_MAX || neighbourEdge->getId() == edgeId || !neighbourEdge->hasRoad()) {
-                        continue;
-                    }
-                    const auto roadId = neighbourEdge->getRoadId();
-                    if (!roadId.has_value()) { continue; }
-
-                    const Road* road = this->findRoadById(roadId.value());
-                    if (road && road->getPlayerId() == playerId) { return true; }
-                }
-            }
-        } catch (const std::exception&) { return false; }
-
-        return false;
-    }
-
-
-    // TODO: changing buildingCost to a map (as is planned), would make this function rather obsolete
-    bool GameController::hasEnoughResources(Player& player, const std::vector<int>& buildingCost) {
-        if (buildingCost.empty()) { return true; } // building is free
-
-        std::map<types::TileType, int> requirements;
-        for (size_t i = 0; i < buildingCost.size() && i < static_cast<size_t>(types::TileType::COUNT); ++i) {
-            if (buildingCost[i] > 0) {
-                requirements[static_cast<types::TileType>(i)] = buildingCost[i];
-            }
-        }
-
-        return (requirements.empty() || player.hasResources(requirements));
-    }
-
-
-    // TODO: when buildingCost is a map, this function would not be necessary anymore
-    void GameController::chargeResourceCost(Player& player, const std::vector<int>& buildingCost) {
-        if (buildingCost.empty()) { return; } // building is free -> nothing charged
-
-        for (size_t i = 0; i < buildingCost.size() && i < static_cast<size_t>(types::TileType::COUNT); ++i) {
-            if (buildingCost[i] > 0) {
-                player.removeResources(static_cast<types::TileType>(i), buildingCost[i]);
-            }
-        }
-    }
-
-
-    // util functions
-    const Road* GameController::findRoadById(size_t roadId) const {
-        const auto& roads = this->gameState.getRoads();
-
-        for (const auto& road : roads) {
-            if (road && road->getId() == roadId) {
-                return road.get();
-            }
-        }
-
-        return nullptr;
-    }
-
-
-    // util functions
-    const Settlement* GameController::findSettlementById(size_t settlementId) const {
-        const auto& settlements = this->gameState.getSettlements();
-
-        for (const auto& settlement : settlements) {
-            if (settlement && settlement->getId() == settlementId) {
-                return settlement.get();
-            }
-        }
-
-        return nullptr;
-    }
-
-}
+	Player* GameController::getCurrentPlayer() { return this->getPlayerbyId(this->gameState.getCurrentPlayerId()); }
+	const Player* GameController::getCurrentPlayer() const { return this->getPlayerById(this->gameState.getCurrentPlayerId()); }
+
+
+	Player* GameController::getPlayerbyId(size_t playerId) { return this->gameState.getPlayer(playerId); }
+	const Player* GameController::getPlayerById(size_t playerId) const { return this->gameState.getPlayer(playerId); }
+
+
+	void GameController::startTurn() {
+		Player* player = this->getCurrentPlayer();
+		if (!player) {
+			return;
+		}
+
+		this->giveResourcesTo(*player);
+		this->resetHeroMovement(*player);
+	}
+
+
+	void GameController::endTurn() {
+		const size_t playerCount = this->gameState.getPlayerCount();
+		if (playerCount == 0) {
+			return;
+		} // should not happen
+
+		// TODO: maybe add some "setNextTurn()" etc. functions
+		size_t nextPlayerId = (this->gameState.getCurrentPlayerId() + 1) % playerCount;
+		this->gameState.setCurrentPlayerId(nextPlayerId);
+		this->gameState.setTurnCount(this->gameState.getTurnCount() + 1);
+
+		if (nextPlayerId == 0) {
+			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
+		}
+	}
+
+
+	void GameController::giveResourcesTo(Player& player) {
+		// resources are given to the player based on the settlements they have
+		// for testing purposes, players receive some resources every turn
+		bool test = true;
+		if (test) {
+			player.addResources(types::TileType::FOREST, 1);
+			player.addResources(types::TileType::CLAY, 1);
+			player.addResources(types::TileType::GRASS, 1);
+			player.addResources(types::TileType::FIELD, 1);
+			player.addResources(types::TileType::MOUNTAIN, 1);
+
+			return;
+		}
+
+		for (size_t settlementId : player.getSettlementIds()) {
+			const Settlement* settlement = this->findSettlementById(settlementId);
+			if (!settlement) {
+				continue;
+			}
+
+			const auto tileIds = this->getSettlementTiles(*settlement);
+			for (size_t tileId : tileIds) {
+				const TileHandle tile = this->gameState.getMap().getTile(tileId);
+				if (tile->givesResourceThisTurn(this->rng)) {
+					player.addResources(tile->getType(), 1); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
+				}
+			}
+		}
+	}
+
+
+	void GameController::resetHeroMovement(Player& player) {
+		std::shared_ptr<Hero> hero = player.getHero();
+		if (hero) {
+			// TODO: something like this needs to be implemented in hero class:
+			// reset the available movement points, hero also needs to keep track of used range per turn
+			// hero->resetMovementPoints();
+			// hero->startIdleAnimation();
+		}
+	}
+
+
+	void GameController::exploreTile(Player& player, size_t tileId) {
+		Graph& map = this->gameState.getMap();
+
+		try {
+			TileHandle tile = map.getTile(tileId);
+
+			if (!player.isTileExplored(tileId)) {
+				tile->addVisibleForPlayers(player.getId());
+				player.exploreTile(tileId);
+			}
+		} catch (const std::exception&) {
+		} // invalid tile -> ignore
+	}
+
+
+	bool GameController::moveHeroToTile(size_t playerId, size_t targetTileId) {
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player) {
+			return false;
+		}
+
+		std::shared_ptr<Hero> hero = player->getHero();
+		if (!hero) {
+			return false;
+		}
+
+		const int currentTileId = hero->getTileID(); // TODO: use size_t in hero
+		size_t distance = 0;
+		if (currentTileId >= 0) {
+			const Graph& map = this->gameState.getMap();
+			const TileHandle currentTile = map.getTile(currentTileId);
+			const TileHandle targetTile = map.getTile(targetTileId);
+			distance = map.getDistanceBetween(currentTile, targetTile);
+
+			if (distance == SIZE_MAX) {
+				return false;
+			}
+		}
+
+		// TODO: hero class should implement moving the hero to a specified tile.
+		// TODO: use size_t in hero -> id and distance cannot be negative -> make this information explicit by used datatype
+		// if (!hero->moveToTile(targetTileId, distance)) { return false; }
+
+		auto range = hero->getBaseRange();
+		auto remainingRange = range - static_cast<int>(distance);
+		// TODO: set remaining range for the hero for the current turn
+		// otherwise we need to specify that the hero can be moved only once per turn
+		// something like this:
+		// hero->setRemainingRange(remainingRange);
+
+		// TODO: this is only a temporary workaround:
+		if (remainingRange < 0) {
+			return false;
+		}
+
+		this->exploreTile(*player, targetTileId);
+
+		return true; // success
+	}
+
+
+	bool GameController::canBuildSettlement(size_t playerId, size_t vertexId) const {
+		(void)playerId; // unused for now - simplified building rules
+		const Graph& map = this->gameState.getMap();
+		try {
+			// Find vertex by ID (not index)
+			VertexHandle vertex = map.findVertexById(vertexId);
+			if (!vertex) {
+				return false;
+			}
+
+			// Only check if vertex already has a settlement
+			if (vertex->hasSettlement()) {
+				return false;
+			}
+
+			// CRITICAL FIX: Check ALL vertices that share the same physical location (same set of tiles)
+			// This prevents building multiple settlements on the same physical vertex due to duplicate vertex IDs
+			// Only perform this check if the vertex has multiple tiles (indicating it's a shared vertex)
+			const auto tilesOpt = map.getVertexTiles(vertex);
+			if (tilesOpt) {
+				// Get the set of tile IDs that this vertex is connected to
+				std::unordered_set<size_t> vertexTileIds;
+				for (const auto& tile : *tilesOpt) {
+					if (tile && tile->getId() != SIZE_MAX) {
+						vertexTileIds.insert(tile->getId());
+					}
+				}
+
+				// Only check for duplicates if this vertex has multiple tiles (shared vertex)
+				// Single-tile vertices are edge cases and don't need this check
+				if (vertexTileIds.size() > 1) {
+					// Only check vertices that already have settlements (optimization and safety)
+					// Check all vertices in the graph to see if any other vertex with a settlement shares the same tiles
+					for (size_t i = 0; i < map.getVertexCount(); ++i) {
+						VertexHandle otherVertex = map.getVertex(i);
+						if (!otherVertex || otherVertex->getId() == vertexId || !otherVertex->hasSettlement()) {
+							continue; // Skip if no settlement - no conflict possible
+						}
+
+						const auto otherTilesOpt = map.getVertexTiles(otherVertex);
+						if (!otherTilesOpt) continue;
+
+						// Check if this vertex shares the same set of tiles
+						std::unordered_set<size_t> otherTileIds;
+						for (const auto& tile : *otherTilesOpt) {
+							if (tile && tile->getId() != SIZE_MAX) {
+								otherTileIds.insert(tile->getId());
+							}
+						}
+
+						// If the tile sets match exactly (same size and same tiles), they're at the same physical location
+						if (otherTileIds.size() == vertexTileIds.size() && vertexTileIds == otherTileIds) {
+							fmt::println("[GameController] canBuildSettlement: vertex {} shares {} tiles with vertex {} which has a settlement", 
+								vertexId, vertexTileIds.size(), otherVertex->getId());
+							return false; // Another vertex at the same location already has a settlement
+						}
+					}
+				}
+			}
+
+			// Also check that no adjacent vertices have settlements (basic rule)
+			if (this->doesVertexHaveNeighborSettlements(vertexId)) {
+				return false;
+			}
+			return true;
+		} catch (const std::exception&) {
+			return false;
+		}
+	}
+
+
+	bool GameController::buildSettlement(size_t playerId, size_t vertexId, const std::vector<int>& buildingCost) {
+		if (!this->canBuildSettlement(playerId, vertexId)) {
+			fmt::println("[GameController] buildSettlement failed: canBuildSettlement returned false");
+			return false;
+		}
+
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player) {
+			fmt::println("[GameController] buildSettlement failed: player {} not found", playerId);
+			return false;
+		}
+		if (!this->hasEnoughResources(*player, buildingCost)) {
+			fmt::println("[GameController] buildSettlement failed: player {} does not have enough resources", playerId);
+			return false;
+		}
+
+		Graph& map = this->gameState.getMap();
+		// Tutorial
+		auto* step = this->gameState.getCurrentTutorialStep();
+
+		try {
+			// Find vertex by ID (not index) - vertexId is the ID stored in the Vertex object
+			VertexHandle vertex = map.findVertexById(vertexId);
+
+			if (!vertex) {
+				fmt::println("[GameController] buildSettlement failed: vertex {} not found in map", vertexId);
+				return false; // Vertex with this ID not found
+			}
+
+			// Double-check vertex doesn't already have a settlement (race condition protection)
+			if (vertex->hasSettlement()) {
+				fmt::println("[GameController] buildSettlement failed: vertex {} already has a settlement", vertexId);
+				return false;
+			}
+
+			// CRITICAL FIX: Check ALL vertices that share the same physical location (same set of tiles)
+			// This prevents building multiple settlements on the same physical vertex due to duplicate vertex IDs
+			const auto tilesOpt = map.getVertexTiles(vertex);
+			if (tilesOpt) {
+				// Get the set of tile IDs that this vertex is connected to
+				std::unordered_set<size_t> vertexTileIds;
+				for (const auto& tile : *tilesOpt) {
+					if (tile && tile->getId() != SIZE_MAX) {
+						vertexTileIds.insert(tile->getId());
+					}
+				}
+
+				// Only check for duplicates if this vertex has multiple tiles (shared vertex)
+				// Single-tile vertices are edge cases and don't need this check
+				if (vertexTileIds.size() > 1) {
+					// Only check vertices that already have settlements (optimization and safety)
+					// Check all vertices in the graph to see if any other vertex with a settlement shares the same tiles
+					for (size_t i = 0; i < map.getVertexCount(); ++i) {
+						VertexHandle otherVertex = map.getVertex(i);
+						if (!otherVertex || otherVertex->getId() == vertexId || !otherVertex->hasSettlement()) {
+							continue; // Skip if no settlement - no conflict possible
+						}
+
+						const auto otherTilesOpt = map.getVertexTiles(otherVertex);
+						if (!otherTilesOpt) continue;
+
+						// Check if this vertex shares the same set of tiles
+						std::unordered_set<size_t> otherTileIds;
+						for (const auto& tile : *otherTilesOpt) {
+							if (tile && tile->getId() != SIZE_MAX) {
+								otherTileIds.insert(tile->getId());
+							}
+						}
+
+						// If the tile sets match exactly (same size and same tiles), they're at the same physical location
+						if (otherTileIds.size() == vertexTileIds.size() && vertexTileIds == otherTileIds) {
+							fmt::println("[GameController] buildSettlement failed: vertex {} shares {} tiles with vertex {} which has a settlement", 
+								vertexId, vertexTileIds.size(), otherVertex->getId());
+							return false;
+						}
+					}
+				}
+			}
+
+			size_t newSettlementId = 0;
+			const auto& existingSettlements = this->gameState.getSettlements();
+			if (!existingSettlements.empty()) {
+				size_t maxId = 0;
+				for (const auto& s : existingSettlements) {
+					if (s && s->getId() > maxId) {
+						maxId = s->getId();
+					}
+				}
+				newSettlementId = maxId + 1;
+			}
+
+			// TODO: rethink ownership of settlement
+			auto newSettlement = std::make_shared<Settlement>(newSettlementId, playerId, vertexId, buildingCost);
+
+			vertex->setSettlementId(newSettlementId);
+			this->gameState.addSettlement(newSettlement);
+			player->addSettlement(newSettlement->getId());
+
+			this->chargeResourceCost(*player, buildingCost);
+
+			fmt::println("[GameController] buildSettlement succeeded: settlement {} built at vertex {} for player {}", newSettlementId, vertexId, playerId);
+			// Finish Tutorial if step is BUILD_SETTLEMENT
+			if (step && step->id == TutorialStepId::BUILD_SETTLEMENT) {
+				this->gameState.completeCurrentTutorialStep();
+			}
+
+			return true;
+
+		} catch (const std::exception& e) {
+			fmt::println("[GameController] buildSettlement failed: exception - {}", e.what());
+			return false;
+		}
+	}
+
+
+	// TODO: validate this in edge class
+	bool GameController::canBuildRoad(size_t playerId, size_t edgeId) const {
+		(void)playerId; // unused for now - simplified building rules
+		const Graph& map = this->gameState.getMap();
+
+		try {
+			// Find edge by ID (not index)
+			EdgeHandle edge = map.findEdgeById(edgeId);
+			if (!edge) {
+				return false;
+			}
+
+			// Only check if edge already has a road
+			if (edge->hasRoad()) {
+				return false;
+			}
+
+			// CRITICAL FIX: Check ALL edges that share the same physical location (same two vertices)
+			// This prevents building multiple roads on the same physical edge due to duplicate edge IDs
+			// This is a safeguard check - if it fails for any reason, we still allow building
+			try {
+				const auto verticesOpt = map.getEdgeVertices(edge);
+				if (verticesOpt) {
+					// Get the two vertex IDs that this edge connects
+					std::unordered_set<size_t> edgeVertexIds;
+					for (const auto& vertex : *verticesOpt) {
+						if (vertex && vertex->getId() != SIZE_MAX) {
+							edgeVertexIds.insert(vertex->getId());
+						}
+					}
+
+					// Only check for duplicates if this edge connects exactly two valid vertices (shared edge)
+					// If it doesn't have 2 vertices, we skip the duplicate check and allow building
+					if (edgeVertexIds.size() == 2) {
+						// Only check edges that already have roads (optimization and safety)
+						// This allows the first road to be built without any checks
+						for (size_t i = 0; i < map.getEdgeCount(); ++i) {
+							EdgeHandle otherEdge = map.getEdge(i);
+							if (!otherEdge || otherEdge->getId() == edgeId || !otherEdge->hasRoad()) {
+								continue; // Skip if no road - no conflict possible
+							}
+
+							const auto otherVerticesOpt = map.getEdgeVertices(otherEdge);
+							if (!otherVerticesOpt) continue;
+
+							// Check if this edge connects the same two vertices
+							std::unordered_set<size_t> otherVertexIds;
+							for (const auto& vertex : *otherVerticesOpt) {
+								if (vertex && vertex->getId() != SIZE_MAX) {
+									otherVertexIds.insert(vertex->getId());
+								}
+							}
+
+							// If the vertex sets match exactly (same two vertices), they're at the same physical location
+							if (otherVertexIds.size() == 2 && edgeVertexIds == otherVertexIds) {
+								fmt::println("[GameController] canBuildRoad: edge {} connects same vertices as edge {} which has a road", 
+									edgeId, otherEdge->getId());
+								return false; // Another edge at the same location already has a road
+							}
+						}
+					}
+					// If edgeVertexIds.size() != 2, we skip the duplicate check and allow building
+				}
+				// If verticesOpt is nullopt, we also allow building (edge case)
+			} catch (const std::exception& e) {
+				// If the duplicate check fails for any reason, we still allow building
+				// This is a safeguard check and shouldn't block legitimate road building
+				fmt::println("[GameController] canBuildRoad: duplicate check failed for edge {}: {}, allowing building", edgeId, e.what());
+			}
+
+			return true;
+		} catch (const std::exception&) {
+			return false;
+		}
+	}
+
+
+	bool GameController::buildRoad(size_t playerId, size_t edgeId, RoadLevel level, const std::vector<int>& buildingCost) {
+		if (!this->canBuildRoad(playerId, edgeId)) {
+			fmt::println("[GameController] buildRoad failed: canBuildRoad returned false");
+			return false;
+		}
+
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player) {
+			fmt::println("[GameController] buildRoad failed: player {} not found", playerId);
+			return false;
+		}
+
+		if (!this->hasEnoughResources(*player, buildingCost)) {
+			fmt::println("[GameController] buildRoad failed: player {} does not have enough resources", playerId);
+			return false;
+		}
+
+		Graph& map = this->gameState.getMap();
+		// Tutorial
+		auto* step = this->gameState.getCurrentTutorialStep();
+		try {
+			// Find edge by ID (not index)
+			EdgeHandle edge = map.findEdgeById(edgeId);
+			if (!edge) {
+				fmt::println("[GameController] buildRoad failed: edge {} not found in map", edgeId);
+				return false;
+			}
+
+			// Double-check edge doesn't already have a road
+			if (edge->hasRoad()) {
+				fmt::println("[GameController] buildRoad failed: edge {} already has a road", edgeId);
+				return false;
+			}
+
+			// CRITICAL FIX: Check ALL edges that share the same physical location (same two vertices)
+			// This prevents building multiple roads on the same physical edge due to duplicate edge IDs
+			// This is a safeguard check - if it fails for any reason, we still allow building
+			try {
+				const auto verticesOpt = map.getEdgeVertices(edge);
+				if (verticesOpt) {
+					// Get the two vertex IDs that this edge connects
+					std::unordered_set<size_t> edgeVertexIds;
+					for (const auto& vertex : *verticesOpt) {
+						if (vertex && vertex->getId() != SIZE_MAX) {
+							edgeVertexIds.insert(vertex->getId());
+						}
+					}
+
+					// Only check for duplicates if this edge connects exactly two valid vertices (shared edge)
+					// If it doesn't have 2 vertices, we skip the duplicate check and allow building
+					if (edgeVertexIds.size() == 2) {
+						// Only check edges that already have roads (optimization and safety)
+						// This allows the first road to be built without any checks
+						for (size_t i = 0; i < map.getEdgeCount(); ++i) {
+							EdgeHandle otherEdge = map.getEdge(i);
+							if (!otherEdge || otherEdge->getId() == edgeId || !otherEdge->hasRoad()) {
+								continue; // Skip if no road - no conflict possible
+							}
+
+							const auto otherVerticesOpt = map.getEdgeVertices(otherEdge);
+							if (!otherVerticesOpt) continue;
+
+							// Check if this edge connects the same two vertices
+							std::unordered_set<size_t> otherVertexIds;
+							for (const auto& vertex : *otherVerticesOpt) {
+								if (vertex && vertex->getId() != SIZE_MAX) {
+									otherVertexIds.insert(vertex->getId());
+								}
+							}
+
+							// If the vertex sets match exactly (same two vertices), they're at the same physical location
+							if (otherVertexIds.size() == 2 && edgeVertexIds == otherVertexIds) {
+								fmt::println("[GameController] buildRoad failed: edge {} connects same vertices as edge {} which has a road", 
+									edgeId, otherEdge->getId());
+								return false;
+							}
+						}
+					}
+					// If edgeVertexIds.size() != 2, we skip the duplicate check and allow building
+				}
+				// If verticesOpt is nullopt, we also allow building (edge case)
+			} catch (const std::exception& e) {
+				// If the duplicate check fails for any reason, we still allow building
+				// This is a safeguard check and shouldn't block legitimate road building
+				fmt::println("[GameController] buildRoad: duplicate check failed for edge {}: {}, allowing building", edgeId, e.what());
+			}
+
+			// generate unique road id -> use the max existing id + 1, or 0 if no roads exist
+			size_t roadId = 0;
+			const auto& existingRoads = this->gameState.getRoads();
+			if (!existingRoads.empty()) {
+				size_t maxId = 0;
+				for (const auto& r : existingRoads)
+					if (r && r->getId() > maxId)
+						maxId = r->getId();
+				roadId = maxId + 1;
+			}
+
+			auto road = std::make_shared<Road>(roadId, playerId, edgeId, level, buildingCost);
+
+			edge->setRoadId(roadId);
+			this->gameState.addRoad(road);
+			player->addRoad(road->getId());
+
+			this->chargeResourceCost(*player, buildingCost);
+
+			fmt::println("[GameController] buildRoad succeeded: road {} built at edge {} for player {}", roadId, edgeId, playerId);
+			// Finish Tutorial if step is BUILD_ROAD
+			if (step && step->id == TutorialStepId::BUILD_ROAD) {
+				this->gameState.completeCurrentTutorialStep();
+			}
+
+			return true;
+
+		} catch (const std::exception& e) {
+			fmt::println("[GameController] buildRoad failed: exception - {}", e.what());
+			return false;
+		}
+	}
+
+
+	// TODO: move this functionality to settlement class
+	std::vector<size_t> GameController::getSettlementTiles(const Settlement& settlement) const {
+		std::vector<size_t> tileIds;
+		const Graph& map = this->gameState.getMap();
+		try {
+			// Find vertex by ID (not index)
+			VertexHandle vertex = nullptr;
+			for (size_t i = 0; i < map.getVertexCount(); ++i) {
+				if (map.getVertex(i)->getId() == settlement.getVertexId()) {
+					vertex = map.getVertex(i);
+					break;
+				}
+			}
+			if (!vertex) {
+				return tileIds;
+			}
+
+			const VertexHandle vh = vertex;
+			auto tilesOpt = map.getVertexTiles(vh);
+			if (!tilesOpt)
+				return tileIds; // std::nullopt
+
+			for (const auto& tile : *tilesOpt) {
+				if (tile->getId() != SIZE_MAX) {
+					tileIds.push_back(tile->getId());
+				}
+			}
+		} catch (const std::exception&) {
+		} // ignore invalid vertex
+
+		return tileIds;
+	}
+
+
+	// TODO: discuss where to put this...
+	// Put this into vertex class? -> or better in settlement class as "hasNeighbourSettlement()"?!
+	bool GameController::doesVertexHaveNeighborSettlements(size_t vertexId) const {
+		const Graph& map = this->gameState.getMap();
+
+		try {
+			// Find vertex by ID (not index)
+			VertexHandle vertex = map.findVertexById(vertexId);
+			if (!vertex) {
+				return true;
+			}
+
+			const auto edgesOpt = map.getVertexEdges(vertex);
+			if (!edgesOpt)
+				return false; // std::nullopt
+
+			for (const auto& edge : *edgesOpt) {
+				if (!edge || edge->getId() == SIZE_MAX) {
+					continue;
+				}
+
+				const auto verticesOpt = map.getEdgeVertices(edge);
+				if (!verticesOpt)
+					return false; // std::nullopt
+
+				for (const auto& neighbour : *verticesOpt) {
+					if (!neighbour || neighbour->getId() == SIZE_MAX || neighbour->getId() == vertexId) {
+						continue;
+					}
+					if (neighbour->hasSettlement()) {
+						return true;
+					}
+				}
+			}
+		} catch (const std::exception&) {
+			return true;
+		}
+
+		return false;
+	}
+
+
+	// check if edge is connected with roads to a settlement from the player:
+	// either the edge is directly connected to a settlement form the player
+	// or the edge is connected to a road -> a road is always connected to a settlement
+	bool GameController::doesEdgeConnectToPlayer(size_t playerId, size_t edgeId) const {
+		const Graph& map = this->gameState.getMap();
+
+		try {
+			// Find edge by ID (not index)
+			EdgeHandle edge = nullptr;
+			for (size_t i = 0; i < map.getEdgeCount(); ++i) {
+				if (map.getEdge(i)->getId() == edgeId) {
+					edge = map.getEdge(i);
+					break;
+				}
+			}
+			if (!edge) {
+				return false;
+			}
+
+			const auto verticesOpt = map.getEdgeVertices(edge);
+			if (!verticesOpt)
+				return false; // std::nullopt
+
+			for (const auto& vertex : *verticesOpt) {
+				if (vertex->hasSettlement()) {
+
+					const auto settlementId = vertex->getSettlementId();
+					if (settlementId.has_value()) {
+
+						const Settlement* settlement = this->findSettlementById(settlementId.value());
+						if (settlement && settlement->getPlayerId() == playerId) {
+							return true;
+						}
+					}
+				}
+
+				const auto edgesOpt = map.getVertexEdges(vertex);
+				if (!edgesOpt)
+					continue;
+
+				for (const auto& neighbourEdge : *edgesOpt) {
+					if (neighbourEdge->getId() == SIZE_MAX || neighbourEdge->getId() == edgeId || !neighbourEdge->hasRoad()) {
+						continue;
+					}
+					const auto roadId = neighbourEdge->getRoadId();
+					if (!roadId.has_value()) {
+						continue;
+					}
+
+					const Road* road = this->findRoadById(roadId.value());
+					if (road && road->getPlayerId() == playerId) {
+						return true;
+					}
+				}
+			}
+		} catch (const std::exception&) {
+			return false;
+		}
+
+		return false;
+	}
+
+
+	// TODO: changing buildingCost to a map (as is planned), would make this function rather obsolete
+	bool GameController::hasEnoughResources(Player& player, const std::vector<int>& buildingCost) {
+		if (buildingCost.empty()) {
+			return true;
+		} // building is free
+
+		std::map<types::TileType, int> requirements;
+		for (size_t i = 0; i < buildingCost.size() && i < static_cast<size_t>(types::TileType::COUNT); ++i) {
+			if (buildingCost[i] > 0) {
+				requirements[static_cast<types::TileType>(i)] = buildingCost[i];
+			}
+		}
+
+		return (requirements.empty() || player.hasResources(requirements));
+	}
+
+
+	// TODO: when buildingCost is a map, this function would not be necessary anymore
+	void GameController::chargeResourceCost(Player& player, const std::vector<int>& buildingCost) {
+		if (buildingCost.empty()) {
+			return;
+		} // building is free -> nothing charged
+
+		for (size_t i = 0; i < buildingCost.size() && i < static_cast<size_t>(types::TileType::COUNT); ++i) {
+			if (buildingCost[i] > 0) {
+				player.removeResources(static_cast<types::TileType>(i), buildingCost[i]);
+			}
+		}
+	}
+
+
+	// util functions
+	const Road* GameController::findRoadById(size_t roadId) const {
+		const auto& roads = this->gameState.getRoads();
+
+		for (const auto& road : roads) {
+			if (road && road->getId() == roadId) {
+				return road.get();
+			}
+		}
+
+		return nullptr;
+	}
+
+
+	// util functions
+	const Settlement* GameController::findSettlementById(size_t settlementId) const {
+		const auto& settlements = this->gameState.getSettlements();
+
+		for (const auto& settlement : settlements) {
+			if (settlement && settlement->getId() == settlementId) {
+				return settlement.get();
+			}
+		}
+
+		return nullptr;
+	}
+
+} // namespace df

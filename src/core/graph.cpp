@@ -1,15 +1,15 @@
 #include "graph.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <fstream>
 #include <iterator>
 #include <limits>
+#include <queue>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <utility>
-#include <algorithm>
-#include <queue>
-#include <fstream>
 
 #include "fmt/base.h"
 #include "vertex.h"
@@ -18,10 +18,12 @@
 
 namespace df {
 	void Graph::addTile(std::unique_ptr<Tile> tile) {
-		if (!tile) return;
+		if (!tile)
+			return;
 
 		const size_t tileId = tile->getId();
-		if (this->doesTileExist(tile->getId())) return;
+		if (this->doesTileExist(tile->getId()))
+			return;
 
 		this->tiles.push_back(std::move(tile));
 
@@ -31,10 +33,14 @@ namespace df {
 
 
 	void Graph::addEdge(std::unique_ptr<Edge> edge) {
-		if (!edge) return;
+		if (!edge)
+			return;
 
 		const size_t edgeId = edge->getId();
-		if (this->doesEdgeExist(edge.get())) return;
+		if (this->findEdgeById(edgeId) != nullptr) {
+			fmt::println("[DEBUG].[addEdge] edge with ID {} already exists; returning...", edgeId);
+			return;
+		}
 
 		this->edges.push_back(std::move(edge));
 
@@ -50,8 +56,8 @@ namespace df {
 
 		const size_t vertexId = vertex->getId();
 		fmt::println("[DEBUG].[addVertex] adding vertex with ID: {}", vertexId);
-		if (this->doesVertexExist(vertex.get())) {
-			fmt::println("[DEBUG].[addVertex] vertex already exists, returning");
+		if (this->findVertexById(vertexId) != nullptr) {
+			fmt::println("[DEBUG].[addVertex] vertex with ID {} already exists; returning...", vertexId);
 			return;
 		}
 
@@ -100,8 +106,7 @@ namespace df {
 		auto it = std::find_if(
 			this->tiles.begin(),
 			this->tiles.end(),
-			[tileId](const std::unique_ptr<Tile>& t) { return t && t->getId() == tileId; }
-		);
+			[tileId](const std::unique_ptr<Tile>& t) { return t && t->getId() == tileId; });
 		return (it != this->tiles.end()) ? it->get() : nullptr;
 	}
 
@@ -110,8 +115,7 @@ namespace df {
 		auto it = std::find_if(
 			this->vertices.begin(),
 			this->vertices.end(),
-			[vertexId](const std::unique_ptr<Vertex>& v) { return v && v->getId() == vertexId; }
-		);
+			[vertexId](const std::unique_ptr<Vertex>& v) { return v && v->getId() == vertexId; });
 		return (it != this->vertices.end()) ? it->get() : nullptr;
 	}
 
@@ -120,20 +124,19 @@ namespace df {
 		auto it = std::find_if(
 			this->edges.begin(),
 			this->edges.end(),
-			[edgeId](const std::unique_ptr<Edge>& e) { return e && e->getId() == edgeId; }
-		);
+			[edgeId](const std::unique_ptr<Edge>& e) { return e && e->getId() == edgeId; });
 		return (it != this->edges.end()) ? it->get() : nullptr;
 	}
 
 
 	bool Graph::doesTileExist(const TileHandle tile) const {
-		if (!tile) return false;
+		if (!tile)
+			return false;
 
 		return std::any_of(
 			this->tiles.begin(),
 			this->tiles.end(),
-			[&](const std::unique_ptr<Tile>& t) { return t.get() == tile; }
-		);
+			[&](const std::unique_ptr<Tile>& t) { return t.get() == tile; });
 	}
 
 	bool Graph::doesTileExist(size_t tileId) const {
@@ -142,46 +145,47 @@ namespace df {
 
 
 	bool Graph::doesEdgeExist(const EdgeHandle edge) const {
-		if (!edge) return false;
+		if (!edge)
+			return false;
 
 		return std::any_of(
 			this->edges.begin(),
 			this->edges.end(),
-			[&](const std::unique_ptr<Edge>& e) { return e.get() == edge; }
-		);
+			[&](const std::unique_ptr<Edge>& e) { return e.get() == edge; });
 	}
 
 
 	bool Graph::doesEdgeExist(size_t edgeId) const {
-		return edgeId < this->edges.size() && this->edges[edgeId] != nullptr;
+		return this->findEdgeById(edgeId) != nullptr;
 	}
 
 
 	bool Graph::doesVertexExist(const VertexHandle vertex) const {
-		if (!vertex) return false;
+		if (!vertex)
+			return false;
 
 		return std::any_of(
 			this->vertices.begin(),
 			this->vertices.end(),
-			[&](const std::unique_ptr<Vertex>& v) { return v.get() == vertex; }
-		);
+			[&](const std::unique_ptr<Vertex>& v) { return v.get() == vertex; });
 	}
 
 
 	bool Graph::doesVertexExist(size_t vertexId) const {
-		return vertexId < this->vertices.size() && this->vertices[vertexId] != nullptr;
+		return this->findVertexById(vertexId) != nullptr;
 	}
 
 
 	void Graph::removeTile(const TileHandle tile) {
-		if (!this->doesTileExist(tile)) return;
+		if (!this->doesTileExist(tile))
+			return;
 
 		auto it = std::find_if(
 			this->tiles.begin(),
 			this->tiles.end(),
-			[&](const std::unique_ptr<Tile>& t) { return t.get() == tile; }
-		);
-		if (it == this->tiles.end()) return;
+			[&](const std::unique_ptr<Tile>& t) { return t.get() == tile; });
+		if (it == this->tiles.end())
+			return;
 
 		const size_t tileId = it->get()->getId();
 
@@ -192,14 +196,15 @@ namespace df {
 
 
 	void Graph::removeEdge(const EdgeHandle edge) {
-		if (!this->doesEdgeExist(edge)) return;
+		if (!this->doesEdgeExist(edge))
+			return;
 
 		auto it = std::find_if(
 			this->edges.begin(),
 			this->edges.end(),
-			[&](const std::unique_ptr<Edge>& e) { return e.get() == edge; }
-		);
-		if (it == this->edges.end()) return;
+			[&](const std::unique_ptr<Edge>& e) { return e.get() == edge; });
+		if (it == this->edges.end())
+			return;
 
 		size_t edgeId = it->get()->getId();
 
@@ -209,14 +214,15 @@ namespace df {
 
 
 	void Graph::removeVertex(const VertexHandle vertex) {
-		if (!this->doesVertexExist(vertex)) return;
+		if (!this->doesVertexExist(vertex))
+			return;
 
 		auto it = std::find_if(
 			this->vertices.begin(),
 			this->vertices.end(),
-			[&](const std::unique_ptr<Vertex>& v) { return v.get() == vertex; }
-		);
-		if (it == this->vertices.end()) return;
+			[&](const std::unique_ptr<Vertex>& v) { return v.get() == vertex; });
+		if (it == this->vertices.end())
+			return;
 
 		size_t vertexId = it->get()->getId();
 
@@ -227,8 +233,10 @@ namespace df {
 
 
 	void Graph::connectEdgeToTile(const TileHandle tile, const EdgeHandle edge) {
-		if (!this->doesTileExist(tile)) return;
-		if (!this->doesEdgeExist(edge)) return;
+		if (!this->doesTileExist(tile))
+			return;
+		if (!this->doesEdgeExist(edge))
+			return;
 
 		auto& localEdges = this->tileEdges[tile->getId()];
 		for (size_t i = 0; i < 6; ++i) {
@@ -241,8 +249,10 @@ namespace df {
 
 
 	void Graph::connectVertexToEdge(const EdgeHandle edge, const VertexHandle vertex) {
-		if (!this->doesEdgeExist(edge)) return;
-		if (!this->doesVertexExist(vertex)) return;
+		if (!this->doesEdgeExist(edge))
+			return;
+		if (!this->doesVertexExist(vertex))
+			return;
 
 		auto& localVertices = this->edgeVertices[edge->getId()];
 		for (size_t i = 0; i < 2; ++i) {
@@ -255,8 +265,10 @@ namespace df {
 
 
 	void Graph::connectVertexToTile(const VertexHandle vertex, const TileHandle tile) {
-		if (!this->doesVertexExist(vertex)) return;
-		if (!this->doesTileExist(tile)) return;
+		if (!this->doesVertexExist(vertex))
+			return;
+		if (!this->doesTileExist(tile))
+			return;
 
 		auto& localVertices = this->tileVertices[tile->getId()];
 		for (size_t i = 0; i < 6; ++i) {
@@ -269,65 +281,75 @@ namespace df {
 
 
 	/**
-	* Returns std::nullopt if the tile is not found.
-	*/
+	 * Returns std::nullopt if the tile is not found.
+	 */
 	std::optional<std::array<EdgeHandle, 6>> Graph::getTileEdges(const TileHandle tile) const {
-		if (!this->doesTileExist(tile)) return std::nullopt;
+		if (!this->doesTileExist(tile))
+			return std::nullopt;
 
 		auto it = this->tileEdges.find(tile->getId());
-		if (it != this->tileEdges.end()) return it->second;
+		if (it != this->tileEdges.end())
+			return it->second;
 
 		return std::nullopt;
 	}
 
 
 	/**
-	* Returns std::nullopt if the tile is not found.
-	*/
+	 * Returns std::nullopt if the tile is not found.
+	 */
 	std::optional<std::array<VertexHandle, 6>> Graph::getTileVertices(const TileHandle tile) const {
-		if (!this->doesTileExist(tile)) return std::nullopt;
+		if (!this->doesTileExist(tile))
+			return std::nullopt;
 
 		auto it = this->tileVertices.find(tile->getId());
-		if (it != this->tileVertices.end()) return it->second;
+		if (it != this->tileVertices.end())
+			return it->second;
 
 		return std::nullopt;
 	}
 
 
 	/**
-	* Returns std::nullopt if the edge is not found.
-	*/
+	 * Returns std::nullopt if the edge is not found.
+	 */
 	std::optional<std::array<VertexHandle, 2>> Graph::getEdgeVertices(const EdgeHandle edge) const {
-		if (!this->doesEdgeExist(edge)) return std::nullopt;
+		if (!this->doesEdgeExist(edge))
+			return std::nullopt;
 
 		auto it = this->edgeVertices.find(edge->getId());
-		if (it != this->edgeVertices.end()) return it->second;
+		if (it != this->edgeVertices.end())
+			return it->second;
 
 		return std::nullopt;
 	}
 
 
 	/**
-	* Returns std::nullopt if the vertex is not found.
-	*/
+	 * Returns std::nullopt if the vertex is not found.
+	 */
 	std::optional<std::array<EdgeHandle, 3>> Graph::getVertexEdges(const VertexHandle vertex) const {
-		if (!this->doesVertexExist(vertex)) return std::nullopt;
+		if (!this->doesVertexExist(vertex))
+			return std::nullopt;
 
 		auto it = this->vertexEdges.find(vertex->getId());
-		if (it != this->vertexEdges.end()) return it->second;
+		if (it != this->vertexEdges.end())
+			return it->second;
 
 		return std::nullopt;
 	}
 
 
 	/**
-	* Returns std::nullopt if the vertex is not found.
-	*/
+	 * Returns std::nullopt if the vertex is not found.
+	 */
 	std::optional<std::array<TileHandle, 3>> Graph::getVertexTiles(const VertexHandle vertex) const {
-		if (!this->doesVertexExist(vertex)) return std::nullopt;
+		if (!this->doesVertexExist(vertex))
+			return std::nullopt;
 
 		auto it = this->vertexTiles.find(vertex->getId());
-		if (it != this->vertexTiles.end()) return it->second;
+		if (it != this->vertexTiles.end())
+			return it->second;
 
 		return std::nullopt;
 	}
@@ -335,17 +357,18 @@ namespace df {
 
 	// get the edge index (0-5) by the "global" edgeId
 	size_t Graph::getEdgeIndex(size_t edgeId) {
-		if (!this->doesEdgeExist(edgeId)) return SIZE_MAX;
+		if (!this->doesEdgeExist(edgeId))
+			return SIZE_MAX;
 
 		for (const auto& tile : this->tiles) {
 			if (auto localTileEdgesOpt = this->getTileEdges(tile.get()); localTileEdgesOpt) {
 				auto& localTileEdges = *localTileEdgesOpt;
 				auto it = std::ranges::find_if(
 					localTileEdges,
-					[&](EdgeHandle e) { return e->getId() == edgeId; }
-				);
+					[&](EdgeHandle e) { return e->getId() == edgeId; });
 
-				if (it != localTileEdges.end()) return std::distance(localTileEdges.begin(), it);
+				if (it != localTileEdges.end())
+					return std::distance(localTileEdges.begin(), it);
 			}
 		}
 		return SIZE_MAX;
@@ -365,7 +388,7 @@ namespace df {
 				for (const auto& edge : this->tileEdges.at(tile->getId())) {
 					if (this->edgeVertices.contains(edge->getId())) {
 						const auto& v = this->edgeVertices.at(edge->getId());
-						edgesJson[std::to_string(edge->getId())] = { v.at(0)->getId(), v.at(1)->getId() };
+						edgesJson[std::to_string(edge->getId())] = {v.at(0)->getId(), v.at(1)->getId()};
 					} else {
 						fmt::println("Edge vertices not found for edge {}", edge->getId());
 					}
@@ -439,8 +462,10 @@ namespace df {
 				verticesMap.emplace(vId0, &v0);
 				verticesMap.emplace(vId1, &v1);
 
-				self.edgeVertices[edgeId] = { verticesMap[vId0], verticesMap[vId1] };
-				if (edgeIndex < 6) { tileEdgesArray[edgeIndex++] = edgesMap.at(edgeId); }
+				self.edgeVertices[edgeId] = {verticesMap[vId0], verticesMap[vId1]};
+				if (edgeIndex < 6) {
+					tileEdgesArray[edgeIndex++] = edgesMap.at(edgeId);
+				}
 			}
 
 			self.tileEdges[tileId] = tileEdgesArray;
@@ -452,13 +477,15 @@ namespace df {
 
 
 	/**
-	* Serialized the graph topology and stores it in json format into the specified file location.
-	* Throws if file could not be opened.
-	*/
+	 * Serialized the graph topology and stores it in json format into the specified file location.
+	 * Throws if file could not be opened.
+	 */
 	void Graph::save(std::filesystem::path& to) {
 		std::ofstream file(to);
 
-		if (!file.is_open()) { throw std::runtime_error("Failed to open file for writing"); }
+		if (!file.is_open()) {
+			throw std::runtime_error("Failed to open file for writing");
+		}
 
 		file << this->serialize().dump(4);
 		file.close();
@@ -466,13 +493,15 @@ namespace df {
 
 
 	/**
-	* Reads data from the specified file and deserializes it into the graph data type.
-	* Throws if file could not be opened.
-	*/
+	 * Reads data from the specified file and deserializes it into the graph data type.
+	 * Throws if file could not be opened.
+	 */
 	void Graph::load(std::filesystem::path& from) {
 		std::ifstream file(from);
 
-		if (!file.is_open()) { throw std::runtime_error("Failed to open file for reading"); }
+		if (!file.is_open()) {
+			throw std::runtime_error("Failed to open file for reading");
+		}
 
 		std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 		file.close();
@@ -484,9 +513,9 @@ namespace df {
 
 
 	/**
-	* Gets ids of *all* neighbors, regardless of node-type.
-	* This means that ids must be unique over all node-types
-	*/
+	 * Gets ids of *all* neighbors, regardless of node-type.
+	 * This means that ids must be unique over all node-types
+	 */
 	std::vector<size_t> Graph::getNeighborIds(size_t id) const {
 		std::vector<size_t> neighbors;
 
@@ -604,7 +633,7 @@ namespace df {
 	// works for weighted graphs -> could be useful later when different terrain yields different
 	// difficulties for travel. Also rule-based AI might use this for building roads and stuff...
 	// Algorithm calculates shortest paths to nodes *of same type*; TODO: need to think about this more
-	template<HasIdProperty T>
+	template <HasIdProperty T>
 	std::vector<T> Graph::dijkstra(const T& start) const {
 		constexpr double INF = std::numeric_limits<double>::infinity();
 
@@ -616,14 +645,12 @@ namespace df {
 		const std::vector<T>& nodes = [this]() -> const std::vector<T>& {
 			if constexpr (std::is_same_v<T, Tile>) {
 				return this->tiles;
-			}
-			else if constexpr (std::is_same_v<T, Edge>) {
+			} else if constexpr (std::is_same_v<T, Edge>) {
 				return this->edges;
-			}
-			else {
+			} else {
 				return this->vertices;
 			}
-		}(); //directly call lambda
+		}(); // directly call lambda
 
 		for (const auto& node : nodes) {
 			distance[node.getId()] = INF; // make sure T has id
@@ -671,12 +698,13 @@ namespace df {
 
 
 	// Get the distance between two nodes (of same type) using basic BFS implementaiton
-	template<HasIdProperty T>
+	template <HasIdProperty T>
 	size_t Graph::getDistanceBetween(const T& start, const T& end) const {
 		const size_t startId = HasIdPropertyHelper::getId(start);
 		const size_t endId = HasIdPropertyHelper::getId(end);
 
-		if (startId == endId) return 0;
+		if (startId == endId)
+			return 0;
 
 		std::queue<size_t> q;
 		std::unordered_map<size_t, size_t> distances;
@@ -712,8 +740,9 @@ namespace df {
 	template size_t Graph::getDistanceBetween<Tile>(const Tile& start, const Tile& end) const;
 	template size_t Graph::getDistanceBetween<TileHandle>(const TileHandle& start, const TileHandle& end) const;
 
+
 	// Map methods
-	void Graph::regenerate(const WorldGeneratorConfig &worldGeneratorConfig) {
+	void Graph::regenerate(const WorldGeneratorConfig& worldGeneratorConfig) {
 		if (const Result<std::vector<Tile>, ResultError> generatedTiles = WorldGenerator::generateTiles(worldGeneratorConfig); generatedTiles.isOk()) {
 			fmt::println("[DEBUG] generated tiles");
 			setMapWidth(worldGeneratorConfig.columns);
@@ -721,8 +750,11 @@ namespace df {
 			fmt::println("[DEBUG] start initializing tiles");
 			this->initializeTilesForGraph(generatedTiles.unwrap());
 			fmt::println("[DEBUG] finished initializing tiles, try populating graph");
-			try { this->populate(); }
-			catch (const std::exception& e) { std::cerr << "Error populating graph: " << e.what() << std::endl; }
+			try {
+				this->populate();
+			} catch (const std::exception& e) {
+				std::cerr << "Error populating graph: " << e.what() << std::endl;
+			}
 			fmt::println("[DEBUG] finished populating graph");
 			this->renderUpdateRequested = true;
 		} else {
@@ -732,7 +764,8 @@ namespace df {
 
 
 	void Graph::initializeTilesForGraph(std::vector<Tile> newTiles) {
-		if (newTiles.empty()) return;
+		if (newTiles.empty())
+			return;
 		fmt::println("[DEBUG] start initializing tiles with a non-empty newTiles vector");
 		fmt::println("[DEBUG] clear existing tiles");
 		this->tiles.clear();
@@ -749,7 +782,8 @@ namespace df {
 	// populates the graph with edges and vertices for all tiles.
 	// this function also regards the fact that some tiles share edges and/or vertices
 	void Graph::populate() {
-		if (this->tiles.empty() || this->mapWidth == 0) return;
+		if (this->tiles.empty() || this->mapWidth == 0)
+			return;
 
 		this->edges.clear();
 		this->vertices.clear();
@@ -764,7 +798,7 @@ namespace df {
 		const size_t columns = this->mapWidth;
 		const size_t rows = this->tiles.size() / columns;
 		fmt::println("[DEBUG].[populate] received map dimensions: columns={}, rows={}, tiles.size()={}", columns, rows, this->tiles.size());
-		
+
 		if (columns == 0 || rows == 0 || this->tiles.empty()) {
 			fmt::println("[DEBUG].[populate] ERROR: Invalid map dimensions or empty tiles!");
 			return;
@@ -793,7 +827,8 @@ namespace df {
 			int newCol = static_cast<int>(col) + dCol;
 
 			// Check bounds
-			if (newRow < 0 || newRow >= static_cast<int>(rows) || newCol < 0 || newCol >= static_cast<int>(columns)) return std::nullopt;
+			if (newRow < 0 || newRow >= static_cast<int>(rows) || newCol < 0 || newCol >= static_cast<int>(columns))
+				return std::nullopt;
 
 			size_t neighbourId = static_cast<size_t>(newRow) * columns + static_cast<size_t>(newCol);
 			// Check if neighbourId is valid and within expected range
@@ -814,52 +849,210 @@ namespace df {
 				throw std::logic_error("getVertexKey: columns is zero!");
 			}
 			size_t row = tileId / columns;
-			bool isOdd = (row & 1) == 1; //odd rows have different neighbours -> hexagonal represented by row/col
+			bool isOdd = (row & 1) == 1; // odd rows have different neighbours -> hexagonal represented by row/col
 			size_t minTileId = tileId;
-			std::vector<size_t> sharingTiles = { tileId };
+			std::vector<size_t> sharingTiles = {tileId};
 
 			switch (vertexIndex) {
-				case 0: // Top
-					if (isOdd) {
-						// Odd row: top-left (row-1, col), top-right (row-1, col+1)
-						if (auto n = getNeighbour(tileId, -1, 0)) sharingTiles.push_back(*n);
-						if (auto n = getNeighbour(tileId, -1, 1)) sharingTiles.push_back(*n);
-					} else {
-						// Even row: top-left (row-1, col-1), top-right (row-1, col)
-						if (auto n = getNeighbour(tileId, -1, -1)) sharingTiles.push_back(*n);
-						if (auto n = getNeighbour(tileId, -1, 0)) sharingTiles.push_back(*n);
-					}
-					break;
-				case 1: // Top-right
-					if (auto n = getNeighbour(tileId, 0, 1)) sharingTiles.push_back(*n);
-					break;
-				case 2: // Bottom-right -> right flat edge (sharde with right neighbour)
-					if (auto n = getNeighbour(tileId, 0, 1)) sharingTiles.push_back(*n);
-					break;
-				case 3: // Bottom vertex
-					if (isOdd) {
-						// Odd row: bottom-left (row+1, col), bottom-right (row+1, col+1)
-						if (auto n = getNeighbour(tileId, 1, 0)) sharingTiles.push_back(*n);
-						if (auto n = getNeighbour(tileId, 1, 1)) sharingTiles.push_back(*n);
-					} else {
-						// Even row: bottom-left (row+1, col-1), bottom-right (row+1, col)
-						if (auto n = getNeighbour(tileId, 1, -1)) sharingTiles.push_back(*n);
-						if (auto n = getNeighbour(tileId, 1, 0)) sharingTiles.push_back(*n);
-					}
-					break;
-				case 4: //bottom-left -> shared with left neighbuor
-					if (auto n = getNeighbour(tileId, 0, -1)) sharingTiles.push_back(*n);
-					break;
-				case 5: // top-left vertex ->left neighboor
-					if (auto n = getNeighbour(tileId, 0, -1)) sharingTiles.push_back(*n);
-					break;
+			case 0: // Top
+				if (isOdd) {
+					// Odd row: top-left (row-1, col), top-right (row-1, col+1)
+					if (auto n = getNeighbour(tileId, -1, 0))
+						sharingTiles.push_back(*n);
+					if (auto n = getNeighbour(tileId, -1, 1))
+						sharingTiles.push_back(*n);
+				} else {
+					// Even row: top-left (row-1, col-1), top-right (row-1, col)
+					if (auto n = getNeighbour(tileId, -1, -1))
+						sharingTiles.push_back(*n);
+					if (auto n = getNeighbour(tileId, -1, 0))
+						sharingTiles.push_back(*n);
+				}
+				break;
+			case 1: // Top-right
+				if (auto n = getNeighbour(tileId, 0, 1))
+					sharingTiles.push_back(*n);
+				break;
+			case 2: // Bottom-right -> right flat edge (sharde with right neighbour)
+				if (auto n = getNeighbour(tileId, 0, 1))
+					sharingTiles.push_back(*n);
+				break;
+			case 3: // Bottom vertex
+				if (isOdd) {
+					// Odd row: bottom-left (row+1, col), bottom-right (row+1, col+1)
+					if (auto n = getNeighbour(tileId, 1, 0))
+						sharingTiles.push_back(*n);
+					if (auto n = getNeighbour(tileId, 1, 1))
+						sharingTiles.push_back(*n);
+				} else {
+					// Even row: bottom-left (row+1, col-1), bottom-right (row+1, col)
+					if (auto n = getNeighbour(tileId, 1, -1))
+						sharingTiles.push_back(*n);
+					if (auto n = getNeighbour(tileId, 1, 0))
+						sharingTiles.push_back(*n);
+				}
+				break;
+			case 4: // bottom-left -> shared with left neighbuor
+				if (auto n = getNeighbour(tileId, 0, -1))
+					sharingTiles.push_back(*n);
+				break;
+			case 5: // top-left vertex ->left neighboor
+				if (auto n = getNeighbour(tileId, 0, -1))
+					sharingTiles.push_back(*n);
+				break;
 			}
 
 			// get canconical tile
-			for (size_t tid : sharingTiles) if (tid < minTileId) minTileId = tid;
+			for (size_t tid : sharingTiles)
+				if (tid < minTileId)
+					minTileId = tid;
 
-			// (canonicalTileId, vertexIndex)
-			return { minTileId, vertexIndex };
+			// Determine the vertex index in the canonical tile
+			// If the canonical tile is the current tile, use the current vertexIndex
+			// Otherwise, determine what index this vertex has in the canonical tile
+			size_t canonicalVertexIndex = vertexIndex;
+			if (minTileId != tileId) {
+				std::sort(sharingTiles.begin(), sharingTiles.end());
+				bool isCanonicalOdd = ((minTileId / columns) & 1) == 1;
+
+				// For vertices shared by 3 tiles, determine the canonical index
+				// by checking the relative positions of sharing tiles
+				if (sharingTiles.size() == 3) {
+
+					// Determine which vertex index in the canonical tile corresponds to this shared vertex
+					// by checking which neighbours the canonical tile has which match the sharing tiles
+					for (size_t vi = 0; vi < 6; ++vi) {
+						std::vector<size_t> canonicalSharingTiles = {minTileId};
+
+						switch (vi) {
+						case 0: // Top
+							if (isCanonicalOdd) {
+								if (auto n = getNeighbour(minTileId, -1, 0))
+									canonicalSharingTiles.push_back(*n);
+								if (auto n = getNeighbour(minTileId, -1, 1))
+									canonicalSharingTiles.push_back(*n);
+							} else {
+								if (auto n = getNeighbour(minTileId, -1, -1))
+									canonicalSharingTiles.push_back(*n);
+								if (auto n = getNeighbour(minTileId, -1, 0))
+									canonicalSharingTiles.push_back(*n);
+							}
+							break;
+						case 1: // Top-right
+							if (auto n = getNeighbour(minTileId, 0, 1))
+								canonicalSharingTiles.push_back(*n);
+							break;
+						case 2: // Bottom-right
+							if (auto n = getNeighbour(minTileId, 0, 1))
+								canonicalSharingTiles.push_back(*n);
+							break;
+						case 3: // Bottom
+							if (isCanonicalOdd) {
+								if (auto n = getNeighbour(minTileId, 1, 0))
+									canonicalSharingTiles.push_back(*n);
+								if (auto n = getNeighbour(minTileId, 1, 1))
+									canonicalSharingTiles.push_back(*n);
+							} else {
+								if (auto n = getNeighbour(minTileId, 1, -1))
+									canonicalSharingTiles.push_back(*n);
+								if (auto n = getNeighbour(minTileId, 1, 0))
+									canonicalSharingTiles.push_back(*n);
+							}
+							break;
+						case 4: // Bottom-left
+							if (auto n = getNeighbour(minTileId, 0, -1))
+								canonicalSharingTiles.push_back(*n);
+							break;
+						case 5: // Top-left
+							if (auto n = getNeighbour(minTileId, 0, -1))
+								canonicalSharingTiles.push_back(*n);
+							break;
+						}
+
+						std::sort(canonicalSharingTiles.begin(), canonicalSharingTiles.end());
+						if (canonicalSharingTiles == sharingTiles) {
+							canonicalVertexIndex = vi;
+							break;
+						}
+					}
+				}
+				// else {
+				// 	// For vertices shared by 2 tiles (edge vertices), we need to determine the vertex index in the canonical tile
+				// 	// Try to find which vertex index in the canonical tile corresponds to this shared vertex
+				// 	// size_t canonicalRow = minTileId / columns;
+				// 	// bool canonicalIsOdd = ((minTileId / columns) & 1) == 1;
+				//
+				// 	for (size_t vi = 0; vi < 6; ++vi) {
+				// 		std::vector<size_t> canonicalSharingTiles = {minTileId};
+				//
+				// 		switch (vi) {
+				// 		case 0: // Top
+				// 			if (isCanonicalOdd) {
+				// 				if (auto n = getNeighbour(minTileId, -1, 0))
+				// 					canonicalSharingTiles.push_back(*n);
+				// 				if (auto n = getNeighbour(minTileId, -1, 1))
+				// 					canonicalSharingTiles.push_back(*n);
+				// 			} else {
+				// 				if (auto n = getNeighbour(minTileId, -1, -1))
+				// 					canonicalSharingTiles.push_back(*n);
+				// 				if (auto n = getNeighbour(minTileId, -1, 0))
+				// 					canonicalSharingTiles.push_back(*n);
+				// 			}
+				// 			break;
+				// 		case 1: // Top-right
+				// 			if (auto n = getNeighbour(minTileId, 0, 1))
+				// 				canonicalSharingTiles.push_back(*n);
+				// 			break;
+				// 		case 2: // Bottom-right
+				// 			if (auto n = getNeighbour(minTileId, 0, 1))
+				// 				canonicalSharingTiles.push_back(*n);
+				// 			break;
+				// 		case 3: // Bottom
+				// 			if (isCanonicalOdd) {
+				// 				if (auto n = getNeighbour(minTileId, 1, 0))
+				// 					canonicalSharingTiles.push_back(*n);
+				// 				if (auto n = getNeighbour(minTileId, 1, 1))
+				// 					canonicalSharingTiles.push_back(*n);
+				// 			} else {
+				// 				if (auto n = getNeighbour(minTileId, 1, -1))
+				// 					canonicalSharingTiles.push_back(*n);
+				// 				if (auto n = getNeighbour(minTileId, 1, 0))
+				// 					canonicalSharingTiles.push_back(*n);
+				// 			}
+				// 			break;
+				// 		case 4: // Bottom-left
+				// 			if (auto n = getNeighbour(minTileId, 0, -1))
+				// 				canonicalSharingTiles.push_back(*n);
+				// 			break;
+				// 		case 5: // Top-left
+				// 			if (auto n = getNeighbour(minTileId, 0, -1))
+				// 				canonicalSharingTiles.push_back(*n);
+				// 			break;
+				// 		}
+				//
+				// 		std::sort(canonicalSharingTiles.begin(), canonicalSharingTiles.end());
+				// 		if (canonicalSharingTiles == sharingTiles) {
+				// 			canonicalVertexIndex = vi;
+				// 			break;
+				// 		}
+				// 	}
+				//
+				// 	// If we still couldn't find a match, use a hash of the sorted sharing tiles as a fallback
+				// 	// This ensures we still get a consistent key even if the matching logic fails
+				// 	if (canonicalVertexIndex == vertexIndex && minTileId != tileId) {
+				// 		// Use a simple hash of the sorted sharing tile IDs to create a unique but consistent key
+				// 		size_t hash = 0;
+				// 		for (size_t tid : sharingTiles) {
+				// 			hash = hash * 31 + tid; // Simple hash function
+				// 		}
+				// 		// Map hash to a vertex index (0-5) using modulo
+				// 		canonicalVertexIndex = hash % 6;
+				// 	}
+				// }
+			}
+
+			// (canonicalTileId, canonicalVertexIndex)
+			return {minTileId, canonicalVertexIndex};
 		};
 
 		// similar to above, just for edges (shard among at most 2 tiles)
@@ -871,35 +1064,76 @@ namespace df {
 			std::optional<size_t> neighbour;
 
 			switch (edgeIndex) {
-				case 0:
-					neighbour = isOdd ? getNeighbour(tileId, -1, 1) : getNeighbour(tileId, -1, 0);
-					break;
-				case 1:
-					neighbour = getNeighbour(tileId, 0, 1);
-					break;
-				case 2:
-					neighbour = isOdd ? getNeighbour(tileId, 1, 1) : getNeighbour(tileId, 1, 0);
-					break;
-				case 3:
-					neighbour = isOdd ? getNeighbour(tileId, 1, 0) : getNeighbour(tileId, 1, -1);
-					break;
-				case 4:
-					neighbour = getNeighbour(tileId, 0, -1);
-					break;
-				case 5:
-					neighbour = isOdd ? getNeighbour(tileId, -1, 0) : getNeighbour(tileId, -1, -1);
-					break;
+			case 0:
+				neighbour = isOdd ? getNeighbour(tileId, -1, 1) : getNeighbour(tileId, -1, 0);
+				break;
+			case 1:
+				neighbour = getNeighbour(tileId, 0, 1);
+				break;
+			case 2:
+				neighbour = isOdd ? getNeighbour(tileId, 1, 1) : getNeighbour(tileId, 1, 0);
+				break;
+			case 3:
+				neighbour = isOdd ? getNeighbour(tileId, 1, 0) : getNeighbour(tileId, 1, -1);
+				break;
+			case 4:
+				neighbour = getNeighbour(tileId, 0, -1);
+				break;
+			case 5:
+				neighbour = isOdd ? getNeighbour(tileId, -1, 0) : getNeighbour(tileId, -1, -1);
+				break;
 			}
 
-			if (neighbour && *neighbour < minTileId) minTileId = *neighbour;
+			if (neighbour && *neighbour < minTileId)
+				minTileId = *neighbour;
 
-			return { minTileId, edgeIndex };
+			size_t canonicalEdgeIndex = edgeIndex;
+			if (minTileId != tileId && neighbour.has_value()) {
+				bool isCanonicalOdd = ((minTileId / columns) & 1) == 1;
+
+				// Which edge index in the canonical tile corresponds to this edge
+				// checking which neighbour the canonical tile has which matches the current tile
+				for (size_t ei = 0; ei < 6; ++ei) {
+					std::optional<size_t> canonicalNeighbour;
+
+					switch (ei) {
+					case 0:
+						canonicalNeighbour = isCanonicalOdd ? getNeighbour(minTileId, -1, 1) : getNeighbour(minTileId, -1, 0);
+						break;
+					case 1:
+						canonicalNeighbour = getNeighbour(minTileId, 0, 1);
+						break;
+					case 2:
+						canonicalNeighbour = isCanonicalOdd ? getNeighbour(minTileId, 1, 1) : getNeighbour(minTileId, 1, 0);
+						break;
+					case 3:
+						canonicalNeighbour = isCanonicalOdd ? getNeighbour(minTileId, 1, 0) : getNeighbour(minTileId, 1, -1);
+						break;
+					case 4:
+						canonicalNeighbour = getNeighbour(minTileId, 0, -1);
+						break;
+					case 5:
+						canonicalNeighbour = isCanonicalOdd ? getNeighbour(minTileId, -1, 0) : getNeighbour(minTileId, -1, -1);
+						break;
+					}
+
+					// If the canonical tile's edge connects to the same neighbour (=current tile), that's the correct edge index
+					if (canonicalNeighbour.has_value() && *canonicalNeighbour == tileId) {
+						canonicalEdgeIndex = ei;
+						break;
+					}
+				}
+			}
+
+			return {minTileId, canonicalEdgeIndex};
 		};
 
 		// Calculate the maximum tile ID to avoid ID conflicts
 		// Vertex IDs will start at maxTileId + 1, edge IDs at maxTileId + 1000000 -> TODO: make more flexible (although this sould be enough)
 		size_t maxTileId = 0;
-		for (const auto& tile : this->tiles) if (tile->getId() > maxTileId) maxTileId = tile->getId();
+		for (const auto& tile : this->tiles)
+			if (tile->getId() > maxTileId)
+				maxTileId = tile->getId();
 		fmt::print("[DEBUG].[populate] got max tile id: {} and start iterating over tiles", maxTileId);
 
 		size_t nextVertexId = maxTileId + 1;
@@ -933,25 +1167,25 @@ namespace df {
 				fmt::println("[DEBUG].[populate] looking up key in vertexIdMap (size: {})", vertexIdMap.size());
 				try {
 					if (auto it = vertexIdMap.find(key); it != vertexIdMap.end()) {
-					fmt::println("[DEBUG].[populate] found existing vertex in map");
-					tmpVertex = this->findVertexById(it->second);
-					if (!tmpVertex) {
-						throw std::logic_error(fmt::format("Error while getting vertex. vertexIdMap out of sync: vertex {} missing", it->second));
-						// continue;
-					}
-				} else {
-					fmt::println("[DEBUG].[populate] creating new vertex");
-					size_t vertexId = nextVertexId++;
-					fmt::println("[DEBUG].[populate] new vertex ID: {}", vertexId);
+						fmt::println("[DEBUG].[populate] found existing vertex in map");
+						tmpVertex = this->findVertexById(it->second);
+						if (!tmpVertex) {
+							throw std::logic_error(fmt::format("Error while getting vertex. vertexIdMap out of sync: vertex {} missing", it->second));
+							// continue;
+						}
+					} else {
+						fmt::println("[DEBUG].[populate] creating new vertex");
+						size_t vertexId = nextVertexId++;
+						fmt::println("[DEBUG].[populate] new vertex ID: {}", vertexId);
 
-					auto vertex = std::make_unique<Vertex>(vertexId);
-					tmpVertex = vertex.get();
-					fmt::println("[DEBUG].[populate] created vertex unique_ptr, calling addVertex");
-					this->addVertex(std::move(vertex));
-					fmt::println("[DEBUG].[populate] added vertex, storing in map");
+						auto vertex = std::make_unique<Vertex>(vertexId);
+						tmpVertex = vertex.get();
+						fmt::println("[DEBUG].[populate] created vertex unique_ptr, calling addVertex");
+						this->addVertex(std::move(vertex));
+						fmt::println("[DEBUG].[populate] added vertex, storing in map");
 
-					vertexIdMap[key] = vertexId;
-					fmt::println("[DEBUG].[populate] stored vertex in map");
+						vertexIdMap[key] = vertexId;
+						fmt::println("[DEBUG].[populate] stored vertex in map");
 					}
 				} catch (const std::exception& e) {
 					fmt::println("[DEBUG].[populate] EXCEPTION in vertex handling: {}", e.what());
@@ -961,7 +1195,7 @@ namespace df {
 				// store in tileVertices array and connect to tile
 				tileVerticesArray[vi] = tmpVertex;
 				this->connectVertexToTile(tmpVertex, tile.get());
-				
+
 				// Build reverse lookup: add tile to vertexTiles
 				size_t vertexId = tmpVertex->getId();
 				if (!this->vertexTiles.contains(vertexId)) {
@@ -1002,7 +1236,7 @@ namespace df {
 				tileEdgesArray[ei] = tmpEdge;
 				this->connectEdgeToTile(tile.get(), tmpEdge);
 
-				//connect edge to the 2 vertices
+				// connect edge to the 2 vertices
 				// Edge i connects vertex i to vertex (i+1) % 6
 				auto vertex1Key = getVertexKey(tileId, ei);
 				auto vertex2Key = getVertexKey(tileId, (ei + 1) % 6);
@@ -1014,11 +1248,11 @@ namespace df {
 					if (v1 && v2) {
 						this->connectVertexToEdge(tmpEdge, v1);
 						this->connectVertexToEdge(tmpEdge, v2);
-						
+
 						// Build reverse lookup: add edge to vertexEdges for both vertices
 						size_t v1Id = v1->getId();
 						size_t v2Id = v2->getId();
-						
+
 						if (!this->vertexEdges.contains(v1Id)) {
 							this->vertexEdges[v1Id] = std::array<EdgeHandle, 3>{};
 						}
@@ -1029,7 +1263,7 @@ namespace df {
 								break;
 							}
 						}
-						
+
 						if (!this->vertexEdges.contains(v2Id)) {
 							this->vertexEdges[v2Id] = std::array<EdgeHandle, 3>{};
 						}
@@ -1055,4 +1289,4 @@ namespace df {
 		fmt::println("[DEBUG].[populate] finished with populating");
 		fmt::println("[DEBUG].[populate] finished wiht populating");
 	}
-}
+} // namespace df
