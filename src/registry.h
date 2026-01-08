@@ -1,10 +1,10 @@
 #pragma once
 
+#include "components.h"
 #include <common.h>
-#include <tiny_ecs.hpp>
 #include <core/road.h>
 #include <core/settlement.h>
-#include "components.h"
+#include <tiny_ecs.hpp>
 
 #include "core/player.h"
 #include <core/camera.h>
@@ -21,59 +21,59 @@ namespace df {
 
 	// NOTE: For your own project you may want to move the registry to a different file, as it grows in size.
 	//	 Depending on the requirements of your projects it may also make sense to have multiple registries.
-    class Registry {
-    public:
-        static Registry* init() noexcept;
+	class Registry {
+	  public:
+		static Registry* init() noexcept;
 
-        void clear() noexcept;
-        void clear(Entity e) noexcept;
+		void clear() noexcept;
+		void clear(Entity e) noexcept;
 
-			ComponentContainer<glm::vec2> positions;
-			ComponentContainer<glm::vec2> velocities;
-			ComponentContainer<glm::vec2> scales;
-			ComponentContainer<float> angles;
+		ComponentContainer<glm::vec2> positions;
+		ComponentContainer<glm::vec2> velocities;
+		ComponentContainer<glm::vec2> scales;
+		ComponentContainer<float> angles;
 
-			ComponentContainer<Player> players;
+		ComponentContainer<Player> players;
 
-			ComponentContainer<float> collisionRadius;
+		ComponentContainer<float> collisionRadius;
 
-			ComponentContainer<glm::vec3> colors;
-			ComponentContainer<Road> roads;
-			ComponentContainer<int> roadEdgeIndices; // autoselect correct road-texture for edge angle
-			ComponentContainer<Settlement> settlements;
-			ComponentContainer<BuildingPreviewComponent> buildingPreviews;
+		ComponentContainer<glm::vec3> colors;
+		ComponentContainer<Road> roads;
+		ComponentContainer<int> roadEdgeIndices; // autoselect correct road-texture for edge angle
+		ComponentContainer<Settlement> settlements;
+		ComponentContainer<BuildingPreviewComponent> buildingPreviews;
 
-			ComponentContainer<Camera> cameras;
-			ComponentContainer<CameraInput> cameraInputs;
-			ComponentContainer<AnimationComponent> animations;
-
-
-			inline Entity getPlayer() noexcept { return player; }
-			inline Entity getCamera() noexcept { return camera; }
-			inline float& getScreenDarkness() noexcept { return screenDarkness; }
+		ComponentContainer<Camera> cameras;
+		ComponentContainer<CameraInput> cameraInputs;
+		ComponentContainer<AnimationComponent> animations;
 
 
-			// This Code was generated using ChatGPT in order to store the rederTextSystem in the Registry.
-			// For use in other systems.
-			template<typename T>
-			void addSystem(T* system) {
-				systems[typeid(T).hash_code()] = system;
-			}
-
-			template<typename T>
-			T* getSystem() {
-				auto it = systems.find(typeid(T).hash_code());
-				return it != systems.end() ? static_cast<T*>(it->second) : nullptr;
-			}
-			// ChatGPT code end
+		inline Entity getPlayer() noexcept { return player; }
+		inline Entity getCamera() noexcept { return camera; }
+		inline float& getScreenDarkness() noexcept { return screenDarkness; }
 
 
-		private:
-			std::array<ContainerInterface*, 14> containers;
+		// This Code was generated using ChatGPT in order to store the rederTextSystem in the Registry.
+		// For use in other systems.
+		template <typename T>
+		void addSystem(T* system) {
+			systems[typeid(T).hash_code()] = system;
+		}
 
-			Entity player;
-			Entity camera;
-			float screenDarkness;
-			std::unordered_map<size_t, void*> systems;
+		template <typename T>
+		T* getSystem() {
+			auto it = systems.find(typeid(T).hash_code());
+			return it != systems.end() ? static_cast<T*>(it->second) : nullptr;
+		}
+		// ChatGPT code end
+
+
+	  private:
+		std::array<ContainerInterface*, 14> containers;
+
+		Entity player;
+		Entity camera;
+		float screenDarkness;
+		std::unordered_map<size_t, void*> systems;
 	};
 } // namespace df

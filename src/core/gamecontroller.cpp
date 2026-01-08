@@ -195,7 +195,8 @@ namespace df {
 						}
 
 						const auto otherTilesOpt = map.getVertexTiles(otherVertex);
-						if (!otherTilesOpt) continue;
+						if (!otherTilesOpt)
+							continue;
 
 						// Check if this vertex shares the same set of tiles
 						std::unordered_set<size_t> otherTileIds;
@@ -207,8 +208,8 @@ namespace df {
 
 						// If the tile sets match exactly (same size and same tiles), they're at the same physical location
 						if (otherTileIds.size() == vertexTileIds.size() && vertexTileIds == otherTileIds) {
-							fmt::println("[GameController] canBuildSettlement: vertex {} shares {} tiles with vertex {} which has a settlement", 
-								vertexId, vertexTileIds.size(), otherVertex->getId());
+							fmt::println("[GameController] canBuildSettlement: vertex {} shares {} tiles with vertex {} which has a settlement",
+										 vertexId, vertexTileIds.size(), otherVertex->getId());
 							return false; // Another vertex at the same location already has a settlement
 						}
 					}
@@ -285,7 +286,8 @@ namespace df {
 						}
 
 						const auto otherTilesOpt = map.getVertexTiles(otherVertex);
-						if (!otherTilesOpt) continue;
+						if (!otherTilesOpt)
+							continue;
 
 						// Check if this vertex shares the same set of tiles
 						std::unordered_set<size_t> otherTileIds;
@@ -297,8 +299,8 @@ namespace df {
 
 						// If the tile sets match exactly (same size and same tiles), they're at the same physical location
 						if (otherTileIds.size() == vertexTileIds.size() && vertexTileIds == otherTileIds) {
-							fmt::println("[GameController] buildSettlement failed: vertex {} shares {} tiles with vertex {} which has a settlement", 
-								vertexId, vertexTileIds.size(), otherVertex->getId());
+							fmt::println("[GameController] buildSettlement failed: vertex {} shares {} tiles with vertex {} which has a settlement",
+										 vertexId, vertexTileIds.size(), otherVertex->getId());
 							return false;
 						}
 					}
@@ -384,7 +386,8 @@ namespace df {
 							}
 
 							const auto otherVerticesOpt = map.getEdgeVertices(otherEdge);
-							if (!otherVerticesOpt) continue;
+							if (!otherVerticesOpt)
+								continue;
 
 							// Check if this edge connects the same two vertices
 							std::unordered_set<size_t> otherVertexIds;
@@ -396,8 +399,8 @@ namespace df {
 
 							// If the vertex sets match exactly (same two vertices), they're at the same physical location
 							if (otherVertexIds.size() == 2 && edgeVertexIds == otherVertexIds) {
-								fmt::println("[GameController] canBuildRoad: edge {} connects same vertices as edge {} which has a road", 
-									edgeId, otherEdge->getId());
+								fmt::println("[GameController] canBuildRoad: edge {} connects same vertices as edge {} which has a road",
+											 edgeId, otherEdge->getId());
 								return false; // Another edge at the same location already has a road
 							}
 						}
@@ -478,7 +481,8 @@ namespace df {
 							}
 
 							const auto otherVerticesOpt = map.getEdgeVertices(otherEdge);
-							if (!otherVerticesOpt) continue;
+							if (!otherVerticesOpt)
+								continue;
 
 							// Check if this edge connects the same two vertices
 							std::unordered_set<size_t> otherVertexIds;
@@ -490,8 +494,8 @@ namespace df {
 
 							// If the vertex sets match exactly (same two vertices), they're at the same physical location
 							if (otherVertexIds.size() == 2 && edgeVertexIds == otherVertexIds) {
-								fmt::println("[GameController] buildRoad failed: edge {} connects same vertices as edge {} which has a road", 
-									edgeId, otherEdge->getId());
+								fmt::println("[GameController] buildRoad failed: edge {} connects same vertices as edge {} which has a road",
+											 edgeId, otherEdge->getId());
 								return false;
 							}
 						}

@@ -23,7 +23,7 @@ namespace df {
 		size_t buflen = 512;
 		GetModuleFileNameA(NULL, buf, buflen);
 		binpath = std::filesystem::path(buf);
-		
+
 #elif defined(__APPLE__)
 #error Not implemented yet
 #endif

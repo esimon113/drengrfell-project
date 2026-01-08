@@ -104,7 +104,7 @@ namespace df {
 		};
 
 
-		template<typename AssetType>
+		template <typename AssetType>
 		std::string getAssetPath(const AssetType assetId) noexcept;
 
 	} // namespace assets

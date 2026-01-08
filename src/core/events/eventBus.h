@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
 
-#include "assets.h"
 #include "./events/signal.h"
+#include "assets.h"
 
 /*
  * This idea is inspired from Signals in Godot engine and the event bus pattern.
@@ -14,13 +14,14 @@
  *
  * Naming convention for signal handling callbacks:
  *     on + Signal
-*/
+ */
 
-#define RegisterSignal(name, ...) Signal<__VA_ARGS__> name{#name}
+#define RegisterSignal(name, ...) \
+	Signal<__VA_ARGS__> name { #name }
 
 namespace df {
 	class EventBus {
-	public:
+	  public:
 		EventBus() {
 			initializeSignalDecoration();
 		}
@@ -42,19 +43,18 @@ namespace df {
 		RegisterSignal(playSoundRequested, const std::string&, const bool);
 		// }
 
-	private:
+	  private:
 		// Signal Decoration {
-		template<typename SignalType>
+		template <typename SignalType>
 		void attachSound(SignalType& signal, const std::string& path, const bool loop = false) {
 			signal.connect(
 				[this, path, loop](auto&&...) {
 					this->playSoundRequested.emit(path, loop);
 				},
-				"EventBus::attachSound"
-			);
+				"EventBus::attachSound");
 		}
 
-		template<typename SignalType>
+		template <typename SignalType>
 		void attachSound(SignalType& signal, const assets::Sound asset, bool loop = false) {
 			attachSound(signal, assets::getAssetPath(asset), loop);
 		}
@@ -65,4 +65,4 @@ namespace df {
 
 		// }
 	};
-}
+} // namespace df

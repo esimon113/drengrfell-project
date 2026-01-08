@@ -30,8 +30,7 @@ namespace df {
 			[this](const std::string& path, const bool loop) {
 				this->onPlaySoundRequested(path, loop);
 			},
-			"AudioSystem::onPlaySoundRequested"
-		);
+			"AudioSystem::onPlaySoundRequested");
 	}
 
 	AudioSystem::~AudioSystem() noexcept {
@@ -62,8 +61,9 @@ namespace df {
 			}
 		}
 		ma_sound* music = sounds.at(path)->get();
-		if (!music) return;
+		if (!music)
+			return;
 		ma_sound_set_looping(music, loop ? MA_TRUE : MA_FALSE);
 		ma_sound_start(music);
 	}
-}
+} // namespace df

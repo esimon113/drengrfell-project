@@ -1,13 +1,13 @@
 #pragma once
 #include <common.h>
-#include <registry.h>
 #include <core/gamestate.h>
 #include <glm/vec2.hpp>
+#include <registry.h>
 
 
 namespace df {
 	class EntityMovementSystem {
-	public:
+	  public:
 		static EntityMovementSystem init(Registry* registry, GameState& gameState) noexcept;
 
 		void moveEntityTo(Entity entity, const glm::vec2& targetPosition, float deltaTime) noexcept;
@@ -19,10 +19,10 @@ namespace df {
 		bool getMovementState() noexcept { return movementState; };
 		bool isEntityMoving() const noexcept { return moving; }
 
-	private:
+	  private:
 		Registry* registry;
 		GameState* gameState;
 		bool movementState = false;
 		bool moving = false;
 	};
-}
+} // namespace df

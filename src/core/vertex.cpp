@@ -22,9 +22,8 @@ namespace df {
 		if (!j["settlementId"].is_null()) {
 			size_t newSettlementId = j["settlementId"].get<size_t>();
 			this->setSettlementId(newSettlementId);
-		}
-		else {
+		} else {
 			this->setSettlementId(std::nullopt);
 		}
 	}
-}
+} // namespace df

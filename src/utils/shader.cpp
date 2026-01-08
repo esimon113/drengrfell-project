@@ -25,8 +25,8 @@ namespace df {
 		Shader self;
 
 		const std::string basePath = assets::getAssetPath(asset);
-		std::ifstream vertexShaderFile{ basePath + ".vert.glsl" };
-		std::ifstream fragmentShaderFile{ basePath + ".frag.glsl" };
+		std::ifstream vertexShaderFile{basePath + ".vert.glsl"};
+		std::ifstream fragmentShaderFile{basePath + ".frag.glsl"};
 
 		if (vertexShaderFile.bad()) {
 			fmt::println("Failed to read shader file: {}", basePath + ".vert.glsl");
@@ -83,4 +83,4 @@ namespace df {
 
 		return self;
 	}
-}
+} // namespace df

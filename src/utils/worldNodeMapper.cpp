@@ -5,8 +5,8 @@
 #include "tile.h"
 #include "vertex.h"
 
-#include <cstdint>
 #include <array>
+#include <cstdint>
 #include <limits>
 #include <unordered_set>
 
@@ -26,18 +26,19 @@ namespace df {
 		const float sqrt3 = 1.732050808f;
 
 		return {
-			glm::vec2(0.0f, hexagonRadius),									// top
-			glm::vec2(0.5f * sqrt3 * hexagonRadius, 0.5f * hexagonRadius),	// top-right
-			glm::vec2(0.5f * sqrt3 * hexagonRadius, -0.5f * hexagonRadius),	// bottom-right
-			glm::vec2(0.0f, -hexagonRadius),								// bottom
-			glm::vec2(-0.5f * sqrt3 * hexagonRadius, -0.5f * hexagonRadius),// bottom-left
-			glm::vec2(-0.5f * sqrt3 * hexagonRadius, 0.5f * hexagonRadius)	// top-left
+			glm::vec2(0.0f, hexagonRadius),									 // top
+			glm::vec2(0.5f * sqrt3 * hexagonRadius, 0.5f * hexagonRadius),	 // top-right
+			glm::vec2(0.5f * sqrt3 * hexagonRadius, -0.5f * hexagonRadius),	 // bottom-right
+			glm::vec2(0.0f, -hexagonRadius),								 // bottom
+			glm::vec2(-0.5f * sqrt3 * hexagonRadius, -0.5f * hexagonRadius), // bottom-left
+			glm::vec2(-0.5f * sqrt3 * hexagonRadius, 0.5f * hexagonRadius)	 // top-left
 		};
 	}
 
 
-	std::optional<size_t> WorldNodeMapper::findClosestTileToWorldPos(const glm::vec2 &worldPos, const Graph& map) noexcept {
-		if (map.getTileCount() == 0) return std::nullopt;
+	std::optional<size_t> WorldNodeMapper::findClosestTileToWorldPos(const glm::vec2& worldPos, const Graph& map) noexcept {
+		if (map.getTileCount() == 0)
+			return std::nullopt;
 
 		float minDistance = (std::numeric_limits<float>::max)();
 		size_t closestTileId = SIZE_MAX;
@@ -57,12 +58,13 @@ namespace df {
 			}
 		}
 
-		if (closestTileId != SIZE_MAX) return closestTileId;
+		if (closestTileId != SIZE_MAX)
+			return closestTileId;
 		return std::nullopt;
 	};
 
 
-	std::optional<size_t> WorldNodeMapper::findClosestVertexToWorldPos(const glm::vec2 &worldPos, const Graph &map) noexcept {
+	std::optional<size_t> WorldNodeMapper::findClosestVertexToWorldPos(const glm::vec2& worldPos, const Graph& map) noexcept {
 		fmt::println("[WorldNodeMapper] findClosestVertexToWorldPos: searching for vertex near world position ({}, {})", worldPos.x, worldPos.y);
 
 		if (map.getVertexCount() == 0) {
@@ -86,17 +88,20 @@ namespace df {
 
 			glm::vec2 tileCenterPos(WorldNodeMapper::getTilePosition(currentRow, currentCol));
 			const auto verticesOpt = map.getTileVertices(tile);
-			if (!verticesOpt) continue;
+			if (!verticesOpt)
+				continue;
 			std::array<glm::vec2, 6> vertexOffsets = WorldNodeMapper::getVertexOffsets(hexagonRadius);
 
 			for (size_t i = 0; i < (*verticesOpt).size(); ++i) {
 				const VertexHandle vertex = (*verticesOpt)[i];
 				size_t vertexId = vertex->getId();
 
-				if (vertexId == SIZE_MAX) continue;
+				if (vertexId == SIZE_MAX)
+					continue;
 
 				// Skip if already processed the vertex (-> shared between tiles)
-				if (processedVertexIds.find(vertexId) != processedVertexIds.end()) continue;
+				if (processedVertexIds.find(vertexId) != processedVertexIds.end())
+					continue;
 				processedVertexIds.insert(vertexId);
 
 				glm::vec2 vertexPosition = tileCenterPos + vertexOffsets[i];
@@ -104,7 +109,7 @@ namespace df {
 
 				if (distance < minDistance) {
 					fmt::println("[WorldNodeMapper] New closest vertex found: vertexId={}, distance={:.3f}, position=({:.3f}, {:.3f})",
-						vertexId, distance, vertexPosition.x, vertexPosition.y);
+								 vertexId, distance, vertexPosition.x, vertexPosition.y);
 					minDistance = distance;
 					closestVertexId = vertexId;
 				}
@@ -121,7 +126,7 @@ namespace df {
 	};
 
 
-	std::optional<size_t> WorldNodeMapper::findClosestEdgeToWorldPos(const glm::vec2 &worldPos, const Graph &map) noexcept {
+	std::optional<size_t> WorldNodeMapper::findClosestEdgeToWorldPos(const glm::vec2& worldPos, const Graph& map) noexcept {
 		fmt::println("[WorldNodeMapper] findClosestEdgeToWorldPos: searching for edge near world position ({}, {})", worldPos.x, worldPos.y);
 
 		if (map.getEdgeCount() == 0) {
@@ -145,7 +150,8 @@ namespace df {
 
 			glm::vec2 tileCenterPos(WorldNodeMapper::getTilePosition(currentRow, currentCol));
 			const auto edgesOpt = map.getTileEdges(tile);
-			if (!edgesOpt) continue;
+			if (!edgesOpt)
+				continue;
 
 			std::array<glm::vec2, 6> vertexOffsets = WorldNodeMapper::getVertexOffsets(hexagonRadius);
 
@@ -153,10 +159,12 @@ namespace df {
 				const EdgeHandle edge = (*edgesOpt)[i];
 				size_t edgeId = edge->getId();
 
-				if (edgeId == SIZE_MAX) continue;
+				if (edgeId == SIZE_MAX)
+					continue;
 
 				// Skip if already processed edge (-> shared between tiles)
-				if (processedEdgeIds.find(edgeId) != processedEdgeIds.end()) continue;
+				if (processedEdgeIds.find(edgeId) != processedEdgeIds.end())
+					continue;
 				processedEdgeIds.insert(edgeId);
 
 				// edge-position as center between two neighboring vertices
@@ -167,7 +175,7 @@ namespace df {
 				float distance = glm::distance(worldPos, edgePosition);
 				if (distance < minDistance) {
 					fmt::println("[WorldNodeMapper] New closest edge found: edgeId={}, distance={:.3f}, position=({:.3f}, {:.3f})",
-						edgeId, distance, edgePosition.x, edgePosition.y);
+								 edgeId, distance, edgePosition.x, edgePosition.y);
 					minDistance = distance;
 					closestEdgeId = edgeId;
 				}
@@ -193,7 +201,8 @@ namespace df {
 			const TileHandle tile = map.getTile(tileId);
 
 			const auto verticesOpt = map.getTileVertices(tile);
-			if (!verticesOpt) continue;
+			if (!verticesOpt)
+				continue;
 			auto vertices = *verticesOpt;
 
 			for (size_t i = 0; i < vertices.size(); ++i) {
@@ -220,7 +229,8 @@ namespace df {
 		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
 			const TileHandle tile = map.getTile(tileId);
 			const auto edgesOpt = map.getTileEdges(tile);
-			if (!edgesOpt) continue;
+			if (!edgesOpt)
+				continue;
 			auto edges = *edgesOpt;
 
 			for (size_t i = 0; i < edges.size(); ++i) {
@@ -241,4 +251,4 @@ namespace df {
 		}
 		return glm::vec2(0.0f);
 	}
-}
+} // namespace df
