@@ -63,16 +63,19 @@ namespace df {
     void RenderHudSystem::step(float /*dt*/) noexcept {
         RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
         if (textSystem) {
+			// scale text size for fullscreen
+			float scaleX = viewport.size.x / DEFAULT_WIDTH;
+			float scaleY = viewport.size.y / DEFAULT_HEIGHT;
+			float scale = std::min(scaleX, scaleY);
             // Render Tutorial
             if (gameState->isTutorialActive()) {
                 // get next tutorial step
                 TutorialStep* step = gameState->getCurrentTutorialStep();
                 if (!step)
                     return;
-                // box position/size
-                float boxPosPaddingX = 10.f;
-                float boxPosPaddingY = 10.f;
-                float scale = 0.4f;
+				// box position/size
+				float boxPosPaddingX = 20.f * scale;
+				float boxPosPaddingY = 20.f * scale;
                 glm::vec2 textSize = textSystem->measureText(step->text, scale);
                 glm::vec2 rectBoxSize = {
                     textSize.x + boxPosPaddingX,
@@ -85,7 +88,7 @@ namespace df {
                 }
 
                 // center text in the middle of the box
-                float offset = 15.0f;
+				float offset = 40.0f * scale;
                 glm::vec2 textPos = {
                     pos.x + (rectBoxSize.x - textSize.x) / 2.0f,
                     pos.y + (rectBoxSize.y + textSize.y) / 2.0f - offset
@@ -103,11 +106,12 @@ namespace df {
                 "; Grass: " + std::to_string(resources[types::TileType::GRASS]) +
                 "; Grain: " + std::to_string(resources[types::TileType::FIELD]) +
                 "; Round: " + std::to_string(gameState->getRoundNumber());
-            float scale = viewport.size.x * 0.05f / 100.f;  // scale text size for fullscreen
+
             glm::vec2 hudTextSize = textSystem->measureText(hudTextToPrint, scale);
+			float hudPaddingX = 20.0f * scale;
             glm::vec2 hudTextPos = {
-                hudPos.x + 10.0f,
-                hudPos.y + (hudSize.y - hudTextSize.y) / 2.0f
+				hudPos.x + hudPaddingX,
+				hudPos.y + (hudSize.y / 2.0f) - (hudTextSize.y * 0.35f) // move slightly down
             };
             // Render Box for HUD
             renderRectBox(hudPos, hudSize, {0.0f, 0.0f, 0.0f});
@@ -121,12 +125,12 @@ namespace df {
 
             // End Turn Button
             renderRectBox({ endTurnButton.x , endTurnButton.y }, { endTurnButton.w, endTurnButton.h }, {0.0f, 0.0f, 1.0f});
-            glm::vec2 textSizeEndTurn = textSystem->measureText("End Turn", 0.5f);
+			glm::vec2 textSizeEndTurn = textSystem->measureText("End Turn", scale * 0.9f);
             glm::vec2 buttonTextPos = {
                 endTurnButton.x + (endTurnButton.w - textSizeEndTurn.x) / 2.0f,
-                endTurnButton.y + (endTurnButton.h - textSizeEndTurn.y) / 2.0f
+				endTurnButton.y + (endTurnButton.h - textSizeEndTurn.y) / 2.0f + textSizeEndTurn.y * 0.15 // shift slightly up
             };
-            textSystem->renderText("End Turn", buttonTextPos, 0.5f, { 1.f, 1.f, 1.f });
+			textSystem->renderText("End Turn", buttonTextPos, scale * 0.9f, {1.f, 1.f, 1.f});
 
         }
     }

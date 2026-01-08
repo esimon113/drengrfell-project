@@ -44,5 +44,8 @@ namespace df {
         };
 
         Button endTurnButton{};
+
+		float DEFAULT_WIDTH = 1920.0f;
+		float DEFAULT_HEIGHT = 1080.0f;
     };
 }
