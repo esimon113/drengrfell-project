@@ -109,10 +109,9 @@ namespace df {
 
             glm::vec2 hudTextSize = textSystem->measureText(hudTextToPrint, scale);
 			float hudPaddingX = 20.0f * scale;
-			float hudPaddingY = 20.0f * scale;
             glm::vec2 hudTextPos = {
 				hudPos.x + hudPaddingX,
-				hudPos.y + hudPaddingY + (hudSize.y - hudTextSize.y) / 2.0f
+				hudPos.y + (hudSize.y / 2.0f) - (hudTextSize.y * 0.35f) // move slightly down
             };
             // Render Box for HUD
             renderRectBox(hudPos, hudSize, {0.0f, 0.0f, 0.0f});
