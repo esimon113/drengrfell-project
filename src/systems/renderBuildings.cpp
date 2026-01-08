@@ -33,16 +33,15 @@ namespace df {
 		self.settlementTextures[4] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT5);
 
 		glm::uvec2 extent = self.window->getWindowExtent();
-		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
+		self.intermediateFramebuffer = Framebuffer::init({static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true});
 
 		float quadVertices[] = {
 			// positions (centered at origin)	// texcoords
-			-0.5f, -0.5f,	0.0f, 0.0f,
-			0.5f, -0.5f,	1.0f, 0.0f,
-			0.5f, 0.5f,		1.0f, 1.0f,
-			-0.5f, 0.5f,	0.0f, 1.0f
-		};
-		constexpr GLuint quadIndices[] = { 0, 1, 2, 2, 3, 0 };
+			-0.5f, -0.5f, 0.0f, 0.0f,
+			0.5f, -0.5f, 1.0f, 0.0f,
+			0.5f, 0.5f, 1.0f, 1.0f,
+			-0.5f, 0.5f, 0.0f, 1.0f};
+		constexpr GLuint quadIndices[] = {0, 1, 2, 2, 3, 0};
 
 		glGenVertexArrays(1, &self.m_quad_vao);
 		glBindVertexArray(self.m_quad_vao);
@@ -81,6 +80,8 @@ namespace df {
 		for (auto& tex : settlementTextures) {
 			tex.deinit();
 		}
+
+		intermediateFramebuffer.deinit();
 	}
 
 
@@ -100,13 +101,13 @@ namespace df {
 		return glm::ortho(
 			cam.minX(), cam.maxX(),
 			cam.minY(), cam.maxY(),
-			-1.0f, 1.0f
-		);
+			-1.0f, 1.0f);
 	}
 
 
 	void RenderBuildingsSystem::renderBuildings(float time) noexcept {
-		if (!registry || !gamestate) return;
+		if (!registry || !gamestate)
+			return;
 
 		glBindVertexArray(m_quad_vao);
 		Camera& cam = registry->cameras.get(registry->getCamera());
@@ -116,12 +117,13 @@ namespace df {
 
 		// TODO: use consistent FPS for animations
 		constexpr float animationSpeed = 5.0f; // fps
-		constexpr int numFrames = 5; // how many frames per animation run
+		constexpr int numFrames = 5;		   // how many frames per animation run
 		int textureIndex = static_cast<int>(time * animationSpeed) % numFrames;
 
 		// Render settlements from ECS
 		for (Entity e : registry->settlements.entities) {
-			if (!registry->positions.has(e) || !registry->scales.has(e)) continue;
+			if (!registry->positions.has(e) || !registry->scales.has(e))
+				continue;
 
 			// const Settlement& settlement = registry->settlements.get(e);
 			const glm::vec2& worldPos = registry->positions.get(e);
@@ -145,7 +147,8 @@ namespace df {
 
 		// Render roads from ECS
 		for (Entity e : registry->roads.entities) {
-			if (!registry->positions.has(e) || !registry->scales.has(e)) continue;
+			if (!registry->positions.has(e) || !registry->scales.has(e))
+				continue;
 
 			const glm::vec2& worldPos = registry->positions.get(e);
 			const glm::vec2& scale = registry->scales.get(e);
@@ -153,10 +156,14 @@ namespace df {
 			int edgeIndex = this->registry->roadEdgeIndices.has(e) ? this->registry->roadEdgeIndices.get(e) : -1;
 
 			Texture* roadTexture = nullptr;
-			if (edgeIndex == 0 || edgeIndex == 3) roadTexture = &roadTextureDiagonalDown;
-			else if (edgeIndex == 2 || edgeIndex == 5) roadTexture = &roadTextureDiagonalUp;
-			else if (edgeIndex == 1 || edgeIndex == 4) roadTexture = &roadTextureVertical;
-			else roadTexture = &roadTextureVertical;
+			if (edgeIndex == 0 || edgeIndex == 3)
+				roadTexture = &roadTextureDiagonalDown;
+			else if (edgeIndex == 2 || edgeIndex == 5)
+				roadTexture = &roadTextureDiagonalUp;
+			else if (edgeIndex == 1 || edgeIndex == 4)
+				roadTexture = &roadTextureVertical;
+			else
+				roadTexture = &roadTextureVertical;
 
 			glm::mat4 model = glm::identity<glm::mat4>();
 			model = glm::translate(model, glm::vec3(worldPos, 0.0f));
@@ -176,4 +183,4 @@ namespace df {
 
 		glBindVertexArray(0);
 	}
-}
+} // namespace df

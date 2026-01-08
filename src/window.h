@@ -1,68 +1,70 @@
 #pragma once
 
 #include <common.h>
+#include <memory>
 
 
 
 namespace df {
 	class Window {
-		public:
-			using ResizeFunction = std::function<void(GLFWwindow*, int, int)>;
-			using KeyFunction = std::function<void(GLFWwindow*, int, int, int, int)>;
-			using MouseButtonFunction = std::function<void(GLFWwindow*, int, int, int)>;
-			using ScrollFunction = std::function<void(GLFWwindow*, double, double)>;
+	  public:
+		using ResizeFunction = std::function<void(GLFWwindow*, int, int)>;
+		using KeyFunction = std::function<void(GLFWwindow*, int, int, int, int)>;
+		using MouseButtonFunction = std::function<void(GLFWwindow*, int, int, int)>;
+		using ScrollFunction = std::function<void(GLFWwindow*, double, double)>;
 
 
-			Window() = default;
-			~Window() = default;
+		Window() : handle(nullptr) {}
+		~Window();
 
-			static std::optional<Window*> init(const size_t width, const size_t height, const char* title) noexcept;
-			void deinit() noexcept;
+		static std::unique_ptr<Window> init(const size_t width, const size_t height, const char* title) noexcept;
+		void deinit() noexcept;
 
-			inline GLFWwindow* getHandle() noexcept { return handle; }
-			inline void makeContextCurrent() noexcept { glfwMakeContextCurrent(handle); }
-			inline void unsetCurrentContext() noexcept { glfwMakeContextCurrent(nullptr); }
-			inline bool shouldClose() noexcept { return glfwWindowShouldClose(handle); }
-			inline void close() noexcept { glfwSetWindowShouldClose(handle, GLFW_TRUE); }
-			inline void swapBuffers() noexcept { glfwSwapBuffers(handle); }
-			inline void setTitle(const char* title) noexcept { glfwSetWindowTitle(handle, title); }
+		inline GLFWwindow* getHandle() noexcept { return handle; }
+		inline void makeContextCurrent() noexcept { glfwMakeContextCurrent(handle); }
+		inline void unsetCurrentContext() noexcept { glfwMakeContextCurrent(nullptr); }
+		inline bool shouldClose() noexcept { return glfwWindowShouldClose(handle); }
+		inline void close() noexcept { glfwSetWindowShouldClose(handle, GLFW_TRUE); }
+		inline void swapBuffers() noexcept { glfwSwapBuffers(handle); }
+		inline void setTitle(const char* title) noexcept { glfwSetWindowTitle(handle, title); }
 
-			inline void setKeyCallback(KeyFunction keyFunc) noexcept { this->keyFunction = keyFunc; }
-			inline void setMouseButtonCallback(MouseButtonFunction mbFunc) noexcept { this->mouseButtonFunction = mbFunc; }
-			inline void setScrollCallback(ScrollFunction scrollFunc) noexcept { this->scrollFunction = scrollFunc; }
+		inline void setKeyCallback(KeyFunction keyFunc) noexcept { this->keyFunction = keyFunc; }
+		inline void setMouseButtonCallback(MouseButtonFunction mbFunc) noexcept { this->mouseButtonFunction = mbFunc; }
+		inline void setScrollCallback(ScrollFunction scrollFunc) noexcept { this->scrollFunction = scrollFunc; }
 
-			inline void setResizeCallback(ResizeFunction resizeFunc) noexcept { this->resizeFunction = resizeFunc; }
+		inline void setResizeCallback(ResizeFunction resizeFunc) noexcept { this->resizeFunction = resizeFunc; }
 
-			inline glm::vec2 getCursorPosition() const noexcept { return cursorPosition; }
-			inline glm::uvec2 getWindowExtent() const noexcept { return windowExtent; }
-
-
-			inline glm::vec2 getContentScale() const noexcept {
-				glm::vec2 scale;
-				glfwGetWindowContentScale(handle, &scale.x, &scale.y);
-
-				return scale;
-			}
+		inline glm::vec2 getCursorPosition() const noexcept { return cursorPosition; }
+		inline glm::uvec2 getWindowExtent() const noexcept { return windowExtent; }
 
 
-		private:
-			GLFWwindow* handle;
+		inline glm::vec2 getContentScale() const noexcept {
+			glm::vec2 scale;
+			glfwGetWindowContentScale(handle, &scale.x, &scale.y);
 
-			glm::uvec2 windowExtent;
-			ResizeFunction resizeFunction;
-			static void resizeCallback(GLFWwindow*, int width, int height) noexcept;
+			return scale;
+		}
 
-			glm::vec2 cursorPosition;
-			static void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) noexcept;
 
-			KeyFunction keyFunction;
-			static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+	  private:
+		GLFWwindow* handle;
 
-			MouseButtonFunction mouseButtonFunction;
-			static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
+		glm::uvec2 windowExtent;
+		ResizeFunction resizeFunction;
+		static void resizeCallback(GLFWwindow*, int width, int height) noexcept;
 
-			ScrollFunction scrollFunction;
-			static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
+		glm::vec2 cursorPosition;
+		static void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) noexcept;
 
+		KeyFunction keyFunction;
+		static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+
+		MouseButtonFunction mouseButtonFunction;
+		static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
+
+		ScrollFunction scrollFunction;
+		static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 	};
+
+	using WindowHandle = Window*;
 } // namespace df

@@ -23,7 +23,7 @@ namespace df {
 
 		self.buildingHoverShader = Shader::init(assets::Shader::buildingHover).value();
 		self.buildingShadowShader = Shader::init(assets::Shader::buildingShadow).value();
-		
+
 		// Load all settlement textures for animation
 		self.settlementTextures[0] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT1);
 		self.settlementTextures[1] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT2);
@@ -33,16 +33,15 @@ namespace df {
 		self.roadPreviewTexture = Texture::init(assets::Texture::DIRT_ROAD_DIAGONAL_UP);
 
 		glm::uvec2 extent = self.window->getWindowExtent();
-		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
+		self.intermediateFramebuffer = Framebuffer::init({static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true});
 
 		float quadVertices[] = {
 			// positions (centered at origin)	// texcoords
-			-0.5f, -0.5f,	0.0f, 0.0f,
-			0.5f, -0.5f,	1.0f, 0.0f,
-			0.5f, 0.5f,		1.0f, 1.0f,
-			-0.5f, 0.5f,	0.0f, 1.0f
-		};
-		constexpr GLuint quadIndices[] = { 0, 1, 2, 2, 3, 0 };
+			-0.5f, -0.5f, 0.0f, 0.0f,
+			0.5f, -0.5f, 1.0f, 0.0f,
+			0.5f, 0.5f, 1.0f, 1.0f,
+			-0.5f, 0.5f, 0.0f, 1.0f};
+		constexpr GLuint quadIndices[] = {0, 1, 2, 2, 3, 0};
 
 		glGenVertexArrays(1, &self.m_quad_vao);
 		glBindVertexArray(self.m_quad_vao);
@@ -75,8 +74,10 @@ namespace df {
 	void RenderBuildingPreviewsSystem::deinit() noexcept {
 		buildingHoverShader.deinit();
 		buildingShadowShader.deinit();
-		for (auto& tex : settlementTextures) tex.deinit();
+		for (auto& tex : settlementTextures)
+			tex.deinit();
 		roadPreviewTexture.deinit();
+		intermediateFramebuffer.deinit();
 	}
 
 
@@ -96,13 +97,13 @@ namespace df {
 		return glm::ortho(
 			0.0f, cam.viewWidth,
 			0.0f, cam.viewHeight,
-			-1.0f, 1.0f
-		);
+			-1.0f, 1.0f);
 	}
 
 
 	void RenderBuildingPreviewsSystem::renderPreviews(float time) noexcept {
-		if (!registry || !window || !gamestate) return;
+		if (!registry || !window || !gamestate)
+			return;
 
 		Camera& cam = registry->cameras.get(registry->getCamera());
 
@@ -113,7 +114,8 @@ namespace df {
 
 		// Render building previews from ECS
 		for (Entity e : registry->buildingPreviews.entities) {
-			if (!registry->scales.has(e) || !registry->positions.has(e)) continue;
+			if (!registry->scales.has(e) || !registry->positions.has(e))
+				continue;
 
 			const BuildingPreviewComponent& preview = registry->buildingPreviews.get(e);
 			const glm::vec2& scale = registry->scales.get(e);
@@ -125,7 +127,7 @@ namespace df {
 
 				// TODO: use consistent FPS for animations
 				constexpr float animationSpeed = 5.0f; // fps
-				constexpr int numFrames = 5; // how many frames per animation run
+				constexpr int numFrames = 5;		   // how many frames per animation run
 				int textureIndex = static_cast<int>(time * animationSpeed) % numFrames;
 
 				// Render shadow
@@ -194,4 +196,4 @@ namespace df {
 		}
 		glBindVertexArray(0);
 	}
-}
+} // namespace df

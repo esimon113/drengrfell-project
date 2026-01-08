@@ -1,22 +1,23 @@
 #include "application.h"
 #include "GL/gl3w.h"
 #include "GL/glcorearb.h"
+#include "animationSystem.h"
+#include "core/camera.h"
 #include "fmt/base.h"
 #include "glm/fwd.hpp"
-#include "animationSystem.h"
 #include "types.h"
-#include "core/camera.h"
 #include <glm/gtc/matrix_transform.hpp>
 // test for entityMovement
+#include "core/road.h"
 #include "entityMovement.h"
 #include "utils/worldNodeMapper.h"
-#include "core/road.h"
 
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 #include "events/eventBus.h"
+#include "window.h"
 
 
 namespace df {
@@ -25,12 +26,14 @@ namespace df {
 	}
 
 	::std::optional<Application> Application::init(const CommandLineOptions& options) noexcept {
-		if (options.hasHelp()) return ::std::nullopt;
+		if (options.hasHelp())
+			return ::std::nullopt;
 
 		Application self;
 		fmt::println("\"{}\" version {}.{}", PROJECT_NAME, VERSION_MAJOR, VERSION_MINOR);
 
-		if (options.hasX11()) glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+		if (options.hasX11())
+			glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
 
 		glfwSetErrorCallback(glfwErrorCallback);
 		if (!glfwInit()) {
@@ -38,12 +41,12 @@ namespace df {
 			return ::std::nullopt;
 		}
 
-		::std::optional<Window*> win = Window::init(600, 600, PROJECT_NAME);
+		auto win = Window::init(600, 600, PROJECT_NAME);
 		if (!win) {
 			glfwTerminate();
 			return ::std::nullopt;
 		}
-		self.window = ::std::move(*win);
+		self.window = ::std::move(win);
 
 		self.window->makeContextCurrent();
 
@@ -60,17 +63,17 @@ namespace df {
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
 		self.gameController = std::make_shared<GameController>(*self.gameState);
-		self.world = WorldSystem::init(self.window, self.registry, self.audioEngine.get(), *self.gameState);
+		self.world = WorldSystem::init(self.window.get(), self.registry, self.audioEngine.get(), *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-		self.render = RenderSystem::init(self.window, self.registry, self.gameState);
+		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState);
 		// Create main menu
-		self.mainMenu.init(self.window);
+		self.mainMenu.init(self.window.get());
 		// for testing hero movement until we have a triggerpoint
 		self.movementSystem = EntityMovementSystem::init(self.registry, *self.gameState);
 		// building preview system
-		self.buildingPreviewSystem = BuildingPreviewSystem::init(self.window, self.registry, *self.gameState);
+		self.buildingPreviewSystem = BuildingPreviewSystem::init(self.window.get(), self.registry, *self.gameState);
 		// Create config menu
-		self.configMenu.init(self.window, self.registry);
+		self.configMenu.init(self.window.get(), self.registry);
 
 		return self;
 	}
@@ -79,8 +82,14 @@ namespace df {
 		audioEngine.reset();
 		render.deinit();
 		delete registry;
-		window->deinit();
-		delete window;
+		// Poll events one last time to allow GLFW to process any pending cleanup
+		// This can help with proper cleanup of Wayland resources
+		if (window && window->getHandle()) {
+			glfwPollEvents();
+		}
+		// Explicitly reset the window to ensure it's fully destroyed before glfwTerminate
+		// This is important for proper cleanup of Wayland resources
+		window.reset();
 		glfwTerminate();
 	}
 
@@ -116,19 +125,17 @@ namespace df {
 		mainMenu.setStartCallback([&]() { configurateGame(); });
 
 		// callbacks so the config menu can change phase, set world parameters etc.
-		//configMenu.setStartCallback([&]() { startGame(); });
+		// configMenu.setStartCallback([&]() { startGame(); });
 		configMenu.setStartCallback(
 			[&](int seed,
 				int width,
 				int height,
-				int mode)
-			{
+				int mode) {
 				startGame(seed, width, height, mode);
-			}
-		);
+			});
 
-		//configMenu.setInsularCallback([&]() { setInsular(); });
-		//configMenu.setPerlinCallback([&]() { setPerlin(); });
+		// configMenu.setInsularCallback([&]() { setInsular(); });
+		// configMenu.setPerlinCallback([&]() { setPerlin(); });
 
 		float delta_time = 0;
 		float last_time = static_cast<float>(glfwGetTime());
@@ -157,68 +164,65 @@ namespace df {
 			}
 
 			switch (gamePhase) {
-				case types::GamePhase::START:
-					mainMenu.update(delta_time);
-					mainMenu.render();
+			case types::GamePhase::START:
+				mainMenu.update(delta_time);
+				mainMenu.render();
+				break;
+			case types::GamePhase::CONFIG:
+				configMenu.update(delta_time);
+				configMenu.render();
+				break;
+			case types::GamePhase::PLAY: {
+				world.step(delta_time);
+				// physics.step(delta_time);
+				// physics.handleCollisions(delta_time);
+
+				if (gameState->isGameOver()) {
+					fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
+					this->reset();
+					gameState->setPhase(types::GamePhase::START);
 					break;
-				case types::GamePhase::CONFIG:
-					configMenu.update(delta_time);
-					configMenu.render();
-					break;
-				case types::GamePhase::PLAY:
-				{
-					world.step(delta_time);
-					// physics.step(delta_time);
-					// physics.handleCollisions(delta_time);
-
-					if(gameState->isGameOver()){
-						fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
-						this->reset();
-						gameState->setPhase(types::GamePhase::START);
-						break;
-					}
-
-					df::AnimationSystem::update(registry, delta_time);
-
-					// update building preview BEFORE rendering
-					buildingPreviewSystem.setSettlementPreviewActive(this->world.isSettlementPreviewActive);
-					buildingPreviewSystem.setRoadPreviewActive(this->world.isRoadPreviewActive);
-					buildingPreviewSystem.step(delta_time);
-
-					window->makeContextCurrent();
-					glClearColor(0.5f,0.5f,0.5f,1.0f);
-					glClear(GL_COLOR_BUFFER_BIT);
-
-					render.step(delta_time);
-					// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
-					if (movementSystem.getMovementState()) {
-						if (!registry->animations.entities.empty()) {
-
-							glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
-							auto extent = this->window->getWindowExtent();
-
-							auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
-							auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
-							//fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
-
-							glm::vec2 tilePosition = movementSystem.getTileWorldPosition(mapId);
-							//fmt::println("Tile Position: ({},{})", tilePosition.x, tilePosition.y);
-
-							Entity hero = registry->animations.entities.front();
-							glm::vec2 targetPos = tilePosition;
-							//glm::vec2 currentTargetPos = targetPos;
-
-							movementSystem.moveEntityTo(hero, targetPos, delta_time);
-						}
-						else {
-							fmt::println("No hero entity available!");
-						}
-					}
-					// ------------------------------------------------------------
 				}
-					break;
-				case types::GamePhase::END:
-					break;
+
+				df::AnimationSystem::update(registry, delta_time);
+
+				// update building preview BEFORE rendering
+				buildingPreviewSystem.setSettlementPreviewActive(this->world.isSettlementPreviewActive);
+				buildingPreviewSystem.setRoadPreviewActive(this->world.isRoadPreviewActive);
+				buildingPreviewSystem.step(delta_time);
+
+				window->makeContextCurrent();
+				glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+				glClear(GL_COLOR_BUFFER_BIT);
+
+				render.step(delta_time);
+				// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
+				if (movementSystem.getMovementState()) {
+					if (!registry->animations.entities.empty()) {
+
+						glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
+						auto extent = this->window->getWindowExtent();
+
+						auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+						auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+						// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+
+						glm::vec2 tilePosition = movementSystem.getTileWorldPosition(mapId);
+						// fmt::println("Tile Position: ({},{})", tilePosition.x, tilePosition.y);
+
+						Entity hero = registry->animations.entities.front();
+						glm::vec2 targetPos = tilePosition;
+						// glm::vec2 currentTargetPos = targetPos;
+
+						movementSystem.moveEntityTo(hero, targetPos, delta_time);
+					} else {
+						fmt::println("No hero entity available!");
+					}
+				}
+				// ------------------------------------------------------------
+			} break;
+			case types::GamePhase::END:
+				break;
 			}
 
 			// Update previous phase for next iteration -> future TODO: adjust for multiple players + ending game + reentering
@@ -278,8 +282,7 @@ namespace df {
 		WorldGeneratorConfig config;
 		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
 			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
-		}
-		else {
+		} else {
 			config = worldGenConfResult.unwrap<>();
 		}
 
@@ -287,27 +290,34 @@ namespace df {
 		if (mode == -1) {
 			if (config.generationMode == WorldGeneratorConfig::GenerationMode::INSULAR) {
 				modeName = "kept as insular";
-			}
-			else if (config.generationMode == WorldGeneratorConfig::GenerationMode::PERLIN) {
+			} else if (config.generationMode == WorldGeneratorConfig::GenerationMode::PERLIN) {
 				modeName = "kept as perlin";
 			}
 		} else if (mode == 0) {
 			config.generationMode = WorldGeneratorConfig::GenerationMode::INSULAR;
 			modeName = "insular";
-		}
-		else if (mode == 1) {
+		} else if (mode == 1) {
 			config.generationMode = WorldGeneratorConfig::GenerationMode::PERLIN;
 			modeName = "perlin";
 		}
 
-		if (seedParam != -1) {config.seed = static_cast<unsigned>(seedParam);}
-		else {seedName = "kept as " + std::to_string(config.seed);}
+		if (seedParam != -1) {
+			config.seed = static_cast<unsigned>(seedParam);
+		} else {
+			seedName = "kept as " + std::to_string(config.seed);
+		}
 
-		if (widthParam != -1) {config.columns = static_cast<unsigned>(widthParam);}
-		else {widthName = "kept as " + std::to_string(config.columns);}
+		if (widthParam != -1) {
+			config.columns = static_cast<unsigned>(widthParam);
+		} else {
+			widthName = "kept as " + std::to_string(config.columns);
+		}
 
-		if (widthParam != -1) {config.rows = static_cast<unsigned>(heightParam);}
-		else {heightName = "kept as " + std::to_string(config.rows);}
+		if (widthParam != -1) {
+			config.rows = static_cast<unsigned>(heightParam);
+		} else {
+			heightName = "kept as " + std::to_string(config.rows);
+		}
 
 		fmt::println("set worldGen parameters to seed: {}, width: {}, height: {}, mode: {}", seedName, widthName, heightName, modeName);
 
@@ -315,7 +325,7 @@ namespace df {
 		// write config to json
 		const auto path = assets::getAssetPath(assets::JsonFile::WORLD_GENERATION_CONFIGURATION);
 
-		{	// open the stream in an extra block, so the stream gets closed before deserialize tries to open the json
+		{ // open the stream in an extra block, so the stream gets closed before deserialize tries to open the json
 			std::ofstream file(path);
 			if (!file) {
 				std::cerr << "Could not open config file: " << path << '\n';
@@ -331,8 +341,7 @@ namespace df {
 			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
 			fmt::println("[DEBUG] start regenerating...");
 			gameState->getMap().regenerate();
-		}
-		else {
+		} else {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
 		fmt::println("[DEBUG] regenerated world");
@@ -341,15 +350,14 @@ namespace df {
 			if (gameState->getPlayer(0)) {
 				Player* player = gameState->getPlayer(0);
 				player->reset();
-				player->addResources(types::TileType::FOREST, 100);				// give player 100 wood
-				player->addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
-				player->addResources(types::TileType::FIELD, 50);				// give player 50 grain
-			}
-			else {
+				player->addResources(types::TileType::FOREST, 100);	  // give player 100 wood
+				player->addResources(types::TileType::MOUNTAIN, 100); // give player 100 stone
+				player->addResources(types::TileType::FIELD, 50);	  // give player 50 grain
+			} else {
 				Player player{};
-				player.addResources(types::TileType::FOREST, 100);				// give player 100 wood
-				player.addResources(types::TileType::MOUNTAIN, 100);			// give player 100 stone
-				player.addResources(types::TileType::FIELD, 50);				// give player 50 grain
+				player.addResources(types::TileType::FOREST, 100);	 // give player 100 wood
+				player.addResources(types::TileType::MOUNTAIN, 100); // give player 100 stone
+				player.addResources(types::TileType::FIELD, 50);	 // give player 50 grain
 				gameState->addPlayer(player);
 			}
 			fmt::println("[DEBUG] resources distributed to player");
@@ -373,7 +381,7 @@ namespace df {
 		}
 		render.renderHeroSystem.updateDimensionsFromMap();
 
-		gameState->initTutorial();	// Init the Tutorial
+		gameState->initTutorial(); // Init the Tutorial
 		gameState->setPhase(types::GamePhase::PLAY);
 		fmt::println("[DEBUG] Application::startGame completed");
 	}
@@ -432,8 +440,7 @@ namespace df {
 
 			glm::vec2 mouse{
 				mouseX,
-				static_cast<float>(window->getWindowExtent().y) - mouseY
-			};
+				static_cast<float>(window->getWindowExtent().y) - mouseY};
 
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 			if (!movementSystem.getMovementState()) {
@@ -472,25 +479,25 @@ namespace df {
 					// TODO: This is just temporary...
 					// Settlement: 1 WOOD, 1 CLAY, 1 GRASS
 					const std::vector<int> settlementCost = {
-						0,  // EMPTY
-						0,  // WATER
-						1,  // FOREST (wood)
-						1,  // GRASS
-						0,  // MOUNTAIN
-						0,  // FIELD
-						1,  // CLAY
-						0   // ICE
+						0, // EMPTY
+						0, // WATER
+						1, // FOREST (wood)
+						1, // GRASS
+						0, // MOUNTAIN
+						0, // FIELD
+						1, // CLAY
+						0  // ICE
 					};
 					// Road: 1 WOOD
 					const std::vector<int> roadCost = {
-						0,  // EMPTY
-						0,  // WATER
-						1,  // FOREST (wood)
-						0,  // GRASS
-						0,  // MOUNTAIN
-						0,  // FIELD
-						0,  // CLAY
-						0   // ICE
+						0, // EMPTY
+						0, // WATER
+						1, // FOREST (wood)
+						0, // GRASS
+						0, // MOUNTAIN
+						0, // FIELD
+						0, // CLAY
+						0  // ICE
 					};
 
 					if (this->world.isSettlementPreviewActive) {
@@ -514,7 +521,8 @@ namespace df {
 							} else {
 								fmt::println("Cannot build settlement at vertex {}: insufficient resources or invalid placement", vertexId);
 							}
-						} else fmt::println("No closest vertex found");
+						} else
+							fmt::println("No closest vertex found");
 
 					} else if (this->world.isRoadPreviewActive) {
 						fmt::println("Checking if player can build road at world position {},{}", worldPos.x, worldPos.y);
@@ -538,7 +546,8 @@ namespace df {
 								fmt::println("Cannot build road at edge {}: insufficient resources or invalid placement", edgeId);
 							}
 
-						} else fmt::println("No closest edge found");
+						} else
+							fmt::println("No closest edge found");
 					}
 
 					return; // ignore other mouse callbacks when placing buildings...
@@ -573,6 +582,5 @@ namespace df {
 		render.onResizeCallback(windowParam, width, height);
 		render.renderHudSystem.onResizeCallback(windowParam, width, height);
 		configMenu.onResizeCallback(windowParam, width, height);
-
 	}
-}
+} // namespace df

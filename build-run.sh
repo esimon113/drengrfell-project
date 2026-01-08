@@ -31,7 +31,7 @@ awk '
     getline
 
     # Only count lines for files from src/
-    if ($0 ~ /src\//) {
+    if ($0 ~ /drengrfell-project\/src\//) {
         direct_count++
 
         # Count leaked bytes

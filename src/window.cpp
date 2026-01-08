@@ -1,15 +1,17 @@
 #include "window.h"
+#include "GLFW/glfw3.h"
+#include <memory>
 
 
 
 namespace df {
-	std::optional<Window*> Window::init(const size_t width, const size_t height, const char* title) noexcept {
-		Window* self = new Window;
+	std::unique_ptr<Window> Window::init(const size_t width, const size_t height, const char* title) noexcept {
+		auto self = std::make_unique<Window>();
 
-		if (self == nullptr) {
+		if (!self) {
 			fmt::println(stderr, "Failed to allocate window");
 
-			return std::nullopt;
+			return nullptr;
 		}
 
 		self->windowExtent = glm::uvec2(width, height);
@@ -29,20 +31,22 @@ namespace df {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 #endif
 
-		if (!(window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title,
-			nullptr, nullptr))) {
+		window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title, nullptr, nullptr);
+		// if (!(window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title,
+		// nullptr, nullptr))) {
+		if (!window) {
 			fmt::println(stderr, "Failed to create GLFW window");
-			return std::nullopt;
+			return nullptr;
 		}
 		self->handle = window;
 
 		self->makeContextCurrent();
 
 		int fbWidth, fbHeight;
-    	glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    	self->windowExtent = glm::uvec2(fbWidth, fbHeight);
+		glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+		self->windowExtent = glm::uvec2(fbWidth, fbHeight);
 
-		glfwSetWindowUserPointer(self->getHandle(), self);
+		glfwSetWindowUserPointer(self->getHandle(), self.get());
 		glfwSetCursorPosCallback(self->getHandle(), Window::cursorPositionCallback);
 		glfwSetKeyCallback(self->getHandle(), Window::keyCallback);
 		glfwSetMouseButtonCallback(self->getHandle(), Window::mouseButtonCallback);
@@ -58,8 +62,24 @@ namespace df {
 	}
 
 
+	Window::~Window() noexcept {
+		if (handle) {
+			// Unset the current context before destroying the window
+			// This is important for proper cleanup, especially on Wayland
+			glfwMakeContextCurrent(nullptr);
+			glfwDestroyWindow(handle);
+			handle = nullptr;
+		}
+	}
+
 	void Window::deinit() noexcept {
-		glfwDestroyWindow(handle);
+		if (handle) {
+			// Unset the current context before destroying the window
+			// This is important for proper cleanup, especially on Wayland
+			glfwMakeContextCurrent(nullptr);
+			glfwDestroyWindow(handle);
+			handle = nullptr;
+		}
 	}
 
 
