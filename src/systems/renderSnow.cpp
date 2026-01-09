@@ -120,7 +120,7 @@ namespace df {
 		float mapTopY = rows * hexHeightMultiplier;
 		float mapWidth = cols * hexWidthMultiplier;
 
-		int newparticles = 3; 
+		int newparticles = 7; 
 		for (int i = 0; i < newparticles; i++) {
 			int particleIndex = findUnusedParticle();
 			Particle& p = particlesContainer[particleIndex];
@@ -138,8 +138,10 @@ namespace df {
 			
 			p.life = std::abs(mapTopY / p.speed.y) + 2.0f; 
 
-			p.r = 255; p.g = 255; p.b = 255;
-			p.a = 160 + (rand() % 75);
+			p.r = 180; 
+			p.g = 190; 
+			p.b = 210; 
+			p.a = 80;
 			p.size = 0.12f;
 		}
 
