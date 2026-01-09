@@ -60,7 +60,7 @@ namespace df {
 		}
 
 		void initializeSignalDecoration() {
-			attachSound(this->applicationRunStarted, assets::Sound::music, true);
+			attachSound(this->applicationRunStarted, assets::Sound::BACKGROUND_MUSIC_1, true);
 		}
 
 		// }

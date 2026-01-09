@@ -4,7 +4,10 @@
 
 namespace df {
 	static constexpr std::array<const char*, static_cast<size_t>(assets::Sound::count)> SOUND_FILES = {
-		"music.wav",
+		"background/Fires Beneath the Trees.mp3",
+		"background/Foundations of Stone.mp3",
+		"background/Rest of the Hearthlands.mp3",
+		"background/The Weaver's Hope.mp3",
 	};
 
 

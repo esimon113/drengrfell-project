@@ -7,7 +7,10 @@
 namespace df {
 	namespace assets {
 		enum struct Sound {
-			music,
+			BACKGROUND_MUSIC_1,
+			BACKGROUND_MUSIC_2,
+			BACKGROUND_MUSIC_3,
+			BACKGROUND_MUSIC_4,
 			count
 		};
 
