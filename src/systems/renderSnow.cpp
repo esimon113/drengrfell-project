@@ -109,44 +109,38 @@ namespace df {
 	}
 
 	void RenderSnowSystem::step(float deltaTime) noexcept {
-		// Get camera position from registry
-
 		Camera& cam = registry->cameras.get(registry->getCamera());
-		glm::vec3 cameraPos = glm::vec3(cam.position.x, cam.position.y, 0.0f);
+		
+		int rows = RenderCommon::getMapRows<int>(this->gameState->getMap());
+		int cols = RenderCommon::getMapColumns<int>(this->gameState->getMap());
+		
+		float hexHeightMultiplier = 4.0f; 
+		float hexWidthMultiplier = 8.0f; 
 
-		const glm::vec2 worldDimensions = calculateWorldDimensions(RenderCommon::getMapColumns<int>(this->gameState->getMap()), RenderCommon::getMapRows<int>(this->gameState->getMap()));
+		float mapTopY = rows * hexHeightMultiplier;
+		float mapWidth = cols * hexWidthMultiplier;
 
-
-		glm::vec2 camPos2D = cam.position;
-
-		float camZoom = cam.zoom;
-
-		float visibleHeight = worldDimensions.y / cam.zoom;
-
-		int newparticles = 3;
-		float spawnY = camPos2D.y + visibleHeight + 2.0f;
-
+		int newparticles = 3; 
 		for (int i = 0; i < newparticles; i++) {
 			int particleIndex = findUnusedParticle();
 			Particle& p = particlesContainer[particleIndex];
 
-			p.life = (50.0f + (rand() % 20));
 			p.pos = glm::vec3(
-				cameraPos.x + (rand() % 200) - 20.0f,
-				spawnY,
+				(float)(rand() % (int)(mapWidth > 0 ? mapWidth : 0)), 
+				mapTopY,
 				0.0f);
 
 			p.speed = glm::vec3(
 				(rand() % 60 - 30.0f) / 500.0f,
-				-1.0f,
+				-3.0f - (rand() % 100) / 50.0f, 
 				0.0f);
 
-			p.r = 255;
-			p.g = 255;
-			p.b = 255;
-			p.a = 160 + (rand() % 75);
+			
+			p.life = std::abs(mapTopY / p.speed.y) + 2.0f; 
 
-			p.size = 0.10f;
+			p.r = 255; p.g = 255; p.b = 255;
+			p.a = 160 + (rand() % 75);
+			p.size = 0.12f;
 		}
 
 		particlesCount = 0;
@@ -155,11 +149,13 @@ namespace df {
 
 			if (p.life > 0.0f) {
 				p.life -= deltaTime;
-				if (p.life > 0.0f) {
-					p.pos += p.speed * deltaTime;
-					p.pos.x += 0.04f * sin(p.life * 2.0f) * deltaTime;
-					p.cameradistance = glm::length(p.pos - cameraPos);
+				p.pos += p.speed * deltaTime;
+				p.pos.x += 0.04f * sin(p.life * 2.0f) * deltaTime;
 
+				if (p.pos.x < -1) p.pos.x = mapWidth;
+				if (p.pos.x > mapWidth) p.pos.x = -1;
+
+				if (p.life > 0.0f && p.pos.y > 0.0f) {
 					g_particule_position_size_data[4 * particlesCount + 0] = p.pos.x;
 					g_particule_position_size_data[4 * particlesCount + 1] = p.pos.y;
 					g_particule_position_size_data[4 * particlesCount + 2] = p.pos.z;
@@ -171,25 +167,18 @@ namespace df {
 					g_particule_color_data[4 * particlesCount + 3] = p.a;
 
 					particlesCount++;
-				} else {
-					p.cameradistance = -1.0f;
 				}
 			}
 		}
 
-
-
-
+		const glm::vec2 worldDims = calculateWorldDimensions(cols, rows);
+		
 		const glm::mat4 projection = glm::ortho(
-			camPos2D.x, camPos2D.x + worldDimensions.x / camZoom,
-			camPos2D.y, camPos2D.y + worldDimensions.y / camZoom,
+			cam.position.x, cam.position.x + worldDims.x / cam.zoom,
+			cam.position.y, cam.position.y + worldDims.y / cam.zoom,
 			-1.0f, 1.0f);
 
-		glm::mat4 view = glm::mat4(1.0f); // View matrix but fot  2D
-
-		// debugging
-		// std::cout << "Rendering snow with " << particlesCount << " particles." << std::endl;
-		render(view, projection);
+		render(glm::mat4(1.0f), projection);
 	}
 
 	void RenderSnowSystem::render(const glm::mat4& view, const glm::mat4& projection) noexcept {
