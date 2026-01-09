@@ -142,14 +142,15 @@ namespace df {
 				fmt::println("Set hex rendering to {}", this->useHex ? "true" : "false");
 			} break;*/
 			case GLFW_KEY_P: {
-				double xpos, ypos;
-				glfwGetCursorPos(this->window->getHandle(), &xpos, &ypos);
-				auto extent = this->window->getWindowExtent();
+                    glm::dvec2 cursor = this->window->getCursorPosition(); 
+                    auto extent = this->window->getWindowExtent();
 
-				auto tileId = getTileIdAtPosition(xpos, extent.y - ypos);
-				this->selectedTile = tileId;
-				auto mapId = tileIdToMapId(tileId);
-				fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, xpos, ypos);
+                    // Use the scaled coordinates
+                    auto tileId = getTileIdAtPosition(static_cast<int>(cursor.x), static_cast<int>(extent.y) - static_cast<int>(cursor.y));
+                    this->selectedTile = tileId;
+                    
+                    auto mapId = tileIdToMapId(tileId);
+                    fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, cursor.x, cursor.y);
 			} break;
 			}
 		}
