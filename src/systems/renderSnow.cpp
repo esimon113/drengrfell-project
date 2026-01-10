@@ -37,7 +37,7 @@ namespace df {
 		self.registry = registry;
 		self.gameState = gamestate;
 
-		self.maxParticles = 50000;
+		self.maxParticles = 30000;
 		self.particlesCount = 0;
 
 		self.particlesContainer.resize(self.maxParticles);
@@ -109,77 +109,42 @@ namespace df {
 	}
 
 	void RenderSnowSystem::step(float deltaTime) noexcept {
-		Camera& cam = registry->cameras.get(registry->getCamera());
 
-		int rows = RenderCommon::getMapRows<int>(this->gameState->getMap());
-		int cols = RenderCommon::getMapColumns<int>(this->gameState->getMap());
-
-		const glm::vec2 worldDims = calculateWorldDimensions(cols, rows);
-
-		float visibleWidth  = worldDims.x / cam.zoom;
-		float visibleHeight = worldDims.y / cam.zoom;
-
-		float padding = 14.0f;
-
-		float spawnLeft   = cam.position.x - padding;
-		float spawnRight  = cam.position.x + visibleWidth + padding;
-		float spawnBottom = cam.position.y - padding;
-		float spawnTop    = cam.position.y + visibleHeight + padding;
-
-		static float lastZoom = cam.zoom;
-		bool zoomOut = cam.zoom < lastZoom;
-		lastZoom = cam.zoom;
-
-		float visibleArea = visibleWidth * visibleHeight;
-		float density = 0.017f;
-		int minParticles = rows/2;
-		int newparticles;
-		if(rows > 6){
-			newparticles = visibleArea * density * 0.05f;
-		} else {
-			newparticles = minParticles;
-		}
+		const float screenWidth = 100.0f;
+		const float screenHeight = 100.0f;
 		
 
-
-		if (zoomOut) {
-			newparticles *= 2;
-		}
+		float density = 0.5f; 
+		int newparticles = static_cast<int>(screenWidth * density * deltaTime * 4.0f);
 
 		for (int i = 0; i < newparticles; i++) {
 			int unParticles = findUnusedParticle();
 			Particle& p = particlesContainer[unParticles];
 
 			float rx = static_cast<float>(rand()) / RAND_MAX;
-			float ry = static_cast<float>(rand()) / RAND_MAX;
+			//float ry = static_cast<float>(rand()) / RAND_MAX;
 			float rz = static_cast<float>(rand()) / RAND_MAX;
 
-			p.depth = rz* rz;
+			p.depth = rz * rz;
 
+			// Changed to appear in the screen 
 			p.pos = glm::vec3(
-				spawnLeft + rx*(spawnRight - spawnLeft),
-				spawnBottom+ ry* (spawnTop - spawnBottom),
+				rx * screenWidth,
+				screenHeight + 5.0f, 
 				0.0f
 			);
 
-
-
-			float baseFall = -1.8f;
-			float depthFall = -1.6f;
+			float baseFall = -3.0f; 
+			float depthFall = -3.0f;
 
 			p.speed.y = baseFall + p.depth * depthFall;
-			p.speed.x = ((rand() % 60 - 30) / 600.0f) * (0.3f + p.depth);
+			p.speed.x = ((rand() % 60 - 30) / 10.0f);
 
-			float fallDistance = visibleHeight + padding * 2.0f;
-			p.life = fallDistance / std::abs(p.speed.y);
+			p.life = 15.0f + (rand() % 5); 
+			p.size = 0.5f + p.depth * 0.4f;
 
-			// new size with added depth
-			p.size = 0.02f + p.depth * (rows * 0.016f);
-
-			p.r = 235;
-			p.g = 238;
-			p.b = 242;
-			p.a = 50 + p.depth * 120;
+			p.r = 235; p.g = 238; p.b = 242;
+			p.a = 50 + p.depth * 150;
 		}
 
 		particlesCount = 0;
@@ -191,10 +156,9 @@ namespace df {
 				p.life -= deltaTime;
 				p.pos += p.speed * deltaTime;
 
-				p.pos.x += sin(p.life*2.0f) * 0.06f * (0.2f + p.depth)* deltaTime;
+				p.pos.x += sin(p.life * 2.0f) * 0.5f * deltaTime;
 
-				if (p.pos.x < spawnLeft  || p.pos.x > spawnRight ||
-					p.pos.y < spawnBottom) {
+				if (p.pos.y < -5.0f || p.pos.x < -5.0f || p.pos.x > screenWidth + 5.0f) {
 					p.life = -1.0f;
 					continue;
 				}
@@ -213,11 +177,12 @@ namespace df {
 			}
 		}
 
+		
 		const glm::mat4 projection = glm::ortho(
-			cam.position.x,
-			cam.position.x + visibleWidth,
-			cam.position.y,
-			cam.position.y + visibleHeight,
+			0.0f,
+			screenWidth,
+			0.0f,
+			screenHeight,
 			-1.0f,
 			1.0f
 		);
