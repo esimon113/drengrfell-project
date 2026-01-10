@@ -80,9 +80,12 @@ namespace df {
 
 		fmt::println("[WorldNodeMapper] Map has {} tiles, {} columns", map.getTileCount(), columns);
 
-		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const TileHandle tile = map.getTile(tileId);
+		for (size_t tileIndex = 0; tileIndex < map.getTileCount(); ++tileIndex) {
+			const TileHandle tile = map.getTile(tileIndex);
+			if (!tile)
+				continue;
 
+			const size_t tileId = tile->getId();
 			uint32_t currentRow = tileId / columns;
 			uint32_t currentCol = tileId % columns;
 
@@ -142,9 +145,13 @@ namespace df {
 
 		fmt::println("[WorldNodeMapper] Map has {} tiles, {} columns", map.getTileCount(), columns);
 
-		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const TileHandle tile = map.getTile(tileId);
+		// Iterate through tile indices (not IDs)
+		for (size_t tileIndex = 0; tileIndex < map.getTileCount(); ++tileIndex) {
+			const TileHandle tile = map.getTile(tileIndex);
+			if (!tile)
+				continue;
 
+			const size_t tileId = tile->getId();
 			uint32_t currentRow = tileId / columns;
 			uint32_t currentCol = tileId % columns;
 
@@ -196,9 +203,11 @@ namespace df {
 		const float hexagonRadius = 1.0f;
 		const uint32_t columns = map.getMapWidth();
 
-		// find tiles that have this vertex
-		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const TileHandle tile = map.getTile(tileId);
+		// Find tiles that have this vertex - iterate through indices not IDs
+		for (size_t tileIndex = 0; tileIndex < map.getTileCount(); ++tileIndex) {
+			const TileHandle tile = map.getTile(tileIndex);
+			if (!tile)
+				continue;
 
 			const auto verticesOpt = map.getTileVertices(tile);
 			if (!verticesOpt)
@@ -206,7 +215,8 @@ namespace df {
 			auto vertices = *verticesOpt;
 
 			for (size_t i = 0; i < vertices.size(); ++i) {
-				if (vertices[i]->getId() == vertexId) {
+				if (vertices[i] && vertices[i]->getId() == vertexId) {
+					const size_t tileId = tile->getId();
 					uint32_t row = tileId / columns;
 					uint32_t col = tileId % columns;
 
@@ -225,16 +235,20 @@ namespace df {
 		const float hexagonRadius = 1.0f;
 		const uint32_t columns = map.getMapWidth();
 
-		// Find tiles that have this edge
-		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const TileHandle tile = map.getTile(tileId);
+		// Find tiles that have this edge - iterate through indices not IDs
+		for (size_t tileIndex = 0; tileIndex < map.getTileCount(); ++tileIndex) {
+			const TileHandle tile = map.getTile(tileIndex);
+			if (!tile)
+				continue;
+
 			const auto edgesOpt = map.getTileEdges(tile);
 			if (!edgesOpt)
 				continue;
 			auto edges = *edgesOpt;
 
 			for (size_t i = 0; i < edges.size(); ++i) {
-				if (edges[i]->getId() == edgeId) {
+				if (edges[i] && edges[i]->getId() == edgeId) {
+					const size_t tileId = tile->getId();
 					uint32_t row = tileId / columns;
 					uint32_t col = tileId % columns;
 
