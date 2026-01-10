@@ -38,6 +38,11 @@ namespace df {
 			fmt::println(stderr, "Failed to create GLFW window");
 			return nullptr;
 		}
+
+		int minWidth = 400;
+		int minHeight = 400;
+		glfwSetWindowSizeLimits(window, minWidth, minHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
+
 		self->handle = window;
 
 		self->makeContextCurrent();
