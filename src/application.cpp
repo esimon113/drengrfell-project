@@ -10,6 +10,8 @@
 // test for entityMovement
 #include "core/road.h"
 #include "entityMovement.h"
+#include "utils/graphDebugDump.h"
+#include "utils/graphDebugImage.h"
 #include "utils/worldNodeMapper.h"
 
 
@@ -344,6 +346,12 @@ namespace df {
 		} else {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
+
+		// This is only for DEBUGGING purposes:
+		fmt::println("Log map config");
+		df::utils::writeGraphDebugDump(this->gameState->getMap(), "~/Pictures/debug/graph_debug.txt");
+		df::utils::writeGraphDebugImage(this->gameState->getMap(), "~/Pictures/debug/graph_debug.png");
+
 		fmt::println("[DEBUG] regenerated world");
 		{
 			// only supports one player for now. TODO: if we do multplayer update this.
