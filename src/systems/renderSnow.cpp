@@ -110,78 +110,122 @@ namespace df {
 
 	void RenderSnowSystem::step(float deltaTime) noexcept {
 		Camera& cam = registry->cameras.get(registry->getCamera());
-		
+
 		int rows = RenderCommon::getMapRows<int>(this->gameState->getMap());
 		int cols = RenderCommon::getMapColumns<int>(this->gameState->getMap());
+
+		const glm::vec2 worldDims = calculateWorldDimensions(cols, rows);
+
+		float visibleWidth  = worldDims.x / cam.zoom;
+		float visibleHeight = worldDims.y / cam.zoom;
+
+		float padding = 14.0f;
+
+		float spawnLeft   = cam.position.x - padding;
+		float spawnRight  = cam.position.x + visibleWidth + padding;
+		float spawnBottom = cam.position.y - padding;
+		float spawnTop    = cam.position.y + visibleHeight + padding;
+
+		static float lastZoom = cam.zoom;
+		bool zoomOut = cam.zoom < lastZoom;
+		lastZoom = cam.zoom;
+
+		float visibleArea = visibleWidth * visibleHeight;
+		float density = 0.017f;
+		int minParticles = rows/2;
+		int newparticles;
+		if(rows > 6){
+			newparticles = visibleArea * density * 0.05f;
+		} else {
+			newparticles = minParticles;
+		}
 		
-		float hexHeightMultiplier = 4.0f; 
-		float hexWidthMultiplier = 8.0f; 
 
-		float mapTopY = rows * hexHeightMultiplier;
-		float mapWidth = cols * hexWidthMultiplier;
 
-		int newparticles = 7; 
+		if (zoomOut) {
+			newparticles *= 2;
+		}
+
 		for (int i = 0; i < newparticles; i++) {
-			int particleIndex = findUnusedParticle();
-			Particle& p = particlesContainer[particleIndex];
+			int unParticles = findUnusedParticle();
+			Particle& p = particlesContainer[unParticles];
+
+			float rx = static_cast<float>(rand()) / RAND_MAX;
+			float ry = static_cast<float>(rand()) / RAND_MAX;
+			float rz = static_cast<float>(rand()) / RAND_MAX;
+
+			p.depth = rz* rz;
 
 			p.pos = glm::vec3(
-				(float)(rand() % (int)(mapWidth > 0 ? mapWidth : 0)), 
-				mapTopY,
-				0.0f);
+				spawnLeft + rx*(spawnRight - spawnLeft),
+				spawnBottom+ ry* (spawnTop - spawnBottom),
+				0.0f
+			);
 
-			p.speed = glm::vec3(
-				(rand() % 60 - 30.0f) / 500.0f,
-				-3.0f - (rand() % 100) / 50.0f, 
-				0.0f);
 
-			
-			p.life = std::abs(mapTopY / p.speed.y) + 2.0f; 
 
-			p.r = 180; 
-			p.g = 190; 
-			p.b = 210; 
-			p.a = 80;
-			p.size = 0.12f;
+			float baseFall = -1.8f;
+			float depthFall = -1.6f;
+
+			p.speed.y = baseFall + p.depth * depthFall;
+			p.speed.x = ((rand() % 60 - 30) / 600.0f) * (0.3f + p.depth);
+
+			float fallDistance = visibleHeight + padding * 2.0f;
+			p.life = fallDistance / std::abs(p.speed.y);
+
+			// new size with added depth
+			p.size = 0.02f + p.depth * (rows * 0.016f);
+
+			p.r = 180;
+			p.g = 190;
+			p.b = 210;
+			p.a = 50 + p.depth * 120;
 		}
 
 		particlesCount = 0;
+
 		for (int i = 0; i < maxParticles; i++) {
 			Particle& p = particlesContainer[i];
 
 			if (p.life > 0.0f) {
 				p.life -= deltaTime;
 				p.pos += p.speed * deltaTime;
-				p.pos.x += 0.04f * sin(p.life * 2.0f) * deltaTime;
 
-				if (p.pos.x < -1) p.pos.x = mapWidth;
-				if (p.pos.x > mapWidth) p.pos.x = -1;
+				p.pos.x += sin(p.life*2.0f) * 0.06f * (0.2f + p.depth)* deltaTime;
 
-				if (p.life > 0.0f && p.pos.y > 0.0f) {
-					g_particule_position_size_data[4 * particlesCount + 0] = p.pos.x;
-					g_particule_position_size_data[4 * particlesCount + 1] = p.pos.y;
-					g_particule_position_size_data[4 * particlesCount + 2] = p.pos.z;
-					g_particule_position_size_data[4 * particlesCount + 3] = p.size;
-
-					g_particule_color_data[4 * particlesCount + 0] = p.r;
-					g_particule_color_data[4 * particlesCount + 1] = p.g;
-					g_particule_color_data[4 * particlesCount + 2] = p.b;
-					g_particule_color_data[4 * particlesCount + 3] = p.a;
-
-					particlesCount++;
+				if (p.pos.x < spawnLeft  || p.pos.x > spawnRight ||
+					p.pos.y < spawnBottom) {
+					p.life = -1.0f;
+					continue;
 				}
+
+				g_particule_position_size_data[4 * particlesCount + 0] = p.pos.x;
+				g_particule_position_size_data[4 * particlesCount + 1] = p.pos.y;
+				g_particule_position_size_data[4 * particlesCount + 2] = p.pos.z;
+				g_particule_position_size_data[4 * particlesCount + 3] = p.size;
+
+				g_particule_color_data[4 * particlesCount + 0] = p.r;
+				g_particule_color_data[4 * particlesCount + 1] = p.g;
+				g_particule_color_data[4 * particlesCount + 2] = p.b;
+				g_particule_color_data[4 * particlesCount + 3] = p.a;
+
+				particlesCount++;
 			}
 		}
 
-		const glm::vec2 worldDims = calculateWorldDimensions(cols, rows);
-		
 		const glm::mat4 projection = glm::ortho(
-			cam.position.x, cam.position.x + worldDims.x / cam.zoom,
-			cam.position.y, cam.position.y + worldDims.y / cam.zoom,
-			-1.0f, 1.0f);
+			cam.position.x,
+			cam.position.x + visibleWidth,
+			cam.position.y,
+			cam.position.y + visibleHeight,
+			-1.0f,
+			1.0f
+		);
 
 		render(glm::mat4(1.0f), projection);
 	}
+
+
 
 	void RenderSnowSystem::render(const glm::mat4& view, const glm::mat4& projection) noexcept {
 		if (particlesCount == 0)

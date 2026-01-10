@@ -40,6 +40,7 @@ namespace df {
 			unsigned char r, g, b, a;
 			float size;
 			float life;
+			float depth;
 			float cameradistance;
 		};
 
