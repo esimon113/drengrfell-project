@@ -24,7 +24,6 @@ echo "Starting program..."
 ./drengrfell
 
 if compgen -G "asan_report*" >/dev/null; then
-    echo "Leak Report:"
 
     awk '
 	/Direct leak/ {
@@ -44,7 +43,10 @@ if compgen -G "asan_report*" >/dev/null; then
 	}
 	/Indirect leak/ { next } # skip indirect leaks
 	END {
-		print "Direct leaks in your code: " direct_count " | bytes: " direct_bytes
+		if (direct_bytes > 0) {
+			print "Leak Report:"
+			print "Direct leaks in your code: " direct_count " | bytes: " direct_bytes
+		}
 	}' asan_report*
 else
     echo "No address sanitization report found."
