@@ -176,9 +176,9 @@ namespace df {
 			// new size with added depth
 			p.size = 0.02f + p.depth * (rows * 0.016f);
 
-			p.r = 180;
-			p.g = 190;
-			p.b = 210;
+			p.r = 235;
+			p.g = 238;
+			p.b = 242;
 			p.a = 50 + p.depth * 120;
 		}
 
