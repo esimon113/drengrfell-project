@@ -1,4 +1,6 @@
 import socket
+import argparse
+
 
 SRV_HOST = "127.0.0.1"
 SRV_PORT = 45678
@@ -7,7 +9,7 @@ SRV_CONNECTION = (SRV_HOST, SRV_PORT)
 BUFFER_SIZE = 1024
 
 
-def main():
+def main(withMultiple: bool = False):
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     client.connect(SRV_CONNECTION)
@@ -23,7 +25,10 @@ def main():
             client.sendall(msg.encode("utf-8"))
 
             response = client.recv(BUFFER_SIZE)
-            print(f"[TcpClient] Received from Server: {response.decode("utf-8")}")
+            print(f"[TcpClient] Received from Server: {response.decode('utf-8')}")
+
+            if not withMultiple:
+                break
 
     finally:
         client.close()
@@ -31,4 +36,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Basic TCP client for testing purposes")
+    parser.add_argument("--multi", action="store_true",
+                        help="Allow sending multiple messages in one conenction.")
+    args = parser.parse_args()
+    main(args.multi)
