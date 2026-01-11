@@ -1,4 +1,5 @@
 #include <application.h>
+#include <cstdlib>
 #include <utils/commandLineOptions.h>
 
 #include <iostream>
@@ -9,7 +10,7 @@ void print(std::string s) {
 }
 
 
-int main(int argc, char** argv) {
+int _main(int argc, char** argv) {
 	print("Starting and trying to initialize app...");
 
 	df::CommandLineOptions options = df::CommandLineOptions::parse(argc, argv);
@@ -28,6 +29,26 @@ int main(int argc, char** argv) {
 	app->deinit();
 
 	print("Done.");
+
+	return EXIT_SUCCESS;
+}
+
+
+
+// TODO: Remove this! -> Only for TESTING!
+#include "multiplayer/tcpServer.h"
+
+int main(int /*argc*/, char** /*argv*/) {
+	auto& server = df::mp::TcpServer::instance();
+
+	server.configure(45678, "127.0.0.1");
+	server.onClientCallback([](int client) {
+		std::string msg = "Hello from The TCP Server!\n";
+		send(client, msg.c_str(), sizeof(msg.c_str()), 0);
+	});
+
+	server.start();
+	server.run();
 
 	return EXIT_SUCCESS;
 }
