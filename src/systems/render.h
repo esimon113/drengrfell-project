@@ -15,6 +15,7 @@
 #include "renderHud.h"
 #include "renderText.h"
 #include "renderSnow.h"
+#include "renderNotification.h"
 
 namespace df {
 	class RenderSystem {
@@ -37,10 +38,14 @@ namespace df {
 			RenderBuildingPreviewsSystem renderBuildingPreviewsSystem;
 			RenderTextSystem renderTextSystem;
 			RenderHudSystem renderHudSystem;
-			RenderSnowSystem renderSnowSystem; 
+			RenderSnowSystem renderSnowSystem;
+			RenderNotificationSystem renderNotificationSystem;
 
 			RenderTextSystem& getRenderTextSystem() noexcept {
 				return renderTextSystem;
+			}
+			RenderNotificationSystem& getRenderNotificationSystem() noexcept {
+				return renderNotificationSystem;
 			}
 
 		private:

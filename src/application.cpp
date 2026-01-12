@@ -98,6 +98,9 @@ namespace df {
 
 		// Store RenderTextSystem in registry to use it in any other System.
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
+		// Store RenderNofificationSystem in registry to use it in any other System.
+		registry->addSystem<RenderNotificationSystem>(&render.getRenderNotificationSystem());
+
 		if (!this->window || !this->window->getHandle()) {
 			std::cerr << "Invalid window or GLFWwindow handle!" << std::endl;
 			return;
@@ -452,6 +455,14 @@ namespace df {
 				}
 			}
 
+			// Check if any Notification buttons were pressed
+			std::string pressedButton = render.renderNotificationSystem.onMouseButton(mouse, button, action);
+			// If any button was pressed continue
+			if (!pressedButton.empty()) {
+				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
+				// TODO: add actions for button pressed in notifications
+			}
+
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
 				return;
 
@@ -582,5 +593,6 @@ namespace df {
 		render.onResizeCallback(windowParam, width, height);
 		render.renderHudSystem.onResizeCallback(windowParam, width, height);
 		configMenu.onResizeCallback(windowParam, width, height);
+		render.renderNotificationSystem.onResizeCallback(windowParam, width, height);
 	}
 } // namespace df
