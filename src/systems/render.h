@@ -15,6 +15,7 @@
 #include "renderSnow.h"
 #include "renderText.h"
 #include "renderTiles.h"
+#include "renderNotification.h"
 
 namespace df {
 	class RenderSystem {
@@ -31,17 +32,21 @@ namespace df {
 		void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 		void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
 
-		RenderTilesSystem renderTilesSystem;
-		RenderHeroSystem renderHeroSystem;
-		RenderBuildingsSystem renderBuildingsSystem;
-		RenderBuildingPreviewsSystem renderBuildingPreviewsSystem;
-		RenderTextSystem renderTextSystem;
-		RenderHudSystem renderHudSystem;
-		RenderSnowSystem renderSnowSystem;
+			RenderTilesSystem renderTilesSystem;
+			RenderHeroSystem renderHeroSystem;
+			RenderBuildingsSystem renderBuildingsSystem;
+			RenderBuildingPreviewsSystem renderBuildingPreviewsSystem;
+			RenderTextSystem renderTextSystem;
+			RenderHudSystem renderHudSystem;
+			RenderSnowSystem renderSnowSystem;
+			RenderNotificationSystem renderNotificationSystem;
 
-		RenderTextSystem& getRenderTextSystem() noexcept {
-			return renderTextSystem;
-		}
+			RenderTextSystem& getRenderTextSystem() noexcept {
+				return renderTextSystem;
+			}
+			RenderNotificationSystem& getRenderNotificationSystem() noexcept {
+				return renderNotificationSystem;
+			}
 
 	  private:
 		Registry* registry;
