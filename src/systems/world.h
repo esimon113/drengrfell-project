@@ -39,8 +39,8 @@ namespace df {
 	  private:
 		static constexpr size_t MAX_EAGLES = 15;
 		static constexpr size_t MAX_BUGS = 5;
-		double mouseX;
-		double mouseY;
+		double mouseX = -1;
+		double mouseY = -1;
 
 		Window* window;
 		Registry* registry;

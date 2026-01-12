@@ -449,7 +449,9 @@ namespace df {
 			if (!movementSystem.getMovementState()) {
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
 					gameController->endTurn();
-					movementSystem.toggleMovementState();
+					if (world.getMouseX() >= 0 && world.getMouseY() >= 0) {
+						movementSystem.toggleMovementState();
+					}
 					gameController->startTurn(); // Start turn for the next player
 					return;
 				}
