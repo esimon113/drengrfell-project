@@ -5,18 +5,18 @@
 
 // add additional commonly used headers here
 #include <array>
-#include <cstdlib>
 #include <cstdio>
-#include <functional>
+#include <cstdlib>
 #include <fmt/base.h>
 #include <fmt/format.h>
-#include <optional>
+#include <functional>
 #include <map>
+#include <optional>
+#include <random>
 #include <stack>
 #include <string>
-#include <vector>
-#include <random>
 #include <unordered_map>
+#include <vector>
 
 
 #if defined(_WIN32) && defined(__clang__)

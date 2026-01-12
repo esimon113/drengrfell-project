@@ -4,20 +4,20 @@
 
 namespace df {
 
-    struct AnimationComponent {
-        Animation anim;
-        Hero::AnimationType currentType = Hero::AnimationType::Idle;
+	struct AnimationComponent {
+		Animation anim;
+		Hero::AnimationType currentType = Hero::AnimationType::Idle;
 
-        std::string currentFrame() const { return anim.getCurrentFrame(); }
-    };
+		std::string currentFrame() const { return anim.getCurrentFrame(); }
+	};
 
-    enum class BuildingPreviewType {
-        Settlement,
-        Road
-    };
+	enum class BuildingPreviewType {
+		Settlement,
+		Road
+	};
 
-    struct BuildingPreviewComponent {
-        BuildingPreviewType type = BuildingPreviewType::Settlement;
-    };
+	struct BuildingPreviewComponent {
+		BuildingPreviewType type = BuildingPreviewType::Settlement;
+	};
 
-}
+} // namespace df

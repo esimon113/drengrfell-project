@@ -4,11 +4,15 @@
 
 namespace df {
 	static constexpr std::array<const char*, static_cast<size_t>(assets::Sound::count)> SOUND_FILES = {
-		"music.wav",
+		"background/Fires Beneath the Trees.mp3",
+		"background/Foundations of Stone.mp3",
+		"background/Rest of the Hearthlands.mp3",
+		"background/The Weaver's Hope.mp3",
 	};
 
 
-	template<> std::string assets::getAssetPath<assets::Sound>(const assets::Sound assetId) noexcept {
+	template <>
+	std::string assets::getAssetPath<assets::Sound>(const assets::Sound assetId) noexcept {
 		return getBasePath() + "/assets/sounds/" + SOUND_FILES[static_cast<size_t>(assetId)];
 	}
 
@@ -18,7 +22,8 @@ namespace df {
 	};
 
 
-	template<> std::string assets::getAssetPath<assets::Mesh>(const assets::Mesh assetId) noexcept {
+	template <>
+	std::string assets::getAssetPath<assets::Mesh>(const assets::Mesh assetId) noexcept {
 		return getBasePath() + "/assets/mesh/" + MESH_FILES[static_cast<size_t>(assetId)];
 	}
 
@@ -34,11 +39,11 @@ namespace df {
 		"particle",
 		"text",
 		"hud",
-		"tilepick"
-	};
+		"tilepick"};
 
 
-	template<> std::string assets::getAssetPath<assets::Shader>(const assets::Shader assetId) noexcept {
+	template <>
+	std::string assets::getAssetPath<assets::Shader>(const assets::Shader assetId) noexcept {
 		return getBasePath() + "/assets/shaders/" + SHADER_FILES[static_cast<size_t>(assetId)];
 	}
 
@@ -62,7 +67,7 @@ namespace df {
 		"hero/idle/idle_0.png",
 		"hero/idle/idle_1.png",
 		"hero/idle/idle_2.png",
-	
+
 		"hero/swim/swim_0.png",
 		"hero/swim/swim_1.png",
 		"hero/swim/swim_2.png",
@@ -89,7 +94,8 @@ namespace df {
 	};
 
 
-	template<> std::string assets::getAssetPath<assets::Texture>(const assets::Texture assetId) noexcept {
+	template <>
+	std::string assets::getAssetPath<assets::Texture>(const assets::Texture assetId) noexcept {
 		return getBasePath() + "/assets/textures/" + TEXTURE_FILES[static_cast<size_t>(assetId)];
 	}
 
@@ -99,7 +105,8 @@ namespace df {
 	};
 
 
-	template<> std::string assets::getAssetPath<assets::JsonFile>(const assets::JsonFile assetId) noexcept {
+	template <>
+	std::string assets::getAssetPath<assets::JsonFile>(const assets::JsonFile assetId) noexcept {
 		return getBasePath() + "/assets/jsons/" + JSON_FILES[static_cast<size_t>(assetId)];
 	}
 
@@ -116,11 +123,11 @@ namespace df {
 		"configMenu/temp_configMenu_seed.png",
 		"configMenu/temp_configMenu_start.png",
 		"configMenu/temp_configMenu_title.png",
-		"configMenu/temp_configMenu_width.png"
-	};
+		"configMenu/temp_configMenu_width.png"};
 
 
-	template<> std::string assets::getAssetPath<assets::MenuTexture>(const assets::MenuTexture assetId) noexcept {
+	template <>
+	std::string assets::getAssetPath<assets::MenuTexture>(const assets::MenuTexture assetId) noexcept {
 		return getBasePath() + "/assets/textures/" + MENU_TEXTURE_FILES[static_cast<size_t>(assetId)];
 	}
-}
+} // namespace df

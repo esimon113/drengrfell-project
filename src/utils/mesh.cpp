@@ -48,14 +48,12 @@ namespace df {
 				vertex.position = {
 					attrib.vertices[3 * index.vertex_index + 0],
 					attrib.vertices[3 * index.vertex_index + 1],
-					attrib.vertices[3 * index.vertex_index + 2]
-				};
+					attrib.vertices[3 * index.vertex_index + 2]};
 
 				vertex.color = {
 					attrib.colors[3 * index.vertex_index + 0],
 					attrib.colors[3 * index.vertex_index + 1],
-					attrib.colors[3 * index.vertex_index + 2]
-				};
+					attrib.colors[3 * index.vertex_index + 2]};
 
 				if (!uniqueVertices.contains(vertex)) {
 					uniqueVertices.emplace(vertex, static_cast<uint32_t>(vertices.size()));
@@ -95,4 +93,4 @@ namespace df {
 	void Mesh::bind() const noexcept {
 		glBindVertexArray(vao);
 	}
-}
+} // namespace df

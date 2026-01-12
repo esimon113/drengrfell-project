@@ -18,7 +18,7 @@ namespace df {
 
 	void PhysicsSystem::step(const float /*delta*/) noexcept {
 		// TODO: (A2) Update the angle of the player based on the current cursor position here.
-		
+
 
 		collisions.clear();
 
@@ -27,13 +27,14 @@ namespace df {
 			float radius1 = registry->collisionRadius.get(e1);
 
 			for (Entity e2 : registry->collisionRadius.entities) {
-				if (e2 == e1) continue;
+				if (e2 == e1)
+					continue;
 
 				glm::vec2 position2 = registry->positions.get(e2);
 				float radius2 = registry->collisionRadius.get(e2);
 
 				if (glm::distance(position1, position2) <= radius1 + radius2) {
-					PhysicsSystem::Collision collision = { e1, e2 };
+					PhysicsSystem::Collision collision = {e1, e2};
 					auto first = collisions.begin();
 					auto last = collisions.end();
 					auto it = std::find(first, last, collision);
@@ -53,4 +54,4 @@ namespace df {
 
 
 	void PhysicsSystem::reset() noexcept {}
-}
+} // namespace df
