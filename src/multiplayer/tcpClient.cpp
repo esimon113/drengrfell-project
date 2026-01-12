@@ -6,6 +6,7 @@
 #include <fmt/base.h>
 #include <netinet/in.h>
 #include <stdexcept>
+#include <span>
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -57,21 +58,31 @@ namespace df::mp {
 	}
 
 
-	void TcpClient::trySend(std::string& data) {
-		ssize_t numBytesSent = send(this->tcpSocket, data.c_str(), data.size(), 0);
+	void TcpClient::sendAll(std::span<const std::byte> data) {
+		size_t totalBytesSent = 0;
 
-		if (numBytesSent == SOCKET_ERROR) {
-			throw std::runtime_error("[TcpClient] Failed to send data");
+		// make sure all data is sent
+		while (totalBytesSent < data.size()) {
+			ssize_t numBytesSent = send(this->tcpSocket, data.data() + totalBytesSent, data.size() - totalBytesSent, 0);
+
+			if (numBytesSent == SOCKET_ERROR) {
+				throw std::runtime_error("[TcpClient] Failed to send data");
+			}
+			if (numBytesSent == 0) {
+				throw std::runtime_error("[TcpClient] Connection closed by peer");
+			}
+			totalBytesSent += numBytesSent;
 		}
 	}
 
 
-	void TcpClient::trySend(const std::vector<uint8_t>& data) {
-		ssize_t numBytesSent = send(this->tcpSocket, data.data(), data.size(), 0);
+	void TcpClient::trySend(const std::string& data) {
+		this->sendAll(std::as_bytes(std::span{data}));
+	}
 
-		if (numBytesSent == SOCKET_ERROR) {
-			throw std::runtime_error("[TcpClient] Failed to send binary data");
-		}
+
+	void TcpClient::trySend(const std::vector<uint8_t>& data) {
+		this->sendAll(std::as_bytes(std::span{data}));
 	}
 
 

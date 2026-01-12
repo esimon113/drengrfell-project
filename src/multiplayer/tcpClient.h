@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <cstddef>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -25,7 +27,7 @@ namespace df::mp {
 		void tryConnect(std::string& serverAddress, int serverPort);
 		void disconnect();
 
-		void trySend(std::string& data);
+		void trySend(const std::string& data);
 		void trySend(const std::vector<uint8_t>& data);
 
 		std::string tryReceive(size_t bufferSize);
@@ -33,8 +35,7 @@ namespace df::mp {
 
 
 	  private:
-		void initializeSocket();
-		void cleanupSocket();
+		void sendAll(std::span<const std::byte> data);
 
 		std::string ipAddress;
 		int port;
