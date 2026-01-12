@@ -34,7 +34,7 @@ namespace df::mp {
 	}
 
 
-	void TcpClient::tryConnect(std::string& serverAddress, int serverPort) {
+	void TcpClient::tryConnect(const std::string& serverAddress, uint16_t serverPort) {
 		this->serverAddress = serverAddress;
 		this->serverPort = serverPort;
 

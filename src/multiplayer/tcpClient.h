@@ -4,17 +4,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <netinet/in.h>
+#include <span>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#include <cstddef>
-#include <span>
 #include <string>
 #include <vector>
 
-#define INVALID_SOCKET -1
-#define SOCKET_ERROR -1
+inline constexpr int INVALID_SOCKET = -1;
+inline constexpr int SOCKET_ERROR = -1;
 
 
 
@@ -24,7 +22,7 @@ namespace df::mp {
 		TcpClient();
 		~TcpClient();
 
-		void tryConnect(std::string& serverAddress, int serverPort);
+		void tryConnect(const std::string& serverAddress, uint16_t serverPort);
 		void disconnect();
 
 		void trySend(const std::string& data);
@@ -38,10 +36,10 @@ namespace df::mp {
 		void sendAll(std::span<const std::byte> data);
 
 		std::string ipAddress;
-		int port;
+		uint16_t port;
 		int tcpSocket;
 		std::string serverAddress;
-		int serverPort;
+		uint16_t serverPort;
 
 		bool isSocketInitialized;
 	};
