@@ -1,12 +1,13 @@
 #pragma once
-#include "player.h"
+#include "tiny_ecs.hpp"
+#include <utility>
 
 /* Assumptions:
  * - The players are the only actors needing an AI
  * - The game is round-based
  */
 
-typedef df::Player Agent;
+typedef Entity Agent;
 
 enum class BTState {
 	Invalid,
@@ -31,18 +32,18 @@ public:
 	explicit BTSequence(const std::vector<std::shared_ptr<BTNode>> &children) : children(children) {}
 
 	void init(const Agent a) override {
-		currentChildIndex = 0;
+		this->currentChildIndex[a] = 0;
 		for (const auto &child : children) {
 			child->init(a);
 		}
 	}
 
 	BTState process(const Agent a) override {
-		for (unsigned i = this->currentChildIndex; i < children.size(); i++) {
+		for (unsigned i = this->currentChildIndex[a]; i < children.size(); i++) {
 			std::shared_ptr<BTNode>& child = children[i];
 			switch (child->process(a)) {
 				case BTState::Running:
-					this->currentChildIndex = i;
+					this->currentChildIndex[a] = i;
 					return BTState::Running;
 				case BTState::Success:
 					continue;
@@ -57,7 +58,7 @@ public:
 
 private:
 	std::vector<std::shared_ptr<BTNode>> children;
-	unsigned currentChildIndex = 0;
+	std::map<Agent, unsigned> currentChildIndex;
 };
 
 
@@ -68,18 +69,18 @@ public:
 	explicit BTSelector(const std::vector<std::shared_ptr<BTNode>> &children) : children(children) {}
 
 	void init(const Agent a) override {
-		currentChildIndex = 0;
+		this->currentChildIndex[a] = 0;
 		for (const auto &child : children) {
 			child->init(a);
 		}
 	}
 
 	BTState process(const Agent a) override {
-		for (unsigned i = this->currentChildIndex; i < children.size(); i++) {
+		for (unsigned i = this->currentChildIndex[a]; i < children.size(); i++) {
 			std::shared_ptr<BTNode>& child = children[i];
 			switch (child->process(a)) {
 				case BTState::Running:
-					this->currentChildIndex = i;
+					this->currentChildIndex[a] = i;
 					return BTState::Running;
 				case BTState::Success:
 					return BTState::Success;
@@ -94,7 +95,7 @@ public:
 
 private:
 	std::vector<std::shared_ptr<BTNode>> children;
-	unsigned currentChildIndex = 0;
+	std::map<Agent, unsigned> currentChildIndex;
 };
 
 
@@ -181,7 +182,7 @@ public:
 	explicit BTRepeater(const std::shared_ptr<BTNode> &child, const unsigned times = 1) : child(child), times(times) {}
 
 	void init(const Agent a) override {
-		counter = 0;
+		counter[a] = 0;
 		child->init(a);
 	}
 
@@ -190,8 +191,8 @@ public:
 			case BTState::Running:
 				return BTState::Running;
 			case BTState::Success:
-				counter++;
-				return counter >= times ? BTState::Success : BTState::Running;
+				counter[a]++;
+				return counter[a] >= times ? BTState::Success : BTState::Running;
 			case BTState::Failed:
 				return BTState::Failed;
 			default:
@@ -201,8 +202,8 @@ public:
 
 private:
 	std::shared_ptr<BTNode> child;
-	unsigned times;
-	unsigned counter = 0;
+	unsigned times = 1;
+	std::map<Agent, unsigned> counter;
 };
 
 
@@ -212,12 +213,12 @@ public:
 
 	BTLambda() = default;
 
-	explicit BTLambda(const Lambda &lambda) : lambda(lambda) {}
+	explicit BTLambda(Lambda lambda) : lambda(std::move(lambda)) {}
 
 	void init(const Agent) override {}
 
 	BTState process(const Agent a) override {
-		return lambda(a);;
+		return lambda(a);
 	}
 private:
 	Lambda lambda = [](Agent){ return BTState::Success; };

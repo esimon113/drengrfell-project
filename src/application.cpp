@@ -24,6 +24,7 @@
 #include "events/eventBus.h"
 #include "window.h"
 
+#include "ai/behaviorTreeCommon.h"
 
 namespace df {
 	static void glfwErrorCallback(int error, const char* description) {
