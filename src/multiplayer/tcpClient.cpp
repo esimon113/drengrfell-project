@@ -15,46 +15,49 @@
 
 
 namespace df::mp {
-	TcpClient::TcpClient() : ipAddress("0.0.0.0"), port(56789), tcpSocket(INVALID_SOCKET), isSocketInitialized(false) {
-		fmt::println("[TcpClient] created on {}:{}", this->ipAddress, this->port);
-		this->initializeSocket();
-
-		this->tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
-		if (this->tcpSocket == INVALID_SOCKET) {
-			this->cleanupSocket();
-			throw std::runtime_error("[TcpClient] Failed to create socket.");
-		}
+	TcpClient::TcpClient() {
+		fmt::println("[TcpClient] client created");
 	}
 
 
 	TcpClient::~TcpClient() {
-		fmt::println("[TcpClient] client destroyed");
 		this->disconnect();
-		this->cleanupSocket();
+		fmt::println("[TcpClient] client destroyed");
 	}
 
 
 	void TcpClient::tryConnect(const std::string& serverAddress, uint16_t serverPort) {
+		if (this->connected) {
+			throw std::runtime_error("[TcpClient] Already connected. Call disconnect() first.");
+		}
+
 		this->serverAddress = serverAddress;
 		this->serverPort = serverPort;
 
+		// create a new socket for this connection
+		this->tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
+		if (this->tcpSocket == INVALID_SOCKET) {
+			throw std::runtime_error("[TcpClient] Failed to create socket.");
+		}
+
 		struct sockaddr_in server;
-		// cleanly init server memory
 		std::memset(&server, 0, sizeof(server));
 		server.sin_family = AF_INET;
 		server.sin_port = htons(this->serverPort);
 
 		if (inet_pton(AF_INET, this->serverAddress.c_str(), &server.sin_addr) <= 0) {
-			server.sin_addr.s_addr = inet_addr(this->serverAddress.c_str());
-
-			if (server.sin_addr.s_addr == INADDR_NONE) {
-				throw std::runtime_error("[TcpClient] Invalid IP address: " + this->serverAddress);
-			}
+			close(this->tcpSocket);
+			this->tcpSocket = INVALID_SOCKET;
+			throw std::runtime_error("[TcpClient] Invalid IP address: " + this->serverAddress);
 		}
 
-		if (connect(this->tcpSocket, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
-			throw std::runtime_error("[TcpClient] Failed to connect to the server " + this->serverAddress + ":" + std::to_string(this->serverPort));
+		if (connect(this->tcpSocket, reinterpret_cast<sockaddr*>(&server), sizeof(server)) == SOCKET_ERROR) {
+			close(this->tcpSocket);
+			this->tcpSocket = INVALID_SOCKET;
+			throw std::runtime_error("[TcpClient] Failed to connect to " + this->serverAddress + ":" + std::to_string(this->serverPort));
 		}
+
+		this->connected = true;
 	}
 
 
@@ -87,12 +90,18 @@ namespace df::mp {
 
 
 	std::string TcpClient::tryReceive(size_t bufferSize) {
+		if (bufferSize == 0) {
+			throw std::runtime_error("[TcpClient] Buffer size must be > 0");
+		}
+
 		std::vector<char> buffer(bufferSize);
-		// bufferSize-1 because of '\0'
 		ssize_t numBytesRead = recv(this->tcpSocket, buffer.data(), bufferSize - 1, 0);
 
 		if (numBytesRead == SOCKET_ERROR) {
 			throw std::runtime_error("[TcpClient] Failed to receive data");
+		}
+		if (numBytesRead == 0) {
+			throw std::runtime_error("[TcpClient] Connection closed by peer");
 		}
 
 		buffer[numBytesRead] = '\0';
@@ -116,15 +125,21 @@ namespace df::mp {
 	}
 
 
-	void TcpClient::disconnect() {
+	void TcpClient::disconnect() noexcept {
 		if (this->tcpSocket == INVALID_SOCKET) {
 			return;
 		}
 
 		if (close(this->tcpSocket) == SOCKET_ERROR) {
-			throw std::runtime_error("[TcpClient] Failed to close socket");
+			fmt::println("[TcpClient] Warning: failed to close socket");
 		}
 
 		this->tcpSocket = INVALID_SOCKET;
+		this->connected = false;
+	}
+
+
+	bool TcpClient::isConnected() const noexcept {
+		return this->connected;
 	}
 } // namespace df::mp

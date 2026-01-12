@@ -1,24 +1,32 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
+#include <deque>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <netinet/in.h>
+#include <stop_token>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 
 namespace df::mp {
 	class TcpServer {
 	  public:
-		using ClientHandler = std::function<void(int)>;
+		// handler receives socket and stop_token for cooperative cancellation
+		using ClientHandler = std::function<void(int, std::stop_token)>;
 
 		// use singleton pattern -> there should only be one server at a time
 		static TcpServer& instance();
 
 		void configure(uint16_t port, const std::string& bindTo = "0.0.0.0");
+		void setMaxConnections(size_t maxConnections);
+		void setRateLimit(size_t maxConnectionsPerWindow, std::chrono::seconds windowDuration);
 		void start();
 		void run();
 		void stop();
@@ -37,9 +45,18 @@ namespace df::mp {
 		TcpServer();
 		~TcpServer();
 
-		void handleClient(int clientSocket);
+		void handleClient(int clientSocket, std::stop_token stopToken);
+		void cleanupFinishedConnections();
+		void cleanupStaleRateLimitEntries();
+		size_t getActiveConnectionCount();
+		bool isRateLimited(uint32_t clientIp);
 
-		int port{0};
+		struct ClientConnection {
+			std::jthread thread;
+			std::atomic<bool> finished{false};
+		};
+
+		uint16_t port{0};
 		int serverSocket{-1};
 		sockaddr_in serverAddress{};
 
@@ -47,7 +64,15 @@ namespace df::mp {
 
 		std::atomic<bool> isRunning{false};
 
-		std::mutex clientThreadsMutex;
-		std::vector<std::jthread> clientThreads;
+		// connection management
+		std::mutex connectionsMutex;
+		std::vector<std::unique_ptr<ClientConnection>> connections;
+		size_t maxConnections{10};
+
+		// rate limiting: track connection timestamps per IP
+		std::mutex rateLimitMutex;
+		std::unordered_map<uint32_t, std::deque<std::chrono::steady_clock::time_point>> connectionAttempts;
+		size_t rateLimitMaxConnections{5};
+		std::chrono::seconds rateLimitWindow{60};
 	};
 } // namespace df::mp

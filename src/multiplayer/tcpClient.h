@@ -23,7 +23,8 @@ namespace df::mp {
 		~TcpClient();
 
 		void tryConnect(const std::string& serverAddress, uint16_t serverPort);
-		void disconnect();
+		void disconnect() noexcept;
+		[[nodiscard]] bool isConnected() const noexcept;
 
 		void trySend(const std::string& data);
 		void trySend(const std::vector<uint8_t>& data);
@@ -35,12 +36,9 @@ namespace df::mp {
 	  private:
 		void sendAll(std::span<const std::byte> data);
 
-		std::string ipAddress;
-		uint16_t port;
-		int tcpSocket;
+		int tcpSocket{INVALID_SOCKET};
+		bool connected{false};
 		std::string serverAddress;
-		uint16_t serverPort;
-
-		bool isSocketInitialized;
+		uint16_t serverPort{0};
 	};
 } // namespace df::mp
