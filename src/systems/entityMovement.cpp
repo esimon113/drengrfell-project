@@ -23,6 +23,7 @@ namespace df {
 		if (distance == 0.0f) {
 			moving = false;
 			movementState = false;
+			targetSet = false;
 			return;
 		}
 
@@ -40,6 +41,7 @@ namespace df {
 			animComp.anim.setCurrentFrameIndex(0);
 			moving = false;
 			movementState = false;
+			targetSet = false;
 		} else {
 			if (animComp.currentType == Hero::AnimationType::Idle) {
 				animComp.currentType = Hero::AnimationType::Run;
@@ -53,6 +55,14 @@ namespace df {
 		movementState = !movementState;
 	}
 
+	void EntityMovementSystem::toggleTargetSet() noexcept {
+		targetSet = !targetSet;
+	}
+
+	void EntityMovementSystem::setTargetPosition(const glm::vec2& target) noexcept {
+		targetPosition = target;
+		targetSet = true;
+	}
 
 	glm::vec2 EntityMovementSystem::getTileWorldPosition(size_t tileIndex) const noexcept {
 		if (!gameState)

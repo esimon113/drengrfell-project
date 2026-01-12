@@ -203,21 +203,20 @@ namespace df {
 				if (movementSystem.getMovementState()) {
 					if (!registry->animations.entities.empty()) {
 
-						glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
-						auto extent = this->window->getWindowExtent();
+						if (!movementSystem.isTargetSet()) {
 
-						auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
-						auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
-						// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+							glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
+							auto extent = this->window->getWindowExtent();
 
-						glm::vec2 tilePosition = movementSystem.getTileWorldPosition(mapId);
-						// fmt::println("Tile Position: ({},{})", tilePosition.x, tilePosition.y);
+							auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+							auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+							// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
+							movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
+
+						}
 						Entity hero = registry->animations.entities.front();
-						glm::vec2 targetPos = tilePosition;
-						// glm::vec2 currentTargetPos = targetPos;
-
-						movementSystem.moveEntityTo(hero, targetPos, delta_time);
+						movementSystem.moveEntityTo(hero, movementSystem.getTargetPosition(), delta_time);
 					} else {
 						fmt::println("No hero entity available!");
 					}
