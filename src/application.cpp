@@ -451,7 +451,25 @@ namespace df {
 				mouseX,
 				static_cast<float>(window->getWindowExtent().y) - mouseY};
 
-		
+
+			// Check if any Notification buttons were pressed
+			std::string pressedButton = render.renderNotificationSystem.onMouseButton(mouse, button, action);
+			// If any button was pressed continue
+			if (!pressedButton.empty()) {
+				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
+				// TODO: add actions for button pressed in notifications
+				if (pressedButton == "Pay ressources") {
+					gameController->payForHazard(*registry);
+				}
+
+				if (pressedButton == "Next Quest") {
+					this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
+				} else if (pressedButton == "Claim") {
+					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
+					gameController->claimQuestReward(currentId);
+				}
+				return;	// notification clicked -> no further actions (including movement) for now
+			}
 
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 			if (!movementSystem.getMovementState()) {
@@ -480,24 +498,6 @@ namespace df {
 					gameController->startTurn(*registry); // Start turn for the next player
 					return;
 				}
-			}
-
-			// Check if any Notification buttons were pressed
-			std::string pressedButton = render.renderNotificationSystem.onMouseButton(mouse, button, action);
-			// If any button was pressed continue
-			if (!pressedButton.empty()) {
-				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
-				// TODO: add actions for button pressed in notifications
-				if (pressedButton == "Pay ressources") {
-					gameController->payForHazard(*registry);
-				}
-			}
-			
-			if (pressedButton == "Next Quest") {
-				this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
-			} else if (pressedButton == "Claim") {
-				int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId(); 
-				gameController->claimQuestReward(currentId);
 			}
 
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
