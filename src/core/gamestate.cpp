@@ -198,7 +198,7 @@ namespace df {
 
 		// Add position and scale components for rendering
 		registry->positions.emplace(e) = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), this->map);
-		registry->scales.emplace(e) = glm::vec2(0.5f, 0.5f); // Scale to match hexagon size -> 1/2 hex radius
+		registry->scales.emplace(e) = glm::vec2(0.45f, 0.45f); // Scale to match hexagon size -> 1/2 hex radius
 
 		settlements.push_back(settlement);
 	}
