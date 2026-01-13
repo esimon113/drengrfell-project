@@ -271,7 +271,7 @@ namespace df {
 			}
 			if (seedButton.hovered) {
 				std::string text = "Click this button to start the seed input."
-									"You can enter any number\n and confirm with enter. "
+									"You can enter any number\nand confirm with enter. "
 									"0 as seed generates a random world.";
 				textSize = textSystem->measureText(text, scale);
 				boxSize = {textSize.x + paddingX, textSize.y + paddingY};
@@ -320,7 +320,7 @@ namespace df {
 			}
 			if (widthButton.hovered) {
 				std::string text = "Click this button to start the map-size input."
-								   "You can type a number\n between 1 and 100 "
+								   "You can type a number\nbetween 1 and 100 "
 								   "and confirm with enter.";
 				textSize = textSystem->measureText(text, scale);
 				boxSize = {textSize.x + paddingX, textSize.y + paddingY};
@@ -337,7 +337,7 @@ namespace df {
 			}
 			if (startButton.hovered) {
 				std::string text = "Click this button to start the game."
-								   "Not selecting parameters\n will "
+								   "Not selecting parameters\nwill "
 								   "use the ones from the previous map.";
 				textSize = textSystem->measureText(text, scale);
 				boxSize = {textSize.x + paddingX, textSize.y + paddingY};
