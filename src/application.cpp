@@ -215,7 +215,6 @@ namespace df {
 							// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
 							movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
-
 						}
 						Entity hero = registry->animations.entities.front();
 						movementSystem.moveEntityTo(hero, movementSystem.getTargetPosition(), delta_time);
@@ -350,9 +349,11 @@ namespace df {
 		}
 
 		// This is only for DEBUGGING purposes:
+#if defined(__unix__) || defined(__linux__)
 		fmt::println("Log map config");
 		df::utils::writeGraphDebugDump(this->gameState->getMap(), "~/Pictures/debug/graph_debug.txt");
 		df::utils::writeGraphDebugImage(this->gameState->getMap(), "~/Pictures/debug/graph_debug.png");
+#endif
 
 		fmt::println("[DEBUG] regenerated world");
 		{
