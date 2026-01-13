@@ -33,12 +33,22 @@ namespace df {
 			onStart = std::move(callback);
 		}
 
+		void updateViewport(const glm::uvec2& origin, const glm::uvec2& size) noexcept {
+			viewport.origin = origin;
+			viewport.size = size;
+		}
+
 		// void setInsularCallback(std::function<void()> callback) { onInsular = std::move(callback); }
 		// void setPerlinCallback(std::function<void()> callback) { onPerlin = std::move(callback); }
 
 	  private:
 		Window* window;
 		Registry* registry;
+		Viewport viewport;
+
+		float DEFAULT_WIDTH = 1920.0f;
+		float DEFAULT_HEIGHT = 1080.0f;
+		float scale = 1.0f;
 
 		enum class InputField {
 			NONE,
@@ -57,6 +67,11 @@ namespace df {
 		glm::vec2 infoPos;
 		glm::vec2 warningPos;
 
+		Shader rectShader; // box behind text
+		GLuint rectVao = 0;
+		GLuint rectVbo = 0;
+		float paddingX = 20.0f;
+		float paddingY = 20.0f;
 
 		Shader menuShader;
 		Texture backgroundTexture;
@@ -137,5 +152,6 @@ namespace df {
 		void capInputValue() noexcept;
 		bool isCursorOnButton(float px, float py, const Button& b) const noexcept;
 		void initQuadBuffers() noexcept;
+		void renderBox(glm::vec2 pos, glm::vec2 size);
 	};
 } // namespace df
