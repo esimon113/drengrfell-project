@@ -864,67 +864,63 @@ namespace df {
 			return neighbourIndex;
 		};
 
-		auto buildVertexSharingTiles = [&](size_t tileIndex, size_t vertexIndex) -> std::vector<size_t> {
-			std::vector<size_t> sharingTiles{tileIndex};
-			auto addNeighbour = [&](size_t direction) {
-				if (auto n = getNeighbourIndex(tileIndex, direction); n.has_value())
-					sharingTiles.push_back(*n);
-			};
+		// Returns which tiles share a vertex, with which vertex index on each neighbor
+		// Vertex positions: V0=bottom-right, V1=top-right, V2=top, V3=top-left, V4=bottom-left, V5=bottom
+		// Neighbor directions: 0=NW (below-left), 1=NE (below-right), 2=E (right), 3=SE (above-right), 4=SW (above-left), 5=W (left)
+		auto buildVertexSharingInfo = [&](size_t tileIndex, size_t vertexIndex) -> std::vector<std::pair<size_t, size_t>> {
+			std::vector<std::pair<size_t, size_t>> sharingInfo;
+			sharingInfo.push_back({tileIndex, vertexIndex});
 
 			switch (vertexIndex) {
-			case 0: // Top -> NW + NE
-				addNeighbour(0);
-				addNeighbour(1);
+			case 0: // Bottom-right -> connect with neighbour directions: east (to right) and noth-east (below-right)
+				if (auto n = getNeighbourIndex(tileIndex, 2); n) sharingInfo.push_back({*n, 4}); // E.V4
+				if (auto n = getNeighbourIndex(tileIndex, 1); n) sharingInfo.push_back({*n, 2}); // NE.V2
 				break;
-			case 1: // Top-right -> NE + E
-				addNeighbour(1);
-				addNeighbour(2);
+			case 1: // Top-right -> connect with neighbour east and south-east (above-right)
+				if (auto n = getNeighbourIndex(tileIndex, 2); n) sharingInfo.push_back({*n, 3}); // E.V3
+				if (auto n = getNeighbourIndex(tileIndex, 3); n) sharingInfo.push_back({*n, 5}); // SE.V5
 				break;
-			case 2: // Bottom-right -> E + SE
-				addNeighbour(2);
-				addNeighbour(3);
+			case 2: // Top -> connect  with enighbor south-east and south-west (above-left)
+				if (auto n = getNeighbourIndex(tileIndex, 3); n) sharingInfo.push_back({*n, 4}); // SE.V4
+				if (auto n = getNeighbourIndex(tileIndex, 4); n) sharingInfo.push_back({*n, 0}); // SW.V0
 				break;
-			case 3: // Bottom -> SE + SW
-				addNeighbour(3);
-				addNeighbour(4);
+			case 3: // Top-left -> connect with neighbour south-west and west (left)
+				if (auto n = getNeighbourIndex(tileIndex, 4); n) sharingInfo.push_back({*n, 5}); // SW.V5
+				if (auto n = getNeighbourIndex(tileIndex, 5); n) sharingInfo.push_back({*n, 1}); // W.V1
 				break;
-			case 4: // Bottom-left -> SW + W
-				addNeighbour(4);
-				addNeighbour(5);
+			case 4: // Bottom-left -> connect with neighbour west and north-west (below-left)
+				if (auto n = getNeighbourIndex(tileIndex, 5); n) sharingInfo.push_back({*n, 0}); // W.V0
+				if (auto n = getNeighbourIndex(tileIndex, 0); n) sharingInfo.push_back({*n, 2}); // NW.V2
 				break;
-			case 5: // Top-left -> W + NW
-				addNeighbour(5);
-				addNeighbour(0);
+			case 5: // Bottom -> connect with neighbour north-west and north-east
+				if (auto n = getNeighbourIndex(tileIndex, 0); n) sharingInfo.push_back({*n, 1}); // NW.V1
+				if (auto n = getNeighbourIndex(tileIndex, 1); n) sharingInfo.push_back({*n, 3}); // NE.V3
 				break;
 			}
 
-			std::sort(sharingTiles.begin(), sharingTiles.end());
-			sharingTiles.erase(std::unique(sharingTiles.begin(), sharingTiles.end()), sharingTiles.end());
-			return sharingTiles;
+			return sharingInfo;
 		};
 
+		// Return the canonical tile index and its corresponding vertex index
 		auto getVertexKey = [&](size_t tileIndex, size_t vertexIndex) -> std::pair<size_t, size_t> {
-			auto sharingTiles = buildVertexSharingTiles(tileIndex, vertexIndex);
-			if (sharingTiles.empty())
+			auto sharingInfo = buildVertexSharingInfo(tileIndex, vertexIndex);
+			if (sharingInfo.empty())
 				return {tileIndex, vertexIndex};
 
-			const size_t canonicalTileIndex = sharingTiles.front(); // smallest index after sort
-			size_t canonicalVertexIndex = vertexIndex;
-
-			if (canonicalTileIndex != tileIndex) {
-				for (size_t vi = 0; vi < 6; ++vi) {
-					if (buildVertexSharingTiles(canonicalTileIndex, vi) == sharingTiles) {
-						canonicalVertexIndex = vi;
-						break;
-					}
-				}
-			}
-
-			return {canonicalTileIndex, canonicalVertexIndex};
+			// Sort by tile index to get canonical tile
+			std::sort(sharingInfo.begin(), sharingInfo.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+			return sharingInfo.front();
 		};
 
-		// Edge neighbour direction per edge index (based on vertex ordering above)
-		const std::array<size_t, 6> edgeDirections = {1, 2, 3, 4, 5, 0}; // NE, E, SE, SW, W, NW
+		// Edge i connects vertex i to vertex (i+1)%6.
+		// The shared neighbour is the one that shares both vertices of the edge:
+		// Edge 0: V0-V1 (right edge) -> E shares V0 and V1 -> direction 2
+		// Edge 1: V1-V2 (top-right edge) -> SE shares V1 and V2 -> direction 3
+		// Edge 2: V2-V3 (top-left edge) -> SW shares V2 and V3 -> direction 4
+		// Edge 3: V3-V4 (left edge) -> W shares V3 and V4 -> direction 5
+		// Edge 4: V4-V5 (bottom-left edge) -> NW shares V4 and V5 -> direction 0
+		// Edge 5: V5-V0 (bottom-right edge) -> NE shares V5 and V0 -> direction 1
+		const std::array<size_t, 6> edgeDirections = {2, 3, 4, 5, 0, 1}; // E, SE, SW, W, NW, NE
 
 		auto getEdgeNeighbourIndex = [&](size_t tileIndex, size_t edgeIndex) -> std::optional<size_t> {
 			return getNeighbourIndex(tileIndex, edgeDirections[edgeIndex]);
