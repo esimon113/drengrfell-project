@@ -23,15 +23,17 @@ namespace df {
 
 	// calculate positions of 6 vertices for the tile (relative to the tile center)
 	std::array<glm::vec2, 6> WorldNodeMapper::getVertexOffsets(const float hexagonRadius) noexcept {
-		const float sqrt3 = 1.732050808f;
+		const float xSide = hexagonRadius;
+		const float ySide = 0.5f * hexagonRadius;
+		const float yTip = hexagonRadius;
 
 		return {
-			glm::vec2(0.0f, hexagonRadius),									 // top
-			glm::vec2(0.5f * sqrt3 * hexagonRadius, 0.5f * hexagonRadius),	 // top-right
-			glm::vec2(0.5f * sqrt3 * hexagonRadius, -0.5f * hexagonRadius),	 // bottom-right
-			glm::vec2(0.0f, -hexagonRadius),								 // bottom
-			glm::vec2(-0.5f * sqrt3 * hexagonRadius, -0.5f * hexagonRadius), // bottom-left
-			glm::vec2(-0.5f * sqrt3 * hexagonRadius, 0.5f * hexagonRadius)	 // top-left
+			glm::vec2(xSide, -ySide),  // V0: bottom-right
+			glm::vec2(xSide, ySide),   // V1: top-right
+			glm::vec2(0.0f, yTip),     // V2: top
+			glm::vec2(-xSide, ySide),  // V3: top-left
+			glm::vec2(-xSide, -ySide), // V4: bottom-left
+			glm::vec2(0.0f, -yTip)     // V5: bottom
 		};
 	}
 
