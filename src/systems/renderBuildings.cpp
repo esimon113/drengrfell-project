@@ -157,11 +157,11 @@ namespace df {
 
 			Texture* roadTexture = nullptr;
 			if (edgeIndex == 0 || edgeIndex == 3)
+				roadTexture = &roadTextureVertical;
+			else if (edgeIndex == 1 || edgeIndex == 4)
 				roadTexture = &roadTextureDiagonalDown;
 			else if (edgeIndex == 2 || edgeIndex == 5)
 				roadTexture = &roadTextureDiagonalUp;
-			else if (edgeIndex == 1 || edgeIndex == 4)
-				roadTexture = &roadTextureVertical;
 			else
 				roadTexture = &roadTextureVertical;
 
