@@ -16,13 +16,20 @@ namespace df {
 		size_t getTileIndexFromPosition(const glm::vec2& worldPosition) const noexcept;
 
 		void toggleMovementState() noexcept;
+		void toggleTargetSet() noexcept;
 		bool getMovementState() noexcept { return movementState; };
 		bool isEntityMoving() const noexcept { return moving; }
+		bool isTargetSet() const noexcept { return targetSet; }
+		glm::vec2 getTargetPosition() const noexcept { return targetPosition; }
+
+		void setTargetPosition(const glm::vec2& target) noexcept;
 
 	  private:
 		Registry* registry;
 		GameState* gameState;
 		bool movementState = false;
 		bool moving = false;
+		bool targetSet = false;
+		glm::vec2 targetPosition;
 	};
 } // namespace df

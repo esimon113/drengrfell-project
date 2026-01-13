@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <random> // Para std::mt19937 (El nuevo generador)
+#include <cmath>  // Para funciones matemáticas si fueran necesarias
 
 /*
  *   Used the OPENGL particle system tutorial :
@@ -37,7 +39,7 @@ namespace df {
 		self.registry = registry;
 		self.gameState = gamestate;
 
-		self.maxParticles = 50000;
+		self.maxParticles = 30000;
 		self.particlesCount = 0;
 
 		self.particlesContainer.resize(self.maxParticles);
@@ -109,88 +111,100 @@ namespace df {
 	}
 
 	void RenderSnowSystem::step(float deltaTime) noexcept {
-		// Get camera position from registry
 
-		Camera& cam = registry->cameras.get(registry->getCamera());
-		glm::vec3 cameraPos = glm::vec3(cam.position.x, cam.position.y, 0.0f);
+		// Changed random function to make it work in Windows
+		static std::random_device rd;
+		static std::mt19937 gen(rd()); 
+		static std::uniform_real_distribution<float> dis(0.0f, 1.0f); // Rango 0.0 a 1.0
 
-		const glm::vec2 worldDimensions = calculateWorldDimensions(RenderCommon::getMapColumns<int>(this->gameState->getMap()), RenderCommon::getMapRows<int>(this->gameState->getMap()));
+		const float screenWidth = 100.0f;
+		const float screenHeight = 100.0f;
+		
 
+		float density = 0.5f; 
+		// Problem if delta time is too small -> accumulate the results for it to work correctly
+		static float spawnAccumulator = 0.0f; 
+		float particlesToSpawnFloat = screenWidth * density * deltaTime * 4.0f;
 
-		glm::vec2 camPos2D = cam.position;
+		spawnAccumulator += particlesToSpawnFloat;
 
-		float camZoom = cam.zoom;
-
-		float visibleHeight = worldDimensions.y / cam.zoom;
-
-		int newparticles = 3;
-		float spawnY = camPos2D.y + visibleHeight + 2.0f;
+		int newparticles = static_cast<int>(spawnAccumulator);
+		spawnAccumulator -= newparticles;
 
 		for (int i = 0; i < newparticles; i++) {
-			int particleIndex = findUnusedParticle();
-			Particle& p = particlesContainer[particleIndex];
+			int unParticles = findUnusedParticle();
+			Particle& p = particlesContainer[unParticles];
 
-			p.life = (50.0f + (rand() % 20));
+			float rx = dis(gen);
+			//float ry = static_cast<float>(rand()) / RAND_MAX;
+			float rz = dis(gen);
+
+			p.depth = rz * rz;
+
+			// Changed to appear in the screen 
 			p.pos = glm::vec3(
-				cameraPos.x + (rand() % 200) - 20.0f,
-				spawnY,
-				0.0f);
+				rx * screenWidth,
+				screenHeight + 5.0f, 
+				0.0f
+			);
 
-			p.speed = glm::vec3(
-				(rand() % 60 - 30.0f) / 500.0f,
-				-1.0f,
-				0.0f);
+			float baseFall = -3.0f; 
+			float depthFall = -3.0f;
 
-			p.r = 255;
-			p.g = 255;
-			p.b = 255;
-			p.a = 160 + (rand() % 75);
+			p.speed.y = baseFall + p.depth * depthFall;
+			p.speed.x = ((rand() % 60 - 30) / 10.0f);
 
-			p.size = 0.10f;
+			p.life = 15.0f + (rand() % 5); 
+			p.size = 0.5f + p.depth * 0.4f;
+
+			p.r = 235; p.g = 238; p.b = 242;
+			p.a = 50 + p.depth * 150;
 		}
 
 		particlesCount = 0;
+
 		for (int i = 0; i < maxParticles; i++) {
 			Particle& p = particlesContainer[i];
 
 			if (p.life > 0.0f) {
 				p.life -= deltaTime;
-				if (p.life > 0.0f) {
-					p.pos += p.speed * deltaTime;
-					p.pos.x += 0.04f * sin(p.life * 2.0f) * deltaTime;
-					p.cameradistance = glm::length(p.pos - cameraPos);
+				p.pos += p.speed * deltaTime;
 
-					g_particule_position_size_data[4 * particlesCount + 0] = p.pos.x;
-					g_particule_position_size_data[4 * particlesCount + 1] = p.pos.y;
-					g_particule_position_size_data[4 * particlesCount + 2] = p.pos.z;
-					g_particule_position_size_data[4 * particlesCount + 3] = p.size;
+				p.pos.x += sin(p.life * 2.0f) * 0.5f * deltaTime;
 
-					g_particule_color_data[4 * particlesCount + 0] = p.r;
-					g_particule_color_data[4 * particlesCount + 1] = p.g;
-					g_particule_color_data[4 * particlesCount + 2] = p.b;
-					g_particule_color_data[4 * particlesCount + 3] = p.a;
-
-					particlesCount++;
-				} else {
-					p.cameradistance = -1.0f;
+				if (p.pos.y < -5.0f || p.pos.x < -5.0f || p.pos.x > screenWidth + 5.0f) {
+					p.life = -1.0f;
+					continue;
 				}
+
+				g_particule_position_size_data[4 * particlesCount + 0] = p.pos.x;
+				g_particule_position_size_data[4 * particlesCount + 1] = p.pos.y;
+				g_particule_position_size_data[4 * particlesCount + 2] = p.pos.z;
+				g_particule_position_size_data[4 * particlesCount + 3] = p.size;
+
+				g_particule_color_data[4 * particlesCount + 0] = p.r;
+				g_particule_color_data[4 * particlesCount + 1] = p.g;
+				g_particule_color_data[4 * particlesCount + 2] = p.b;
+				g_particule_color_data[4 * particlesCount + 3] = p.a;
+
+				particlesCount++;
 			}
 		}
 
-
-
-
+		
 		const glm::mat4 projection = glm::ortho(
-			camPos2D.x, camPos2D.x + worldDimensions.x / camZoom,
-			camPos2D.y, camPos2D.y + worldDimensions.y / camZoom,
-			-1.0f, 1.0f);
+			0.0f,
+			screenWidth,
+			0.0f,
+			screenHeight,
+			-1.0f,
+			1.0f
+		);
 
-		glm::mat4 view = glm::mat4(1.0f); // View matrix but fot  2D
-
-		// debugging
-		// std::cout << "Rendering snow with " << particlesCount << " particles." << std::endl;
-		render(view, projection);
+		render(glm::mat4(1.0f), projection);
 	}
+
+
 
 	void RenderSnowSystem::render(const glm::mat4& view, const glm::mat4& projection) noexcept {
 		if (particlesCount == 0)
