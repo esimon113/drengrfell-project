@@ -11,7 +11,8 @@ namespace df {
 	}
 
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& targetPos, float deltaTime) noexcept {
-		if (!registry) return;
+		if (!registry)
+			return;
 
 		auto& animComp = registry->animations.get(entity);
 		glm::vec2& currentPos = registry->positions.get(entity);
@@ -22,6 +23,7 @@ namespace df {
 		if (distance == 0.0f) {
 			moving = false;
 			movementState = false;
+			targetSet = false;
 			return;
 		}
 
@@ -31,19 +33,19 @@ namespace df {
 		glm::vec2 movement = direction * speed * deltaTime;
 
 		moving = true;
-			
+
 		if (glm::length(movement) >= distance) {
 			currentPos = targetPos;
-			
+
 			animComp.currentType = Hero::AnimationType::Idle;
 			animComp.anim.setCurrentFrameIndex(0);
 			moving = false;
 			movementState = false;
-		}
-		else {
+			targetSet = false;
+		} else {
 			if (animComp.currentType == Hero::AnimationType::Idle) {
-			animComp.currentType = Hero::AnimationType::Run;
-			animComp.anim.setCurrentFrameIndex(0);
+				animComp.currentType = Hero::AnimationType::Run;
+				animComp.anim.setCurrentFrameIndex(0);
 			}
 			currentPos += movement;
 		}
@@ -53,9 +55,18 @@ namespace df {
 		movementState = !movementState;
 	}
 
+	void EntityMovementSystem::toggleTargetSet() noexcept {
+		targetSet = !targetSet;
+	}
+
+	void EntityMovementSystem::setTargetPosition(const glm::vec2& target) noexcept {
+		targetPosition = target;
+		targetSet = true;
+	}
 
 	glm::vec2 EntityMovementSystem::getTileWorldPosition(size_t tileIndex) const noexcept {
-		if (!gameState) return glm::vec2(0.0f);
+		if (!gameState)
+			return glm::vec2(0.0f);
 
 		const Graph& map = gameState->getMap();
 		unsigned mapWidth = map.getMapWidth();
@@ -68,14 +79,14 @@ namespace df {
 			float y = 1.5f * static_cast<float>(row);
 
 			return glm::vec2(x, y);
-		}
-		else {
+		} else {
 			return glm::vec2(0.0f);
 		}
 	}
 
 	size_t EntityMovementSystem::getTileIndexFromPosition(const glm::vec2& worldPosition) const noexcept {
-		if (!gameState) return 0;
+		if (!gameState)
+			return 0;
 
 		const Graph& map = gameState->getMap();
 		unsigned mapWidth = map.getMapWidth();
@@ -86,9 +97,10 @@ namespace df {
 		float colF = worldPosition.x / 2.0f - 0.5f * (row & 1);
 		unsigned col = static_cast<unsigned>(colF);
 
-		if (row >= map.getTileCount() / mapWidth || col >= mapWidth) return 0;
+		if (row >= map.getTileCount() / mapWidth || col >= mapWidth)
+			return 0;
 
 		return row * mapWidth + col;
 	}
 
-}
+} // namespace df

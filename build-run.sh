@@ -23,25 +23,31 @@ export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
 echo "Starting program..."
 ./drengrfell
 
-echo "Leak Report:"
+if compgen -G "asan_report*" >/dev/null; then
 
-awk '
-/Direct leak/ {
-    leak_line = $0
-    getline
+    awk '
+	/Direct leak/ {
+		leak_line = $0
+		getline
 
-    # Only count lines for files from src/
-    if ($0 ~ /drengrfell-project\/src\//) {
-        direct_count++
+		# Only count lines for files from src/
+		if ($0 ~ /drengrfell-project\/src\//) {
+			direct_count++
 
-        # Count leaked bytes
-        match(leak_line, /Direct leak of ([0-9]+)/, a)
-        direct_bytes += a[1]
-        print leak_line
-        print $0
-    }
-}
-/Indirect leak/ { next } # skip indirect leaks
-END {
-    print "Direct leaks in your code: " direct_count " | bytes: " direct_bytes
-}' asan_report*
+			# Count leaked bytes
+			match(leak_line, /Direct leak of ([0-9]+)/, a)
+			direct_bytes += a[1]
+			print leak_line
+			print $0
+		}
+	}
+	/Indirect leak/ { next } # skip indirect leaks
+	END {
+		if (direct_bytes > 0) {
+			print "Leak Report:"
+			print "Direct leaks in your code: " direct_count " | bytes: " direct_bytes
+		}
+	}' asan_report*
+else
+    echo "No address sanitization report found."
+fi

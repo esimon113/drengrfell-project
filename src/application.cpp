@@ -10,6 +10,8 @@
 // test for entityMovement
 #include "core/road.h"
 #include "entityMovement.h"
+// #include "utils/graphDebugDump.h"
+// #include "utils/graphDebugImage.h"
 #include "utils/worldNodeMapper.h"
 
 
@@ -98,6 +100,9 @@ namespace df {
 
 		// Store RenderTextSystem in registry to use it in any other System.
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
+		// Store RenderNofificationSystem in registry to use it in any other System.
+		registry->addSystem<RenderNotificationSystem>(&render.getRenderNotificationSystem());
+
 		if (!this->window || !this->window->getHandle()) {
 			std::cerr << "Invalid window or GLFWwindow handle!" << std::endl;
 			return;
@@ -200,21 +205,19 @@ namespace df {
 				if (movementSystem.getMovementState()) {
 					if (!registry->animations.entities.empty()) {
 
-						glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
-						auto extent = this->window->getWindowExtent();
+						if (!movementSystem.isTargetSet()) {
 
-						auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
-						auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
-						// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+							glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
+							auto extent = this->window->getWindowExtent();
 
-						glm::vec2 tilePosition = movementSystem.getTileWorldPosition(mapId);
-						// fmt::println("Tile Position: ({},{})", tilePosition.x, tilePosition.y);
+							auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+							auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+							// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
+							movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
+						}
 						Entity hero = registry->animations.entities.front();
-						glm::vec2 targetPos = tilePosition;
-						// glm::vec2 currentTargetPos = targetPos;
-
-						movementSystem.moveEntityTo(hero, targetPos, delta_time);
+						movementSystem.moveEntityTo(hero, movementSystem.getTargetPosition(), delta_time);
 						// When the Hero stopped moving and is on the destination tile, a check for hazards is done
 						if (!movementSystem.getMovementState()) {
 							gameController->applyHazardAfterMovement(hero, *registry);
@@ -348,6 +351,14 @@ namespace df {
 		} else {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
+
+		// 		// This is only for DEBUGGING purposes:
+		// #if defined(__unix__) || defined(__linux__)
+		// 		fmt::println("Log map config");
+		// 		df::utils::writeGraphDebugDump(this->gameState->getMap(), "~/Pictures/debug/graph_debug.txt");
+		// 		df::utils::writeGraphDebugImage(this->gameState->getMap(), "~/Pictures/debug/graph_debug.png");
+		// #endif
+
 		fmt::println("[DEBUG] regenerated world");
 		{
 			// only supports one player for now. TODO: if we do multplayer update this.
@@ -452,12 +463,20 @@ namespace df {
 					gameController->endTurn();
 					// TODO: For multiplayer check only for active player for hazards
 					Entity hero = registry->animations.entities.front();
-					if (!registry->hazards.has(hero)) {
+					if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
 						movementSystem.toggleMovementState();
 					}
 					gameController->startTurn(*registry); // Start turn for the next player
 					return;
 				}
+			}
+
+			// Check if any Notification buttons were pressed
+			std::string pressedButton = render.renderNotificationSystem.onMouseButton(mouse, button, action);
+			// If any button was pressed continue
+			if (!pressedButton.empty()) {
+				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
+				// TODO: add actions for button pressed in notifications
 			}
 
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
@@ -590,5 +609,6 @@ namespace df {
 		render.onResizeCallback(windowParam, width, height);
 		render.renderHudSystem.onResizeCallback(windowParam, width, height);
 		configMenu.onResizeCallback(windowParam, width, height);
+		render.renderNotificationSystem.onResizeCallback(windowParam, width, height);
 	}
 } // namespace df

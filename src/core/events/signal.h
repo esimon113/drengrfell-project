@@ -6,12 +6,12 @@
  * This idea is inspired from Signals in Godot engine and the event bus pattern.
  * In Godot, you typically create a singleton for holding all the possible events as signals,
  * and connect the classes (resp. nodes) to this singleton, in order to be able to emit signals and connect to them.
-*/
+ */
 
 namespace df {
-	template<typename... Arguments>
+	template <typename... Arguments>
 	class Signal {
-	public:
+	  public:
 		Signal() = default;
 		explicit Signal(std::string signalName) : name(std::move(signalName)) {}
 		~Signal() = default;
@@ -34,7 +34,7 @@ namespace df {
 			callbacks.erase(identifier);
 		}
 
-		template<typename... Arguments2>
+		template <typename... Arguments2>
 		void emit(Arguments2&&... arguments) {
 			fmt::println("Emitted signal {}", name);
 			const auto currentCallbacks = callbacks;
@@ -44,7 +44,8 @@ namespace df {
 		}
 
 		std::string name{};
-	private:
+
+	  private:
 		std::unordered_map<std::string, Callback> callbacks{};
 	};
-}
+} // namespace df

@@ -24,8 +24,7 @@ namespace df {
 		if (!j["roadId"].is_null()) {
 			size_t newRoadId = j["roadId"].get<size_t>();
 			this->setRoadId(newRoadId);
-		}
-		else {
+		} else {
 			this->setRoadId(std::nullopt);
 		}
 
@@ -33,4 +32,4 @@ namespace df {
 		types::EdgeDirection newDirection = static_cast<types::EdgeDirection>(directionInt);
 		this->setDirection(newDirection);
 	}
-}
+} // namespace df

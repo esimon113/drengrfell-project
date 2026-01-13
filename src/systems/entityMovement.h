@@ -1,13 +1,13 @@
 #pragma once
 #include <common.h>
-#include <registry.h>
 #include <core/gamestate.h>
 #include <glm/vec2.hpp>
+#include <registry.h>
 
 
 namespace df {
 	class EntityMovementSystem {
-	public:
+	  public:
 		static EntityMovementSystem init(Registry* registry, GameState& gameState) noexcept;
 
 		void moveEntityTo(Entity entity, const glm::vec2& targetPosition, float deltaTime) noexcept;
@@ -16,13 +16,20 @@ namespace df {
 		size_t getTileIndexFromPosition(const glm::vec2& worldPosition) const noexcept;
 
 		void toggleMovementState() noexcept;
+		void toggleTargetSet() noexcept;
 		bool getMovementState() noexcept { return movementState; };
 		bool isEntityMoving() const noexcept { return moving; }
+		bool isTargetSet() const noexcept { return targetSet; }
+		glm::vec2 getTargetPosition() const noexcept { return targetPosition; }
 
-	private:
+		void setTargetPosition(const glm::vec2& target) noexcept;
+
+	  private:
 		Registry* registry;
 		GameState* gameState;
 		bool movementState = false;
 		bool moving = false;
+		bool targetSet = false;
+		glm::vec2 targetPosition;
 	};
-}
+} // namespace df

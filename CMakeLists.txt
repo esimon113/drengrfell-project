@@ -148,6 +148,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/audio.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/animationSystem.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderText.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderNotification.cpp
 
 	${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
@@ -157,6 +158,8 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/utils/textureArray.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/worldNodeMapper.cpp
+	# ${PROJECT_SOURCE_DIR}/src/utils/graphDebugDump.cpp
+	# ${PROJECT_SOURCE_DIR}/src/utils/graphDebugImage.cpp
 
 	${PROJECT_SOURCE_DIR}/src/systems/renderHero.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderBuildings.cpp
@@ -169,9 +172,8 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
 	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
-	
-
- "src/systems/entityMovement.cpp")
+ 	"src/systems/entityMovement.cpp"
+ )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 20

@@ -4,175 +4,177 @@
 #include <algorithm>
 
 
-namespace df{
+namespace df {
 
-    Player::Player()
-        : playerId(0), heroPoints(0), heroReference(nullptr)
-    {
-    }
+	Player::Player()
+		: playerId(0), heroPoints(0), heroReference(nullptr) {
+	}
 
-    Player::Player(size_t id)
-        : playerId(id), heroPoints(0), heroReference(nullptr)
-    {
-    }
+	Player::Player(size_t id)
+		: playerId(id), heroPoints(0), heroReference(nullptr) {
+	}
 
-    size_t Player::getId() const{
-        return this->playerId;
-    }
+	size_t Player::getId() const {
+		return this->playerId;
+	}
 
-    int Player::getHeroPoints() const{
-        return heroPoints;
-    }
+	int Player::getHeroPoints() const {
+		return heroPoints;
+	}
 
-    void Player::addHeroPoints(int points){
-        heroPoints += points;
-    }
+	void Player::addHeroPoints(int points) {
+		heroPoints += points;
+	}
 
-    void Player::setHeroPoints(int points){
-        heroPoints = points;
-    }
+	void Player::setHeroPoints(int points) {
+		heroPoints = points;
+	}
 
-    const std::vector<size_t> &Player::getSettlementIds() const
-    {
-        return  settlementIds;
-    }
+	const std::vector<size_t>& Player::getSettlementIds() const {
+		return settlementIds;
+	}
 
-    void Player::addSettlement(size_t settlementId){
-        settlementIds.push_back(settlementId);
-    }
+	void Player::addSettlement(size_t settlementId) {
+		settlementIds.push_back(settlementId);
+	}
 
-    void Player::removeSettlement(size_t settlementId){
-        settlementIds.erase(std::remove(settlementIds.begin(), settlementIds.end(), settlementId), settlementIds.end());
-    }
+	void Player::removeSettlement(size_t settlementId) {
+		settlementIds.erase(std::remove(settlementIds.begin(), settlementIds.end(), settlementId), settlementIds.end());
+	}
 
-    void Player::addResources(types::TileType type, int amount){
-        resources[type] += amount;
-    }
+	void Player::addResources(types::TileType type, int amount) {
+		resources[type] += amount;
+	}
 
-    void Player::removeResources(types::TileType type, int amount){
-        // no check is we call first the hasResources function
-        resources[type] -= amount;
-    }
+	void Player::removeResources(types::TileType type, int amount) {
+		// no check is we call first the hasResources function
+		resources[type] -= amount;
+	}
 
-    int Player::getResources(types::TileType type) const{
-        auto it = resources.find(type);
-        if(it != resources.end()){
-            return it->second;
-        }
-        return 0;
-    }
+	int Player::getResources(types::TileType type) const {
+		auto it = resources.find(type);
+		if (it != resources.end()) {
+			return it->second;
+		}
+		return 0;
+	}
 
-    bool Player::hasResources(const std::map<types::TileType, int>& amountRequired){
-        for(const auto& [type,amount ]: amountRequired){
-            if(getResources(type) < amount){
-                return false;
-            } 
-        }
-        return true;
-    }
+	bool Player::hasResources(const std::map<types::TileType, int>& amountRequired) {
+		for (const auto& [type, amount] : amountRequired) {
+			if (getResources(type) < amount) {
+				return false;
+			}
+		}
+		return true;
+	}
 
-    const std::map<types::TileType, int> &Player::getResources() const{
-        return resources;
-    }
+	const std::map<types::TileType, int>& Player::getResources() const {
+		return resources;
+	}
 
-    void Player::setHero(std::shared_ptr<Hero> hero){
-        heroReference = hero;
-    }
+	void Player::setHero(std::shared_ptr<Hero> hero) {
+		heroReference = hero;
+	}
 
-    std::shared_ptr<Hero> Player::getHero() const{
-        return heroReference;
-    }
+	std::shared_ptr<Hero> Player::getHero() const {
+		return heroReference;
+	}
 
-    void Player::addRoad(size_t roadId){
-        roadIds.push_back(roadId);
-    }
+	void Player::addRoad(size_t roadId) {
+		roadIds.push_back(roadId);
+	}
 
-    const std::vector<size_t> &Player::getRoadIds() const{
-        return roadIds;
-    }
+	const std::vector<size_t>& Player::getRoadIds() const {
+		return roadIds;
+	}
 
-    int Player::getRoadCount() const{
-        return roadIds.size();
-    }
+	int Player::getRoadCount() const {
+		return roadIds.size();
+	}
 
-    void Player::exploreTile(size_t tileId){
-        if(!isTileExplored(tileId)){
-            exploredTileIds.push_back(tileId);
-        }
-    }
+	void Player::exploreTile(size_t tileId) {
+		if (!isTileExplored(tileId)) {
+			exploredTileIds.push_back(tileId);
+		}
+	}
 
-    bool Player::isTileExplored(size_t tileId) const{ 
-        return std::find(exploredTileIds.begin(), exploredTileIds.end(), tileId) != exploredTileIds.end();
-    }
+	bool Player::isTileExplored(size_t tileId) const {
+		return std::find(exploredTileIds.begin(), exploredTileIds.end(), tileId) != exploredTileIds.end();
+	}
 
-    const std::vector<size_t> &Player::getExploredTileIds() const{
-        return exploredTileIds;
-    }
+	const std::vector<size_t>& Player::getExploredTileIds() const {
+		return exploredTileIds;
+	}
 
-    void Player::forgetExploredTiles() {
-        this->exploredTileIds.clear();
-    }
+	void Player::forgetExploredTiles() {
+		this->exploredTileIds.clear();
+	}
 
-    void Player::reset(){
-        heroPoints = 0;
-        settlementIds.clear();
-        resources.clear();
-        heroReference = nullptr;
-        roadIds.clear();
-        exploredTileIds.clear();
-    }
+	void Player::reset() {
+		heroPoints = 0;
+		settlementIds.clear();
+		resources.clear();
+		heroReference = nullptr;
+		roadIds.clear();
+		exploredTileIds.clear();
+	}
 
-    size_t Player::getPlayerId() const { return playerId; }
-    void Player::setPlayerId(size_t newPlayerId) { playerId = newPlayerId; }
+	size_t Player::getPlayerId() const { return playerId; }
+	void Player::setPlayerId(size_t newPlayerId) { playerId = newPlayerId; }
 
-    const json Player::serialize() const {
-        
-        json j;
+	const json Player::serialize() const {
 
-        j["playerId"] = playerId;
-        j["heroPoints"] = heroPoints;
-        
-        j["settlementIds"] = settlementIds;
-        j["roadIds"] = roadIds;
-        j["exploredTileIds"] = exploredTileIds;
-        
-        // Resources
-        json resourcesJson;
-        for(const auto& [type, amount] : resources) {
-            resourcesJson[std::to_string(static_cast<int>(type))] = amount;
-        }
-        j["resources"] = resourcesJson;
+		json j;
 
-        if (heroReference) {
-            // Uncomment this when hero serialization is implemented
-            //j["hero"] = heroReference->serialize();
-        }
+		j["playerId"] = playerId;
+		j["heroPoints"] = heroPoints;
 
-        return j;
-    }
+		j["settlementIds"] = settlementIds;
+		j["roadIds"] = roadIds;
+		j["exploredTileIds"] = exploredTileIds;
 
-    void Player::deserialize(const json& j) {
+		// Resources
+		json resourcesJson;
+		for (const auto& [type, amount] : resources) {
+			resourcesJson[std::to_string(static_cast<int>(type))] = amount;
+		}
+		j["resources"] = resourcesJson;
 
-        if(j.contains("playerId")) this->setPlayerId(j.at("playerId").get<size_t>());
-        if(j.contains("heroPoints")) this->setHeroPoints(j.at("heroPoints").get<int>());
-        
-        if(j.contains("settlementIds")) settlementIds = j["settlementIds"].get<std::vector<size_t>>();
-        if(j.contains("roadIds")) roadIds = j["roadIds"].get<std::vector<size_t>>();
-        if(j.contains("exploredTileIds")) exploredTileIds = j["exploredTileIds"].get<std::vector<size_t>>();
-        
-        if(j.contains("resources")) {
-            for(const auto& item : j["resources"].items()) {
-                types::TileType type = static_cast<types::TileType>(std::stoi(item.key()));
-                resources[type] = item.value().get<int>();
-            }
-        }
+		if (heroReference) {
+			// Uncomment this when hero serialization is implemented
+			// j["hero"] = heroReference->serialize();
+		}
 
-        if (j.contains("hero")) {
-            auto hero = std::make_shared<Hero>();
-            // UNcomment this when hero deserialization is implemented
-            //hero->deserialize(j["hero"]);
-            this->setHero(hero);
-        }
-    }
+		return j;
+	}
 
-}
+	void Player::deserialize(const json& j) {
+
+		if (j.contains("playerId"))
+			this->setPlayerId(j.at("playerId").get<size_t>());
+		if (j.contains("heroPoints"))
+			this->setHeroPoints(j.at("heroPoints").get<int>());
+
+		if (j.contains("settlementIds"))
+			settlementIds = j["settlementIds"].get<std::vector<size_t>>();
+		if (j.contains("roadIds"))
+			roadIds = j["roadIds"].get<std::vector<size_t>>();
+		if (j.contains("exploredTileIds"))
+			exploredTileIds = j["exploredTileIds"].get<std::vector<size_t>>();
+
+		if (j.contains("resources")) {
+			for (const auto& item : j["resources"].items()) {
+				types::TileType type = static_cast<types::TileType>(std::stoi(item.key()));
+				resources[type] = item.value().get<int>();
+			}
+		}
+
+		if (j.contains("hero")) {
+			auto hero = std::make_shared<Hero>();
+			// UNcomment this when hero deserialization is implemented
+			// hero->deserialize(j["hero"]);
+			this->setHero(hero);
+		}
+	}
+
+} // namespace df

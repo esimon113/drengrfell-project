@@ -33,7 +33,7 @@ namespace df {
 
 		assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 		self.unbind();
-		self.extent = { descriptor.width, descriptor.height };
+		self.extent = {descriptor.width, descriptor.height};
 
 		return self;
 	}
@@ -43,7 +43,7 @@ namespace df {
 		for (size_t i = 0; i < colorAttachmentCount; ++i) {
 			colorAttachments[i].deinit();
 		}
-		delete [] colorAttachments;
+		delete[] colorAttachments;
 
 		if (depthAttachment) {
 			glDeleteRenderbuffers(1, &depthAttachment.value());
@@ -51,4 +51,4 @@ namespace df {
 
 		glDeleteFramebuffers(1, &handle);
 	}
-}
+} // namespace df

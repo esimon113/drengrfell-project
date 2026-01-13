@@ -1,8 +1,8 @@
 #pragma once
 
+#include "gamestate.h"
 #include "registry.h"
 #include "window.h"
-#include "gamestate.h"
 
 
 
@@ -10,7 +10,7 @@
 
 namespace df {
 	class BuildingPreviewSystem {
-	public:
+	  public:
 		BuildingPreviewSystem() = default;
 		~BuildingPreviewSystem() = default;
 
@@ -31,11 +31,11 @@ namespace df {
 		Entity getPreviewEntity() const noexcept { return previewEntity; }
 
 
-	private:
+	  private:
 		Registry* registry = nullptr;
 		Window* window = nullptr;
 		GameState* gamestate = nullptr;
 		Entity previewEntity;
 		bool hasPreviewEntity = false;
 	};
-}
+} // namespace df

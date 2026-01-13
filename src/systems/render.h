@@ -3,33 +3,34 @@
 #include "renderCommon.h"
 
 #include <registry.h>
-#include <window.h>
-#include <utils/shader.h>
 #include <utils/framebuffer.h>
+#include <utils/shader.h>
+#include <window.h>
 
 
-#include "renderTiles.h"
-#include "renderBuildings.h"
 #include "renderBuildingPreviews.h"
+#include "renderBuildings.h"
 #include "renderHero.h"
 #include "renderHud.h"
-#include "renderText.h"
 #include "renderSnow.h"
+#include "renderText.h"
+#include "renderTiles.h"
+#include "renderNotification.h"
 
 namespace df {
 	class RenderSystem {
-		public:
-			RenderSystem() = default;
-			~RenderSystem() = default;
+	  public:
+		RenderSystem() = default;
+		~RenderSystem() = default;
 
-			static RenderSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
-			void deinit() noexcept;
+		static RenderSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
+		void deinit() noexcept;
 
-			void step(float dt) noexcept;
-			void reset() noexcept;
+		void step(float dt) noexcept;
+		void reset() noexcept;
 
-			void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
-			void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+		void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
+		void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
 
 			RenderTilesSystem renderTilesSystem;
 			RenderHeroSystem renderHeroSystem;
@@ -37,18 +38,21 @@ namespace df {
 			RenderBuildingPreviewsSystem renderBuildingPreviewsSystem;
 			RenderTextSystem renderTextSystem;
 			RenderHudSystem renderHudSystem;
-			RenderSnowSystem renderSnowSystem; 
+			RenderSnowSystem renderSnowSystem;
+			RenderNotificationSystem renderNotificationSystem;
 
 			RenderTextSystem& getRenderTextSystem() noexcept {
 				return renderTextSystem;
 			}
+			RenderNotificationSystem& getRenderNotificationSystem() noexcept {
+				return renderNotificationSystem;
+			}
 
-		private:
-			Registry* registry;
-			Window* window;
+	  private:
+		Registry* registry;
+		Window* window;
 
-			Viewport viewport = Viewport();
-			Framebuffer intermediateFramebuffer;
-
+		Viewport viewport = Viewport();
+		Framebuffer intermediateFramebuffer;
 	};
-}
+} // namespace df

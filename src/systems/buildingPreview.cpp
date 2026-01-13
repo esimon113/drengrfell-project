@@ -36,7 +36,8 @@ namespace df {
 
 
 	void BuildingPreviewSystem::updatePreviewPosition() noexcept {
-		if (!hasPreviewEntity || !registry || !window || !gamestate) return;
+		if (!hasPreviewEntity || !registry || !window || !gamestate)
+			return;
 
 		Camera& cam = registry->cameras.get(registry->getCamera());
 
@@ -61,7 +62,8 @@ namespace df {
 
 
 	void BuildingPreviewSystem::setSettlementPreviewActive(bool active) noexcept {
-		if (!registry) return;
+		if (!registry)
+			return;
 
 		if (active) {
 			if (!hasPreviewEntity) {
@@ -95,7 +97,8 @@ namespace df {
 
 
 	void BuildingPreviewSystem::setRoadPreviewActive(bool active) noexcept {
-		if (!registry) return;
+		if (!registry)
+			return;
 
 		if (active) {
 			if (!hasPreviewEntity) {
@@ -127,4 +130,4 @@ namespace df {
 			}
 		}
 	}
-}
+} // namespace df

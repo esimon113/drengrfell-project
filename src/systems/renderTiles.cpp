@@ -1,10 +1,10 @@
 #include "renderTiles.h"
-#include <iostream>
 #include "../core/player.h"
 #include "../core/tile.h"
-#include "utils/textureArray.h"
 #include "common.h"
+#include "utils/textureArray.h"
 #include "worldGenerator.h"
+#include <iostream>
 
 namespace df {
 	RenderTilesSystem RenderTilesSystem::init(Window& window, Registry& registry, std::shared_ptr<GameState> gameState) noexcept {
@@ -15,7 +15,7 @@ namespace df {
 		self.gameState = gameState;
 
 		const glm::uvec2 extent = self.window->getWindowExtent();
-		self.intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true });
+		self.intermediateFramebuffer = Framebuffer::init({static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true});
 
 		// load resources for rendering
 		self.tileShader = Shader::init(assets::Shader::tile).value();
@@ -129,36 +129,38 @@ namespace df {
 
 	void RenderTilesSystem::onKeyCallback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/) noexcept {
 		switch (action) {
-			case GLFW_PRESS: {
-				switch (key) {
-					case GLFW_KEY_F: {
-						this->renderFogOfWar ^= true;
-						this->updateRequired = true;
-						fmt::println("Set fow rendering to {}", this->renderFogOfWar ? "true" : "false");
-					} break;
-					/*case GLFW_KEY_H: {
-						this->useHex ^= true;
-						this->updateRequired = true;
-						fmt::println("Set hex rendering to {}", this->useHex ? "true" : "false");
-					} break;*/
-					case GLFW_KEY_P: {
-						double xpos, ypos;
-						glfwGetCursorPos(this->window->getHandle(), &xpos, &ypos);
-						auto extent = this->window->getWindowExtent();
+		case GLFW_PRESS: {
+			switch (key) {
+			case GLFW_KEY_F: {
+				this->renderFogOfWar ^= true;
+				this->updateRequired = true;
+				fmt::println("Set fow rendering to {}", this->renderFogOfWar ? "true" : "false");
+			} break;
+			/*case GLFW_KEY_H: {
+				this->useHex ^= true;
+				this->updateRequired = true;
+				fmt::println("Set hex rendering to {}", this->useHex ? "true" : "false");
+			} break;*/
+			case GLFW_KEY_P: {
+                    glm::dvec2 cursor = this->window->getCursorPosition(); 
+                    auto extent = this->window->getWindowExtent();
 
-						auto tileId = getTileIdAtPosition(xpos, extent.y - ypos);
-						this->selectedTile = tileId;
-						auto mapId = tileIdToMapId(tileId);
-						fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, xpos, ypos);
-					} break;
-				}
+                    // Use the scaled coordinates
+                    auto tileId = getTileIdAtPosition(static_cast<int>(cursor.x), static_cast<int>(extent.y) - static_cast<int>(cursor.y));
+                    this->selectedTile = tileId;
+                    
+                    auto mapId = tileIdToMapId(tileId);
+                    fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, cursor.x, cursor.y);
+			} break;
 			}
+		}
 		}
 	}
 
 
 	int RenderTilesSystem::tileIdToMapId(unsigned tileId) const noexcept {
-		if (tileId == 0) return -1;
+		if (tileId == 0)
+			return -1;
 		tileId--;
 
 		const auto columns = this->tileColumns;
@@ -217,7 +219,7 @@ namespace df {
 			this->updateRequired = false;
 		}
 		renderMap(accumulator);
-		//renderPickerMap(true);
+		// renderPickerMap(true);
 	}
 
 
@@ -230,12 +232,11 @@ namespace df {
 		const glm::mat4 projection = glm::ortho(
 			cam.minX(), cam.maxX(),
 			cam.minY(), cam.maxY(),
-			-1.0f, 1.0f
-		);
+			-1.0f, 1.0f);
 
 		glm::mat4 model = glm::identity<glm::mat4>();
-		//model = glm::translate(model, glm::vec3(-camPos, 0.0f));
-		//model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
+		// model = glm::translate(model, glm::vec3(-camPos, 0.0f));
+		// model = glm::scale(model, glm::vec3(glm::vec2{1.0f, 1.0f}, 1));
 
 		this->tileAtlas.bind(0);
 		this->tileShader.use()
@@ -265,8 +266,7 @@ namespace df {
 		const glm::mat4 projection = glm::ortho(
 			cam.minX(), cam.maxX(),
 			cam.minY(), cam.maxY(),
-			-1.0f, 1.0f
-		);
+			-1.0f, 1.0f);
 
 		glm::mat4 model = glm::identity<glm::mat4>();
 
@@ -287,7 +287,7 @@ namespace df {
 		const glm::uvec2 framebufferExtent = this->intermediateFramebuffer.getExtent();
 		if (windowExtent != framebufferExtent) {
 			this->intermediateFramebuffer.deinit();
-			this->intermediateFramebuffer = Framebuffer::init({ static_cast<GLsizei>(windowExtent.x), static_cast<GLsizei>(windowExtent.y), 1, true });
+			this->intermediateFramebuffer = Framebuffer::init({static_cast<GLsizei>(windowExtent.x), static_cast<GLsizei>(windowExtent.y), 1, true});
 		}
 
 		this->intermediateFramebuffer.bind();
@@ -298,11 +298,11 @@ namespace df {
 			return 0;
 		}
 		glViewport(0, 0, extent.x, extent.y);
-		glClearColor(0.0, 0.0, 0.0f , 1.0f);
+		glClearColor(0.0, 0.0, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_PROGRAM_POINT_SIZE);
-		//glEnable(GL_BLEND);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		// glEnable(GL_BLEND);
+		// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glDisable(GL_DEPTH_TEST);
 
 		renderPickerMap(false);
@@ -311,13 +311,13 @@ namespace df {
 		glFinish();
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		unsigned char data[4];
-		glReadPixels(x, y,1,1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 		this->intermediateFramebuffer.unbind();
 
 		return data[0] +
 			   data[1] * 256 +
-			   data[2] * 256*256;
+			   data[2] * 256 * 256;
 	}
 
 
@@ -330,7 +330,7 @@ namespace df {
 		// It is rotated by 30 degrees in order to have a corner at the top,
 		// as the tile textures already created have also the corner at the top.
 
-		constexpr float SQRT_3_DIV_2 = 0.866025404f; //sqrt(3.0) / 2.0f;
+		constexpr float SQRT_3_DIV_2 = 0.866025404f;  // sqrt(3.0) / 2.0f;
 		constexpr float C2_DIV_SQRT_3 = 1.154700538f; // inverse of the above
 		std::vector<TileVertex> vertices;
 		for (int vertex = 0; vertex < 6; vertex++) {
@@ -422,4 +422,4 @@ namespace df {
 
 		return Ok(instances);
 	}
-}
+} // namespace df

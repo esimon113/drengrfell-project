@@ -6,48 +6,48 @@
 using json = nlohmann::json;
 
 namespace df {
-    enum class RoadLevel : size_t {
-        Path = 0,
-        DirtRoad,
-        StoneRoad,
-        HighQualityRoad
-    };
+	enum class RoadLevel : size_t {
+		Path = 0,
+		DirtRoad,
+		StoneRoad,
+		HighQualityRoad
+	};
 
-    class Road {
-    public:
-        Road();
-        Road(size_t newId, size_t newPlayerId, size_t newEdgeId, RoadLevel newLevel, std::vector<int> newBuildingCost);
+	class Road {
+	  public:
+		Road();
+		Road(size_t newId, size_t newPlayerId, size_t newEdgeId, RoadLevel newLevel, std::vector<int> newBuildingCost);
 
-        ~Road();
+		~Road();
 
-        size_t getId() const;
-        void setId(size_t newId);
+		size_t getId() const;
+		void setId(size_t newId);
 
-        size_t getPlayerId() const;
-        void setPlayerId(size_t newPlayerId);
+		size_t getPlayerId() const;
+		void setPlayerId(size_t newPlayerId);
 
-        size_t getEdgeId() const;
-        void setEdgeId(size_t newEdgeId);
+		size_t getEdgeId() const;
+		void setEdgeId(size_t newEdgeId);
 
-        RoadLevel getRoadLevel() const;
-        void setRoadLevel(RoadLevel newLevel);
+		RoadLevel getRoadLevel() const;
+		void setRoadLevel(RoadLevel newLevel);
 
-        int getTradingBonus() const;
-        void upgrade();
+		int getTradingBonus() const;
+		void upgrade();
 
-        const std::vector<int>& getBuildingCost() const;
-        void setBuildingCost(std::vector<int> newBuildingCost);
+		const std::vector<int>& getBuildingCost() const;
+		void setBuildingCost(std::vector<int> newBuildingCost);
 
-        const json serialize() const;
+		const json serialize() const;
 
-        void deserialize(const json& j);
+		void deserialize(const json& j);
 
-    private:
-        size_t id{ 0 };
-        size_t playerId{ 0 };   // owned by player
-        size_t edgeId{ 0 };     // placed on edge
-        RoadLevel roadLevel{ RoadLevel::Path };
-        std::vector<int> buildingCost{};
-    };
+	  private:
+		size_t id{0};
+		size_t playerId{0}; // owned by player
+		size_t edgeId{0};	// placed on edge
+		RoadLevel roadLevel{RoadLevel::Path};
+		std::vector<int> buildingCost{};
+	};
 
-}
+} // namespace df

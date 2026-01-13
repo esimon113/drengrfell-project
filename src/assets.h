@@ -7,7 +7,10 @@
 namespace df {
 	namespace assets {
 		enum struct Sound {
-			music,
+			BACKGROUND_MUSIC_1,
+			BACKGROUND_MUSIC_2,
+			BACKGROUND_MUSIC_3,
+			BACKGROUND_MUSIC_4,
 			count
 		};
 
@@ -104,7 +107,7 @@ namespace df {
 		};
 
 
-		template<typename AssetType>
+		template <typename AssetType>
 		std::string getAssetPath(const AssetType assetId) noexcept;
 
 	} // namespace assets

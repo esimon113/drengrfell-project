@@ -2,46 +2,47 @@
 
 #include "renderCommon.h"
 #include <registry.h>
-#include <window.h>
+#include <utils/framebuffer.h>
 #include <utils/shader.h>
 #include <utils/texture.h>
-#include <utils/framebuffer.h>
+#include <window.h>
 
 
 namespace df {
-    class RenderHeroSystem {
-		public:
-			RenderHeroSystem() = default;
-			~RenderHeroSystem() = default;
+	class RenderHeroSystem {
+	  public:
+		RenderHeroSystem() = default;
+		~RenderHeroSystem() = default;
 
-			static RenderHeroSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
-			void updateDimensionsFromMap() noexcept;
-			void deinit() noexcept;
+		static RenderHeroSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
+		void updateDimensionsFromMap() noexcept;
+		void deinit() noexcept;
 
-			void step(float delta) noexcept;
-			void reset() noexcept;
+		void step(float delta) noexcept;
+		void reset() noexcept;
 
-			Texture& getCurrentTexture(AnimationComponent& animComp, int frameIndex);
-		private:
-			Registry* registry;
-			Window* window;
-			std::shared_ptr<GameState> gameState;
+		Texture& getCurrentTexture(AnimationComponent& animComp, int frameIndex);
 
-			Framebuffer intermediateFramebuffer;
-			Shader heroShader;
+	  private:
+		Registry* registry;
+		Window* window;
+		std::shared_ptr<GameState> gameState;
 
-			GLuint m_quad_vao;
-			GLuint m_quad_ebo;
+		Framebuffer intermediateFramebuffer;
+		Shader heroShader;
 
-			unsigned columns;
-			unsigned rows;
+		GLuint m_quad_vao;
+		GLuint m_quad_ebo;
 
-			Viewport viewport;
+		unsigned columns;
+		unsigned rows;
 
-			std::vector<Texture> heroIdleTextures;
-			std::vector<Texture> heroSwimTextures;
-			std::vector<Texture> heroJumpTextures;
-			std::vector<Texture> heroAttackTextures;
-			std::vector<Texture> heroRunTextures;
+		Viewport viewport;
+
+		std::vector<Texture> heroIdleTextures;
+		std::vector<Texture> heroSwimTextures;
+		std::vector<Texture> heroJumpTextures;
+		std::vector<Texture> heroAttackTextures;
+		std::vector<Texture> heroRunTextures;
 	};
-}
+} // namespace df
