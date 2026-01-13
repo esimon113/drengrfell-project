@@ -8,6 +8,7 @@
 #include "gamecontroller.h"
 #include "hero.h"
 #include "tile.h"
+#include "utils/worldNodeMapper.h"
 #include "vertex.h"
 
 
@@ -166,67 +167,26 @@ namespace df {
 		(void)playerId; // unused for now - simplified building rules
 		const Graph& map = this->gameState.getMap();
 		try {
+			fmt::println("[GameController] canBuildSettlement: checking vertex {}", vertexId);
 			// Find vertex by ID (not index)
 			VertexHandle vertex = map.findVertexById(vertexId);
 			if (!vertex) {
+				fmt::println("[GameController] canBuildSettlement: vertex {} not found", vertexId);
 				return false;
 			}
 
 			// Only check if vertex already has a settlement
 			if (vertex->hasSettlement()) {
+				fmt::println("[GameController] canBuildSettlement: vertex {} already has settlement {}", vertexId, vertex->getSettlementId().value_or(SIZE_MAX));
 				return false;
-			}
-
-			// CRITICAL FIX: Check ALL vertices that share the same physical location (same set of tiles)
-			// This prevents building multiple settlements on the same physical vertex due to duplicate vertex IDs
-			// Only perform this check if the vertex has multiple tiles (indicating it's a shared vertex)
-			const auto tilesOpt = map.getVertexTiles(vertex);
-			if (tilesOpt) {
-				// Get the set of tile IDs that this vertex is connected to
-				std::unordered_set<size_t> vertexTileIds;
-				for (const auto& tile : *tilesOpt) {
-					if (tile && tile->getId() != SIZE_MAX) {
-						vertexTileIds.insert(tile->getId());
-					}
-				}
-
-				// Only check for duplicates if this vertex has multiple tiles (shared vertex)
-				// Single-tile vertices are edge cases and don't need this check
-				if (vertexTileIds.size() > 1) {
-					// Only check vertices that already have settlements (optimization and safety)
-					// Check all vertices in the graph to see if any other vertex with a settlement shares the same tiles
-					for (size_t i = 0; i < map.getVertexCount(); ++i) {
-						VertexHandle otherVertex = map.getVertex(i);
-						if (!otherVertex || otherVertex->getId() == vertexId || !otherVertex->hasSettlement()) {
-							continue; // Skip if no settlement - no conflict possible
-						}
-
-						const auto otherTilesOpt = map.getVertexTiles(otherVertex);
-						if (!otherTilesOpt)
-							continue;
-
-						// Check if this vertex shares the same set of tiles
-						std::unordered_set<size_t> otherTileIds;
-						for (const auto& tile : *otherTilesOpt) {
-							if (tile && tile->getId() != SIZE_MAX) {
-								otherTileIds.insert(tile->getId());
-							}
-						}
-
-						// If the tile sets match exactly (same size and same tiles), they're at the same physical location
-						if (otherTileIds.size() == vertexTileIds.size() && vertexTileIds == otherTileIds) {
-							fmt::println("[GameController] canBuildSettlement: vertex {} shares {} tiles with vertex {} which has a settlement",
-										 vertexId, vertexTileIds.size(), otherVertex->getId());
-							return false; // Another vertex at the same location already has a settlement
-						}
-					}
-				}
 			}
 
 			// Also check that no adjacent vertices have settlements (basic rule)
 			if (this->doesVertexHaveNeighborSettlements(vertexId)) {
+				fmt::println("[GameController] canBuildSettlement: neighbour settlement detected for vertex {}", vertexId);
 				return false;
 			}
+			fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
 			return true;
 		} catch (const std::exception&) {
 			return false;
@@ -255,6 +215,7 @@ namespace df {
 		auto* step = this->gameState.getCurrentTutorialStep();
 
 		try {
+			fmt::println("[GameController] buildSettlement: requested at vertex {}", vertexId);
 			// Find vertex by ID (not index) - vertexId is the ID stored in the Vertex object
 			VertexHandle vertex = map.findVertexById(vertexId);
 
@@ -267,51 +228,6 @@ namespace df {
 			if (vertex->hasSettlement()) {
 				fmt::println("[GameController] buildSettlement failed: vertex {} already has a settlement", vertexId);
 				return false;
-			}
-
-			// CRITICAL FIX: Check ALL vertices that share the same physical location (same set of tiles)
-			// This prevents building multiple settlements on the same physical vertex due to duplicate vertex IDs
-			const auto tilesOpt = map.getVertexTiles(vertex);
-			if (tilesOpt) {
-				// Get the set of tile IDs that this vertex is connected to
-				std::unordered_set<size_t> vertexTileIds;
-				for (const auto& tile : *tilesOpt) {
-					if (tile && tile->getId() != SIZE_MAX) {
-						vertexTileIds.insert(tile->getId());
-					}
-				}
-
-				// Only check for duplicates if this vertex has multiple tiles (shared vertex)
-				// Single-tile vertices are edge cases and don't need this check
-				if (vertexTileIds.size() > 1) {
-					// Only check vertices that already have settlements (optimization and safety)
-					// Check all vertices in the graph to see if any other vertex with a settlement shares the same tiles
-					for (size_t i = 0; i < map.getVertexCount(); ++i) {
-						VertexHandle otherVertex = map.getVertex(i);
-						if (!otherVertex || otherVertex->getId() == vertexId || !otherVertex->hasSettlement()) {
-							continue; // Skip if no settlement - no conflict possible
-						}
-
-						const auto otherTilesOpt = map.getVertexTiles(otherVertex);
-						if (!otherTilesOpt)
-							continue;
-
-						// Check if this vertex shares the same set of tiles
-						std::unordered_set<size_t> otherTileIds;
-						for (const auto& tile : *otherTilesOpt) {
-							if (tile && tile->getId() != SIZE_MAX) {
-								otherTileIds.insert(tile->getId());
-							}
-						}
-
-						// If the tile sets match exactly (same size and same tiles), they're at the same physical location
-						if (otherTileIds.size() == vertexTileIds.size() && vertexTileIds == otherTileIds) {
-							fmt::println("[GameController] buildSettlement failed: vertex {} shares {} tiles with vertex {} which has a settlement",
-										 vertexId, vertexTileIds.size(), otherVertex->getId());
-							return false;
-						}
-					}
-				}
 			}
 
 			size_t newSettlementId = 0;
@@ -594,37 +510,68 @@ namespace df {
 	bool GameController::doesVertexHaveNeighborSettlements(size_t vertexId) const {
 		const Graph& map = this->gameState.getMap();
 
+		// TODO: FIX THIS: when settlement placed on "0", cannot build on "3"
 		try {
 			// Find vertex by ID (not index)
 			VertexHandle vertex = map.findVertexById(vertexId);
 			if (!vertex) {
-				return true;
+				fmt::println("[GameController] doesVertexHaveNeighborSettlements: vertex {} not found", vertexId);
+				return true; // block placement
 			}
 
-			const auto edgesOpt = map.getVertexEdges(vertex);
-			if (!edgesOpt)
-				return false; // std::nullopt
-
-			for (const auto& edge : *edgesOpt) {
-				if (!edge || edge->getId() == SIZE_MAX) {
-					continue;
-				}
-
-				const auto verticesOpt = map.getEdgeVertices(edge);
-				if (!verticesOpt)
-					return false; // std::nullopt
-
-				for (const auto& neighbour : *verticesOpt) {
-					if (!neighbour || neighbour->getId() == SIZE_MAX || neighbour->getId() == vertexId) {
+			// Check tiles that include this vertex + inspect the two adjacent vertices in each tile
+			if (const auto tilesOpt = map.getVertexTiles(vertex)) {
+				for (const auto& tile : *tilesOpt) {
+					if (!tile || tile->getId() == SIZE_MAX)
 						continue;
-					}
-					if (neighbour->hasSettlement()) {
-						return true;
+
+					const auto tileVerticesOpt = map.getTileVertices(tile);
+					if (!tileVerticesOpt)
+						continue;
+
+					const auto& tileVertices = *tileVerticesOpt;
+					for (size_t i = 0; i < tileVertices.size(); ++i) {
+						if (tileVertices[i] != vertex)
+							continue;
+
+						const std::array<size_t, 2> neighboursIdx = {(i + 5) % 6, (i + 1) % 6};
+						for (size_t idx : neighboursIdx) {
+							const VertexHandle neighbour = tileVertices[idx];
+							if (!neighbour || neighbour->getId() == SIZE_MAX || neighbour->getId() == vertexId)
+								continue;
+							if (neighbour->hasSettlement()) {
+								fmt::println("[GameController] doesVertexHaveNeighborSettlements: neighbour settlement at vertex {} (tile {})",
+											 neighbour->getId(), tile->getId());
+								return true;
+							}
+						}
 					}
 				}
 			}
-		} catch (const std::exception&) {
-			return true;
+
+			// TODO: There HAS to be a better solution...
+			// Checking based on actual positoin
+			const glm::vec2 targetPos = WorldNodeMapper::getWorldPositionForVertex(vertexId, map);
+			const float neighbourThreshold = 1.05f; // float error tolerance
+			for (const auto& vPtr : map.getVertices()) {
+				if (!vPtr || !vPtr->hasSettlement())
+					continue;
+
+				const size_t otherId = vPtr->getId();
+				if (otherId == vertexId)
+					continue;
+
+				const glm::vec2 otherPos = WorldNodeMapper::getWorldPositionForVertex(otherId, map);
+				const float dist = glm::distance(targetPos, otherPos);
+				if (dist <= neighbourThreshold) {
+					fmt::println("[GameController] doesVertexHaveNeighborSettlements: geometry neighbour with settlement at vertex {} (dist {:.3f})",
+								 otherId, dist);
+					return true;
+				}
+			}
+		} catch (const std::exception& e) {
+			fmt::println("[GameController] doesVertexHaveNeighborSettlements: exception {} for vertex {}", e.what(), vertexId);
+			return true; // block placement on error
 		}
 
 		return false;

@@ -10,6 +10,8 @@
 // test for entityMovement
 #include "core/road.h"
 #include "entityMovement.h"
+// #include "utils/graphDebugDump.h"
+// #include "utils/graphDebugImage.h"
 #include "utils/worldNodeMapper.h"
 #include "systems/questsSystem.h"
 
@@ -213,21 +215,19 @@ namespace df {
 				if (movementSystem.getMovementState()) {
 					if (!registry->animations.entities.empty()) {
 
-						glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
-						auto extent = this->window->getWindowExtent();
+						if (!movementSystem.isTargetSet()) {
 
-						auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
-						auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
-						// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+							glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
+							auto extent = this->window->getWindowExtent();
 
-						glm::vec2 tilePosition = movementSystem.getTileWorldPosition(mapId);
-						// fmt::println("Tile Position: ({},{})", tilePosition.x, tilePosition.y);
+							auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+							auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+							// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
+							movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
+						}
 						Entity hero = registry->animations.entities.front();
-						glm::vec2 targetPos = tilePosition;
-						// glm::vec2 currentTargetPos = targetPos;
-
-						movementSystem.moveEntityTo(hero, targetPos, delta_time);
+						movementSystem.moveEntityTo(hero, movementSystem.getTargetPosition(), delta_time);
 					} else {
 						fmt::println("No hero entity available!");
 					}
@@ -357,6 +357,14 @@ namespace df {
 		} else {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
+
+		// 		// This is only for DEBUGGING purposes:
+		// #if defined(__unix__) || defined(__linux__)
+		// 		fmt::println("Log map config");
+		// 		df::utils::writeGraphDebugDump(this->gameState->getMap(), "~/Pictures/debug/graph_debug.txt");
+		// 		df::utils::writeGraphDebugImage(this->gameState->getMap(), "~/Pictures/debug/graph_debug.png");
+		// #endif
+
 		fmt::println("[DEBUG] regenerated world");
 		{
 			// only supports one player for now. TODO: if we do multplayer update this.

@@ -1,8 +1,7 @@
 build
 
 # config
-*/world_generation.json
-
+assets/jsons/*
 test/asan_direct_leaks.txt
 
 .DS_Store

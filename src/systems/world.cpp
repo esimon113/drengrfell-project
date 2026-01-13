@@ -255,9 +255,25 @@ namespace df {
 	void WorldSystem::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int /* mods */) noexcept {
 		auto* step = this->gameState->getCurrentTutorialStep();
 
+		// Changed how mouse is captured
+
 		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 			// LMB gedrückt
-			glfwGetCursorPos(this->window->getHandle(), &mouseX, &mouseY);
+			double rawX, rawY;
+			glfwGetCursorPos(this->window->getHandle(), &rawX, &rawY);
+			
+			int winWidth, winHeight;
+			glfwGetWindowSize(this->window->getHandle(), &winWidth, &winHeight);
+			
+			int fbWidth, fbHeight;
+			glfwGetFramebufferSize(this->window->getHandle(), &fbWidth, &fbHeight);
+			
+			float xScale = (winWidth > 0) ? (float)fbWidth / winWidth : 1.f;
+			float yScale = (winHeight > 0) ? (float)fbHeight / winHeight : 1.f;
+			
+			mouseX = rawX * xScale;
+			mouseY = rawY * yScale;
+			
 			fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
 			// Update Tutorial if finished
@@ -266,7 +282,21 @@ namespace df {
 			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
 			// RMB gedrückt
-			glfwGetCursorPos(windowParam, &mouseX, &mouseY);
+			double rawX, rawY;
+			glfwGetCursorPos(windowParam, &rawX, &rawY);
+			
+			int winWidth, winHeight;
+			glfwGetWindowSize(windowParam, &winWidth, &winHeight);
+			
+			int fbWidth, fbHeight;
+			glfwGetFramebufferSize(windowParam, &fbWidth, &fbHeight);
+			
+			float xScale = (winWidth > 0) ? (float)fbWidth / winWidth : 1.f;
+			float yScale = (winHeight > 0) ? (float)fbHeight / winHeight : 1.f;
+			
+			mouseX = rawX * xScale;
+			mouseY = rawY * yScale;
+			
 			fmt::println("RMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 		}
 	}
