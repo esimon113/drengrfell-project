@@ -204,18 +204,6 @@ namespace df {
 				// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
 				if (movementSystem.getMovementState()) {
 					if (!registry->animations.entities.empty()) {
-
-						if (!movementSystem.isTargetSet()) {
-
-							glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
-							auto extent = this->window->getWindowExtent();
-
-							auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
-							auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
-							// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
-
-							movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
-						}
 						Entity hero = registry->animations.entities.front();
 						movementSystem.moveEntityTo(hero, movementSystem.getTargetPosition(), delta_time);
 					} else {
@@ -453,6 +441,8 @@ namespace df {
 				mouseX,
 				static_cast<float>(window->getWindowExtent().y) - mouseY};
 
+		
+
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 			if (!movementSystem.getMovementState()) {
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
@@ -572,6 +562,16 @@ namespace df {
 					}
 
 					return; // ignore other mouse callbacks when placing buildings...
+				}
+				glm::vec2 mouseCoords = glm::vec2(mouseX, mouseY);
+				auto extent = this->window->getWindowExtent();
+
+				auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+				auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+				fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+
+				if (mapId >= 0 && !movementSystem.isTargetSet()) {
+					movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
 				}
 			}
 

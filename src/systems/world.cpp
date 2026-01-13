@@ -265,7 +265,7 @@ namespace df {
 			mouseX = rawX * xScale;
 			mouseY = rawY * yScale;
 			
-			fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
+			//fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
 			// Update Tutorial if finished
 			if ((step && step->id == TutorialStepId::END) || (step && step->id == TutorialStepId::WELCOME)) {
