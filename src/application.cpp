@@ -10,8 +10,8 @@
 // test for entityMovement
 #include "core/road.h"
 #include "entityMovement.h"
-#include "utils/graphDebugDump.h"
-#include "utils/graphDebugImage.h"
+// #include "utils/graphDebugDump.h"
+// #include "utils/graphDebugImage.h"
 #include "utils/worldNodeMapper.h"
 
 
@@ -348,12 +348,12 @@ namespace df {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
 
-		// This is only for DEBUGGING purposes:
-#if defined(__unix__) || defined(__linux__)
-		fmt::println("Log map config");
-		df::utils::writeGraphDebugDump(this->gameState->getMap(), "~/Pictures/debug/graph_debug.txt");
-		df::utils::writeGraphDebugImage(this->gameState->getMap(), "~/Pictures/debug/graph_debug.png");
-#endif
+		// 		// This is only for DEBUGGING purposes:
+		// #if defined(__unix__) || defined(__linux__)
+		// 		fmt::println("Log map config");
+		// 		df::utils::writeGraphDebugDump(this->gameState->getMap(), "~/Pictures/debug/graph_debug.txt");
+		// 		df::utils::writeGraphDebugImage(this->gameState->getMap(), "~/Pictures/debug/graph_debug.png");
+		// #endif
 
 		fmt::println("[DEBUG] regenerated world");
 		{
