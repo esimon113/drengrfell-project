@@ -25,6 +25,7 @@ namespace df {
 
 		double getMouseX();
 		double getMouseY();
+		std::pair<double, double> calculateScaledMousePosition();
 
 		bool isTestMovementActive() const { return heroMovementState; }
 
