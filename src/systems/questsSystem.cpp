@@ -111,7 +111,6 @@ namespace df {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Completed) {
                 q.state = QuestState::Claimed;
-                fmt::println("Misión {} reclamada.", q.name);
 
                 if (q.unlocksId != -1) {
                     activateQuest(q.unlocksId); 
@@ -127,8 +126,6 @@ namespace df {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Locked) {
                 q.state = QuestState::Active;
-                fmt::println("¡Nueva misión activada: {}!", q.name);
-
                 notifyPlayer(q.id); 
                 break;
             }
