@@ -18,12 +18,14 @@
 #include "renderNotification.h"
 
 namespace df {
+	class GameController;
+
 	class RenderSystem {
 	  public:
 		RenderSystem() = default;
 		~RenderSystem() = default;
 
-		static RenderSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
+		static RenderSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState, GameController* gameController) noexcept;
 		void deinit() noexcept;
 
 		void step(float dt) noexcept;

@@ -39,7 +39,8 @@ namespace df {
 		"particle",
 		"text",
 		"hud",
-		"tilepick"};
+		"tilepick",
+		"location-highlight"};
 
 
 	template <>
