@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <glm/glm.hpp>
 #include <optional>
+#include <vector>
 
 #include "graph.h"
 
@@ -14,9 +15,12 @@ namespace df {
 		static std::optional<size_t> findClosestVertexToWorldPos(const glm::vec2& worldPos, const Graph& map) noexcept;
 		static std::optional<size_t> findClosestEdgeToWorldPos(const glm::vec2& worldPos, const Graph& map) noexcept;
 
+		static std::vector<size_t> findVerticesWithinRadius(const glm::vec2& worldPos, float radius, const Graph& map) noexcept;
+		// Returns pairs of: edgeId, localEdgeIndex -> localEdgeIndex is 0-5
+		static std::vector<std::pair<size_t, int>> findEdgesWithinRadius(const glm::vec2& worldPos, float radius, const Graph& map) noexcept;
+
 		static glm::vec2 getWorldPositionForVertex(size_t vertexId, const Graph& map) noexcept;
 		static glm::vec2 getWorldPositionForEdge(size_t edgeId, const Graph& map) noexcept;
-
 
 		// Helper methods for calculating positions
 		static glm::vec2 getTilePosition(uint32_t row, uint32_t col) noexcept;
