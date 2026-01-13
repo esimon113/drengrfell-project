@@ -46,6 +46,13 @@ namespace df {
 		// Player& player = registry->players.get(registry->getPlayer());
 		// score = player.getSettlementIds().size();
 
+		int fbWidth, fbHeight;
+		glfwGetFramebufferSize(window->getHandle(), &fbWidth, &fbHeight);
+		auto [scaledMouseX, scaledMouseY] = calculateScaledMousePosition();
+
+		double edgePercent = 0.03;	// How big the zone is where the camera moves on the window edge
+		double edgeX = fbWidth * edgePercent;
+		double edgeY = fbHeight * edgePercent;
 
 
 		const Graph& map = gameState->getMap();
@@ -60,13 +67,13 @@ namespace df {
 		float camMaxX = worldWidth - cam.viewWidth + offset / 2;
 		float camMaxY = worldHeight - cam.viewHeight + offset;
 
-		if (input.up)
+		if (input.up || scaledMouseY < edgeY)
 			cam.position.y += cam.scrollSpeed * delta;
-		if (input.down)
+		if (input.down || scaledMouseY > fbHeight - edgeY)
 			cam.position.y -= cam.scrollSpeed * delta;
-		if (input.left)
+		if (input.left || scaledMouseX < edgeX)
 			cam.position.x -= cam.scrollSpeed * delta;
-		if (input.right)
+		if (input.right || scaledMouseX > fbWidth - edgeX)
 			cam.position.x += cam.scrollSpeed * delta;
 		if (cam.position.x > camMaxX)
 			cam.position.x = camMaxX;
@@ -255,27 +262,34 @@ namespace df {
 		return mouseY;
 	}
 
-	void WorldSystem::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int /* mods */) noexcept {
+	std::pair<double, double> WorldSystem::calculateScaledMousePosition() {
+		double rawX, rawY;
+		glfwGetCursorPos(this->window->getHandle(), &rawX, &rawY);
+
+		int winWidth, winHeight;
+		glfwGetWindowSize(this->window->getHandle(), &winWidth, &winHeight);
+
+		int fbWidth, fbHeight;
+		glfwGetFramebufferSize(this->window->getHandle(), &fbWidth, &fbHeight);
+
+		float xScale = (winWidth > 0) ? (float)fbWidth / winWidth : 1.f;
+		float yScale = (winHeight > 0) ? (float)fbHeight / winHeight : 1.f;
+
+		return {rawX * xScale, rawY * yScale};
+	}
+
+	void WorldSystem::onMouseButtonCallback(GLFWwindow* /* windowParam */, int button, int action, int /* mods */) noexcept {
 		auto* step = this->gameState->getCurrentTutorialStep();
 
 		// Changed how mouse is captured
 
 		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 			// LMB gedrückt
-			double rawX, rawY;
-			glfwGetCursorPos(this->window->getHandle(), &rawX, &rawY);
+
+			auto [ scaledMouseX, scaledMouseY ] = calculateScaledMousePosition();
 			
-			int winWidth, winHeight;
-			glfwGetWindowSize(this->window->getHandle(), &winWidth, &winHeight);
-			
-			int fbWidth, fbHeight;
-			glfwGetFramebufferSize(this->window->getHandle(), &fbWidth, &fbHeight);
-			
-			float xScale = (winWidth > 0) ? (float)fbWidth / winWidth : 1.f;
-			float yScale = (winHeight > 0) ? (float)fbHeight / winHeight : 1.f;
-			
-			mouseX = rawX * xScale;
-			mouseY = rawY * yScale;
+			mouseX = scaledMouseX;
+			mouseY = scaledMouseY;
 			
 			//fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
@@ -285,20 +299,10 @@ namespace df {
 			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
 			// RMB gedrückt
-			double rawX, rawY;
-			glfwGetCursorPos(windowParam, &rawX, &rawY);
-			
-			int winWidth, winHeight;
-			glfwGetWindowSize(windowParam, &winWidth, &winHeight);
-			
-			int fbWidth, fbHeight;
-			glfwGetFramebufferSize(windowParam, &fbWidth, &fbHeight);
-			
-			float xScale = (winWidth > 0) ? (float)fbWidth / winWidth : 1.f;
-			float yScale = (winHeight > 0) ? (float)fbHeight / winHeight : 1.f;
-			
-			mouseX = rawX * xScale;
-			mouseY = rawY * yScale;
+			auto [scaledMouseX, scaledMouseY] = calculateScaledMousePosition();
+
+			mouseX = scaledMouseX;
+			mouseY = scaledMouseY;
 			
 			fmt::println("RMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 		}
