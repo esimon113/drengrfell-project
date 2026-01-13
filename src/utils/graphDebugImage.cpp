@@ -232,7 +232,7 @@ namespace df::utils {
 			glm::vec2 p = world * hexRadiusPx;
 			return glm::ivec2(
 				static_cast<int>(std::round(p.x - minX + marginPx)),
-				static_cast<int>(std::round(p.y - minY + marginPx)));
+				static_cast<int>(std::round(maxY - p.y + marginPx)));
 		};
 
 		const Color tileOutline{90, 130, 190, 255};
