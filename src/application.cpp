@@ -68,7 +68,7 @@ namespace df {
 		self.gameController = std::make_shared<GameController>(*self.gameState);
 		self.world = WorldSystem::init(self.window.get(), self.registry, self.audioEngine.get(), *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState);
+		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get());
 		// Create main menu
 		self.mainMenu.init(self.window.get());
 		// for testing hero movement until we have a triggerpoint

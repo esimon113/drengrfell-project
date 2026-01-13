@@ -5,7 +5,7 @@
 
 namespace df {
 
-	RenderSystem RenderSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept {
+	RenderSystem RenderSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState, GameController* gameController) noexcept {
 		RenderSystem self;
 
 		self.window = window;
@@ -20,7 +20,7 @@ namespace df {
 		self.renderTilesSystem = RenderTilesSystem::init(*window, *registry, gameState);
 		self.renderHeroSystem = RenderHeroSystem::init(window, registry, gameState);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry, gameState);
-		self.renderBuildingPreviewsSystem = RenderBuildingPreviewsSystem::init(window, registry, gameState);
+		self.renderBuildingPreviewsSystem = RenderBuildingPreviewsSystem::init(window, registry, gameState, gameController);
 		self.renderHudSystem = RenderHudSystem::init(window, registry, gameState);
 		self.renderTextSystem = RenderTextSystem::init(window, registry);
 		self.renderSnowSystem = RenderSnowSystem::init(window, registry, gameState);

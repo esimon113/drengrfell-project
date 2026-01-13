@@ -32,6 +32,7 @@ namespace df {
 			text,
 			hud,
 			tilePicker,
+			locationHighlight,
 			count
 		};
 

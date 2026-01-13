@@ -72,7 +72,7 @@ namespace df {
 				preview.type = BuildingPreviewType::Settlement;
 
 				glm::vec2& scale = registry->scales.emplace(previewEntity);
-				scale = glm::vec2(0.5f, 0.5f);
+				scale = glm::vec2(0.45f, 0.45f);
 
 				hasPreviewEntity = true;
 			} else {
@@ -81,7 +81,7 @@ namespace df {
 					registry->buildingPreviews.get(previewEntity).type = BuildingPreviewType::Settlement;
 				}
 				if (registry->scales.has(previewEntity)) {
-					registry->scales.get(previewEntity) = glm::vec2(0.5f, 0.5f);
+					registry->scales.get(previewEntity) = glm::vec2(0.45f, 0.45f);
 				}
 			}
 		} else {

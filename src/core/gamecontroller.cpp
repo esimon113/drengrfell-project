@@ -38,7 +38,7 @@ namespace df {
 		// Check hazards
 		// TODO: For multiplayer only update hazards for current player/hero
 		if (this->gameState.getTurnCount() > 0) {
-			Entity hero = registry.animations.entities.front();
+			// Entity hero = registry.animations.entities.front();
 			showHazards(registry);
 		}
 	}
@@ -78,7 +78,7 @@ namespace df {
 			fmt::println("No tile for hazard checking found");
 			return;
 		}
-			
+
 		const auto& profileOpt = tile->getHazardProfile();
 		if (!profileOpt) {
 			fmt::println("No profile for hazard checking found");
@@ -382,7 +382,7 @@ namespace df {
 			this->chargeResourceCost(*player, buildingCost);
 
 			m_questsSystem->updateProgress("settlement", 1);
-			
+
 
 			fmt::println("[GameController] buildSettlement succeeded: settlement {} built at vertex {} for player {}", newSettlementId, vertexId, playerId);
 			// Finish Tutorial if step is BUILD_SETTLEMENT
@@ -840,9 +840,9 @@ namespace df {
 		if (q && q->state == QuestState::Completed) {
 
 			player->addResources(q->reward_resource, q->reward_amount);
-			
+
 			quests->claimQuest(questId);
-			
+
 			fmt::println("Reward given to the  player: {} units of type {}", q->reward_amount, (int)q->reward_resource);
 		}
 	}

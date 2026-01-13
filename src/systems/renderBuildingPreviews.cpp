@@ -2,27 +2,31 @@
 #include "GL/glcorearb.h"
 #include "core/camera.h"
 #include "core/components.h"
+#include "core/gamecontroller.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_uint2.hpp"
 #include "systems/renderCommon.h"
+#include "utils/worldNodeMapper.h"
 #include <GLFW/glfw3.h>
 
 
 
 namespace df {
 
-	RenderBuildingPreviewsSystem RenderBuildingPreviewsSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept {
+	RenderBuildingPreviewsSystem RenderBuildingPreviewsSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState, GameController* gameController) noexcept {
 		RenderBuildingPreviewsSystem self;
 
 		self.window = window;
 		self.registry = registry;
 		self.gamestate = gameState;
+		self.gameController = gameController;
 
 		self.viewport.origin = glm::uvec2(0);
 		self.viewport.size = self.window->getWindowExtent();
 
 		self.buildingHoverShader = Shader::init(assets::Shader::buildingHover).value();
 		self.buildingShadowShader = Shader::init(assets::Shader::buildingShadow).value();
+		self.locationHighlightShader = Shader::init(assets::Shader::locationHighlight).value();
 
 		// Load all settlement textures for animation
 		self.settlementTextures[0] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT1);
@@ -74,6 +78,7 @@ namespace df {
 	void RenderBuildingPreviewsSystem::deinit() noexcept {
 		buildingHoverShader.deinit();
 		buildingShadowShader.deinit();
+		locationHighlightShader.deinit();
 		for (auto& tex : settlementTextures)
 			tex.deinit();
 		roadPreviewTexture.deinit();
@@ -111,6 +116,9 @@ namespace df {
 		const glm::mat4 projection = this->calculateProjection(cam);
 
 		glBindVertexArray(m_quad_vao);
+
+		// render potential building site highlight before actual building preview -> correct layernig
+		renderLocationHighlights(view, projection, cam, time);
 
 		// Render building previews from ECS
 		for (Entity e : registry->buildingPreviews.entities) {
@@ -195,5 +203,111 @@ namespace df {
 			}
 		}
 		glBindVertexArray(0);
+	}
+
+
+	void RenderBuildingPreviewsSystem::renderLocationHighlights(const glm::mat4& view, const glm::mat4& projection, const Camera& cam, float time) noexcept {
+		if (!gameController || registry->buildingPreviews.entities.empty())
+			return;
+
+		size_t currentPlayerId = gamestate->getCurrentPlayerId();
+
+		// determine preview type
+		BuildingPreviewType previewType = BuildingPreviewType::Settlement;
+		Entity previewEntity;
+		for (Entity e : registry->buildingPreviews.entities) {
+			if (registry->buildingPreviews.has(e) && registry->positions.has(e)) {
+				previewType = registry->buildingPreviews.get(e).type;
+				previewEntity = e;
+				break;
+			}
+		}
+
+		if (!registry->positions.has(previewEntity))
+			return;
+
+		const glm::vec2& cursorCamRelative = registry->positions.get(previewEntity);
+		glm::vec2 cursorWorldPos = cam.position + cursorCamRelative;
+		const float highlightRadius = baseHighlightRadius / cam.zoom;
+		const Graph& map = gamestate->getMap();
+		const glm::vec3 highlightColor = glm::vec3(0.53f, 0.73f, 0.57f); // mint-greenish -> i liked in a game i can't remember the name of...
+
+		if (previewType == BuildingPreviewType::Settlement) {
+			std::vector<size_t> nearbyVertices = WorldNodeMapper::findVerticesWithinRadius(cursorWorldPos, highlightRadius, map);
+
+			for (size_t vertexId : nearbyVertices) {
+				if (!gameController->canBuildSettlement(currentPlayerId, vertexId))
+					continue;
+
+				glm::vec2 vertexWorldPos = WorldNodeMapper::getWorldPositionForVertex(vertexId, map);
+
+				// calculate distance-based intensity (use of cursor to this location for thsi)
+				float distance = glm::distance(cursorWorldPos, vertexWorldPos);
+				float intensity = 1.0f - (distance / highlightRadius);
+				intensity = glm::clamp(intensity, 0.0f, 1.0f);
+				intensity = intensity * intensity; // Quadratic falloff for smoother edges
+
+				float finalAlpha = highlightBaseAlpha * intensity;
+				if (finalAlpha < 0.1f) // TODO: adjust so that it looks good
+					continue;
+
+				// regard campera for correct rendering
+				glm::vec2 renderPos = vertexWorldPos - cam.position;
+				glm::mat4 model = glm::identity<glm::mat4>();
+				model = glm::translate(model, glm::vec3(renderPos.x, renderPos.y, 0.0f));
+				model = glm::scale(model, glm::vec3(1.0f));
+
+				locationHighlightShader.use()
+					.setMat4("view", view)
+					.setMat4("projection", projection)
+					.setMat4("model[0]", model)
+					.setVec3("highlightColor", highlightColor)
+					.setFloat("alpha", finalAlpha)
+					.setFloat("time", time);
+
+				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+			}
+
+		} else if (previewType == BuildingPreviewType::Road) {
+			auto nearbyEdges = WorldNodeMapper::findEdgesWithinRadius(cursorWorldPos, highlightRadius, map);
+
+			// Rotation angles based on edge index; the angle repeats every three ids
+			float diagonalAngle = std::atan(2.0f);
+			std::array<float, 3> rotationAngles = {0.0f, diagonalAngle, -diagonalAngle};
+
+			for (const auto& [edgeId, edgeIndex] : nearbyEdges) {
+				if (!gameController->canBuildRoad(currentPlayerId, edgeId))
+					continue;
+
+				glm::vec2 edgeWorldPos = WorldNodeMapper::getWorldPositionForEdge(edgeId, map);
+				float distance = glm::distance(cursorWorldPos, edgeWorldPos);
+				float intensity = 1.0f - (distance / highlightRadius);
+				intensity = glm::clamp(intensity, 0.0f, 1.0f);
+				intensity = intensity * intensity;
+
+				float finalAlpha = highlightBaseAlpha * intensity;
+				if (finalAlpha < 0.05f)
+					continue;
+
+				// Get rotation angle from edge index (0,3->vertical, 1,4->down, 2,5->up)
+				// same as with placing buildings
+				float rotationAngle = rotationAngles[edgeIndex % 3];
+				glm::vec2 renderPos = edgeWorldPos - cam.position;
+				glm::mat4 model = glm::identity<glm::mat4>();
+				model = glm::translate(model, glm::vec3(renderPos.x, renderPos.y, 0.0f));
+				model = glm::rotate(model, rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+				model = glm::scale(model, glm::vec3(0.3f, 1.0f, 1.0f)); // elliptic highlight area
+
+				locationHighlightShader.use()
+					.setMat4("view", view)
+					.setMat4("projection", projection)
+					.setMat4("model[0]", model)
+					.setVec3("highlightColor", highlightColor)
+					.setFloat("alpha", finalAlpha)
+					.setFloat("time", time);
+
+				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+			}
+		}
 	}
 } // namespace df

@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "assets.h"
 #include "fmt/base.h"
 #include "vertex.h"
 #include "worldGenerator.h"
@@ -106,7 +107,7 @@ namespace df {
 		}
 
 		auto tileType = getTile(index)->getType();
-		//auto t = tiles[index].get()->getType();
+		// auto t = tiles[index].get()->getType();
 		std::string tileTypeStr = "";
 
 		switch (tileType) {
@@ -133,6 +134,9 @@ namespace df {
 			break;
 		case types::TileType::ICE:
 			tileTypeStr = "ICE";
+			break;
+		default:
+			tileTypeStr = "UNKNOWN";
 			break;
 		}
 		fmt::println("tile: {}", tileTypeStr);
@@ -935,28 +939,40 @@ namespace df {
 
 			switch (vertexIndex) {
 			case 0: // Bottom-right -> connect with neighbour directions: east (to right) and noth-east (below-right)
-				if (auto n = getNeighbourIndex(tileIndex, 2); n) sharingInfo.push_back({*n, 4}); // E.V4
-				if (auto n = getNeighbourIndex(tileIndex, 1); n) sharingInfo.push_back({*n, 2}); // NE.V2
+				if (auto n = getNeighbourIndex(tileIndex, 2); n)
+					sharingInfo.push_back({*n, 4}); // E.V4
+				if (auto n = getNeighbourIndex(tileIndex, 1); n)
+					sharingInfo.push_back({*n, 2}); // NE.V2
 				break;
 			case 1: // Top-right -> connect with neighbour east and south-east (above-right)
-				if (auto n = getNeighbourIndex(tileIndex, 2); n) sharingInfo.push_back({*n, 3}); // E.V3
-				if (auto n = getNeighbourIndex(tileIndex, 3); n) sharingInfo.push_back({*n, 5}); // SE.V5
+				if (auto n = getNeighbourIndex(tileIndex, 2); n)
+					sharingInfo.push_back({*n, 3}); // E.V3
+				if (auto n = getNeighbourIndex(tileIndex, 3); n)
+					sharingInfo.push_back({*n, 5}); // SE.V5
 				break;
 			case 2: // Top -> connect  with enighbor south-east and south-west (above-left)
-				if (auto n = getNeighbourIndex(tileIndex, 3); n) sharingInfo.push_back({*n, 4}); // SE.V4
-				if (auto n = getNeighbourIndex(tileIndex, 4); n) sharingInfo.push_back({*n, 0}); // SW.V0
+				if (auto n = getNeighbourIndex(tileIndex, 3); n)
+					sharingInfo.push_back({*n, 4}); // SE.V4
+				if (auto n = getNeighbourIndex(tileIndex, 4); n)
+					sharingInfo.push_back({*n, 0}); // SW.V0
 				break;
 			case 3: // Top-left -> connect with neighbour south-west and west (left)
-				if (auto n = getNeighbourIndex(tileIndex, 4); n) sharingInfo.push_back({*n, 5}); // SW.V5
-				if (auto n = getNeighbourIndex(tileIndex, 5); n) sharingInfo.push_back({*n, 1}); // W.V1
+				if (auto n = getNeighbourIndex(tileIndex, 4); n)
+					sharingInfo.push_back({*n, 5}); // SW.V5
+				if (auto n = getNeighbourIndex(tileIndex, 5); n)
+					sharingInfo.push_back({*n, 1}); // W.V1
 				break;
 			case 4: // Bottom-left -> connect with neighbour west and north-west (below-left)
-				if (auto n = getNeighbourIndex(tileIndex, 5); n) sharingInfo.push_back({*n, 0}); // W.V0
-				if (auto n = getNeighbourIndex(tileIndex, 0); n) sharingInfo.push_back({*n, 2}); // NW.V2
+				if (auto n = getNeighbourIndex(tileIndex, 5); n)
+					sharingInfo.push_back({*n, 0}); // W.V0
+				if (auto n = getNeighbourIndex(tileIndex, 0); n)
+					sharingInfo.push_back({*n, 2}); // NW.V2
 				break;
 			case 5: // Bottom -> connect with neighbour north-west and north-east
-				if (auto n = getNeighbourIndex(tileIndex, 0); n) sharingInfo.push_back({*n, 1}); // NW.V1
-				if (auto n = getNeighbourIndex(tileIndex, 1); n) sharingInfo.push_back({*n, 3}); // NE.V3
+				if (auto n = getNeighbourIndex(tileIndex, 0); n)
+					sharingInfo.push_back({*n, 1}); // NW.V1
+				if (auto n = getNeighbourIndex(tileIndex, 1); n)
+					sharingInfo.push_back({*n, 3}); // NE.V3
 				break;
 			}
 
