@@ -587,7 +587,7 @@ namespace df {
 				auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
 				fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
-				if (mapId >= 0 && !movementSystem.isTargetSet()) {
+				if (mapId >= 0 && !movementSystem.isEntityMoving()) {
 					movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
 				}
 			}
