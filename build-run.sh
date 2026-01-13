@@ -13,7 +13,7 @@ echo "Running cmake commands..."
 cmake -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_CXX_FLAGS="-fsanitize=address -g" \
     -DCMAKE_C_FLAGS="-fsanitize=address -g" ..
-make
+make -j$(nproc)
 echo "Running cmake completed..."
 
 echo "Log sanitizer report"
