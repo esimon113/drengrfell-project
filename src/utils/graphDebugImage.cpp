@@ -23,7 +23,13 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
+
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif // _MSC_VER
+
 #include <stb_image_write.h>
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
@@ -37,7 +43,14 @@ namespace df::utils {
 				return path;
 			}
 
+#ifdef _WIN32
+			const char* home = nullptr;
+			size_t len = 0;
+			_dupenv_s(&home, &len, "HOME");
+#else
 			const char* home = std::getenv("HOME");
+#endif
+
 			if (!home) {
 				throw std::runtime_error("HOME environment variable not set");
 			}
