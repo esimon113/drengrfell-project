@@ -157,8 +157,8 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/utils/textureArray.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/worldNodeMapper.cpp
-	${PROJECT_SOURCE_DIR}/src/utils/graphDebugDump.cpp
-	${PROJECT_SOURCE_DIR}/src/utils/graphDebugImage.cpp
+	# ${PROJECT_SOURCE_DIR}/src/utils/graphDebugDump.cpp
+	# ${PROJECT_SOURCE_DIR}/src/utils/graphDebugImage.cpp
 
 	${PROJECT_SOURCE_DIR}/src/systems/renderHero.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderBuildings.cpp
