@@ -6,7 +6,7 @@
 
 #include "gamestate.h"
 #include "road.h"
-
+#include "systems/questsSystem.h"
 
 
 
@@ -22,7 +22,9 @@ namespace df {
 		GameController() = default;
 		~GameController() = default;
 		explicit GameController(GameState& state)
-			: gameState(state), rng(std::random_device{}()) {};
+			: gameState(state), rng(std::random_device{}()) {
+				m_questsSystem = std::make_unique<QuestsSystem>();
+			};
 
 		GameState& getState() { return this->gameState; }
 		const GameState& getState() const { return this->gameState; }
@@ -43,10 +45,13 @@ namespace df {
 		bool canBuildRoad(size_t playerId, size_t edgeId) const;
 		bool buildRoad(size_t playerId, size_t edgeId, RoadLevel level, const std::vector<int>& buildingCost);
 
+		QuestsSystem* getQuestsSystem() const { return m_questsSystem.get(); }
+		void claimQuestReward(int questId);
 
 	  private:
 		GameState& gameState;
 		std::mt19937 rng;
+		std::unique_ptr<QuestsSystem> m_questsSystem;
 
 		Player* getPlayerbyId(size_t playerId);
 		const Player* getPlayerById(size_t playerId) const;
