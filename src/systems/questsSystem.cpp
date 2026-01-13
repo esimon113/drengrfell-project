@@ -17,15 +17,14 @@ namespace df {
         // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress | unblock id | Initial state
         
         // Building quests
-        m_quests.push_back({0, "Builder", "Build your first settlement","settlement", 1, 0, 1, QuestState::Active});
-        m_quests.push_back({1, "The King's Highway", "Build 2 roads", "road", 2 , 0, -1, QuestState::Locked});
+        m_quests.push_back({0, "Builder", "Build your first settlement","settlement", 1, 0, 1, types::TileType::CLAY,100, QuestState::Active});
+        m_quests.push_back({1, "The King's Highway", "Build 2 roads", "road", 2 , 0, -1, types::TileType::MOUNTAIN,100,QuestState::Locked});
         
         // Resources quests
-        m_quests.push_back({2, "Lumberjack", "Collect 100 wood" ,"wood", 100, 0, 3, QuestState::Active});
+        m_quests.push_back({2, "Lumberjack", "Collect 100 wood" ,"wood", 100, 0, 3, types::TileType::FIELD,100, QuestState::Active});
 
         // Surcvival quests
-        m_quests.push_back({3, "Proffesional surviver", "Survive 5 rounds" ,"rounds", 5, 0, -1, QuestState::Locked});
-
+        m_quests.push_back({3, "Professional Survivor", "Survive 5 rounds", "rounds", 5, 0, -1, types::TileType::GRASS, 100, QuestState::Locked});
 
 
         //loadQuests("../assets/jsons/quests.json");
@@ -62,6 +61,13 @@ namespace df {
         }
     }
     */
+
+    const Quest* QuestsSystem::getQuestById(int id) const {
+        for (const auto& q : m_quests) {
+            if (q.id == id) return &q;
+        }
+        return nullptr;
+    }
 
 
     void QuestsSystem::updateProgress(const std::string& type, int amount) {

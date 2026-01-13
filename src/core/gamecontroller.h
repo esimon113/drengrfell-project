@@ -46,6 +46,7 @@ namespace df {
 		bool buildRoad(size_t playerId, size_t edgeId, RoadLevel level, const std::vector<int>& buildingCost);
 
 		QuestsSystem* getQuestsSystem() const { return m_questsSystem.get(); }
+		void claimQuestReward(int questId);
 
 	  private:
 		GameState& gameState;

@@ -23,18 +23,23 @@ namespace df {
         int goal_amount; 
         int progress; 
         int unlocksId;
+        types::TileType reward_resource; 
+        int reward_amount;
         QuestState state ;
         
-        Quest(int _id, std::string _name, std::string _desc,std::string _type, int _amount, int _prog, int _unlock, QuestState _state)
-        : id(_id), 
-          name(_name), 
-          desc(_desc),
-          goal_type(_type), 
-          goal_amount(_amount), 
-          progress(_prog), 
-          unlocksId(_unlock), 
-          state(_state) 
-        {}
+        
+        Quest(int _id, std::string _name, std::string _desc, std::string _goalType, int _amount, int _prog, int _unlock, types::TileType _res, int _reward, QuestState _state)
+            : id(_id), 
+            name(_name), 
+            desc(_desc),
+            goal_type(_goalType), 
+            goal_amount(_amount), 
+            progress(_prog), 
+            unlocksId(_unlock), 
+            reward_resource(_res), 
+            reward_amount(_reward),
+            state(_state) 
+            {}
     };
 
     class QuestsSystem {
@@ -52,7 +57,7 @@ namespace df {
             void activateQuest(int );
 
             void notifyNextActiveQuest();
-
+            const Quest* getQuestById(int id) const;
             int getCurrentShowingQuestId() const { return m_currentShowingQuestId; }
             const std::vector<Quest> getQuests () const { return m_quests;}
 

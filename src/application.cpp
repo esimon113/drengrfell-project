@@ -478,12 +478,8 @@ namespace df {
 			if (pressedButton == "Next Quest") {
 				this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
 			} else if (pressedButton == "Claim") {
-				auto* quests = gameController->getQuestsSystem();
-				if (quests) {
-					int currentId = quests->getCurrentShowingQuestId(); 
-					quests->claimQuest(currentId);
-					render.renderNotificationSystem.reset(); 
-				}
+				int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId(); 
+				gameController->claimQuestReward(currentId);
 			}
 
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))

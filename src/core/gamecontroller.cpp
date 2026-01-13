@@ -752,4 +752,22 @@ namespace df {
 		return nullptr;
 	}
 
+	void GameController::claimQuestReward(int questId) {
+		Player* player = this->getCurrentPlayer();
+		QuestsSystem* quests = this->getQuestsSystem();
+
+		if (!player || !quests) return;
+
+		const Quest* q = quests->getQuestById(questId);
+
+		if (q && q->state == QuestState::Completed) {
+
+			player->addResources(q->reward_resource, q->reward_amount);
+			
+			quests->claimQuest(questId);
+			
+			fmt::println("Reward given to the  player: {} units of type {}", q->reward_amount, (int)q->reward_resource);
+		}
+	}
+
 } // namespace df
