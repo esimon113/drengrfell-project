@@ -1,6 +1,7 @@
 #pragma once
 #include "animations.h"
 #include "hero.h"
+#include "types.h"
 
 namespace df {
 
@@ -19,5 +20,10 @@ namespace df {
     struct BuildingPreviewComponent {
         BuildingPreviewType type = BuildingPreviewType::Settlement;
     };
+
+	struct HazardComponent {
+		types::HazardType type;
+		int turnsLeft;
+	};
 
 }

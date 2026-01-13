@@ -30,8 +30,11 @@ namespace df {
         Player* getCurrentPlayer();
         const Player* getCurrentPlayer() const;
 
-        void startTurn();
-        void endTurn();
+        void startTurn(Registry& registry);
+		void endTurn();
+
+		void applyHazardAfterMovement(Entity hero, Registry& registry);
+		void updateHazards(Registry& registry);
 
         void giveResourcesTo(Player& player);
 

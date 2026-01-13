@@ -159,7 +159,7 @@ namespace df {
 
 			// Start turn when first entering PLAY phase -> future TODO: adjust for multiple players + ending game + reentering
 			if (gamePhase == types::GamePhase::PLAY && previousGamePhase != types::GamePhase::PLAY) {
-				gameController->startTurn();
+				gameController->startTurn(*registry);
 				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
 			}
 
@@ -215,6 +215,10 @@ namespace df {
 						// glm::vec2 currentTargetPos = targetPos;
 
 						movementSystem.moveEntityTo(hero, targetPos, delta_time);
+						// When the Hero stopped moving and is on the destination tile, a check for hazards is done
+						if (!movementSystem.getMovementState()) {
+							gameController->applyHazardAfterMovement(hero, *registry);
+						}
 					} else {
 						fmt::println("No hero entity available!");
 					}
@@ -446,8 +450,12 @@ namespace df {
 			if (!movementSystem.getMovementState()) {
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
 					gameController->endTurn();
-					movementSystem.toggleMovementState();
-					gameController->startTurn(); // Start turn for the next player
+					// TODO: For multiplayer check only for active player for hazards
+					Entity hero = registry->animations.entities.front();
+					if (!registry->hazards.has(hero)) {
+						movementSystem.toggleMovementState();
+					}
+					gameController->startTurn(*registry); // Start turn for the next player
 					return;
 				}
 			}

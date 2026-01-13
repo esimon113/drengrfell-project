@@ -24,7 +24,7 @@ namespace df {
 	const Player* GameController::getPlayerById(size_t playerId) const { return this->gameState.getPlayer(playerId); }
 
 
-	void GameController::startTurn() {
+	void GameController::startTurn(Registry& registry) {
 		Player* player = this->getCurrentPlayer();
 		if (!player) {
 			return;
@@ -32,6 +32,13 @@ namespace df {
 
 		this->giveResourcesTo(*player);
 		this->resetHeroMovement(*player);
+
+		// Check hazards
+		// TODO: For multiplayer only update hazards for current player/hero
+		if (this->gameState.getTurnCount() > 0) {
+			Entity hero = registry.animations.entities.front();
+			updateHazards(registry);
+		}
 	}
 
 
@@ -48,6 +55,62 @@ namespace df {
 
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
+		}
+	}
+
+	// This function is called when moveEntityTo from entityMovement is finished
+	void GameController::applyHazardAfterMovement(Entity hero, Registry& registry) {
+		// Hero is already caught in a hazard
+		if (registry.hazards.has(hero)) {
+			fmt::println("Hazard can not be applied, as hero already has hazard");
+			return;
+		}
+			
+		const auto& pos = registry.positions.get(hero);
+		fmt::println("Hero Position: ({},{})", pos.x, pos.y);
+
+		TileHandle tile = this->gameState.getMap().getTileFromWorldPosition(pos.x, pos.y);
+		if (!tile) {
+			fmt::println("No tile for hazard checking found");
+			return;
+		}
+			
+		const auto& profileOpt = tile->getHazardProfile();
+		if (!profileOpt) {
+			fmt::println("No profile for hazard checking found");
+			return;
+		}
+
+		const auto& profile = *profileOpt;
+
+		std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+		bool encounteredHazard = dist(rng) <= profile.probability;
+
+		if (!encounteredHazard) {
+			fmt::println("No hazard encountered");
+			return;
+		}
+
+		const auto& def = HazardDB::getDefinition(profile.hazardType);
+
+		registry.hazards.emplace(hero) = {profile.hazardType, def.defaultRoundDuration};
+		fmt::println("[Hazard] You encountered a {}, which will stop your movement for {} turns", def.name, def.defaultRoundDuration);
+	}
+
+	// TODO: Only update hazards for active player in multiplayer
+	void GameController::updateHazards(Registry& registry) {
+		for (Entity e : registry.hazards.entities) {
+			auto& hazard = registry.hazards.get(e);
+			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
+
+			hazard.turnsLeft--;
+
+			if (hazard.turnsLeft <= 0) {
+				fmt::println("[Hazard] {} encounter ended", hazardDefinition.name);
+				registry.hazards.remove(e);
+			} else {
+				fmt::println("[Hazard] {} still active for {} turns", hazardDefinition.name, hazard.turnsLeft);
+			}
 		}
 	}
 

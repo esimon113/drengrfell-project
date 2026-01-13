@@ -81,4 +81,8 @@ namespace df {
 		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 		return distribution(rng) <= this->getPotencyProbability(this->potency);
 	}
+
+	void Tile::initializeHazardProfile() {
+		hazardProfile = HazardDB::getTileHazardProfile(type);
+	}
 }

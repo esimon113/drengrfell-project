@@ -65,4 +65,12 @@ namespace df::types {
         PLAY,
         END
     };
+
+	enum class HazardType {
+		NONE,
+		MUD,
+		ROCKSLIDE,
+		BEAR,
+		BLIZZARD
+	};
 }
