@@ -32,11 +32,11 @@ namespace df {
 	bool visibleBeforehand;			// If the hazard should be rendered on the map (currently unused)
 	*/
 	std::unordered_map<types::TileType, TileHazardProfile> HazardDB::tileHazardProfiles = {
-		{types::TileType::WATER, {types::HazardType::NONE, 0.3f, false}},
+		{types::TileType::WATER, {types::HazardType::NONE, 0.0f, false}},
 		{types::TileType::FOREST, {types::HazardType::BEAR, 0.25f, false}},
-		{types::TileType::GRASS, {types::HazardType::NONE, 0.3f, false}},
+		{types::TileType::GRASS, {types::HazardType::NONE, 0.0f, false}},
 		{types::TileType::MOUNTAIN, {types::HazardType::ROCKSLIDE, 0.4f, false}},
-		{types::TileType::FIELD, {types::HazardType::NONE, 0.3f, false}},
+		{types::TileType::FIELD, {types::HazardType::NONE, 0.0f, false}},
 		{types::TileType::CLAY, {types::HazardType::MUD, 0.3f, false}},
 		{types::TileType::ICE, {types::HazardType::BLIZZARD, 0.5f, false}},
 	};
