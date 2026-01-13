@@ -1,6 +1,8 @@
 #include "world.h"
 #include "fmt/base.h"
 #include "hero.h"
+#include "questsSystem.h"
+#include "renderNotification.h"
 #include <iostream>
 
 namespace df {
@@ -207,6 +209,13 @@ namespace df {
 				if (step && step->id == TutorialStepId::ZOOM_CAMERA) {
 					this->gameState->completeCurrentTutorialStep();
 				}
+				break;
+			case GLFW_KEY_Q: {
+				auto* quests = registry->getSystem<QuestsSystem>();
+				if (quests) {
+					quests->notifyNextActiveQuest(); 
+				}
+			} 
 				break;
 			default:
 				break;
