@@ -20,6 +20,7 @@ namespace df {
 		std::string name;				// The name of the hazard for displaying it in the game
 		int defaultRoundDuration;		// How long the hazard holds the hero in place
 		types::TileType skipRessource;	// Which ressource the player would have to pay to skip waiting
+		std::string skipRessourceStr;	// A string which represents the ressource
 		int skipCost;					// How many ressources it costs per round to skip the hazard
 	};
 

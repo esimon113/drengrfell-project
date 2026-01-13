@@ -9,14 +9,15 @@ namespace df {
 	std::string name;				// The name of the hazard for displaying it in the game
 	int defaultRoundDuration;		// How long the hazard holds the hero in place
 	types::TileType skipRessource;	// Which ressource the player would have to pay to skip waiting
+	std::string skipRessourceStr;	// A string which represents the ressource
 	int skipCost;					// How many ressources it costs per round to skip the hazard
 	*/
 	std::unordered_map<types::HazardType, HazardDefinition> HazardDB::hazardDefinitions = {
-		{types::HazardType::NONE, {types::HazardType::NONE, "None", 0, types::TileType::EMPTY, 0}},
-		{types::HazardType::MUD, {types::HazardType::MUD, "Sticky mud pit", 2, types::TileType::FOREST, 1}},
-		{types::HazardType::ROCKSLIDE, {types::HazardType::ROCKSLIDE, "Rockslide", 3, types::TileType::FOREST, 2}},
-		{types::HazardType::BLIZZARD, {types::HazardType::BLIZZARD, "Blizzard", 2, types::TileType::FIELD, 3}},
-		{types::HazardType::BEAR, {types::HazardType::BEAR, "Bear", 1, types::TileType::FIELD, 1}},
+		{types::HazardType::NONE, {types::HazardType::NONE, "None", 0, types::TileType::EMPTY, "None", 0}},
+		{types::HazardType::MUD, {types::HazardType::MUD, "Sticky mud pit", 2, types::TileType::FOREST, "Wood", 1}},
+		{types::HazardType::ROCKSLIDE, {types::HazardType::ROCKSLIDE, "Rockslide", 3, types::TileType::FOREST, "Wood", 2}},
+		{types::HazardType::BLIZZARD, {types::HazardType::BLIZZARD, "Blizzard", 2, types::TileType::FIELD, "Grain", 3}},
+		{types::HazardType::BEAR, {types::HazardType::BEAR, "Bear", 1, types::TileType::FIELD, "Grain", 1}},
 	};
 
 	const HazardDefinition& HazardDB::getDefinition(types::HazardType type) {

@@ -31,10 +31,12 @@ namespace df {
 		const Player* getCurrentPlayer() const;
 
         void startTurn(Registry& registry);
-		void endTurn();
+		void endTurn(Registry& registry);
 
-		void applyHazardAfterMovement(Entity hero, Registry& registry);
+		void applyHazard(Entity hero, Registry& registry, glm::vec2 destination);
 		void updateHazards(Registry& registry);
+		void showHazards(Registry& registry);
+		void payForHazard(Registry& registry);
 
         void giveResourcesTo(Player& player);
 

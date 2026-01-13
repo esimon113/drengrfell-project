@@ -10,6 +10,7 @@
 #include "tile.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
+#include "renderNotification.h"
 
 
 
@@ -38,16 +39,18 @@ namespace df {
 		// TODO: For multiplayer only update hazards for current player/hero
 		if (this->gameState.getTurnCount() > 0) {
 			Entity hero = registry.animations.entities.front();
-			updateHazards(registry);
+			showHazards(registry);
 		}
 	}
 
 
-	void GameController::endTurn() {
+	void GameController::endTurn(Registry& registry) {
 		const size_t playerCount = this->gameState.getPlayerCount();
 		if (playerCount == 0) {
 			return;
 		} // should not happen
+
+		updateHazards(registry);
 
 		// TODO: maybe add some "setNextTurn()" etc. functions
 		size_t nextPlayerId = (this->gameState.getCurrentPlayerId() + 1) % playerCount;
@@ -59,15 +62,15 @@ namespace df {
 		}
 	}
 
-	// This function is called when moveEntityTo from entityMovement is finished
-	void GameController::applyHazardAfterMovement(Entity hero, Registry& registry) {
+	// This function checks if the hero encounters a hazard at the destination (in world coordinates)
+	void GameController::applyHazard(Entity hero, Registry& registry, glm::vec2 destination) {
 		// Hero is already caught in a hazard
 		if (registry.hazards.has(hero)) {
 			fmt::println("Hazard can not be applied, as hero already has hazard");
 			return;
 		}
-			
-		const auto& pos = registry.positions.get(hero);
+
+		glm::vec2 pos = destination;
 		fmt::println("Hero Position: ({},{})", pos.x, pos.y);
 
 		TileHandle tile = this->gameState.getMap().getTileFromWorldPosition(pos.x, pos.y);
@@ -105,13 +108,78 @@ namespace df {
 			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
 
 			hazard.turnsLeft--;
+		}
+	}
+
+	void GameController::showHazards(Registry& registry) {
+		for (Entity e : registry.hazards.entities) {
+			auto& hazard = registry.hazards.get(e);
+			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
+			RenderNotificationSystem* notification = registry.getSystem<RenderNotificationSystem>();
 
 			if (hazard.turnsLeft <= 0) {
 				fmt::println("[Hazard] {} encounter ended", hazardDefinition.name);
+				notification->showNotification("You overcame the hazard",
+											   fmt::format(
+												   "Your encounter with the {} ended",
+												   hazardDefinition.name),
+											   {"Continue"});
 				registry.hazards.remove(e);
+			} else if (hazard.turnsLeft == hazardDefinition.defaultRoundDuration) {
+				fmt::println("[Hazard] {} encountered. It is active for {} turns", hazardDefinition.name, hazard.turnsLeft);
+				notification->showNotification("You encountered a hazard",
+											   fmt::format(
+												   "A {} is preventing you from moving for {} turns\n"
+												   "Would you like to overcome the encounter by paying {} {} or wait?",
+												   hazardDefinition.name,
+												   hazard.turnsLeft,
+												   hazardDefinition.skipCost * hazard.turnsLeft,
+												   hazardDefinition.skipRessourceStr
+											   ),
+											   {
+												   "Pay ressources",
+												   "Wait"
+											   });
 			} else {
-				fmt::println("[Hazard] {} still active for {} turns", hazardDefinition.name, hazard.turnsLeft);
+				fmt::println("[Hazard] {} encounter ongoing. It is still active for {} turns", hazardDefinition.name, hazard.turnsLeft);
+				notification->showNotification("Ongoing hazard",
+											   fmt::format(
+												   "A {} is still preventing you from moving for {} turns\n"
+												   "Would you like to overcome the encounter by paying {} {} or wait?",
+												   hazardDefinition.name,
+												   hazard.turnsLeft,
+												   hazardDefinition.skipCost * hazard.turnsLeft,
+												   hazardDefinition.skipRessourceStr
+											   ),
+											   {
+													"Pay ressources",
+													"Wait"
+												});
 			}
+		}
+	}
+
+	void GameController::payForHazard(Registry& registry) {
+		for (Entity e : registry.hazards.entities) {
+			auto& hazard = registry.hazards.get(e);
+			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
+			RenderNotificationSystem* notification = registry.getSystem<RenderNotificationSystem>();
+
+			Player* player = this->getCurrentPlayer();
+
+			if (player->getResources(hazardDefinition.skipRessource) < hazard.turnsLeft * hazardDefinition.skipCost) {
+				notification->showNotification("Not enough ressources",
+											   fmt::format(
+												   "You have {} {}, but need {} to overcome the hazard",
+												   player->getResources(hazardDefinition.skipRessource),
+												   hazardDefinition.skipRessourceStr,
+												   hazard.turnsLeft * hazardDefinition.skipCost
+											   ),
+											   {"Continue"});
+				return;
+			}
+			player->removeResources(hazardDefinition.skipRessource, hazard.turnsLeft * hazardDefinition.skipCost);
+			registry.hazards.remove(e);
 		}
 	}
 

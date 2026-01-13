@@ -204,24 +204,8 @@ namespace df {
 				// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
 				if (movementSystem.getMovementState()) {
 					if (!registry->animations.entities.empty()) {
-
-						if (!movementSystem.isTargetSet()) {
-
-							glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
-							auto extent = this->window->getWindowExtent();
-
-							auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
-							auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
-							// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
-
-							movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
-						}
 						Entity hero = registry->animations.entities.front();
 						movementSystem.moveEntityTo(hero, movementSystem.getTargetPosition(), delta_time);
-						// When the Hero stopped moving and is on the destination tile, a check for hazards is done
-						if (!movementSystem.getMovementState()) {
-							gameController->applyHazardAfterMovement(hero, *registry);
-						}
 					} else {
 						fmt::println("No hero entity available!");
 					}
@@ -460,11 +444,22 @@ namespace df {
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 			if (!movementSystem.getMovementState()) {
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
-					gameController->endTurn();
+					gameController->endTurn(*registry);
 					// TODO: For multiplayer check only for active player for hazards
 					Entity hero = registry->animations.entities.front();
 					if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
 						movementSystem.toggleMovementState();
+
+						glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
+						auto extent = this->window->getWindowExtent();
+
+						auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+						auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+						// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+
+						movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
+						gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
+						fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
 					}
 					gameController->startTurn(*registry); // Start turn for the next player
 					return;
@@ -477,6 +472,9 @@ namespace df {
 			if (!pressedButton.empty()) {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
 				// TODO: add actions for button pressed in notifications
+				if (pressedButton == "Pay ressources") {
+					gameController->payForHazard(*registry);
+				}
 			}
 
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
