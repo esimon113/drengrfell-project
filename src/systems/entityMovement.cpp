@@ -16,6 +16,7 @@ namespace df {
 
 		auto& animComp = registry->animations.get(entity);
 		glm::vec2& currentPos = registry->positions.get(entity);
+		glm::vec2& scale = registry->scales.get(entity);
 
 		glm::vec2 direction = targetPos - currentPos;
 		float distance = glm::length(direction);
@@ -24,6 +25,7 @@ namespace df {
 			moving = false;
 			movementState = false;
 			targetSet = false;
+			scale.x = 1.0f;
 			return;
 		}
 
@@ -33,6 +35,12 @@ namespace df {
 		glm::vec2 movement = direction * speed * deltaTime;
 
 		moving = true;
+
+		if (direction.x > 0.0f) {
+			scale.x = 1.0f;
+		} else if (direction.x < 0.0f) {
+			scale.x = -1.0f;
+		}
 
 		if (glm::length(movement) >= distance) {
 			currentPos = targetPos;
