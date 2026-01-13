@@ -2,7 +2,6 @@ build
 
 # config
 */world_generation.json
-assets/jsons/quests.json
 
 test/asan_direct_leaks.txt
 

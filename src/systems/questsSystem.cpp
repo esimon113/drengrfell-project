@@ -7,45 +7,38 @@ using json = nlohmann::json;
 
 namespace df {
 
+    //  TODO: In a future add the functions to update the json to reload a game
+
     void QuestsSystem::init(RenderNotificationSystem* notificationSys) {
         m_notificationSystem = notificationSys;
-        loadQuests("../assets/jsons/quests.json");
+
+        m_quests.clear();
+
+        // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress | unblock id | Initial state
+        
+        // Building quests
+        m_quests.push_back({0, "Builder", "Build your first settlement","settlement", 1, 0, 1, QuestState::Active});
+        m_quests.push_back({1, "The King's Highway", "Build 2 roads", "road", 2 , 0, -1, QuestState::Locked});
+        
+        // Resources quests
+        m_quests.push_back({2, "Lumberjack", "Collect 100 wood" ,"wood", 100, 0, 3, QuestState::Active});
+
+        // Surcvival quests
+        m_quests.push_back({3, "Proffesional surviver", "Survive 5 rounds" ,"rounds", 5, 0, -1, QuestState::Locked});
+
+
+
+        //loadQuests("../assets/jsons/quests.json");
+
+
     }
 
-    void QuestsSystem::updateProgress(const std::string& type, int amount) {
-        for (auto& quest : m_quests) {
-            if (quest.state == QuestState::Active && quest.goal_type == type) {
-                
-                quest.progress = amount;
 
-                if (quest.progress >= quest.goal_amount) {
-                    quest.state = QuestState::Completed;
-                    notifyPlayer(quest.id); 
-                }
-            }
-        }
-    }
+    /*
 
-    void QuestsSystem::notifyPlayer(int questId) {
-        for (auto& q : m_quests) {
-            if (q.id == questId) {
-                m_currentShowingQuestId = questId;
-                std::vector<std::string> buttons;
-                
-                if (q.state == QuestState::Completed) {
-                    buttons = {"Claim", "Next Quest"};
-                } else {
-                    buttons = {"Close", "Next Quest"};
-                }
+    JSON functions
 
-                if (m_notificationSystem) {
-                    m_notificationSystem->showNotification(q.name, "Objetivo en curso...", buttons);
-                }
-                break;
-            }
-        }
-    }
-
+    
     void QuestsSystem::loadQuests(const std::string& path) {
         std::ifstream file(path);
         if (!file.is_open()) return;
@@ -68,6 +61,45 @@ namespace df {
             m_quests.push_back(q); 
         }
     }
+    */
+
+
+    void QuestsSystem::updateProgress(const std::string& type, int amount) {
+        for (auto& quest : m_quests) {
+            if (quest.state == QuestState::Active && quest.goal_type == type) {
+                
+                quest.progress += amount;
+
+                if (quest.progress >= quest.goal_amount) {
+                    quest.state = QuestState::Completed;
+                    notifyPlayer(quest.id); 
+                }
+            }
+        }
+    }
+
+    void QuestsSystem::notifyPlayer(int questId) {
+        for (auto& q : m_quests) {
+            if (q.id == questId) {
+                m_currentShowingQuestId = questId;
+                std::vector<std::string> buttons;
+                
+                if (q.state == QuestState::Completed) {
+                    buttons = {"Claim", "Next Quest"};
+                } else {
+                    buttons = {"Close", "Next Quest"};
+                }
+
+                if (q.state == QuestState::Active) {
+                    m_notificationSystem->showNotification(q.name, q.desc, buttons);
+                } else {
+                    m_notificationSystem->showNotification(q.name, "Quest completed", buttons);
+                }
+                break;
+            }
+        }
+    }
+
 
     void QuestsSystem::claimQuest(int questId) {
         for (auto& q : m_quests) {

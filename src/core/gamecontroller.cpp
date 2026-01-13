@@ -50,26 +50,25 @@ namespace df {
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
 		}
-
-		size_t currentPlayerId = gameState.getCurrentPlayerId();
-    	Player* player = gameState.getPlayer(currentPlayerId);
-		int woodCount = player->getResources(types::TileType::FOREST);
-
-        m_questsSystem->updateProgress("wood",woodCount);
-         
 	}
 
 
 	void GameController::giveResourcesTo(Player& player) {
 		// resources are given to the player based on the settlements they have
 		// for testing purposes, players receive some resources every turn
+		// TODO: CHANGE how the quests are updated with the new values given to the player
 		bool test = true;
 		if (test) {
 			player.addResources(types::TileType::FOREST, 1);
+			m_questsSystem->updateProgress("wood", 1);
 			player.addResources(types::TileType::CLAY, 1);
+			m_questsSystem->updateProgress("clay", 1);
 			player.addResources(types::TileType::GRASS, 1);
+			m_questsSystem->updateProgress("sheep", 1);
 			player.addResources(types::TileType::FIELD, 1);
+			m_questsSystem->updateProgress("wheat", 1);
 			player.addResources(types::TileType::MOUNTAIN, 1);
+			m_questsSystem->updateProgress("stone", 1);
 
 			return;
 		}
@@ -336,6 +335,9 @@ namespace df {
 
 			this->chargeResourceCost(*player, buildingCost);
 
+			m_questsSystem->updateProgress("settlement", 1);
+			
+
 			fmt::println("[GameController] buildSettlement succeeded: settlement {} built at vertex {} for player {}", newSettlementId, vertexId, playerId);
 			// Finish Tutorial if step is BUILD_SETTLEMENT
 			if (step && step->id == TutorialStepId::BUILD_SETTLEMENT) {
@@ -535,6 +537,8 @@ namespace df {
 			player->addRoad(road->getId());
 
 			this->chargeResourceCost(*player, buildingCost);
+
+			m_questsSystem->updateProgress("road",1);
 
 			fmt::println("[GameController] buildRoad succeeded: road {} built at edge {} for player {}", roadId, edgeId, playerId);
 			// Finish Tutorial if step is BUILD_ROAD
