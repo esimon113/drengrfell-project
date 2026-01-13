@@ -69,7 +69,15 @@ namespace df::types {
 	enum class GamePhase {
 		START,
 		CONFIG,
-		PLAY,
-		END
+        PLAY,
+        END
+    };
+
+	enum class HazardType {
+		NONE,
+		MUD,
+		ROCKSLIDE,
+		BEAR,
+		BLIZZARD
 	};
-} // namespace df::types
+}

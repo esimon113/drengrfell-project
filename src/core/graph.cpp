@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "assets.h"
 #include "fmt/base.h"
 #include "vertex.h"
 #include "worldGenerator.h"
@@ -80,6 +81,69 @@ namespace df {
 
 		return this->tiles[index].get();
 	}
+
+	TileHandle Graph::getTileFromWorldPosition(float worldX, float worldY) const {
+		int row = static_cast<int>(std::floor((worldY + 0.75f) / 1.5f));
+
+		if (row < 0) {
+			fmt::println("Improper world Position: row < 0");
+			return nullptr;
+		}
+
+		float rowOffset = (row % 2 == 1) ? 1.0f : 0.0f;
+
+		int col = static_cast<int>(std::floor((worldX - rowOffset + 1.0f) / 2.0f));
+
+		if (col < 0) {
+			fmt::println("Improper world Position: col < 0");
+			return nullptr;
+		}
+
+		size_t index = static_cast<size_t>(row) * mapWidth + static_cast<size_t>(col);
+
+		if (index >= tiles.size()) {
+			fmt::println("Improper world Position: index out of map bounds");
+			return nullptr;
+		}
+
+		auto tileType = getTile(index)->getType();
+		// auto t = tiles[index].get()->getType();
+		std::string tileTypeStr = "";
+
+		switch (tileType) {
+		case types::TileType::EMPTY:
+			tileTypeStr = "EMPTY";
+			break;
+		case types::TileType::WATER:
+			tileTypeStr = "WATER";
+			break;
+		case types::TileType::FOREST:
+			tileTypeStr = "FOREST";
+			break;
+		case types::TileType::GRASS:
+			tileTypeStr = "GRASS";
+			break;
+		case types::TileType::MOUNTAIN:
+			tileTypeStr = "MOUNTAIN";
+			break;
+		case types::TileType::FIELD:
+			tileTypeStr = "FIELD";
+			break;
+		case types::TileType::CLAY:
+			tileTypeStr = "CLAY";
+			break;
+		case types::TileType::ICE:
+			tileTypeStr = "ICE";
+			break;
+		default:
+			tileTypeStr = "UNKNOWN";
+			break;
+		}
+		fmt::println("tile: {}", tileTypeStr);
+
+		return getTile(index);
+	}
+
 
 
 	// Throws out_of_range if no edge with id
@@ -773,6 +837,8 @@ namespace df {
 
 		for (auto newTile : newTiles) {
 			std::unique_ptr<Tile> tile = std::make_unique<Tile>(newTile.getId(), newTile.getType(), newTile.getPotency());
+			// TODO: Place hazards only with certain probabilities, if they should be rendered
+			tile->initializeHazardProfile();
 			this->addTile(std::move(tile));
 		}
 		fmt::println("[DEBUG] finished initializing tiles");
@@ -873,28 +939,40 @@ namespace df {
 
 			switch (vertexIndex) {
 			case 0: // Bottom-right -> connect with neighbour directions: east (to right) and noth-east (below-right)
-				if (auto n = getNeighbourIndex(tileIndex, 2); n) sharingInfo.push_back({*n, 4}); // E.V4
-				if (auto n = getNeighbourIndex(tileIndex, 1); n) sharingInfo.push_back({*n, 2}); // NE.V2
+				if (auto n = getNeighbourIndex(tileIndex, 2); n)
+					sharingInfo.push_back({*n, 4}); // E.V4
+				if (auto n = getNeighbourIndex(tileIndex, 1); n)
+					sharingInfo.push_back({*n, 2}); // NE.V2
 				break;
 			case 1: // Top-right -> connect with neighbour east and south-east (above-right)
-				if (auto n = getNeighbourIndex(tileIndex, 2); n) sharingInfo.push_back({*n, 3}); // E.V3
-				if (auto n = getNeighbourIndex(tileIndex, 3); n) sharingInfo.push_back({*n, 5}); // SE.V5
+				if (auto n = getNeighbourIndex(tileIndex, 2); n)
+					sharingInfo.push_back({*n, 3}); // E.V3
+				if (auto n = getNeighbourIndex(tileIndex, 3); n)
+					sharingInfo.push_back({*n, 5}); // SE.V5
 				break;
 			case 2: // Top -> connect  with enighbor south-east and south-west (above-left)
-				if (auto n = getNeighbourIndex(tileIndex, 3); n) sharingInfo.push_back({*n, 4}); // SE.V4
-				if (auto n = getNeighbourIndex(tileIndex, 4); n) sharingInfo.push_back({*n, 0}); // SW.V0
+				if (auto n = getNeighbourIndex(tileIndex, 3); n)
+					sharingInfo.push_back({*n, 4}); // SE.V4
+				if (auto n = getNeighbourIndex(tileIndex, 4); n)
+					sharingInfo.push_back({*n, 0}); // SW.V0
 				break;
 			case 3: // Top-left -> connect with neighbour south-west and west (left)
-				if (auto n = getNeighbourIndex(tileIndex, 4); n) sharingInfo.push_back({*n, 5}); // SW.V5
-				if (auto n = getNeighbourIndex(tileIndex, 5); n) sharingInfo.push_back({*n, 1}); // W.V1
+				if (auto n = getNeighbourIndex(tileIndex, 4); n)
+					sharingInfo.push_back({*n, 5}); // SW.V5
+				if (auto n = getNeighbourIndex(tileIndex, 5); n)
+					sharingInfo.push_back({*n, 1}); // W.V1
 				break;
 			case 4: // Bottom-left -> connect with neighbour west and north-west (below-left)
-				if (auto n = getNeighbourIndex(tileIndex, 5); n) sharingInfo.push_back({*n, 0}); // W.V0
-				if (auto n = getNeighbourIndex(tileIndex, 0); n) sharingInfo.push_back({*n, 2}); // NW.V2
+				if (auto n = getNeighbourIndex(tileIndex, 5); n)
+					sharingInfo.push_back({*n, 0}); // W.V0
+				if (auto n = getNeighbourIndex(tileIndex, 0); n)
+					sharingInfo.push_back({*n, 2}); // NW.V2
 				break;
 			case 5: // Bottom -> connect with neighbour north-west and north-east
-				if (auto n = getNeighbourIndex(tileIndex, 0); n) sharingInfo.push_back({*n, 1}); // NW.V1
-				if (auto n = getNeighbourIndex(tileIndex, 1); n) sharingInfo.push_back({*n, 3}); // NE.V3
+				if (auto n = getNeighbourIndex(tileIndex, 0); n)
+					sharingInfo.push_back({*n, 1}); // NW.V1
+				if (auto n = getNeighbourIndex(tileIndex, 1); n)
+					sharingInfo.push_back({*n, 3}); // NE.V3
 				break;
 			}
 

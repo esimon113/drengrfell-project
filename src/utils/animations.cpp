@@ -3,7 +3,7 @@
 namespace df {
 
 	Animation::Animation()
-		: frameDuration(0.1f), loop(true), currentFrameIndex(0), elapsedTime(0.f) {
+		: frameDuration(0.65f), loop(true), currentFrameIndex(0), elapsedTime(0.f) {
 	}
 
 	// constructor
@@ -11,9 +11,6 @@ namespace df {
 		: frames(frames), frameDuration(frameDuration), loop(loop),
 		  currentFrameIndex(0), elapsedTime(0.f) {
 	}
-
-
-
 
 	// updated animations based on elapsedtime
 	void Animation::step(float deltaTime) {
@@ -41,13 +38,9 @@ namespace df {
 		return frames.at(currentFrameIndex);
 	}
 
-
-
 	void Animation::setFrames(const std::vector<int>& newFrames) {
 		frames = newFrames;
 	}
-
-
 
 	void Animation::setLoop(bool l) { loop = l; }
 	bool Animation::isLooping() const { return loop; }

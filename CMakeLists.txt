@@ -140,9 +140,11 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
 	${PROJECT_SOURCE_DIR}/src/core/mainMenu.cpp
 	${PROJECT_SOURCE_DIR}/src/core/configMenu.cpp
+	${PROJECT_SOURCE_DIR}/src/core/hazards.cpp
 
 	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/questsSystem.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/render.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/audio.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/animationSystem.cpp
