@@ -215,6 +215,9 @@ namespace df {
 				if (quests) {
 					quests->notifyNextActiveQuest(); 
 				}
+				if (step && step->id == TutorialStepId::OPEN_QUEST_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
 			} 
 				break;
 			default:

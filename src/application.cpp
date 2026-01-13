@@ -457,6 +457,10 @@ namespace df {
 			if (!movementSystem.getMovementState()) {
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
 					gameController->endTurn(*registry);
+					auto* step = this->gameState->getCurrentTutorialStep();
+					if (step && step->id == TutorialStepId::MOVE_HERO) {
+						this->gameState->completeCurrentTutorialStep();
+					}
 					// TODO: For multiplayer check only for active player for hazards
 					Entity hero = registry->animations.entities.front();
 					if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {

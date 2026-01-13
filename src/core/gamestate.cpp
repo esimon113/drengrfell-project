@@ -256,9 +256,22 @@ namespace df {
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
+		tutorialSteps.push_back({.id = TutorialStepId::MOVE_HERO,
+								 .text = "Use the left mouse button to click on a tile on the map to select it.\nAfter pressing the 'End Turn' button on the bottom right the hero will move there.\n"
+									"But beware, you might encounter a hazard.",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+
+		tutorialSteps.push_back({.id = TutorialStepId::OPEN_QUEST_MENU,
+								 .text = "You can check your quests by pressing 'Q'! Your first quest will be\n to build a settlement which is also coverd in the next tutorial step.",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+
 		tutorialSteps.push_back({.id = TutorialStepId::BUILD_SETTLEMENT,
 								 .text =
-									 "Build your first settlement using the n Button.\n"
+									 "Build your first settlement using the 'N' button.\n"
 									 "Then you get the hover view.\n"
 									 "Here click any free tile close to your hero to build the settlement.\n"
 									 "Settlements generate resources from nearby tiles each round.",
@@ -267,7 +280,7 @@ namespace df {
 								 .renderBox = true});
 
 		tutorialSteps.push_back({.id = TutorialStepId::BUILD_ROAD,
-								 .text = "Build a road to expand using b Button to create the hover view.\nThen select any free edge close to your hero to build the road.",
+								 .text = "Build a road to expand using 'B' Button to create the hover view.\nThen select any free edge close to your hero to build the road.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
