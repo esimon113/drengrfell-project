@@ -47,6 +47,7 @@ namespace df {
 		ComponentContainer<CameraInput> cameraInputs;
 		ComponentContainer<AnimationComponent> animations;
 
+			ComponentContainer<HazardComponent> hazards;
 
 		inline Entity getPlayer() noexcept { return player; }
 		inline Entity getCamera() noexcept { return camera; }
@@ -69,7 +70,7 @@ namespace df {
 
 
 	  private:
-		std::array<ContainerInterface*, 14> containers;
+		std::array<ContainerInterface*, 15> containers;
 
 		Entity player;
 		Entity camera;

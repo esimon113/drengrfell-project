@@ -81,6 +81,66 @@ namespace df {
 		return this->tiles[index].get();
 	}
 
+	TileHandle Graph::getTileFromWorldPosition(float worldX, float worldY) const {
+		int row = static_cast<int>(std::floor((worldY + 0.75f) / 1.5f));
+
+		if (row < 0) {
+			fmt::println("Improper world Position: row < 0");
+			return nullptr;
+		}
+
+		float rowOffset = (row % 2 == 1) ? 1.0f : 0.0f;
+
+		int col = static_cast<int>(std::floor((worldX - rowOffset + 1.0f) / 2.0f));
+
+		if (col < 0) {
+			fmt::println("Improper world Position: col < 0");
+			return nullptr;
+		}
+
+		size_t index = static_cast<size_t>(row) * mapWidth + static_cast<size_t>(col);
+
+		if (index >= tiles.size()) {
+			fmt::println("Improper world Position: index out of map bounds");
+			return nullptr;
+		}
+
+		auto tileType = getTile(index)->getType();
+		//auto t = tiles[index].get()->getType();
+		std::string tileTypeStr = "";
+
+		switch (tileType) {
+		case types::TileType::EMPTY:
+			tileTypeStr = "EMPTY";
+			break;
+		case types::TileType::WATER:
+			tileTypeStr = "WATER";
+			break;
+		case types::TileType::FOREST:
+			tileTypeStr = "FOREST";
+			break;
+		case types::TileType::GRASS:
+			tileTypeStr = "GRASS";
+			break;
+		case types::TileType::MOUNTAIN:
+			tileTypeStr = "MOUNTAIN";
+			break;
+		case types::TileType::FIELD:
+			tileTypeStr = "FIELD";
+			break;
+		case types::TileType::CLAY:
+			tileTypeStr = "CLAY";
+			break;
+		case types::TileType::ICE:
+			tileTypeStr = "ICE";
+			break;
+		}
+		fmt::println("tile: {}", tileTypeStr);
+
+		return getTile(index);
+	}
+
+
 
 	// Throws out_of_range if no edge with id
 	EdgeHandle Graph::getEdge(size_t index) const {
@@ -773,6 +833,8 @@ namespace df {
 
 		for (auto newTile : newTiles) {
 			std::unique_ptr<Tile> tile = std::make_unique<Tile>(newTile.getId(), newTile.getType(), newTile.getPotency());
+			// TODO: Place hazards only with certain probabilities, if they should be rendered
+			tile->initializeHazardProfile();
 			this->addTile(std::move(tile));
 		}
 		fmt::println("[DEBUG] finished initializing tiles");

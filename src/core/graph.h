@@ -58,6 +58,7 @@ namespace df {
 		void addVertex(std::unique_ptr<Vertex> vertex);
 
 		TileHandle getTile(size_t index) const;
+		TileHandle getTileFromWorldPosition(float worldX, float worldY) const;
 		EdgeHandle getEdge(size_t index) const;
 		VertexHandle getVertex(size_t index) const;
 

@@ -174,7 +174,7 @@ namespace df {
 
 			// Start turn when first entering PLAY phase -> future TODO: adjust for multiple players + ending game + reentering
 			if (gamePhase == types::GamePhase::PLAY && previousGamePhase != types::GamePhase::PLAY) {
-				gameController->startTurn();
+				gameController->startTurn(*registry);
 				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
 			}
 
@@ -456,11 +456,24 @@ namespace df {
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 			if (!movementSystem.getMovementState()) {
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
-					gameController->endTurn();
-					if (world.getMouseX() >= 0 && world.getMouseY() >= 0) {
+					gameController->endTurn(*registry);
+					// TODO: For multiplayer check only for active player for hazards
+					Entity hero = registry->animations.entities.front();
+					if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
 						movementSystem.toggleMovementState();
+
+						glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
+						auto extent = this->window->getWindowExtent();
+
+						auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+						auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+						// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+
+						movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
+						gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
+						fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
 					}
-					gameController->startTurn(); // Start turn for the next player
+					gameController->startTurn(*registry); // Start turn for the next player
 					return;
 				}
 			}
@@ -471,6 +484,9 @@ namespace df {
 			if (!pressedButton.empty()) {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
 				// TODO: add actions for button pressed in notifications
+				if (pressedButton == "Pay ressources") {
+					gameController->payForHazard(*registry);
+				}
 			}
 			
 			if (pressedButton == "Next Quest") {

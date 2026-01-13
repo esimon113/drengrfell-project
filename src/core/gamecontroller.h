@@ -32,10 +32,15 @@ namespace df {
 		Player* getCurrentPlayer();
 		const Player* getCurrentPlayer() const;
 
-		void startTurn();
-		void endTurn();
+        void startTurn(Registry& registry);
+		void endTurn(Registry& registry);
 
-		void giveResourcesTo(Player& player);
+		void applyHazard(Entity hero, Registry& registry, glm::vec2 destination);
+		void updateHazards(Registry& registry);
+		void showHazards(Registry& registry);
+		void payForHazard(Registry& registry);
+
+        void giveResourcesTo(Player& player);
 
 		bool moveHeroToTile(size_t playerId, size_t targetTileId);
 
