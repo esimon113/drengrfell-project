@@ -13,6 +13,7 @@
 // #include "utils/graphDebugDump.h"
 // #include "utils/graphDebugImage.h"
 #include "utils/worldNodeMapper.h"
+#include "systems/questsSystem.h"
 
 
 #include <fstream>
@@ -102,6 +103,15 @@ namespace df {
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
 		// Store RenderNofificationSystem in registry to use it in any other System.
 		registry->addSystem<RenderNotificationSystem>(&render.getRenderNotificationSystem());
+
+		auto* qSys = gameController->getQuestsSystem();
+		if (qSys) {
+			registry->addSystem<QuestsSystem>(qSys);
+			
+			qSys->init(&render.getRenderNotificationSystem());
+		}
+
+
 
 		if (!this->window || !this->window->getHandle()) {
 			std::cerr << "Invalid window or GLFWwindow handle!" << std::endl;
@@ -441,6 +451,8 @@ namespace df {
 				mouseX,
 				static_cast<float>(window->getWindowExtent().y) - mouseY};
 
+		
+
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 			if (!movementSystem.getMovementState()) {
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
@@ -475,6 +487,13 @@ namespace df {
 				if (pressedButton == "Pay ressources") {
 					gameController->payForHazard(*registry);
 				}
+			}
+			
+			if (pressedButton == "Next Quest") {
+				this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
+			} else if (pressedButton == "Claim") {
+				int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId(); 
+				gameController->claimQuestReward(currentId);
 			}
 
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
@@ -576,6 +595,16 @@ namespace df {
 					}
 
 					return; // ignore other mouse callbacks when placing buildings...
+				}
+				glm::vec2 mouseCoords = glm::vec2(mouseX, mouseY);
+				auto extent = this->window->getWindowExtent();
+
+				auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+				auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+				fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+
+				if (mapId >= 0 && !movementSystem.isEntityMoving()) {
+					movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
 				}
 			}
 

@@ -1,6 +1,8 @@
 #include "world.h"
 #include "fmt/base.h"
 #include "hero.h"
+#include "questsSystem.h"
+#include "renderNotification.h"
 #include <iostream>
 
 namespace df {
@@ -208,6 +210,13 @@ namespace df {
 					this->gameState->completeCurrentTutorialStep();
 				}
 				break;
+			case GLFW_KEY_Q: {
+				auto* quests = registry->getSystem<QuestsSystem>();
+				if (quests) {
+					quests->notifyNextActiveQuest(); 
+				}
+			} 
+				break;
 			default:
 				break;
 			}
@@ -265,7 +274,7 @@ namespace df {
 			mouseX = rawX * xScale;
 			mouseY = rawY * yScale;
 			
-			fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
+			//fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
 			// Update Tutorial if finished
 			if ((step && step->id == TutorialStepId::END) || (step && step->id == TutorialStepId::WELCOME)) {
