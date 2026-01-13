@@ -10,6 +10,7 @@
 | N       | Preview settlements               |
 | B       | Preview roads                     |
 | P       | Print tile ID at mouse to console |
+| Q       | See active quests                 |
 | + -     | Zoom                              |
 | H       | toggle movement                   |
 | F7      | set Idle animation                |
@@ -17,3 +18,4 @@
 | F9      | set Attack animation              |
 | F10     | set Jump animation                |
 | F11     | set Run animation                 |
+

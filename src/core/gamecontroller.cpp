@@ -24,6 +24,7 @@ namespace df {
 	const Player* GameController::getPlayerById(size_t playerId) const { return this->gameState.getPlayer(playerId); }
 
 
+	
 	void GameController::startTurn() {
 		Player* player = this->getCurrentPlayer();
 		if (!player) {
@@ -49,6 +50,13 @@ namespace df {
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
 		}
+
+		size_t currentPlayerId = gameState.getCurrentPlayerId();
+    	Player* player = gameState.getPlayer(currentPlayerId);
+		int woodCount = player->getResources(types::TileType::FOREST);
+
+        m_questsSystem->updateProgress("wood",woodCount);
+         
 	}
 
 

@@ -11,6 +11,7 @@
 #include "core/road.h"
 #include "entityMovement.h"
 #include "utils/worldNodeMapper.h"
+#include "systems/questsSystem.h"
 
 
 #include <fstream>
@@ -100,6 +101,15 @@ namespace df {
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
 		// Store RenderNofificationSystem in registry to use it in any other System.
 		registry->addSystem<RenderNotificationSystem>(&render.getRenderNotificationSystem());
+
+		auto* qSys = gameController->getQuestsSystem();
+		if (qSys) {
+			registry->addSystem<QuestsSystem>(qSys);
+			
+			qSys->init(&render.getRenderNotificationSystem());
+		}
+
+
 
 		if (!this->window || !this->window->getHandle()) {
 			std::cerr << "Invalid window or GLFWwindow handle!" << std::endl;
@@ -463,6 +473,17 @@ namespace df {
 			if (!pressedButton.empty()) {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
 				// TODO: add actions for button pressed in notifications
+			}
+			
+			if (pressedButton == "Next Quest") {
+				this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
+			} else if (pressedButton == "Claim") {
+				auto* quests = gameController->getQuestsSystem();
+				if (quests) {
+					int currentId = quests->getCurrentShowingQuestId(); 
+					quests->claimQuest(currentId);
+					render.renderNotificationSystem.reset(); 
+				}
 			}
 
 			if (render.renderHudSystem.onMouseButton(mouse, button, action))
