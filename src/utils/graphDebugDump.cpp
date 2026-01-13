@@ -25,7 +25,13 @@ namespace df::utils {
 				return path;
 			}
 
-			const char* home = std::getenv("HOME");
+#ifdef _WIN32
+			std::string envName = "USERPROFILE";
+#else
+			std::string envName = "HOME";
+#endif
+
+			const char* home = std::getenv(envName.c_str());
 			if (!home) {
 				throw std::runtime_error("HOME environment variable not set");
 			}
@@ -349,7 +355,7 @@ namespace df::utils {
 		}
 
 		fmt::println("[DEBUG graphDebugDump] Graph has {} tiles, {} edges, {} vertices",
-			graph.getTiles().size(), graph.getEdges().size(), graph.getVertices().size());
+					 graph.getTiles().size(), graph.getEdges().size(), graph.getVertices().size());
 
 		const auto tileIds = gatherTileIds(graph);
 		const auto edgeIds = gatherEdgeIds(graph);
@@ -440,7 +446,8 @@ namespace df::utils {
 			}
 		}
 
-		out << "\n" << minorSep << '\n';
+		out << "\n"
+			<< minorSep << '\n';
 		out << "EDGES\n";
 		out << minorSep << '\n';
 
@@ -471,7 +478,8 @@ namespace df::utils {
 			}
 		}
 
-		out << "\n" << minorSep << '\n';
+		out << "\n"
+			<< minorSep << '\n';
 		out << "VERTICES\n";
 		out << minorSep << '\n';
 
@@ -507,10 +515,9 @@ namespace df::utils {
 			}
 		}
 
-		out << '\n' << majorSep << '\n';
+		out << '\n'
+			<< majorSep << '\n';
 		out << "END OF DUMP\n";
 		out << majorSep << '\n';
 	}
 } // namespace df::utils
-
-

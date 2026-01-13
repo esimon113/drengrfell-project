@@ -115,7 +115,7 @@ namespace df::utils {
 			{0b111, 0b100, 0b111, 0b101, 0b111}, // 6
 			{0b111, 0b001, 0b001, 0b001, 0b001}, // 7
 			{0b111, 0b101, 0b111, 0b101, 0b111}, // 8
-			{0b111, 0b101, 0b111, 0b001, 0b111}	// 9
+			{0b111, 0b101, 0b111, 0b001, 0b111}	 // 9
 		}};
 
 		constexpr Glyph kMinusGlyph = {0b000, 0b000, 0b111, 0b000, 0b000};
@@ -184,8 +184,8 @@ namespace df::utils {
 
 	void writeGraphDebugImage(const Graph& graph, const std::filesystem::path& outputPath) {
 		fmt::println("[DEBUG graphDebugImage] Graph has {} tiles, {} edges, {} vertices",
-			graph.getTiles().size(), graph.getEdges().size(), graph.getVertices().size());
-			
+					 graph.getTiles().size(), graph.getEdges().size(), graph.getVertices().size());
+
 		if (graph.getMapWidth() == 0)
 			throw std::runtime_error("Cannot render graph debug image: map width is zero.");
 
@@ -207,10 +207,10 @@ namespace df::utils {
 
 			for (const auto& offset : vertexOffsets) {
 				glm::vec2 p = center + offset * hexRadiusPx;
-				minX = std::min(minX, p.x);
-				minY = std::min(minY, p.y);
-				maxX = std::max(maxX, p.x);
-				maxY = std::max(maxY, p.y);
+				minX = (std::min)(minX, p.x);
+				minY = (std::min)(minY, p.y);
+				maxX = (std::max)(maxX, p.x);
+				maxY = (std::max)(maxY, p.y);
 			}
 		}
 
@@ -303,4 +303,3 @@ namespace df::utils {
 			throw std::runtime_error(fmt::format("Failed to write graph debug image to {}", expandedPath.string()));
 	}
 } // namespace df::utils
-
