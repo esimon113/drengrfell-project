@@ -372,13 +372,19 @@ namespace df {
 		std::random_device rd;
 		std::mt19937 rng(rd());
 		std::uniform_int_distribution<int> dist(0, mapWidth * mapHeight - 1);
-		int randomTileID = dist(rng);
+		int randomTileID;
+		do {
+			randomTileID = dist(rng);
+		} while (map.getTile(randomTileID)->getType() == types::TileType::WATER);
 		
+
 		glm::vec2 startPosition = movementSystem.getTileWorldPosition(randomTileID);
 		fmt::println("Hero spawned at TileID: {} with coords: X: {}, Y: {}", randomTileID, startPosition.x, startPosition.y);
 
 		registry->positions.emplace(hero, startPosition);
 		registry->tileID.emplace(hero, randomTileID);
+
+
 
 		// 		// This is only for DEBUGGING purposes:
 		// #if defined(__unix__) || defined(__linux__)
