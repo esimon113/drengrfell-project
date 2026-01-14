@@ -1,5 +1,7 @@
 #include "edge.h"
 #include "fmt/base.h"
+#include <algorithm>
+#include <cctype>
 #include <map>
 #include <optional>
 #include <stdexcept>
@@ -9,6 +11,7 @@
 #include "hero.h"
 #include "renderNotification.h"
 #include "tile.h"
+#include "types.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
 #include "../systems/renderSnow.h"
@@ -30,6 +33,7 @@ namespace df {
 	void GameController::startTurn(Registry& registry) {
 		Player* player = this->getCurrentPlayer();
 		if (!player) {
+			fmt::println("Current Player does not exist!");
 			return;
 		}
 
@@ -187,35 +191,24 @@ namespace df {
 
 	void GameController::giveResourcesTo(Player& player) {
 		// resources are given to the player based on the settlements they have
-		// for testing purposes, players receive some resources every turn
-		// TODO: CHANGE how the quests are updated with the new values given to the player
-		bool test = true;
-		if (test) {
-			player.addResources(types::TileType::FOREST, 1);
-			m_questsSystem->updateProgress("wood", 1);
-			player.addResources(types::TileType::CLAY, 1);
-			m_questsSystem->updateProgress("clay", 1);
-			player.addResources(types::TileType::GRASS, 1);
-			m_questsSystem->updateProgress("sheep", 1);
-			player.addResources(types::TileType::FIELD, 1);
-			m_questsSystem->updateProgress("wheat", 1);
-			player.addResources(types::TileType::MOUNTAIN, 1);
-			m_questsSystem->updateProgress("stone", 1);
-
-			return;
-		}
 
 		for (size_t settlementId : player.getSettlementIds()) {
 			const Settlement* settlement = this->findSettlementById(settlementId);
 			if (!settlement) {
 				continue;
 			}
+			fmt::println("Try getting resources for settlement with id: {}", settlementId);
 
 			const auto tileIds = this->getSettlementTiles(*settlement);
 			for (size_t tileId : tileIds) {
 				const TileHandle tile = this->gameState.getMap().getTile(tileId);
+				fmt::println("Get TileId {}, tile has type {} and potency {}", tileId, std::string(types::tileTypeToString(tile->getType())), types::potencyToString(tile->getPotency()));
 				if (tile->givesResourceThisTurn(this->rng)) {
 					player.addResources(tile->getType(), 1); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
+
+					std::string type = types::tileTypeToString(tile->getType());
+					std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
+					this->m_questsSystem->updateProgress(type, 1);
 				}
 			}
 		}
@@ -608,30 +601,19 @@ namespace df {
 		std::vector<size_t> tileIds;
 		const Graph& map = this->gameState.getMap();
 		try {
-			// Find vertex by ID (not index)
-			VertexHandle vertex = nullptr;
-			for (size_t i = 0; i < map.getVertexCount(); ++i) {
-				if (map.getVertex(i)->getId() == settlement.getVertexId()) {
-					vertex = map.getVertex(i);
-					break;
-				}
-			}
-			if (!vertex) {
+			size_t vertexId = settlement.getVertexId();
+			auto vertex = map.findVertexById(vertexId);
+			auto vertexTiles = map.getVertexTiles(vertex);
+
+			if (!vertexTiles) {
 				return tileIds;
 			}
 
-			const VertexHandle vh = vertex;
-			auto tilesOpt = map.getVertexTiles(vh);
-			if (!tilesOpt)
-				return tileIds; // std::nullopt
-
-			for (const auto& tile : *tilesOpt) {
-				if (tile->getId() != SIZE_MAX) {
-					tileIds.push_back(tile->getId());
-				}
+			for (const auto& tile : *vertexTiles) {
+				tileIds.push_back(tile->getId());
 			}
 		} catch (const std::exception&) {
-		} // ignore invalid vertex
+		} // ignore invalid vert
 
 		return tileIds;
 	}

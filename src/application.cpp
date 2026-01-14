@@ -382,19 +382,18 @@ namespace df {
 		fmt::println("[DEBUG] regenerated world");
 		{
 			// only supports one player for now. TODO: if we do multplayer update this.
-			if (gameState->getPlayer(0)) {
-				Player* player = gameState->getPlayer(0);
-				player->reset();
-				player->addResources(types::TileType::FOREST, 100);	  // give player 100 wood
-				player->addResources(types::TileType::MOUNTAIN, 100); // give player 100 stone
-				player->addResources(types::TileType::FIELD, 50);	  // give player 50 grain
-			} else {
-				Player player{};
-				player.addResources(types::TileType::FOREST, 100);	 // give player 100 wood
-				player.addResources(types::TileType::MOUNTAIN, 100); // give player 100 stone
-				player.addResources(types::TileType::FIELD, 50);	 // give player 50 grain
-				gameState->addPlayer(player);
+			Player* player = this->gameState->getPlayer(0);
+			if (!player) {
+				gameState->addPlayer(Player{});
+				player = this->gameState->getPlayer(0);
 			}
+			player->reset();
+			player->addResources(types::TileType::FOREST, 10);	 // give player initial wood
+			player->addResources(types::TileType::CLAY, 10);	 // give player initial clay
+			player->addResources(types::TileType::MOUNTAIN, 10); // give player initial stone
+			player->addResources(types::TileType::FIELD, 10);	 // give player initial grain
+			player->addResources(types::TileType::GRASS, 10);	 // give player initial grass (cattle)
+
 			fmt::println("[DEBUG] resources distributed to player");
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
@@ -577,30 +576,6 @@ namespace df {
 					const Graph& map = this->gameState->getMap();
 
 					size_t currentPlayerId = this->gameState->getCurrentPlayerId();
-					//
-					// // TODO: This is just temporary...
-					// // Settlement: 1 WOOD, 1 CLAY, 1 GRASS
-					// const std::vector<int> settlementCost = {
-					// 	0, // EMPTY
-					// 	0, // WATER
-					// 	1, // FOREST (wood)
-					// 	1, // GRASS
-					// 	0, // MOUNTAIN
-					// 	0, // FIELD
-					// 	1, // CLAY
-					// 	0  // ICE
-					// };
-					// // Road: 1 WOOD
-					// const std::vector<int> roadCost = {
-					// 	0, // EMPTY
-					// 	0, // WATER
-					// 	1, // FOREST (wood)
-					// 	0, // GRASS
-					// 	0, // MOUNTAIN
-					// 	0, // FIELD
-					// 	0, // CLAY
-					// 	0  // ICE
-					// };
 
 					if (this->world.isSettlementPreviewActive) {
 						fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
@@ -700,7 +675,7 @@ namespace df {
 	}
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
-		if (width <= 0 || height <= 0)	// prevent crashing window under windows when minimizing
+		if (width <= 0 || height <= 0) // prevent crashing window under windows when minimizing
 			return;
 		mainMenu.onResizeCallback(windowParam, width, height);
 		render.onResizeCallback(windowParam, width, height);

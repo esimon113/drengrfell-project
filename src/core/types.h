@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include <tuple>
 
 
@@ -21,6 +22,27 @@ namespace df::types {
 		COUNT
 	};
 
+	inline std::string tileTypeToString(TileType t) {
+		switch (t) {
+		case TileType::WATER:
+			return "WATER";
+		case TileType::FOREST:
+			return "FOREST";
+		case TileType::GRASS:
+			return "GRASS";
+		case TileType::MOUNTAIN:
+			return "MOUNTAIN";
+		case TileType::FIELD:
+			return "FIELD";
+		case TileType::CLAY:
+			return "CLAY";
+		case TileType::ICE:
+			return "ICE";
+		default:
+			return "EMPTY";
+		};
+	}
+
 
 	// maybe like 10/25/50% chance to get resource per round?!
 	enum class TilePotency {
@@ -28,6 +50,20 @@ namespace df::types {
 		MEDIUM,
 		HIGH
 	};
+
+
+	inline std::string potencyToString(TilePotency p) {
+		switch (p) {
+		case TilePotency::LOW:
+			return "LOW";
+		case TilePotency::MEDIUM:
+			return "MEDIUM";
+		case TilePotency::HIGH:
+			return "HIGH";
+		default:
+			return "";
+		};
+	}
 
 
 	enum class TileDirection {
@@ -69,9 +105,9 @@ namespace df::types {
 	enum class GamePhase {
 		START,
 		CONFIG,
-        PLAY,
-        END
-    };
+		PLAY,
+		END
+	};
 
 	enum class HazardType {
 		NONE,
@@ -80,4 +116,4 @@ namespace df::types {
 		BEAR,
 		BLIZZARD
 	};
-}
+} // namespace df::types
