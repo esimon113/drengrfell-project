@@ -461,13 +461,14 @@ namespace df {
 				if (pressedButton == "Pay ressources") {
 					gameController->payForHazard(*registry);
 				}
-
+				// Quests
 				if (pressedButton == "Next Quest") {
 					this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
 				} else if (pressedButton == "Claim") {
 					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
 					gameController->claimQuestReward(currentId);
 				}
+				
 				return;	// notification clicked -> no further actions (including movement) for now
 			}
 
