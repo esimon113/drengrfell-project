@@ -7,10 +7,11 @@
 
 #include "gamecontroller.h"
 #include "hero.h"
+#include "renderNotification.h"
 #include "tile.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
-#include "renderNotification.h"
+#include "../systems/renderSnow.h"
 
 
 
@@ -56,6 +57,13 @@ namespace df {
 		size_t nextPlayerId = (this->gameState.getCurrentPlayerId() + 1) % playerCount;
 		this->gameState.setCurrentPlayerId(nextPlayerId);
 		this->gameState.setTurnCount(this->gameState.getTurnCount() + 1);
+
+
+		auto* snowSystem = registry.getSystem<df::RenderSnowSystem>();
+		if (snowSystem) {
+			snowSystem->increaseIntensity();
+			
+		}
 
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
@@ -134,12 +142,9 @@ namespace df {
 												   hazardDefinition.name,
 												   hazard.turnsLeft,
 												   hazardDefinition.skipCost * hazard.turnsLeft,
-												   hazardDefinition.skipRessourceStr
-											   ),
-											   {
-												   "Pay ressources",
-												   "Wait"
-											   });
+												   hazardDefinition.skipRessourceStr),
+											   {"Pay ressources",
+												"Wait"});
 			} else {
 				fmt::println("[Hazard] {} encounter ongoing. It is still active for {} turns", hazardDefinition.name, hazard.turnsLeft);
 				notification->showNotification("Ongoing hazard",
@@ -149,12 +154,9 @@ namespace df {
 												   hazardDefinition.name,
 												   hazard.turnsLeft,
 												   hazardDefinition.skipCost * hazard.turnsLeft,
-												   hazardDefinition.skipRessourceStr
-											   ),
-											   {
-													"Pay ressources",
-													"Wait"
-												});
+												   hazardDefinition.skipRessourceStr),
+											   {"Pay ressources",
+												"Wait"});
 			}
 		}
 	}
@@ -173,8 +175,7 @@ namespace df {
 												   "You have {} {}, but need {} to overcome the hazard",
 												   player->getResources(hazardDefinition.skipRessource),
 												   hazardDefinition.skipRessourceStr,
-												   hazard.turnsLeft * hazardDefinition.skipCost
-											   ),
+												   hazard.turnsLeft * hazardDefinition.skipCost),
 											   {"Continue"});
 				return;
 			}
@@ -379,6 +380,7 @@ namespace df {
 			this->gameState.addSettlement(newSettlement);
 			player->addSettlement(newSettlement->getId());
 
+			// this->chargeResourceCost(*player, newSettlement->getBuildingCost());
 			this->chargeResourceCost(*player, buildingCost);
 
 			m_questsSystem->updateProgress("settlement", 1);
@@ -584,7 +586,7 @@ namespace df {
 
 			this->chargeResourceCost(*player, buildingCost);
 
-			m_questsSystem->updateProgress("road",1);
+			m_questsSystem->updateProgress("road", 1);
 
 			fmt::println("[GameController] buildRoad succeeded: road {} built at edge {} for player {}", roadId, edgeId, playerId);
 			// Finish Tutorial if step is BUILD_ROAD
@@ -833,7 +835,8 @@ namespace df {
 		Player* player = this->getCurrentPlayer();
 		QuestsSystem* quests = this->getQuestsSystem();
 
-		if (!player || !quests) return;
+		if (!player || !quests)
+			return;
 
 		const Quest* q = quests->getQuestById(questId);
 

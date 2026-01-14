@@ -230,6 +230,19 @@ namespace df {
 		return roads;
 	}
 
+
+	// TODO: balance costs + make costs scale with total available resources
+	const std::vector<int>& GameState::getCurrentRoadCost() const {
+		return this->roadCosts;
+	}
+
+
+	const std::vector<int>& GameState::getCurrentSettlementCost() const {
+		return this->settlementCosts;
+	}
+
+
+
 	// Tutorial
 	void GameState::initTutorial() {
 		tutorialSteps.clear();
@@ -258,7 +271,7 @@ namespace df {
 
 		tutorialSteps.push_back({.id = TutorialStepId::MOVE_HERO,
 								 .text = "Use the left mouse button to click on a tile on the map to select it.\nAfter pressing the 'End Turn' button on the bottom right the hero will move there.\n"
-									"But beware, you might encounter a hazard.",
+										 "But beware, you might encounter a hazard.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});

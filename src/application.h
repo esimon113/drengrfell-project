@@ -47,7 +47,6 @@ namespace df {
 		// PhysicsSystem physics;
 
 		RenderSystem render;
-		RenderSnowSystem renderSnowSystem;
 
 		EntityMovementSystem movementSystem;
 		BuildingPreviewSystem buildingPreviewSystem;
