@@ -72,7 +72,8 @@ namespace df {
 		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get());
 		// Create main menu
 		self.mainMenu.init(self.window.get());
-		// for testing hero movement until we have a triggerpoint
+		// for testing
+		// movement until we have a triggerpoint
 		self.movementSystem = EntityMovementSystem::init(self.registry, *self.gameState);
 		// building preview system
 		self.buildingPreviewSystem = BuildingPreviewSystem::init(self.window.get(), self.registry, *self.gameState);
@@ -363,27 +364,8 @@ namespace df {
 		} else {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
-
-		Graph& map = gameState->getMap();
-		int mapWidth = map.getMapWidth();
-		int mapHeight = map.getTileCount() / mapWidth;
-		Entity hero = registry->animations.entities.front();
-
-		std::random_device rd;
-		std::mt19937 rng(rd());
-		std::uniform_int_distribution<int> dist(0, mapWidth * mapHeight - 1);
-		int randomTileID;
-		do {
-			randomTileID = dist(rng);
-		} while (map.getTile(randomTileID)->getType() == types::TileType::WATER);
-		
-
-		glm::vec2 startPosition = movementSystem.getTileWorldPosition(randomTileID);
-		fmt::println("Hero spawned at TileID: {} with coords: X: {}, Y: {}", randomTileID, startPosition.x, startPosition.y);
-
-		registry->positions.emplace(hero, startPosition);
-		registry->tileID.emplace(hero, randomTileID);
-
+		// lets the hero spawn with on a random Tile (water excluded)
+		spawnHero();
 
 
 		// 		// This is only for DEBUGGING purposes:
@@ -457,6 +439,43 @@ namespace df {
 			break;
 		case types::GamePhase::END:
 			break;
+		}
+	}
+
+	void Application::spawnHero() noexcept {
+		Entity hero;
+		if (!registry->animations.entities.empty()) {
+			hero = registry->animations.entities.front();
+		} else {
+			hero = registry->getPlayer();
+			registry->animations.emplace(hero);
+		}
+
+		Graph& map = gameState->getMap();
+		int mapWidth = map.getMapWidth();
+		int mapHeight = map.getTileCount() / mapWidth;
+
+		std::random_device rd;
+		std::mt19937 rng(rd());
+		std::uniform_int_distribution<int> dist(0, mapWidth * mapHeight - 1);
+		int randomTileID;
+		do {
+			randomTileID = dist(rng);
+		} while (map.getTile(randomTileID)->getType() == types::TileType::WATER);
+
+		glm::vec2 startPosition = movementSystem.getTileWorldPosition(randomTileID);
+		fmt::println("Hero spawned at TileID: {} with coords: X: {}, Y: {}", randomTileID, startPosition.x, startPosition.y);
+
+		if (registry->positions.has(hero)) {
+			registry->positions.get(hero) = startPosition;
+		} else {
+			registry->positions.emplace(hero, startPosition);
+		}
+
+		if (registry->tileID.has(hero)) {
+			registry->tileID.get(hero) = randomTileID;
+		} else {
+			registry->tileID.emplace(hero, randomTileID);
 		}
 	}
 
