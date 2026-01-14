@@ -627,6 +627,8 @@ namespace df {
 	}
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
+		if (width <= 0 || height <= 0)	// prevent crashing window under windows when minimizing
+			return;
 		mainMenu.onResizeCallback(windowParam, width, height);
 		render.onResizeCallback(windowParam, width, height);
 		render.renderHudSystem.onResizeCallback(windowParam, width, height);
