@@ -281,6 +281,7 @@ namespace df {
 
 		registry->animations.emplace(playerEntity);
 
+
 		victoryScreenClosed = false;
 		victoryScreenShown = false;
 		world.reset();
