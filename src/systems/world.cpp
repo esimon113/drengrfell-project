@@ -243,6 +243,19 @@ namespace df {
 				}
 			} 
 				break;
+			case GLFW_KEY_T:{
+				auto* notifications = registry->getSystem<RenderNotificationSystem>();
+				std::vector<std::string> buttons;
+				std::string keybindsList = 
+					"WASD: Move Map\n"
+					"Q: Active Quests\n"
+					"N: Build settlement\n"
+					"B: Build road\n"
+					"+/-: Zoom";
+				buttons = {"Close"};
+				notifications->showNotification("Keybinds",keybindsList,buttons);
+			}
+				break;
 			default:
 				break;
 			}

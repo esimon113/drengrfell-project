@@ -13,6 +13,8 @@ namespace df {
 	class RenderSnowSystem {
 	  public:
 		static RenderSnowSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept;
+		void increaseIntensity() { snowIntensity += 0.05f; }
+
 
 		void step(float deltaTime) noexcept;
 		void render(const glm::mat4& view, const glm::mat4& projection) noexcept;
@@ -33,6 +35,8 @@ namespace df {
 
 		int maxParticles;
 		int particlesCount;
+
+		float snowIntensity = 0.0f;
 
 		struct Particle {
 			glm::vec3 pos;

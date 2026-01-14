@@ -50,6 +50,9 @@ namespace df {
 			RenderNotificationSystem& getRenderNotificationSystem() noexcept {
 				return renderNotificationSystem;
 			}
+			RenderSnowSystem& getRenderSnowSystem() noexcept {
+				return renderSnowSystem;
+			}
 
 	  private:
 		Registry* registry;

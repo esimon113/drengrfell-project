@@ -12,9 +12,10 @@
 #include "entityMovement.h"
 // #include "utils/graphDebugDump.h"
 // #include "utils/graphDebugImage.h"
-#include "utils/worldNodeMapper.h"
 #include "systems/questsSystem.h"
+#include "utils/worldNodeMapper.h"
 
+#include <random>
 
 #include <fstream>
 #include <iostream>
@@ -71,7 +72,8 @@ namespace df {
 		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get());
 		// Create main menu
 		self.mainMenu.init(self.window.get());
-		// for testing hero movement until we have a triggerpoint
+		// for testing
+		// movement until we have a triggerpoint
 		self.movementSystem = EntityMovementSystem::init(self.registry, *self.gameState);
 		// building preview system
 		self.buildingPreviewSystem = BuildingPreviewSystem::init(self.window.get(), self.registry, *self.gameState);
@@ -103,11 +105,13 @@ namespace df {
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
 		// Store RenderNofificationSystem in registry to use it in any other System.
 		registry->addSystem<RenderNotificationSystem>(&render.getRenderNotificationSystem());
+		// Store RenderSnowSystem in registry to use it in any other System.
+		registry->addSystem<RenderSnowSystem>(&render.getRenderSnowSystem());
 
 		auto* qSys = gameController->getQuestsSystem();
 		if (qSys) {
 			registry->addSystem<QuestsSystem>(qSys);
-			
+
 			qSys->init(&render.getRenderNotificationSystem());
 		}
 
@@ -191,11 +195,25 @@ namespace df {
 				world.step(delta_time);
 				// physics.step(delta_time);
 				// physics.handleCollisions(delta_time);
-
 				if (gameState->isGameOver()) {
-					fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
-					this->reset();
-					gameState->setPhase(types::GamePhase::START);
+					window->makeContextCurrent();
+					glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+					glClear(GL_COLOR_BUFFER_BIT);
+					render.step(delta_time);
+					if (!victoryScreenShown) {
+						// Render victory notification
+						RenderNotificationSystem* notification = registry->getSystem<RenderNotificationSystem>();
+						std::string message = fmt::format("\nYou have played for {} rounds!\n\nYou build {} settlements and {} roads.\n",
+							gameState->getRoundNumber(), gameState->getSettlements().size(), gameState->getRoads().size());
+						notification->showNotification("You won the Game!", message, {"Back to Menu"});
+						fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
+						victoryScreenShown = true;
+					}
+					if (victoryScreenClosed) {
+						// reset application once victory screen was closed
+						this->reset();
+						gameState->setPhase(types::GamePhase::START);
+					}
 					break;
 				}
 
@@ -265,6 +283,8 @@ namespace df {
 		registry->tileID.emplace(playerEntity, 0);
 
 
+		victoryScreenClosed = false;
+		victoryScreenShown = false;
 		world.reset();
 		render.reset();
 	}
@@ -346,6 +366,9 @@ namespace df {
 		} else {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
+		// lets the hero spawn with on a random Tile (water excluded)
+		spawnHero();
+
 
 		Entity hero = registry->animations.entities.front();
 		registry->tileID.emplace(hero, 0);
@@ -417,6 +440,43 @@ namespace df {
 		}
 	}
 
+	void Application::spawnHero() noexcept {
+		Entity hero;
+		if (!registry->animations.entities.empty()) {
+			hero = registry->animations.entities.front();
+		} else {
+			hero = registry->getPlayer();
+			registry->animations.emplace(hero);
+		}
+
+		Graph& map = gameState->getMap();
+		int mapWidth = map.getMapWidth();
+		int mapHeight = map.getTileCount() / mapWidth;
+
+		std::random_device rd;
+		std::mt19937 rng(rd());
+		std::uniform_int_distribution<int> dist(0, mapWidth * mapHeight - 1);
+		int randomTileID;
+		do {
+			randomTileID = dist(rng);
+		} while (map.getTile(randomTileID)->getType() == types::TileType::WATER);
+
+		glm::vec2 startPosition = movementSystem.getTileWorldPosition(randomTileID);
+		fmt::println("Hero spawned at TileID: {} with coords: X: {}, Y: {}", randomTileID, startPosition.x, startPosition.y);
+
+		if (registry->positions.has(hero)) {
+			registry->positions.get(hero) = startPosition;
+		} else {
+			registry->positions.emplace(hero, startPosition);
+		}
+
+		if (registry->tileID.has(hero)) {
+			registry->tileID.get(hero) = randomTileID;
+		} else {
+			registry->tileID.emplace(hero, randomTileID);
+		}
+	}
+
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
 		types::GamePhase gamePhase = gameState->getPhase();
 
@@ -458,12 +518,16 @@ namespace df {
 				if (pressedButton == "Pay ressources") {
 					gameController->payForHazard(*registry);
 				}
-
+				// Quests
 				if (pressedButton == "Next Quest") {
 					this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
 				} else if (pressedButton == "Claim") {
 					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
 					gameController->claimQuestReward(currentId);
+				}
+
+				if (pressedButton == "Back to Menu") {
+					victoryScreenClosed = true;	// close victory screen and go back to menu
 				}
 				return;	// notification clicked -> no further actions (including movement) for now
 			}
@@ -471,20 +535,22 @@ namespace df {
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 			if (!movementSystem.getMovementState()) {
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
-					gameController->endTurn(*registry);
-					auto* step = this->gameState->getCurrentTutorialStep();
-					if (step && step->id == TutorialStepId::MOVE_HERO) {
-						this->gameState->completeCurrentTutorialStep();
+					if (!gameState->isGameOver()) {
+						gameController->endTurn(*registry);
+						auto* step = this->gameState->getCurrentTutorialStep();
+						if (step && step->id == TutorialStepId::MOVE_HERO) {
+							this->gameState->completeCurrentTutorialStep();
+						}
+						// TODO: For multiplayer check only for active player for hazards
+						Entity hero = registry->animations.entities.front();
+						if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
+							movementSystem.toggleMovementState();
+							gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
+							fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
+						}
+						gameController->startTurn(*registry); // Start turn for the next player
+						return;
 					}
-					// TODO: For multiplayer check only for active player for hazards
-					Entity hero = registry->animations.entities.front();
-					if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
-						movementSystem.toggleMovementState();
-						gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
-						fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
-					}
-					gameController->startTurn(*registry); // Start turn for the next player
-					return;
 				}
 			}
 
@@ -511,30 +577,30 @@ namespace df {
 					const Graph& map = this->gameState->getMap();
 
 					size_t currentPlayerId = this->gameState->getCurrentPlayerId();
-
-					// TODO: This is just temporary...
-					// Settlement: 1 WOOD, 1 CLAY, 1 GRASS
-					const std::vector<int> settlementCost = {
-						0, // EMPTY
-						0, // WATER
-						1, // FOREST (wood)
-						1, // GRASS
-						0, // MOUNTAIN
-						0, // FIELD
-						1, // CLAY
-						0  // ICE
-					};
-					// Road: 1 WOOD
-					const std::vector<int> roadCost = {
-						0, // EMPTY
-						0, // WATER
-						1, // FOREST (wood)
-						0, // GRASS
-						0, // MOUNTAIN
-						0, // FIELD
-						0, // CLAY
-						0  // ICE
-					};
+					//
+					// // TODO: This is just temporary...
+					// // Settlement: 1 WOOD, 1 CLAY, 1 GRASS
+					// const std::vector<int> settlementCost = {
+					// 	0, // EMPTY
+					// 	0, // WATER
+					// 	1, // FOREST (wood)
+					// 	1, // GRASS
+					// 	0, // MOUNTAIN
+					// 	0, // FIELD
+					// 	1, // CLAY
+					// 	0  // ICE
+					// };
+					// // Road: 1 WOOD
+					// const std::vector<int> roadCost = {
+					// 	0, // EMPTY
+					// 	0, // WATER
+					// 	1, // FOREST (wood)
+					// 	0, // GRASS
+					// 	0, // MOUNTAIN
+					// 	0, // FIELD
+					// 	0, // CLAY
+					// 	0  // ICE
+					// };
 
 					if (this->world.isSettlementPreviewActive) {
 						fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
@@ -543,9 +609,10 @@ namespace df {
 						if (vertexIdOpt.has_value()) {
 							fmt::println("Closest vertex found at {}", vertexIdOpt.value());
 							size_t vertexId = vertexIdOpt.value();
-							if (gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
+							if (this->gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
 								fmt::println("Player can build settlement at vertex {}", vertexId);
-								bool success = gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
+								const auto settlementCost = this->gameState->getCurrentSettlementCost();
+								bool success = this->gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
 
 								if (success) {
 									fmt::println("Settlement built at vertex {}", vertexId);
@@ -570,6 +637,7 @@ namespace df {
 
 							if (gameController->canBuildRoad(currentPlayerId, edgeId)) { // validate player can build road
 								fmt::println("Player can build road at edge {}", edgeId);
+								const auto roadCost = this->gameState->getCurrentRoadCost();
 								bool success = gameController->buildRoad(currentPlayerId, edgeId, RoadLevel::Path, roadCost);
 								if (success) {
 									fmt::println("Road built at edge {}", edgeId);

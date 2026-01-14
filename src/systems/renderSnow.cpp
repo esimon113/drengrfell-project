@@ -30,7 +30,14 @@ namespace df {
 		0.0f,
 	};
 
-	void RenderSnowSystem::reset() {}
+	void RenderSnowSystem::reset() {
+
+		for (int i = 0; i < maxParticles; i++) {
+			particlesContainer[i].life = -1.0f;
+		}
+		this->particlesCount = 0;
+		this->snowIntensity = 0.0f; 
+	}
 
 	RenderSnowSystem RenderSnowSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept {
 		RenderSnowSystem self;
@@ -124,7 +131,7 @@ namespace df {
 		float density = 0.5f; 
 		// Problem if delta time is too small -> accumulate the results for it to work correctly
 		static float spawnAccumulator = 0.0f; 
-		float particlesToSpawnFloat = screenWidth * density * deltaTime * 4.0f;
+		float particlesToSpawnFloat = screenWidth * density * deltaTime * 4.0f * snowIntensity;
 
 		spawnAccumulator += particlesToSpawnFloat;
 

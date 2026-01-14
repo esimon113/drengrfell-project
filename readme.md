@@ -4,6 +4,7 @@
 
 | Key     | Function                          |
 |---------|-----------------------------------|
+| T       | Toggle to see this table          |
 | F       | Toggle rendering of fog of war    |
 | G       | Regenerate map                    |
 | W A S D | Move map                          |

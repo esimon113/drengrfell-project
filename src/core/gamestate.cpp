@@ -230,6 +230,19 @@ namespace df {
 		return roads;
 	}
 
+
+	// TODO: balance costs + make costs scale with total available resources
+	const std::vector<int>& GameState::getCurrentRoadCost() const {
+		return this->roadCosts;
+	}
+
+
+	const std::vector<int>& GameState::getCurrentSettlementCost() const {
+		return this->settlementCosts;
+	}
+
+
+
 	// Tutorial
 	void GameState::initTutorial() {
 		tutorialSteps.clear();
