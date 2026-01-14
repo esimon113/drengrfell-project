@@ -96,7 +96,6 @@ namespace df {
 
 		Entity hero;
 
-		registry->positions.emplace(hero, glm::vec2(1.0f, 1.0f));
 		registry->scales.emplace(hero, glm::vec2(1.0f, 1.0f));
 		registry->collisionRadius.emplace(hero, 0.5f);
 
