@@ -1,6 +1,7 @@
 #pragma once
 #include "tiny_ecs.hpp"
 #include <utility>
+#include <nlohmann/json.hpp>
 
 /* Assumptions:
  * - The players are the only actors needing an AI
@@ -22,6 +23,7 @@ public:
 	virtual ~BTNode() = default;
 	virtual void init(Agent) {};
 	virtual BTState process(Agent) = 0;
+	virtual nlohmann::json serialize() const = 0;
 };
 
 
@@ -54,6 +56,17 @@ public:
 			}
 		}
 		return BTState::Success;
+	}
+
+	nlohmann::json serialize() const override {
+		nlohmann::json a = nlohmann::json::array();
+		for (const auto &child : children) {
+			a.emplace_back(child->serialize());
+		}
+		return {
+			{"kind", "sequence"},
+			{"children", a}
+		};
 	}
 
 private:
@@ -93,6 +106,17 @@ public:
 		return BTState::Failed;
 	}
 
+	nlohmann::json serialize() const override {
+		nlohmann::json a = nlohmann::json::array();
+		for (const auto &child : children) {
+			a.emplace_back(child->serialize());
+		}
+		return {
+			{"kind", "selector"},
+			{"children", a}
+		};
+	}
+
 private:
 	std::vector<std::shared_ptr<BTNode>> children;
 	std::map<Agent, unsigned> currentChildIndex;
@@ -122,6 +146,13 @@ public:
 		}
 	}
 
+	nlohmann::json serialize() const override {
+		return {
+			{"kind", "inverter"},
+			{"child", child->serialize()}
+		};
+	}
+
 private:
 	std::shared_ptr<BTNode> child;
 };
@@ -140,6 +171,13 @@ public:
 	BTState process(const Agent a) override {
 		child->process(a);
 		return BTState::Success;
+	}
+
+	nlohmann::json serialize() const override {
+		return {
+			{"kind", "succeeder"},
+			{"child", child->serialize()}
+		};
 	}
 
 private:
@@ -168,6 +206,13 @@ public:
 			default:
 				return BTState::Invalid;
 		}
+	}
+
+	nlohmann::json serialize() const override {
+		return {
+				{"kind", "untilFailureRepeater"},
+				{"child", child->serialize()}
+		};
 	}
 
 private:
@@ -200,6 +245,14 @@ public:
 		}
 	}
 
+	nlohmann::json serialize() const override {
+		return {
+			{"kind", "repeater"},
+			{"times", times},
+			{"child", child->serialize()}
+		};
+	}
+
 private:
 	std::shared_ptr<BTNode> child;
 	unsigned times = 1;
@@ -219,6 +272,13 @@ public:
 
 	BTState process(const Agent a) override {
 		return lambda(a);
+	}
+
+	nlohmann::json serialize() const override {
+		return {
+			{"kind", "lambda"},
+			{"lambda", "Work in progress"}
+		};
 	}
 private:
 	Lambda lambda = [](Agent){ return BTState::Success; };
