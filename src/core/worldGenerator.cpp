@@ -35,9 +35,9 @@ namespace df {
 		std::unordered_map<int, int> tileCount;
 		std::unordered_map<int, int> tileMax = {{static_cast<int>(types::TileType::ICE), 1}};
 
-		for (int row = rows - 1; row >= 0; row--) {
-			for (int column = 0; column < columns; column++) {
-				// Creating an island with two water wide borders
+		for (int row = 0; row < rows; row++) {
+    		for (int column = 0; column < columns; column++) {
+				// Creating an island with one water wide borders
 				if (row < 1 || column < 1 || row > rows - 2 || column > columns - 2) {
 					// make border tiles water
 					size_t id = row * columns + column;
