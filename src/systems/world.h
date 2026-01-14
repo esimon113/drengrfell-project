@@ -15,6 +15,7 @@ namespace df {
 
 		void step(const float delta) noexcept;
 		void completeCameraTutorial();
+		void centerCameraOnPoint(glm::vec2 pos);
 		void reset() noexcept;
 
 		inline bool shouldReset() noexcept { return m_reset; }

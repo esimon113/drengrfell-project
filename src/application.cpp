@@ -180,6 +180,9 @@ namespace df {
 			if (gamePhase == types::GamePhase::PLAY && previousGamePhase != types::GamePhase::PLAY) {
 				gameController->startTurn(*registry);
 				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
+				// Prepare the camera so it can be centered
+				world.step(0.0f);
+				world.centerCameraOnPoint(movementSystem.getTargetPosition());
 			}
 
 			switch (gamePhase) {
