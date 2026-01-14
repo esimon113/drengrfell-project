@@ -101,6 +101,12 @@ namespace df {
 		}
 	}
 
+	void WorldSystem::centerCameraOnPoint(glm::vec2 pos) {
+		Camera& cam = registry->cameras.get(registry->getCamera());
+		cam.position.x = pos.x - (0.5f * cam.viewWidth);
+		cam.position.y = pos.y - (0.5f * cam.viewHeight);
+	}
+
 
 	void WorldSystem::onKeyCallback(GLFWwindow* /* window */, int key, int /* scancode */, int action, int /* mods */) noexcept {
 		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
@@ -254,6 +260,13 @@ namespace df {
 					"+/-: Zoom";
 				buttons = {"Close"};
 				notifications->showNotification("Keybinds",keybindsList,buttons);
+			}
+				break;
+			case GLFW_KEY_SPACE: {
+				// TODO: for multiplayer get the hero of the current player
+				Entity e = registry->animations.entities.front();
+				auto pos = registry->positions.get(e);
+				centerCameraOnPoint(pos);
 			}
 				break;
 			default:
