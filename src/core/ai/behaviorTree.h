@@ -103,14 +103,15 @@ private:
 };
 
 
-class BTLambda final : public BTNode {
+class BTFunction final : public BTNode {
 public:
-	using Lambda = std::function<BTState(Agent)>;
-	BTLambda() = default;
-	explicit BTLambda(Lambda lambda) : lambda(std::move(lambda)) {}
+	using Function = std::function<BTState(Agent)>;
+	BTFunction() = default;
+	explicit BTFunction(std::string name, Function fn) : name(std::move(name)), fn(std::move(fn)) {}
 	void init(Agent) override;
 	BTState process(Agent a) override;
 	nlohmann::json serialize() const override;
 private:
-	Lambda lambda = [](Agent){ return BTState::Success; };
+	std::string name = "success";
+	Function fn = [](Agent){ return BTState::Success; };
 };

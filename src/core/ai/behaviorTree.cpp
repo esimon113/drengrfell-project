@@ -171,16 +171,16 @@ nlohmann::json BTRepeater::serialize() const {
 }
 
 
-void BTLambda::init(const Agent) {}
+void BTFunction::init(const Agent) {}
 
-BTState BTLambda::process(const Agent a) {
-	return lambda(a);
+BTState BTFunction::process(const Agent a) {
+	return fn(a);
 }
 
-nlohmann::json BTLambda::serialize() const {
+nlohmann::json BTFunction::serialize() const {
 	return {
-		{"kind", "lambda"},
-		{"lambda", "Work in progress"}
+		{"kind", "function"},
+		{"name", name}
 	};
 }
 
