@@ -12,8 +12,8 @@
 #include "entityMovement.h"
 // #include "utils/graphDebugDump.h"
 // #include "utils/graphDebugImage.h"
-#include "utils/worldNodeMapper.h"
 #include "systems/questsSystem.h"
+#include "utils/worldNodeMapper.h"
 
 
 #include <fstream>
@@ -107,7 +107,7 @@ namespace df {
 		auto* qSys = gameController->getQuestsSystem();
 		if (qSys) {
 			registry->addSystem<QuestsSystem>(qSys);
-			
+
 			qSys->init(&render.getRenderNotificationSystem());
 		}
 
@@ -468,7 +468,7 @@ namespace df {
 					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
 					gameController->claimQuestReward(currentId);
 				}
-				return;	// notification clicked -> no further actions (including movement) for now
+				return; // notification clicked -> no further actions (including movement) for now
 			}
 
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
@@ -514,30 +514,30 @@ namespace df {
 					const Graph& map = this->gameState->getMap();
 
 					size_t currentPlayerId = this->gameState->getCurrentPlayerId();
-
-					// TODO: This is just temporary...
-					// Settlement: 1 WOOD, 1 CLAY, 1 GRASS
-					const std::vector<int> settlementCost = {
-						0, // EMPTY
-						0, // WATER
-						1, // FOREST (wood)
-						1, // GRASS
-						0, // MOUNTAIN
-						0, // FIELD
-						1, // CLAY
-						0  // ICE
-					};
-					// Road: 1 WOOD
-					const std::vector<int> roadCost = {
-						0, // EMPTY
-						0, // WATER
-						1, // FOREST (wood)
-						0, // GRASS
-						0, // MOUNTAIN
-						0, // FIELD
-						0, // CLAY
-						0  // ICE
-					};
+					//
+					// // TODO: This is just temporary...
+					// // Settlement: 1 WOOD, 1 CLAY, 1 GRASS
+					// const std::vector<int> settlementCost = {
+					// 	0, // EMPTY
+					// 	0, // WATER
+					// 	1, // FOREST (wood)
+					// 	1, // GRASS
+					// 	0, // MOUNTAIN
+					// 	0, // FIELD
+					// 	1, // CLAY
+					// 	0  // ICE
+					// };
+					// // Road: 1 WOOD
+					// const std::vector<int> roadCost = {
+					// 	0, // EMPTY
+					// 	0, // WATER
+					// 	1, // FOREST (wood)
+					// 	0, // GRASS
+					// 	0, // MOUNTAIN
+					// 	0, // FIELD
+					// 	0, // CLAY
+					// 	0  // ICE
+					// };
 
 					if (this->world.isSettlementPreviewActive) {
 						fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
@@ -546,9 +546,10 @@ namespace df {
 						if (vertexIdOpt.has_value()) {
 							fmt::println("Closest vertex found at {}", vertexIdOpt.value());
 							size_t vertexId = vertexIdOpt.value();
-							if (gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
+							if (this->gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
 								fmt::println("Player can build settlement at vertex {}", vertexId);
-								bool success = gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
+								const auto settlementCost = this->gameState->getCurrentSettlementCost();
+								bool success = this->gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
 
 								if (success) {
 									fmt::println("Settlement built at vertex {}", vertexId);
@@ -573,6 +574,7 @@ namespace df {
 
 							if (gameController->canBuildRoad(currentPlayerId, edgeId)) { // validate player can build road
 								fmt::println("Player can build road at edge {}", edgeId);
+								const auto roadCost = this->gameState->getCurrentRoadCost();
 								bool success = gameController->buildRoad(currentPlayerId, edgeId, RoadLevel::Path, roadCost);
 								if (success) {
 									fmt::println("Road built at edge {}", edgeId);
