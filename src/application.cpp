@@ -369,10 +369,6 @@ namespace df {
 		// lets the hero spawn with on a random Tile (water excluded)
 		spawnHero();
 
-
-		Entity hero = registry->animations.entities.front();
-		registry->tileID.emplace(hero, 0);
-
 		// 		// This is only for DEBUGGING purposes:
 		// #if defined(__unix__) || defined(__linux__)
 		// 		fmt::println("Log map config");
