@@ -1,6 +1,35 @@
 #include "behaviorTree.h"
 using json = nlohmann::json;
 
+
+std::shared_ptr<BTNode> BTNode::deserialize(const json &j) {
+	std::string kind = j.value("kind", "");
+	if (kind == "sequence") {
+		auto ptr = std::make_shared<BTSequence>();
+		if (ptr->deserializeInplace(j)) return ptr;
+	} else if (kind == "selector") {
+		auto ptr = std::make_shared<BTSelector>();
+		if (ptr->deserializeInplace(j)) return ptr;
+	} else if (kind == "inverter") {
+		auto ptr = std::make_shared<BTInverter>();
+		if (ptr->deserializeInplace(j)) return ptr;
+	} else if (kind == "succeeder") {
+		auto ptr = std::make_shared<BTSucceeder>();
+		if (ptr->deserializeInplace(j)) return ptr;
+	} else if (kind == "untilFailureRepeater") {
+		auto ptr = std::make_shared<BTUntilFailureRepeater>();
+		if (ptr->deserializeInplace(j)) return ptr;
+	} else if (kind == "repeater") {
+		auto ptr = std::make_shared<BTRepeater>();
+		if (ptr->deserializeInplace(j)) return ptr;
+	} else if (kind == "function") {
+		auto ptr = std::make_shared<BTFunction>();
+		if (ptr->deserializeInplace(j)) return ptr;
+	}
+	return nullptr;
+}
+
+
 void BTSequence::init(const Agent a) {
 	this->currentChildIndex[a] = 0;
 	for (const auto &child : children) {
@@ -37,6 +66,16 @@ nlohmann::json BTSequence::serialize() const {
 	};
 }
 
+bool BTSequence::deserializeInplace(const nlohmann::json& j) {
+	nlohmann::json a = j.value("children", nlohmann::json::array());
+	if (!a.is_array()) return false; // TODO: Add proper error handling
+	for (auto& element : a) {
+		auto c = deserialize(element);
+		if (c == nullptr) return false;
+		this->children.push_back(c);
+	}
+	return true;
+}
 
 
 void BTSelector::init(const Agent a) {
@@ -75,6 +114,17 @@ nlohmann::json BTSelector::serialize() const {
 	};
 }
 
+bool BTSelector::deserializeInplace(const nlohmann::json& j) {
+	nlohmann::json a = j.value("children", nlohmann::json::array());
+	if (!a.is_array()) return false; // TODO: Add proper error handling
+	for (auto& element : a) {
+		auto c = deserialize(element);
+		if (c == nullptr) return false;
+		this->children.push_back(c);
+	}
+	return true;
+}
+
 
 void BTInverter::init(const Agent a) {
 	child->init(a);
@@ -100,6 +150,15 @@ nlohmann::json BTInverter::serialize() const {
 	};
 }
 
+bool BTInverter::deserializeInplace(const nlohmann::json& j) {
+	nlohmann::json o = j.value("child", nlohmann::json::object());
+	if (!o.is_object()) return false; // TODO: Add proper error handling
+	auto c = deserialize(o);
+	if (c == nullptr) return false;
+	this->child = c;
+	return true;
+}
+
 
 void BTSucceeder::init(const Agent a) {
 	child->init(a);
@@ -115,6 +174,15 @@ nlohmann::json BTSucceeder::serialize() const {
 		{"kind", "succeeder"},
 		{"child", child->serialize()}
 	};
+}
+
+bool BTSucceeder::deserializeInplace(const nlohmann::json& j) {
+	nlohmann::json o = j.value("child", nlohmann::json::object());
+	if (!o.is_object()) return false; // TODO: Add proper error handling
+	auto c = deserialize(o);
+	if (c == nullptr) return false;
+	this->child = c;
+	return true;
 }
 
 
@@ -140,6 +208,15 @@ nlohmann::json BTUntilFailureRepeater::serialize() const {
 		{"kind", "untilFailureRepeater"},
 		{"child", child->serialize()}
 	};
+}
+
+bool BTUntilFailureRepeater::deserializeInplace(const nlohmann::json& j) {
+	nlohmann::json o = j.value("child", nlohmann::json::object());
+	if (!o.is_object()) return false; // TODO: Add proper error handling
+	auto c = deserialize(o);
+	if (c == nullptr) return false;
+	this->child = c;
+	return true;
 }
 
 
@@ -170,6 +247,16 @@ nlohmann::json BTRepeater::serialize() const {
 	};
 }
 
+bool BTRepeater::deserializeInplace(const nlohmann::json& j) {
+	nlohmann::json o = j.value("child", nlohmann::json::object());
+	if (!o.is_object()) return false; // TODO: Add proper error handling
+	auto c = deserialize(o);
+	if (c == nullptr) return false;
+	this->child = c;
+	this->times = j.value("times", 1);
+	return true;
+}
+
 
 void BTFunction::init(const Agent) {}
 
@@ -184,3 +271,8 @@ nlohmann::json BTFunction::serialize() const {
 	};
 }
 
+bool BTFunction::deserializeInplace(const nlohmann::json& j) {
+	std::string n = j.value("name", "");
+	// TODO: Look in named function registry
+	return false;
+}
