@@ -262,6 +262,7 @@ namespace df {
 		gameState->setCurrentPlayerId(0);
 
 		registry->animations.emplace(playerEntity);
+		registry->tileID.emplace(playerEntity, 0);
 
 
 		world.reset();
@@ -345,6 +346,9 @@ namespace df {
 		} else {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
+
+		Entity hero = registry->animations.entities.front();
+		registry->tileID.emplace(hero, 0);
 
 		// 		// This is only for DEBUGGING purposes:
 		// #if defined(__unix__) || defined(__linux__)
@@ -595,8 +599,11 @@ namespace df {
 				fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
 				if (mapId >= 0 && !movementSystem.isEntityMoving()) {
-					movementSystem.setTargetPositionTileID(mapId);
-					movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
+					//movementSystem.setTargetPositionTileID(mapId);
+					//  TODO: For multiplayer use hero of active player
+					Entity hero = registry->animations.entities.front();
+					movementSystem.setTarget(mapId, hero);
+					//movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
 				}
 			}
 
