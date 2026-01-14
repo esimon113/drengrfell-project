@@ -90,13 +90,23 @@ namespace df {
 		targetSet = !targetSet;
 	}
 
-	void EntityMovementSystem::setTargetPosition(const glm::vec2& target) noexcept {
-		targetPosition = target;
-		targetSet = true;
-	}
+	void EntityMovementSystem::setTarget(const size_t id, Entity entity) noexcept {
+		glm::vec2& currentPos = registry->positions.get(entity);
+		size_t& currentPosTileId = registry->tileID.get(entity);
 
-	void EntityMovementSystem::setTargetPositionTileID(const size_t id) noexcept {
+		// Same tile has been selected twice -> deselect it by choosing the current hero position as the new target -> hero stands still
+		if (targetPositionTileID == id) {
+			targetPosition = currentPos;
+			targetSet = true;
+			targetPositionTileID = currentPosTileId;
+			fmt::println("Target deselected (same tile clicked twice)");
+			return;
+		}
+
+		targetPosition = getTileWorldPosition(id);
+		targetSet = true;
 		targetPositionTileID = id;
+		fmt::println("New target tile selected: {}", id);
 	}
 
 	glm::vec2 EntityMovementSystem::getTileWorldPosition(size_t tileIndex) const noexcept {

@@ -67,14 +67,22 @@ namespace df {
 		float camMaxX = worldWidth - cam.viewWidth + offset / 2;
 		float camMaxY = worldHeight - cam.viewHeight + offset;
 
-		if (input.up || scaledMouseY < edgeY)
+		if (input.up || scaledMouseY < edgeY) {
 			cam.position.y += cam.scrollSpeed * delta;
-		if (input.down || scaledMouseY > fbHeight - edgeY)
+			completeCameraTutorial();
+		}
+		if (input.down || scaledMouseY > fbHeight - edgeY) {
 			cam.position.y -= cam.scrollSpeed * delta;
-		if (input.left || scaledMouseX < edgeX)
+			completeCameraTutorial();
+		}
+		if (input.left || scaledMouseX < edgeX) {
 			cam.position.x -= cam.scrollSpeed * delta;
-		if (input.right || scaledMouseX > fbWidth - edgeX)
+			completeCameraTutorial();
+		}
+		if (input.right || scaledMouseX > fbWidth - edgeX) {
 			cam.position.x += cam.scrollSpeed * delta;
+			completeCameraTutorial();
+		}
 		if (cam.position.x > camMaxX)
 			cam.position.x = camMaxX;
 		if (cam.position.y > camMaxY)
@@ -83,6 +91,14 @@ namespace df {
 			cam.position.x = camMinX;
 		if (cam.position.y < camMinY)
 			cam.position.y = camMinY;
+	}
+
+	void WorldSystem::completeCameraTutorial() {
+		auto* step = this->gameState->getCurrentTutorialStep();
+		// Update Tutorial if step == moveCamera
+		if (step && step->id == TutorialStepId::MOVE_CAMERA) {
+			this->gameState->completeCurrentTutorialStep();
+		}
 	}
 
 
@@ -299,10 +315,10 @@ namespace df {
 		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 			// LMB gedrückt
 
-			auto [ scaledMouseX, scaledMouseY ] = calculateScaledMousePosition();
+			//auto [ scaledMouseX, scaledMouseY ] = calculateScaledMousePosition();
 			
-			mouseX = scaledMouseX;
-			mouseY = scaledMouseY;
+			//mouseX = scaledMouseX;
+			//mouseY = scaledMouseY;
 			
 			//fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 

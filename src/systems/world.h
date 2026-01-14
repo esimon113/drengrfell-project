@@ -14,6 +14,7 @@ namespace df {
 		void deinit() noexcept;
 
 		void step(const float delta) noexcept;
+		void completeCameraTutorial();
 		void reset() noexcept;
 
 		inline bool shouldReset() noexcept { return m_reset; }

@@ -258,7 +258,7 @@ namespace df {
 								 .renderBox = true});
 
 		tutorialSteps.push_back({.id = TutorialStepId::MOVE_CAMERA,
-								 .text = "Use WASD to move the camera. Just try it now!",
+								 .text = "Use WASD to move the camera or simply move the cursor to the edges of the window.\nJust try it now!",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
@@ -270,8 +270,8 @@ namespace df {
 								 .renderBox = true});
 
 		tutorialSteps.push_back({.id = TutorialStepId::MOVE_HERO,
-								 .text = "Use the left mouse button to click on a tile on the map to select it.\nAfter pressing the 'End Turn' button on the bottom right the hero will move there.\n"
-										 "But beware, you might encounter a hazard.",
+								 .text = "Use the right mouse button to click on a tile on the map to select and highlight it.\nAfter pressing the 'End Turn' button on the bottom right the hero will move there.\n"
+									"But beware, you might encounter a hazard.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});

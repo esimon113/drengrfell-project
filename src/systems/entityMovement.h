@@ -23,9 +23,7 @@ namespace df {
 		bool isTargetSet() const noexcept { return targetSet; }
 
 		glm::vec2 getTargetPosition() const noexcept { return targetPosition; }
-		void setTargetPosition(const glm::vec2& target) noexcept;
-
-		void setTargetPositionTileID(const size_t id) noexcept;
+		void setTarget(const size_t id, Entity entity) noexcept;
 
 	  private:
 		Registry* registry;
@@ -33,7 +31,7 @@ namespace df {
 		bool movementState = false;
 		bool moving = false;
 		bool targetSet = false;
-		glm::vec2 targetPosition;
+		glm::vec2 targetPosition = glm::vec2(0.0f);
 		size_t targetPositionTileID;
 	};
 } // namespace df
