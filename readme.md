@@ -55,11 +55,13 @@ The codebase is organized into modular directories following a clear separation 
 - **C++20 Compiler** (GCC 11+, Clang 13+, or MSVC 19.30+)
 - **OpenGL Drivers**
 
+Note that MacOS is currently not supported.
+
 ### Build & Run
 
 The project includes automation scripts for quick setup:
 
-- **Linux/macOS**:
+- **Linux**:
   ```bash
   chmod +x build-run.sh  # add execution permission
   ./build-run.sh
