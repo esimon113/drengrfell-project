@@ -1,4 +1,5 @@
 #include "player.h"
+#include "fmt/base.h"
 #include "types.h"
 
 #include <algorithm>
@@ -44,6 +45,7 @@ namespace df {
 
 	void Player::addResources(types::TileType type, int amount) {
 		resources[type] += amount;
+		fmt::println("Player received {} of {}", amount, types::tileTypeToString(type));
 	}
 
 	void Player::removeResources(types::TileType type, int amount) {
