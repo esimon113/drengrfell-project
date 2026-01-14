@@ -33,6 +33,16 @@ namespace df {
 				registry->tileID.emplace(entity, targetPositionTileID);
 			}
 
+			if (gameState) {
+				Player* playerPtr = gameState->getPlayer(0);
+				if (playerPtr) {
+					Player& player = *playerPtr;
+					player.exploreTile(targetPositionTileID);
+					gameState->getMap().setRenderUpdateRequested(true);
+					fmt::println("Tile {} discovered!", targetPositionTileID);
+				}
+			}
+
 			fmt::println("Hero destination: {},{} | Stored TileID: {}",
 						 getTileWorldPosition(targetPositionTileID).x,
 						 getTileWorldPosition(targetPositionTileID).y,
@@ -66,6 +76,16 @@ namespace df {
 				registry->tileID.get(entity) = targetPositionTileID;
 			} else {
 				registry->tileID.emplace(entity, targetPositionTileID);
+			}
+
+			if (gameState) {
+				Player* playerPtr = gameState->getPlayer(0);
+				if (playerPtr) {
+					Player& player = *playerPtr;
+					player.exploreTile(targetPositionTileID);
+					gameState->getMap().setRenderUpdateRequested(true);
+					fmt::println("Tile {} discovered!", targetPositionTileID);
+				}
 			}
 
 			fmt::println("Hero destination: {},{} | Stored TileID: {}",

@@ -35,9 +35,9 @@ namespace df {
 		std::unordered_map<int, int> tileCount;
 		std::unordered_map<int, int> tileMax = {{static_cast<int>(types::TileType::ICE), 1}};
 
-		for (int row = rows - 1; row >= 0; row--) {
-			for (int column = 0; column < columns; column++) {
-				// Creating an island with two water wide borders
+		for (int row = 0; row < rows; row++) {
+    		for (int column = 0; column < columns; column++) {
+				// Creating an island with one water wide borders
 				if (row < 1 || column < 1 || row > rows - 2 || column > columns - 2) {
 					// make border tiles water
 					size_t id = row * columns + column;
@@ -220,9 +220,26 @@ namespace df {
 				size_t id = row * columns + column;
 				tiles.emplace_back(id, type, types::TilePotency::MEDIUM);
 			}
-		}
+		}		
+        auto rng = std::default_random_engine(config.seed);
+        
+        for (int i = 2; i < static_cast<int>(types::TileType::COUNT); ++i) {
+            types::TileType searched = static_cast<types::TileType>(i);
+            
+            bool exists = std::any_of(tiles.begin(), tiles.end(), [searched](const Tile& t) { return t.getType() == searched; });
 
-		return tiles;
-	}
+            if (!exists) {
+                bool set = false;
+                while (!set) {
+                    int idx = std::uniform_int_distribution<int>(0, (int)tiles.size() - 1)(rng);
+					tiles[idx] = Tile(tiles[idx].getId(), searched, types::TilePotency::MEDIUM);
+					set = true;
+                    
+                }
+            }
+        }
+
+        return tiles;
+    }
 
 } // namespace df
