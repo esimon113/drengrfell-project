@@ -193,11 +193,25 @@ namespace df {
 				world.step(delta_time);
 				// physics.step(delta_time);
 				// physics.handleCollisions(delta_time);
-
 				if (gameState->isGameOver()) {
-					fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
-					this->reset();
-					gameState->setPhase(types::GamePhase::START);
+					window->makeContextCurrent();
+					glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+					glClear(GL_COLOR_BUFFER_BIT);
+					render.step(delta_time);
+					if (!victoryScreenShown) {
+						// Render victory notification
+						RenderNotificationSystem* notification = registry->getSystem<RenderNotificationSystem>();
+						std::string message = fmt::format("\nYou have played for {} rounds!\n\nYou build {} settlements and {} roads.\n",
+							gameState->getRoundNumber(), gameState->getSettlements().size(), gameState->getRoads().size());
+						notification->showNotification("You won the Game!", message, {"Back to Menu"});
+						fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
+						victoryScreenShown = true;
+					}
+					if (victoryScreenClosed) {
+						// reset application once victory screen was closed
+						this->reset();
+						gameState->setPhase(types::GamePhase::START);
+					}
 					break;
 				}
 
@@ -265,7 +279,8 @@ namespace df {
 
 		registry->animations.emplace(playerEntity);
 
-
+		victoryScreenClosed = false;
+		victoryScreenShown = false;
 		world.reset();
 		render.reset();
 	}
@@ -470,26 +485,32 @@ namespace df {
 					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
 					gameController->claimQuestReward(currentId);
 				}
-				return; // notification clicked -> no further actions (including movement) for now
+
+				if (pressedButton == "Back to Menu") {
+					victoryScreenClosed = true;	// close victory screen and go back to menu
+				}
+				return;	// notification clicked -> no further actions (including movement) for now
 			}
 
 			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 			if (!movementSystem.getMovementState()) {
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
-					gameController->endTurn(*registry);
-					auto* step = this->gameState->getCurrentTutorialStep();
-					if (step && step->id == TutorialStepId::MOVE_HERO) {
-						this->gameState->completeCurrentTutorialStep();
+					if (!gameState->isGameOver()) {
+						gameController->endTurn(*registry);
+						auto* step = this->gameState->getCurrentTutorialStep();
+						if (step && step->id == TutorialStepId::MOVE_HERO) {
+							this->gameState->completeCurrentTutorialStep();
+						}
+						// TODO: For multiplayer check only for active player for hazards
+						Entity hero = registry->animations.entities.front();
+						if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
+							movementSystem.toggleMovementState();
+							gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
+							fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
+						}
+						gameController->startTurn(*registry); // Start turn for the next player
+						return;
 					}
-					// TODO: For multiplayer check only for active player for hazards
-					Entity hero = registry->animations.entities.front();
-					if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
-						movementSystem.toggleMovementState();
-						gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
-						fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
-					}
-					gameController->startTurn(*registry); // Start turn for the next player
-					return;
 				}
 			}
 

@@ -67,6 +67,9 @@ namespace df {
 
 		bool test = false;
 
+		bool victoryScreenClosed = false;
+		bool victoryScreenShown = false;
+
 		// GameState
 		std::shared_ptr<GameState> gameState;
 		// GameController
