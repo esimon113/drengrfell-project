@@ -15,6 +15,7 @@
 #include "systems/questsSystem.h"
 #include "utils/worldNodeMapper.h"
 
+#include <random>
 
 #include <fstream>
 #include <iostream>
@@ -347,6 +348,22 @@ namespace df {
 		} else {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
+
+		Graph& map = gameState->getMap();
+		int mapWidth = map.getMapWidth();
+		int mapHeight = map.getTileCount() / mapWidth;
+		Entity hero = registry->animations.entities.front();
+
+		std::random_device rd;
+		std::mt19937 rng(rd());
+		std::uniform_int_distribution<int> dist(0, mapWidth * mapHeight - 1);
+		int randomTileID = dist(rng);
+		
+		glm::vec2 startPosition = movementSystem.getTileWorldPosition(randomTileID);
+		fmt::println("Hero spawned at TileID: {} with coords: X: {}, Y: {}", randomTileID, startPosition.x, startPosition.y);
+
+		registry->positions.emplace(hero, startPosition);
+		registry->tileID.emplace(hero, randomTileID);
 
 		// 		// This is only for DEBUGGING purposes:
 		// #if defined(__unix__) || defined(__linux__)
