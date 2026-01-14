@@ -5,32 +5,32 @@
 
 ## Technical Highlights
 
-*   **Graph-Based Game Logic**: The core engine manages a tri-partite graph where:
-    *   **Tiles** (Nodes) represent resource-generating biomes.
-    *   **Vertices** (Nodes) represent potential settlement locations.
-    *   **Edges** represent road connections.
+* **Graph-Based Game Logic**: The core engine manages a tri-partite graph where:
+    * **Tiles** (Nodes) represent resource-generating biomes.
+    * **Vertices** (Nodes) represent potential settlement locations.
+    * **Edges** represent road connections.
     This architecture enables efficient pathfinding and adjacency-based resource distribution.
-*   **Procedural World Generation**: Utilizes multi-octave **Perlin noise** for biome distribution and terrain elevation. The generation is configurable via JSON and includes custom-authored textures for diverse environments (forests, mountains, plains, ocean).
-*   **Entity Component System (ECS)**: Built on the **tinyecs** framework, the game decouples data (Components) from logic (Systems). This ensures high performance for batch rendering and complex state updates.
-*   **Custom Rendering Pipeline**: Developed using **OpenGL 3.3+**, featuring:
-    *   Custom GLSL shaders for **dynamic lighting, shadows, and Fog of War**.
-    *   **Texture Arrays** for efficient tile and sprite rendering.
-    *   Animated character sprites using frame-based animation systems.
-    *   Framebuffer-based effects for UI and post-processing.
-*   **Advanced Gameplay Systems**:
-    *   **Exploration**: Hero-based exploration with a persistent Fog of War state.
-    *   **Hazard System**: Environmental triggers that affect player economy and movement.
-    *   **Quest System**: A data-driven system for managing player objectives and progression.
+* **World Generation**: Provides two mechanisms for world generation. Either randomly assign tiles to the map and surround it with water, or utilize multi-octave **Perlin noise** for biome distribution and terrain elevation. The generation is configurable via JSON and includes custom-authored textures for diverse environments (forests, mountains, plains, ocean).
+* **Entity Component System (ECS)**: Built on the **tinyecs** framework, the game decouples data (Components) from logic (Systems). This ensures high performance for batch rendering and complex state updates.
+* **Custom Rendering Pipeline**: Developed using **OpenGL**, featuring:
+    * Custom GLSL shaders for **dynamic lighting, shadows, and Fog of War**.
+    * **Texture Arrays** for efficient tile and sprite rendering.
+    * Animated character, tile, and settlement sprites using frame-based animation systems.
+    * Framebuffer-based effects for UI and post-processing.
+* **Advanced Gameplay Systems**:
+    * **Exploration**: Hero-based exploration with a persistent Fog of War state.
+    * **Hazard System**: Environmental triggers that affect player economy and movement.
+    * **Quest System**: A data-driven system for managing player objectives and progression.
 
 
 ## Tech Stack
 
-*   **Language**: C++20
-*   **Graphics**: OpenGL, GLFW, GLM, gl3w
-*   **ECS Framework**: tinyecs
-*   **Audio**: miniaudio
-*   **Data & Assets**: nlohmann_json, tinyobjloader, stb_image, freetype (text rendering)
-*   **Build System**: CMake with automated dependency management via FetchContent.
+* **Language**: C++20
+* **Graphics**: OpenGL, GLFW, GLM, gl3w
+* **ECS Framework**: tinyecs
+* **Audio**: miniaudio
+* **Data & Assets**: nlohmann_json, tinyobjloader, stb_image, freetype (text rendering)
+* **Build System**: CMake with automated dependency management via FetchContent.
 
 
 ## Project Structure
@@ -51,9 +51,9 @@ The codebase is organized into modular directories following a clear separation 
 
 ### Prerequisites
 
-- **CMake** (v3.24 or higher)
-- **C++20 Compiler** (GCC 11+, Clang 13+, or MSVC 19.30+)
-- **OpenGL Drivers**
+* **CMake** (v3.24 or higher)
+* **C++20 Compiler** (GCC 11+, Clang 13+, or MSVC 19.30+)
+* **OpenGL Drivers**
 
 Note that MacOS is currently not supported.
 
@@ -61,12 +61,12 @@ Note that MacOS is currently not supported.
 
 The project includes automation scripts for quick setup:
 
-- **Linux**:
+* **Linux**:
   ```bash
   chmod +x build-run.sh  # add execution permission
   ./build-run.sh
   ```
-- **Windows**:
+* **Windows**:
   Run `build-run.bat` from the root directory.
 
 Alternatively, you can use standard CMake commands:
