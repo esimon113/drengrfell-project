@@ -142,6 +142,8 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/configMenu.cpp
 	${PROJECT_SOURCE_DIR}/src/core/hazards.cpp
 
+	${PROJECT_SOURCE_DIR}/src/core/ai/behaviorTree.cpp
+
 	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/questsSystem.cpp
@@ -174,7 +176,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
  	"src/systems/entityMovement.cpp"
- )
+)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 20
