@@ -397,7 +397,6 @@ namespace df {
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
 		types::GamePhase gamePhase = gameState->getPhase();
-		auto* step = this->gameState->getCurrentTutorialStep();
 		switch (gamePhase) {
 		case types::GamePhase::START:
 			mainMenu.onKeyCallback(windowParam, key, scancode, action, mods);
@@ -408,12 +407,6 @@ namespace df {
 		case types::GamePhase::PLAY:
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
 			render.onKeyCallback(windowParam, key, scancode, action, mods);
-			// Update Tutorial if step == moveCamera
-			if (step && step->id == TutorialStepId::MOVE_CAMERA) {
-				if (action == GLFW_PRESS && (key == GLFW_KEY_W || key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_D)) {
-					this->gameState->completeCurrentTutorialStep();
-				}
-			}
 			break;
 		case types::GamePhase::END:
 			break;
@@ -591,6 +584,9 @@ namespace df {
 
 					return; // ignore other mouse callbacks when placing buildings...
 				}
+			}
+
+			if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
 				glm::vec2 mouseCoords = glm::vec2(mouseX, mouseY);
 				auto extent = this->window->getWindowExtent();
 
@@ -604,6 +600,7 @@ namespace df {
 			}
 
 			world.onMouseButtonCallback(windowParam, button, action, mods);
+			render.onMouseButtonCallback(windowParam, button, action, mods);
 		} break;
 		case types::GamePhase::END:
 			break;

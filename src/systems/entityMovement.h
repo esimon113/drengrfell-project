@@ -30,6 +30,6 @@ namespace df {
 		bool movementState = false;
 		bool moving = false;
 		bool targetSet = false;
-		glm::vec2 targetPosition;
+		glm::vec2 targetPosition = glm::vec2(0.0f);
 	};
 } // namespace df

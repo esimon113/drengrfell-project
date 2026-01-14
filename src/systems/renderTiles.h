@@ -25,6 +25,7 @@ namespace df {
 		[[nodiscard]] Result<void, ResultError> updateMap() noexcept;
 
 		void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+		void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
 
 		// Render tile id. 0 = no tile
 		unsigned getTileIdAtPosition(int x, int y) noexcept;

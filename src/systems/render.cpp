@@ -105,4 +105,7 @@ namespace df {
 	void RenderSystem::onKeyCallback(GLFWwindow* pwindow, int key, int scancode, int action, int mods) noexcept {
 		this->renderTilesSystem.onKeyCallback(pwindow, key, scancode, action, mods);
 	}
+	void RenderSystem::onMouseButtonCallback(GLFWwindow* pwindow, int button, int action, int mods) noexcept {
+		this->renderTilesSystem.onMouseButtonCallback(pwindow, button, action, mods);
+	}
 } // namespace df
