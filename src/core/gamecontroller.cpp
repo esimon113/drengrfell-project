@@ -11,6 +11,7 @@
 #include "tile.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
+#include "../systems/renderSnow.h"
 
 
 
@@ -56,6 +57,14 @@ namespace df {
 		size_t nextPlayerId = (this->gameState.getCurrentPlayerId() + 1) % playerCount;
 		this->gameState.setCurrentPlayerId(nextPlayerId);
 		this->gameState.setTurnCount(this->gameState.getTurnCount() + 1);
+
+
+		auto* snowSystem = registry.getSystem<df::RenderSnowSystem>();
+		if (snowSystem) {
+			float intensidad = static_cast<float>(rand() % 2); 
+			snowSystem->setIntensity(intensidad);
+			
+		}
 
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);

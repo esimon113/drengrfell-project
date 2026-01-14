@@ -124,7 +124,7 @@ namespace df {
 		float density = 0.5f; 
 		// Problem if delta time is too small -> accumulate the results for it to work correctly
 		static float spawnAccumulator = 0.0f; 
-		float particlesToSpawnFloat = screenWidth * density * deltaTime * 4.0f;
+		float particlesToSpawnFloat = screenWidth * density * deltaTime * 4.0f * snowIntensity;
 
 		spawnAccumulator += particlesToSpawnFloat;
 
