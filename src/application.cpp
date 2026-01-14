@@ -483,15 +483,6 @@ namespace df {
 					Entity hero = registry->animations.entities.front();
 					if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
 						movementSystem.toggleMovementState();
-
-						glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
-						auto extent = this->window->getWindowExtent();
-
-						auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
-						auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
-						// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
-
-						movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
 						gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
 						fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
 					}
