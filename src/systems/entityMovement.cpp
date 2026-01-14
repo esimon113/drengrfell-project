@@ -26,6 +26,17 @@ namespace df {
 			movementState = false;
 			targetSet = false;
 			scale.x = 1.0f;
+
+			if (registry->tileID.has(entity)) {
+				registry->tileID.get(entity) = targetPositionTileID;
+			} else {
+				registry->tileID.emplace(entity, targetPositionTileID);
+			}
+
+			fmt::println("Hero destination: {},{} | Stored TileID: {}",
+						 getTileWorldPosition(targetPositionTileID).x,
+						 getTileWorldPosition(targetPositionTileID).y,
+						 registry->tileID.get(entity));
 			return;
 		}
 
@@ -50,6 +61,18 @@ namespace df {
 			moving = false;
 			movementState = false;
 			targetSet = false;
+
+			if (registry->tileID.has(entity)) {
+				registry->tileID.get(entity) = targetPositionTileID;
+			} else {
+				registry->tileID.emplace(entity, targetPositionTileID);
+			}
+
+			fmt::println("Hero destination: {},{} | Stored TileID: {}",
+						 getTileWorldPosition(targetPositionTileID).x,
+						 getTileWorldPosition(targetPositionTileID).y,
+						 registry->tileID.get(entity));
+
 		} else {
 			if (animComp.currentType == Hero::AnimationType::Idle) {
 				animComp.currentType = Hero::AnimationType::Run;
@@ -70,6 +93,10 @@ namespace df {
 	void EntityMovementSystem::setTargetPosition(const glm::vec2& target) noexcept {
 		targetPosition = target;
 		targetSet = true;
+	}
+
+	void EntityMovementSystem::setTargetPositionTileID(const size_t id) noexcept {
+		targetPositionTileID = id;
 	}
 
 	glm::vec2 EntityMovementSystem::getTileWorldPosition(size_t tileIndex) const noexcept {

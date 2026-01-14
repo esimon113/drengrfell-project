@@ -17,12 +17,15 @@ namespace df {
 
 		void toggleMovementState() noexcept;
 		void toggleTargetSet() noexcept;
+
 		bool getMovementState() noexcept { return movementState; };
 		bool isEntityMoving() const noexcept { return moving; }
 		bool isTargetSet() const noexcept { return targetSet; }
-		glm::vec2 getTargetPosition() const noexcept { return targetPosition; }
 
+		glm::vec2 getTargetPosition() const noexcept { return targetPosition; }
 		void setTargetPosition(const glm::vec2& target) noexcept;
+
+		void setTargetPositionTileID(const size_t id) noexcept;
 
 	  private:
 		Registry* registry;
@@ -31,5 +34,6 @@ namespace df {
 		bool moving = false;
 		bool targetSet = false;
 		glm::vec2 targetPosition;
+		size_t targetPositionTileID;
 	};
 } // namespace df
