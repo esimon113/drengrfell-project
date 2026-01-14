@@ -220,9 +220,26 @@ namespace df {
 				size_t id = row * columns + column;
 				tiles.emplace_back(id, type, types::TilePotency::MEDIUM);
 			}
-		}
+		}		
+        auto rng = std::default_random_engine(config.seed);
+        
+        for (int i = 2; i < static_cast<int>(types::TileType::COUNT); ++i) {
+            types::TileType searched = static_cast<types::TileType>(i);
+            
+            bool exists = std::any_of(tiles.begin(), tiles.end(), [searched](const Tile& t) { return t.getType() == searched; });
 
-		return tiles;
-	}
+            if (!exists) {
+                bool set = false;
+                while (!set) {
+                    int idx = std::uniform_int_distribution<int>(0, (int)tiles.size() - 1)(rng);
+					tiles[idx] = Tile(tiles[idx].getId(), searched, types::TilePotency::MEDIUM);
+					set = true;
+                    
+                }
+            }
+        }
+
+        return tiles;
+    }
 
 } // namespace df
