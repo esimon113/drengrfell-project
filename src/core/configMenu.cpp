@@ -436,10 +436,12 @@ namespace df {
 	void ConfigMenu::capMapsize() noexcept {
 		if (activeInput == InputField::WIDTH || activeInput == InputField::HEIGHT) {
 			int value = std::stoi(inputString);
-			if (value < 1) {
+			if (value < 10) {
 				warningTimer = 2.0f;
-				warningMessage = "Map size too small, must be >= 1";
-				inputString = "1";
+				warningMessage = "Map size too small, must be >= 10. Enter new value or click start to start with a map size of 10.";
+				//inputString = "1";
+			} else if (value >= 10 && value < 100) {
+				warningTimer = 0.0f;
 			}
 			if (value > 100) {
 				warningTimer = 2.0f;
@@ -492,6 +494,10 @@ namespace df {
 					fmt::println("Seed: {}", value);
 					break;
 				case InputField::WIDTH:
+					// minimum map size >= 10
+					if (value < 10) {
+						value = 10;
+					}
 					worldWidth = value;
 					fmt::println("width: {}", value);
 					// TEMPORARY while map is only quadratic
@@ -499,6 +505,10 @@ namespace df {
 					fmt::println("height: {}", value);
 					break;
 				case InputField::HEIGHT:
+					// minimum map size >= 10
+					if (value < 10) {
+						value = 10;
+					}
 					worldHeight = value;
 					fmt::println("height: {}", value);
 					break;
