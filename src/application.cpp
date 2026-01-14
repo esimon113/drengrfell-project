@@ -471,6 +471,7 @@ namespace df {
 		} else {
 			registry->tileID.emplace(hero, randomTileID);
 		}
+		movementSystem.setTarget(randomTileID, hero);
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
