@@ -61,8 +61,7 @@ namespace df {
 
 		auto* snowSystem = registry.getSystem<df::RenderSnowSystem>();
 		if (snowSystem) {
-			float intensidad = static_cast<float>(rand() % 2); 
-			snowSystem->setIntensity(intensidad);
+			snowSystem->increaseIntensity();
 			
 		}
 

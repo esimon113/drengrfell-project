@@ -13,7 +13,7 @@ namespace df {
 	class RenderSnowSystem {
 	  public:
 		static RenderSnowSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept;
-		void setIntensity(float intensity) { snowIntensity = intensity; }
+		void increaseIntensity() { snowIntensity += 0.1f; }
 
 		void step(float deltaTime) noexcept;
 		void render(const glm::mat4& view, const glm::mat4& projection) noexcept;
