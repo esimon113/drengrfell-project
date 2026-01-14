@@ -599,6 +599,7 @@ namespace df {
 				fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
 				if (mapId >= 0 && !movementSystem.isEntityMoving()) {
+					movementSystem.setTargetPositionTileID(mapId);
 					movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
 				}
 			}

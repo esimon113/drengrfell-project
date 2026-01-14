@@ -14,11 +14,8 @@ namespace df {
 	class Hero {
 	  public:
 		Hero();
-		Hero(int tileID, const glm::vec2& coords, const std::string& textureRef, int baseRange);
+		Hero(size_t tileID, const glm::vec2& coords, const std::string& textureRef, int baseRange);
 
-		// position on map
-		void setTileID(int id);
-		int getTileID() const;
 
 		void setCoords(const glm::vec2& pos);
 		const glm::vec2& getCoords() const;
@@ -34,9 +31,8 @@ namespace df {
 		void setAnimation(const std::string& name, const std::vector<int>& frames, float frameDuration, bool loop);
 		void startAnimation(const std::string& name);
 		void updateAnimation(float deltaTime);
-
-
-
+		void setTileID(size_t id);
+		size_t getTileID() const;
 
 		enum class AnimationType {
 			Idle,
@@ -55,7 +51,7 @@ namespace df {
 		};
 
 	  private:
-		int tileID = -1;
+		size_t tileID;
 		glm::vec2 coords{0.f, 0.f};
 		std::string textureRef;
 		int baseRange = 3;
