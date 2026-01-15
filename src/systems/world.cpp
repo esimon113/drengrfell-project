@@ -216,6 +216,7 @@ namespace df {
 					"N: Build settlement\n"
 					"B: Build road\n"
 					"T: Open trade menu\n"
+					"C: See costs\n"
 					"+/-: Zoom\n"
 					"Space: Center camera to hero";
 				buttons = {"Close"};
@@ -223,6 +224,23 @@ namespace df {
 				if (step && step->id == TutorialStepId::OPEN_KEYBINDS_MENU) {
 					this->gameState->completeCurrentTutorialStep();
 				}
+			}
+				break;
+			
+			case GLFW_KEY_C:{
+				auto* notifications = registry->getSystem<RenderNotificationSystem>();
+				std::vector<std::string> buttons;
+				std::string costsList = 
+					"SETTLEMENT\n"
+					"  - 5 wood\n"
+					"  - 5 clay\n"
+					"  - 3 grain\n"
+					"  - 3 grass\n"
+					"ROAD\n"
+					"  - 1 wood\n"
+					"  - 1 clay";
+				buttons = {"Close"};
+				notifications->showNotification("COSTS", costsList, buttons);
 			}
 				break;
 			case GLFW_KEY_G: {
