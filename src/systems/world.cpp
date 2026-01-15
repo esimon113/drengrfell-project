@@ -212,6 +212,7 @@ namespace df {
 					"Q: Active quests\n"
 					"N: Build settlement\n"
 					"B: Build road\n"
+					"T: Open trade menu\n"
 					"+/-: Zoom\n"
 					"Space: Center camera to hero";
 				buttons = {"Close"};
