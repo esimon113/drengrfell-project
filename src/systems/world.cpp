@@ -199,7 +199,10 @@ namespace df {
 			} 
 				break;
 			case GLFW_KEY_T: {
-				// TODO: add trade action
+
+				if (tradeCallback) {
+					tradeCallback();
+				}
 				if (step && step->id == TutorialStepId::OPEN_TRADE_MENU) {
 					this->gameState->completeCurrentTutorialStep();
 				}

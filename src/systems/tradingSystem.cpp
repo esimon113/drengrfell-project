@@ -13,7 +13,7 @@ namespace df {
 			return;
 
 		isTradingActive = true;
-		selectedResource.clear(); // Phase 1
+		selectedResource.clear();
 
 		showBuyResourcePopup();
 	}
@@ -35,57 +35,77 @@ namespace df {
 
 		notificationSystem->showNotification(
 			fmt::format("Buying {}", selectedResource),
-			"Which resource do you want to pay with?",
+			fmt::format(
+				"Which resource do you want to pay with?\n"
+				"Pay {} to receive {} {}.",
+				payAmount, gainAmount, selectedResource),
 			payOptions);
-		}
+	}
 
 	void TradingSystem::handleOptionClicked(const std::string& resource) {
-			if (!isTradingActive || !currentPlayer)
-				return;
+		if (!isTradingActive || !currentPlayer)
+			return;
 
-			if (selectedResource.empty()) {
-				selectedResource = resource;
-				showPayResourcePopup();
-			} else {
-				executeTrade(resource);
-				isTradingActive = false;
-				selectedResource.clear();
-			}
+		if (selectedResource.empty()) {
+			selectedResource = resource;
+			showPayResourcePopup();
+		} else {
+			executeTrade(resource);
+			isTradingActive = false;
+			selectedResource.clear();
 		}
+	}
 
 
 	void TradingSystem::executeTrade(const std::string& payResource) {
-			bool success = false;
+		bool success = false;
 
-			if (payResource == "Wood") {
-				success = currentPlayer->removeResource(types::TileType::FOREST, payAmount);
-			} else if (payResource == "Clay") {
-				success = currentPlayer->removeResource(types::TileType::CLAY, payAmount);
-			} else if (payResource == "Stone") {
-				success = currentPlayer->removeResource(types::TileType::MOUNTAIN, payAmount);
-			} else if (payResource == "Grain") {
-				success = currentPlayer->removeResource(types::TileType::FIELD, payAmount);
-			} else if (payResource == "Cattle") {
-				success = currentPlayer->removeResource(types::TileType::GRASS, payAmount);
+		if (payResource == "Wood") {
+			if (currentPlayer->getResources(types::TileType::FOREST) >= payAmount) {
+				currentPlayer->removeResources(types::TileType::FOREST, payAmount);
+				success = true;
 			}
-
-			if (!success) {
-				fmt::println("Not enough {} to trade!", payResource);
-				return;
+		} else if (payResource == "Stone") {
+			if (currentPlayer->getResources(types::TileType::MOUNTAIN) >= payAmount) {
+				currentPlayer->removeResources(types::TileType::MOUNTAIN, payAmount);
+				success = true;
 			}
-
-			if (selectedResource == "Wood")
-				currentPlayer->addResource(types::TileType::FOREST, gainAmount);
-			if (selectedResource == "Clay")
-				currentPlayer->addResource(types::TileType::CLAY, gainAmount);
-			if (selectedResource == "Stone")
-				currentPlayer->addResource(types::TileType::MOUNTAIN, gainAmount);
-			if (selectedResource == "Grain")
-				currentPlayer->addResource(types::TileType::FIELD, gainAmount);
-			if (selectedResource == "Cattle")
-				currentPlayer->addResource(types::TileType::GRASS, gainAmount);
-
-			fmt::println("Traded {} {} for {} {}", payAmount, payResource, gainAmount, selectedResource);
+		} else if (payResource == "Clay") {
+			if (currentPlayer->getResources(types::TileType::CLAY) >= payAmount) {
+				currentPlayer->removeResources(types::TileType::CLAY, payAmount);
+				success = true;
+			}
+		} else if (payResource == "Grass") {
+			if (currentPlayer->getResources(types::TileType::GRASS) >= payAmount) {
+				currentPlayer->removeResources(types::TileType::GRASS, payAmount);
+				success = true;
+			}
+		} else if (payResource == "Grain") {
+			if (currentPlayer->getResources(types::TileType::FIELD) >= payAmount) {
+				currentPlayer->removeResources(types::TileType::FIELD, payAmount);
+				success = true;
+			}
 		}
 
+		if (!success) {
+			fmt::println("Not enough {} to trade!", payResource);
+			selectedResource.clear();
+			showBuyResourcePopup();
+			return;
+		}
+
+		if (selectedResource == "Wood")
+			currentPlayer->addResources(types::TileType::FOREST, gainAmount);
+		else if (selectedResource == "Stone")
+			currentPlayer->addResources(types::TileType::MOUNTAIN, gainAmount);
+		else if (selectedResource == "Clay")
+			currentPlayer->addResources(types::TileType::CLAY, gainAmount);
+		else if (selectedResource == "Grass")
+			currentPlayer->addResources(types::TileType::GRASS, gainAmount);
+		else if (selectedResource == "Grain")
+			currentPlayer->addResources(types::TileType::FIELD, gainAmount);
+
+		fmt::println("Traded {} {} for {} {}", payAmount, payResource, gainAmount, selectedResource);
 	}
+
+} // namespace df

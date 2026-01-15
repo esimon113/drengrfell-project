@@ -19,8 +19,8 @@ namespace df {
 		void showBuyResourcePopup();
 		void showPayResourcePopup();
 
-		void handleOptionClicked(const std::string& resource) {
-		void executeTrade(const std::string& payResource)
+		void handleOptionClicked(const std::string& resource);
+		void executeTrade(const std::string& payResource);
 
 	  private:
 		RenderNotificationSystem* notificationSystem;
@@ -33,7 +33,6 @@ namespace df {
 		std::string selectedResource;
 
 		std::vector<std::string> allResources = {
-			"Wood", "Stone", "Clay", "Grass", "Grain"};
+			"Wood", "Stone", "Clay", "Grass", "Grain", "Cancle"};
 	};
 } // namespace df
-

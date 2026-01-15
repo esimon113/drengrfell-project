@@ -5,6 +5,7 @@
 #include "core/gamestate.h"
 #include "core/mainMenu.h"
 #include "worldGeneratorConfig.h"
+#include "tradingSystem.h"
 #include <common.h>
 #include <memory>
 #include <utils/commandLineOptions.h>
@@ -50,6 +51,7 @@ namespace df {
 
 		EntityMovementSystem movementSystem;
 		BuildingPreviewSystem buildingPreviewSystem;
+		TradingSystem tradingSystem;
 
 		void reset() noexcept;
 
