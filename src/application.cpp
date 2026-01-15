@@ -70,7 +70,7 @@ namespace df {
 		self.audioEngine = std::make_unique<AudioSystem>(self.eventBus);
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
-		self.gameController = std::make_shared<GameController>(*self.gameState);
+		self.gameController = std::make_shared<GameController>(*self.gameState, *self.registry);
 		self.world = WorldSystem::init(self.window.get(), self.registry, self.audioEngine.get(), *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get());

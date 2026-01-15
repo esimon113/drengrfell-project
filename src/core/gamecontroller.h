@@ -21,8 +21,8 @@ namespace df {
 	  public:
 		GameController() = default;
 		~GameController() = default;
-		explicit GameController(GameState& state)
-			: gameState(state), rng(std::random_device{}()) {
+		explicit GameController(GameState& state, Registry& registry)
+			: gameState(state), reg(registry), rng(std::random_device{}()) {
 				m_questsSystem = std::make_unique<QuestsSystem>();
 			};
 
@@ -55,6 +55,7 @@ namespace df {
 
 	  private:
 		GameState& gameState;
+		Registry& reg;
 		std::mt19937 rng;
 		std::unique_ptr<QuestsSystem> m_questsSystem;
 
