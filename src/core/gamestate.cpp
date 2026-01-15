@@ -241,8 +241,6 @@ namespace df {
 		return this->settlementCosts;
 	}
 
-
-
 	// Tutorial
 	void GameState::initTutorial() {
 		tutorialSteps.clear();
@@ -263,14 +261,21 @@ namespace df {
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
+		tutorialSteps.push_back({.id = TutorialStepId::CENTER_CAMERA,
+								 .text = "Use 'Space' to center the camera onto the hero.\nThat way you can always find him no matter where you are!",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+
 		tutorialSteps.push_back({.id = TutorialStepId::ZOOM_CAMERA,
 								 .text = "Use the mousewheel to zoom in/out.\nThis is also possible with +/-.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
-		tutorialSteps.push_back({.id = TutorialStepId::OPEN_KEYBINDS_MENU,
-								 .text = "You can see all the possible keybinds by pressing the 'K' button.\n ",
+		tutorialSteps.push_back({.id = TutorialStepId::MOVE_HERO,
+								 .text = "Use the right mouse button to click on a tile on the map to select and highlight it.\nAfter pressing the 'End Turn' button on the bottom right the hero will move there.\n"
+										 "But beware, you might encounter a hazard.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
@@ -297,9 +302,9 @@ namespace df {
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
-		tutorialSteps.push_back({.id = TutorialStepId::MOVE_HERO,
-								 .text = "Use the right mouse button to click on a tile on the map to select and highlight it.\nAfter pressing the 'End Turn' button on the bottom right the hero will move there.\n"
-									"But beware, you might encounter a hazard.",
+		
+		tutorialSteps.push_back({.id = TutorialStepId::OPEN_KEYBINDS_MENU,
+								 .text = "You can see all the possible keybinds by pressing the 'K' button.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
@@ -311,6 +316,10 @@ namespace df {
 								 .renderBox = true});
 	}
 
+	void GameState::resetTutorial() {
+		currentTutorialStep = 0;
+		initTutorial();
+	}
 
 	TutorialStep* GameState::getCurrentTutorialStep() {
 		if (currentTutorialStep >= tutorialSteps.size()) {

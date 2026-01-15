@@ -253,14 +253,14 @@ namespace df {
 				auto* notifications = registry->getSystem<RenderNotificationSystem>();
 				std::vector<std::string> buttons;
 				std::string keybindsList = 
-					"WASD: Move Map\n"
-					"Q: Active Quests\n"
+					"WASD: Move map\n"
+					"Q: Active quests\n"
 					"N: Build settlement\n"
 					"B: Build road\n"
-					"+/-: Zoom";
+					"+/-: Zoom\n"
+					"Space: Center camera to hero";
 				buttons = {"Close"};
-				notifications->showNotification("Keybinds",keybindsList,buttons);
-				auto* step = this->gameState->getCurrentTutorialStep();
+				notifications->showNotification("Keybinds", keybindsList, buttons);
 				if (step && step->id == TutorialStepId::OPEN_KEYBINDS_MENU) {
 					this->gameState->completeCurrentTutorialStep();
 				}
@@ -271,6 +271,9 @@ namespace df {
 				Entity e = registry->animations.entities.front();
 				auto pos = registry->positions.get(e);
 				centerCameraOnPoint(pos);
+				if (step && step->id == TutorialStepId::CENTER_CAMERA) {
+					this->gameState->completeCurrentTutorialStep();
+				}
 			}
 				break;
 			default:
