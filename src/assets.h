@@ -39,6 +39,7 @@ namespace df {
 
 		enum struct Texture {
 			TILE_ATLAS,
+			TILE_ATLAS2,
 			VIKING_WOOD_SETTLEMENT1,
 			VIKING_WOOD_SETTLEMENT2,
 			VIKING_WOOD_SETTLEMENT3,

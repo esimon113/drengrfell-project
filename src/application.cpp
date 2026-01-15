@@ -14,6 +14,7 @@
 // #include "utils/graphDebugImage.h"
 #include "systems/questsSystem.h"
 #include "utils/worldNodeMapper.h"
+#include "systems/renderTiles.h"
 
 #include <random>
 
@@ -23,6 +24,8 @@
 #include "events/eventBus.h"
 #include "window.h"
 
+#include "ai/behaviorTree.h"
+#include "ai/commandRegistry.h"
 
 namespace df {
 	static void glfwErrorCallback(int error, const char* description) {
@@ -107,6 +110,8 @@ namespace df {
 		registry->addSystem<RenderNotificationSystem>(&render.getRenderNotificationSystem());
 		// Store RenderSnowSystem in registry to use it in any other System.
 		registry->addSystem<RenderSnowSystem>(&render.getRenderSnowSystem());
+
+		registry->addSystem<RenderTilesSystem>(&render.getRenderTilesSystem());
 
 		auto* qSys = gameController->getQuestsSystem();
 		if (qSys) {
@@ -215,6 +220,7 @@ namespace df {
 					if (victoryScreenClosed) {
 						// reset application once victory screen was closed
 						this->reset();
+						gameState->resetTutorial();
 						gameState->setPhase(types::GamePhase::START);
 					}
 					break;
@@ -293,6 +299,7 @@ namespace df {
 
 		gameState->setRoundNumber(0);
 		gameState->setCurrentPlayerId(0);
+		gameState->setTurnCount(0);
 
 		registry->animations.emplace(playerEntity);
 		registry->tileID.emplace(playerEntity, 0);

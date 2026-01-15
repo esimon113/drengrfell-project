@@ -51,7 +51,8 @@ namespace df {
 
 	static constexpr std::array<const char*, static_cast<size_t>(assets::Texture::count)> TEXTURE_FILES = {
 		// add "*.png"-files that contain the textures here
-		"tiles/tileAtlas.png",
+		"tiles/tileAtlas1.png",
+		"tiles/tileAtlas2.png",
 		"settlements/viking-wood/viking-wood-settlement1.png",
 		"settlements/viking-wood/viking-wood-settlement2.png",
 		"settlements/viking-wood/viking-wood-settlement3.png",

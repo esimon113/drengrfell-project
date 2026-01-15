@@ -113,6 +113,10 @@ namespace df {
 		Entity hero = registry->animations.entities.front();
 		auto& animComp = registry->animations.get(hero);
 		auto* step = this->gameState->getCurrentTutorialStep();
+
+		if (this->gameState->isGameOver()) {
+			return; 
+		}
 		switch (action) {
 		case GLFW_PRESS:
 			switch (key) {
@@ -184,6 +188,33 @@ namespace df {
 					this->isSettlementPreviewActive = false;
 				}
 				break;
+			case GLFW_KEY_Q: {
+				auto* quests = registry->getSystem<QuestsSystem>();
+				if (quests) {
+					quests->notifyNextActiveQuest(); 
+				}
+				if (step && step->id == TutorialStepId::OPEN_QUEST_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			} 
+				break;
+			case GLFW_KEY_K:{
+				auto* notifications = registry->getSystem<RenderNotificationSystem>();
+				std::vector<std::string> buttons;
+				std::string keybindsList = 
+					"WASD: Move map\n"
+					"Q: Active quests\n"
+					"N: Build settlement\n"
+					"B: Build road\n"
+					"+/-: Zoom\n"
+					"Space: Center camera to hero";
+				buttons = {"Close"};
+				notifications->showNotification("Keybinds", keybindsList, buttons);
+				if (step && step->id == TutorialStepId::OPEN_KEYBINDS_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			}
+				break;
 			case GLFW_KEY_G: {
 				Graph& map = this->gameState->getMap();
 				if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
@@ -239,34 +270,15 @@ namespace df {
 					this->gameState->completeCurrentTutorialStep();
 				}
 				break;
-			case GLFW_KEY_Q: {
-				auto* quests = registry->getSystem<QuestsSystem>();
-				if (quests) {
-					quests->notifyNextActiveQuest(); 
-				}
-				if (step && step->id == TutorialStepId::OPEN_QUEST_MENU) {
-					this->gameState->completeCurrentTutorialStep();
-				}
-			} 
-				break;
-			case GLFW_KEY_T:{
-				auto* notifications = registry->getSystem<RenderNotificationSystem>();
-				std::vector<std::string> buttons;
-				std::string keybindsList = 
-					"WASD: Move Map\n"
-					"Q: Active Quests\n"
-					"N: Build settlement\n"
-					"B: Build road\n"
-					"+/-: Zoom";
-				buttons = {"Close"};
-				notifications->showNotification("Keybinds",keybindsList,buttons);
-			}
-				break;
+			
 			case GLFW_KEY_SPACE: {
 				// TODO: for multiplayer get the hero of the current player
 				Entity e = registry->animations.entities.front();
 				auto pos = registry->positions.get(e);
 				centerCameraOnPoint(pos);
+				if (step && step->id == TutorialStepId::CENTER_CAMERA) {
+					this->gameState->completeCurrentTutorialStep();
+				}
 			}
 				break;
 			default:
@@ -336,8 +348,14 @@ namespace df {
 			//fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
 			// Update Tutorial if finished
-			if ((step && step->id == TutorialStepId::END) || (step && step->id == TutorialStepId::WELCOME)) {
+			if (step && step->id == TutorialStepId::WELCOME) {
 				this->gameState->completeCurrentTutorialStep();
+			} else if (step && step->id == TutorialStepId::END) {
+				this->gameState->completeCurrentTutorialStep();
+				auto* quests = registry->getSystem<QuestsSystem>();
+				if (quests) {
+					quests->updateProgress("tutorial",1); 
+				}
 			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
 			// RMB gedrückt

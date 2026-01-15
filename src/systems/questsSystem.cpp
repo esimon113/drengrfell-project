@@ -14,17 +14,18 @@ namespace df {
 
         m_quests.clear();
 
-        // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress | unblock id | Initial state
+        // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress | unblock id | Reward type | Reward | Initial state
         
+        m_quests.push_back({0, "Apprentice", "Complete the tutorial", "tutorial", 1, 0, {1,3}, types::TileType::FOREST, 5, QuestState::Active});
         // Building quests
-        m_quests.push_back({0, "Builder", "Build your first settlement","settlement", 1, 0, 1, types::TileType::CLAY,100, QuestState::Active});
-        m_quests.push_back({1, "The King's Highway", "Build 2 roads", "road", 2 , 0, -1, types::TileType::MOUNTAIN,100,QuestState::Locked});
+        m_quests.push_back({1, "Builder", "Have 3 settlements","settlement", 3, 1, {2}, types::TileType::CLAY,10, QuestState::Locked});
+        m_quests.push_back({2, "The King's Highway", "Build 2 new roads", "road", 2 , 0, {-1}, types::TileType::MOUNTAIN,5,QuestState::Locked});
         
         // Resources quests
-        m_quests.push_back({2, "Lumberjack", "Collect 100 wood" ,"wood", 100, 0, 3, types::TileType::FIELD,100, QuestState::Active});
+        m_quests.push_back({3, "Lumberjack", "Collect 10 wood" ,"wood", 10, 0, {4}, types::TileType::FIELD,10, QuestState::Locked});
 
-        // Surcvival quests
-        m_quests.push_back({3, "Professional Survivor", "Survive 5 rounds", "rounds", 5, 0, -1, types::TileType::GRASS, 100, QuestState::Locked});
+        // Surcvival quests1, 
+        m_quests.push_back({4, "Professional Survivor", "Survive 5 rounds", "rounds", 5, 0, {-1}, types::TileType::GRASS, 10, QuestState::Locked});
 
 
         //loadQuests("../assets/jsons/quests.json");
@@ -112,8 +113,8 @@ namespace df {
             if (q.id == questId && q.state == QuestState::Completed) {
                 q.state = QuestState::Claimed;
 
-                if (q.unlocksId != -1) {
-                    activateQuest(q.unlocksId); 
+                for (int nextId : q.unlocksIds) {
+                    activateQuest(nextId);
                 }
                 
                 m_currentShowingQuestId = -1; 
@@ -127,7 +128,6 @@ namespace df {
             if (q.id == questId && q.state == QuestState::Locked) {
                 q.state = QuestState::Active;
                 notifyPlayer(q.id); 
-                break;
             }
         }
     }

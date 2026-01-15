@@ -111,6 +111,7 @@ namespace df {
 
 		// Tutorial
 		void initTutorial();
+		void resetTutorial();
 		TutorialStep* getCurrentTutorialStep();
 		void completeCurrentTutorialStep();
 		bool isTutorialActive() const;
