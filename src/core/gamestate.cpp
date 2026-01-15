@@ -269,15 +269,14 @@ namespace df {
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
-		tutorialSteps.push_back({.id = TutorialStepId::MOVE_HERO,
-								 .text = "Use the right mouse button to click on a tile on the map to select and highlight it.\nAfter pressing the 'End Turn' button on the bottom right the hero will move there.\n"
-									"But beware, you might encounter a hazard.",
+		tutorialSteps.push_back({.id = TutorialStepId::OPEN_TOGGLE_MENU,
+								 .text = "You can see all the possible keybinds by pressing the 'T' button.\n ",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
 		tutorialSteps.push_back({.id = TutorialStepId::OPEN_QUEST_MENU,
-								 .text = "You can check your quests by pressing 'Q'! Your first quest will be\n to build a settlement which is also coverd in the next tutorial step.",
+								 .text = "You can check your quests by pressing 'Q'! Your first quest will be\n to complete the tutorial.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
@@ -294,6 +293,13 @@ namespace df {
 
 		tutorialSteps.push_back({.id = TutorialStepId::BUILD_ROAD,
 								 .text = "Build a road to expand using 'B' Button to create the hover view.\nThen select any free edge close to your hero to build the road.",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+
+		tutorialSteps.push_back({.id = TutorialStepId::MOVE_HERO,
+								 .text = "Use the right mouse button to click on a tile on the map to select and highlight it.\nAfter pressing the 'End Turn' button on the bottom right the hero will move there.\n"
+									"But beware, you might encounter a hazard.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});

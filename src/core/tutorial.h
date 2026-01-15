@@ -11,6 +11,7 @@ namespace df {
 		OPEN_QUEST_MENU,
 		BUILD_SETTLEMENT,
 		BUILD_ROAD,
+		OPEN_TOGGLE_MENU,
 		END
 	};
 

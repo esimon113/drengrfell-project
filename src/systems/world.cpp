@@ -260,6 +260,10 @@ namespace df {
 					"+/-: Zoom";
 				buttons = {"Close"};
 				notifications->showNotification("Keybinds",keybindsList,buttons);
+				auto* step = this->gameState->getCurrentTutorialStep();
+				if (step && step->id == TutorialStepId::OPEN_TOGGLE_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
 			}
 				break;
 			case GLFW_KEY_SPACE: {
@@ -336,8 +340,14 @@ namespace df {
 			//fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
 			// Update Tutorial if finished
-			if ((step && step->id == TutorialStepId::END) || (step && step->id == TutorialStepId::WELCOME)) {
+			if (step && step->id == TutorialStepId::WELCOME) {
 				this->gameState->completeCurrentTutorialStep();
+			} else if (step && step->id == TutorialStepId::END) {
+				this->gameState->completeCurrentTutorialStep();
+				auto* quests = registry->getSystem<QuestsSystem>();
+				if (quests) {
+					quests->updateProgress("tutorial",1); 
+				}
 			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
 			// RMB gedrückt

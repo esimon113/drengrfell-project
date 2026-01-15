@@ -22,20 +22,20 @@ namespace df {
         std::string goal_type; 
         int goal_amount; 
         int progress; 
-        int unlocksId;
+        std::vector<int> unlocksIds;
         types::TileType reward_resource; 
         int reward_amount;
         QuestState state ;
         
         
-        Quest(int _id, std::string _name, std::string _desc, std::string _goalType, int _amount, int _prog, int _unlock, types::TileType _res, int _reward, QuestState _state)
+        Quest(int _id, std::string _name, std::string _desc, std::string _goalType, int _amount, int _prog, std::vector<int> _unlock, types::TileType _res, int _reward, QuestState _state)
             : id(_id), 
             name(_name), 
             desc(_desc),
             goal_type(_goalType), 
             goal_amount(_amount), 
             progress(_prog), 
-            unlocksId(_unlock), 
+            unlocksIds(_unlock), 
             reward_resource(_res), 
             reward_amount(_reward),
             state(_state) 
