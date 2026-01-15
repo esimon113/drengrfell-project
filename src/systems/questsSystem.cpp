@@ -22,7 +22,7 @@ namespace df {
         m_quests.push_back({2, "The King's Highway", "Build 2 new roads", "road", 2 , 0, {-1}, types::TileType::MOUNTAIN,5,QuestState::Locked});
         
         // Resources quests
-        m_quests.push_back({3, "Lumberjack", "Collect 10 wood" ,"wood", 10, 0, {4}, types::TileType::FIELD,10, QuestState::Locked});
+        m_quests.push_back({3, "Lumberjack", "Collect 10 wood" ,"forest", 10, 0, {4}, types::TileType::FIELD,10, QuestState::Locked});
 
         // Surcvival quests1, 
         m_quests.push_back({4, "Professional Survivor", "Survive 5 rounds", "rounds", 5, 0, {-1}, types::TileType::GRASS, 10, QuestState::Locked});
