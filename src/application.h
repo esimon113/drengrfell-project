@@ -70,6 +70,7 @@ namespace df {
 
 		bool victoryScreenClosed = false;
 		bool victoryScreenShown = false;
+		bool awaitingTurnEnd = false;
 
 		// GameState
 		std::shared_ptr<GameState> gameState;
