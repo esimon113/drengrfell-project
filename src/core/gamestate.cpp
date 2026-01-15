@@ -269,8 +269,8 @@ namespace df {
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
-		tutorialSteps.push_back({.id = TutorialStepId::OPEN_TOGGLE_MENU,
-								 .text = "You can see all the possible keybinds by pressing the 'T' button.\n ",
+		tutorialSteps.push_back({.id = TutorialStepId::OPEN_KEYBINDS_MENU,
+								 .text = "You can see all the possible keybinds by pressing the 'K' button.\n ",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});

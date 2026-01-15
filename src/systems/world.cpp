@@ -249,7 +249,7 @@ namespace df {
 				}
 			} 
 				break;
-			case GLFW_KEY_T:{
+			case GLFW_KEY_K:{
 				auto* notifications = registry->getSystem<RenderNotificationSystem>();
 				std::vector<std::string> buttons;
 				std::string keybindsList = 
@@ -261,7 +261,7 @@ namespace df {
 				buttons = {"Close"};
 				notifications->showNotification("Keybinds",keybindsList,buttons);
 				auto* step = this->gameState->getCurrentTutorialStep();
-				if (step && step->id == TutorialStepId::OPEN_TOGGLE_MENU) {
+				if (step && step->id == TutorialStepId::OPEN_KEYBINDS_MENU) {
 					this->gameState->completeCurrentTutorialStep();
 				}
 			}
