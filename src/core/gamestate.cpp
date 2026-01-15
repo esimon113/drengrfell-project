@@ -302,7 +302,12 @@ namespace df {
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
-		
+		tutorialSteps.push_back({.id = TutorialStepId::OPEN_TRADE_MENU,
+								 .text = "Use 'T' to open the trade menu and trade your ressources.",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+				
 		tutorialSteps.push_back({.id = TutorialStepId::OPEN_KEYBINDS_MENU,
 								 .text = "You can see all the possible keybinds by pressing the 'K' button.",
 								 .completed = false,
