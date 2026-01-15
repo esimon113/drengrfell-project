@@ -43,6 +43,16 @@ namespace df {
     };
 
     class QuestsSystem {
+        std::string resourceName(df::types::TileType type) {
+            switch (type) {
+                case df::types::TileType::FOREST:   return "Wood";
+                case df::types::TileType::MOUNTAIN: return "Stone";
+                case df::types::TileType::CLAY:     return "Clay";
+                case df::types::TileType::FIELD:    return "Grain";
+                case df::types::TileType::GRASS:    return "Wool";
+                default:                            return "Resources";
+            }
+        }
         
         public:
             QuestsSystem() : m_notificationSystem(nullptr) {}
@@ -53,8 +63,10 @@ namespace df {
             void updateProgress(types::QuestGoalType , int amount);
             void notifyPlayer(int questId);
             void addQuest(const Quest& newQuest);
-            void claimQuest(int questId, Player* player);
-            void activateQuest(int, Player* );
+            void claimQuest(int questId, Player* player, GameState* gameState);
+            void activateQuest(int, Player* , GameState* gameState);
+
+            void reset();
 
             void notifyNextActiveQuest();
             const Quest* getQuestById(int id) const;
