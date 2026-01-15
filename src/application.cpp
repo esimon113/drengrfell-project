@@ -14,6 +14,7 @@
 // #include "utils/graphDebugImage.h"
 #include "systems/questsSystem.h"
 #include "utils/worldNodeMapper.h"
+#include "systems/renderTiles.h"
 
 #include <random>
 
@@ -107,6 +108,8 @@ namespace df {
 		registry->addSystem<RenderNotificationSystem>(&render.getRenderNotificationSystem());
 		// Store RenderSnowSystem in registry to use it in any other System.
 		registry->addSystem<RenderSnowSystem>(&render.getRenderSnowSystem());
+
+		registry->addSystem<RenderTilesSystem>(&render.getRenderTilesSystem());
 
 		auto* qSys = gameController->getQuestsSystem();
 		if (qSys) {

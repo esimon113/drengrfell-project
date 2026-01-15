@@ -257,7 +257,7 @@ namespace df {
 			.setFloat("time", timeInSeconds)
 			.setInt("frames", 4)
 			.setInt("selectedTile", this->selectedTile)
-			.setSampler("tileAtlas", 0);
+			.setSampler("tileAtlas1", 0);
 
 		glBindVertexArray(useHex ? hexVao : tileVao);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>((useHex ? this->hexMesh : this->tileMesh).size()), static_cast<GLsizei>(this->tileInstances.size()));
@@ -333,7 +333,11 @@ namespace df {
 	}
 
 
-	void RenderTilesSystem::reset() noexcept {}
+	void RenderTilesSystem::reset() noexcept {
+		this->tileAtlas.deinit(); 
+		this->tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
+		this->updateRequired = true;
+	}
 
 
 	std::vector<RenderTilesSystem::TileVertex> RenderTilesSystem::createHexagonalTileMesh() noexcept {
