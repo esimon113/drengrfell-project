@@ -280,6 +280,10 @@ namespace df {
 	void Application::reset() noexcept {
 		registry->clear();
 
+		auto* qSys = gameController->getQuestsSystem();
+		if (qSys) {
+			qSys->reset(); 
+		}
 
 		Entity camEntity = registry->getCamera();
 
@@ -304,6 +308,7 @@ namespace df {
 
 		registry->animations.emplace(playerEntity);
 		registry->tileID.emplace(playerEntity, 0);
+
 
 
 		victoryScreenClosed = false;
@@ -551,7 +556,9 @@ namespace df {
 				// Quests
 				if (pressedButton == "Next Quest") {
 					this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
-				} else if (pressedButton == "Claim") {
+				} 
+
+				if (pressedButton.find("Claim") == 0) { 
 					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
 					gameController->claimQuestReward(currentId);
 				}
