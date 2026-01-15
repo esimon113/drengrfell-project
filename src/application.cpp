@@ -547,7 +547,7 @@ namespace df {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
 				// TODO: add actions for button pressed in notifications
 				if (pressedButton == "Wood" || pressedButton == "Stone" ||
-					pressedButton == "Clay" || pressedButton == "Grass" || pressedButton == "Grain") {
+					pressedButton == "Clay" || pressedButton == "Wool" || pressedButton == "Grain") {
 					tradingSystem.handleOptionClicked(pressedButton);
 				}
 				if (pressedButton == "Pay ressources") {
