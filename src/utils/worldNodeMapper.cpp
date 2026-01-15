@@ -337,7 +337,6 @@ namespace df {
 		return glm::vec2(0.0f);
 	}
 
-
 	glm::vec2 WorldNodeMapper::getWorldPositionForEdge(size_t edgeId, const Graph& map) noexcept {
 		const float hexagonRadius = 1.0f;
 		const uint32_t columns = map.getMapWidth();
