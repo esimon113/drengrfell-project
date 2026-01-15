@@ -334,6 +334,7 @@ namespace df {
 				return false;
 			}
 			const auto tileId = hero->getTileID();
+			fmt::println("[GameController] canBuildSettlement: hero tile ID: {}", tileId);
 			const auto tile = map.getTile(tileId);
 			const auto tileVertices = map.getTileVertices(tile);
 			if (tileVertices) {

@@ -614,6 +614,7 @@ namespace df {
 						const Graph& map = this->gameState->getMap();
 
 						size_t currentPlayerId = this->gameState->getCurrentPlayerId();
+						fmt::println("Current player ID: {}", currentPlayerId);
 
 						if (this->world.isSettlementPreviewActive) {
 							fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
