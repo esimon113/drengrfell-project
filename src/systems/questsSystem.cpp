@@ -107,6 +107,18 @@ namespace df {
                     q.reward_amount, 
                     rewardName
                 );
+
+
+                if(q.goal_type==types::QuestGoalType::TUTORIAL){
+                    dynamicDesc = fmt::format(
+                        "\n{}\n\n"
+                        "Reward: {} units of {}", 
+                        q.desc, 
+                        q.reward_amount, 
+                        rewardName
+                    );
+                }
+                
                 
                 if (q.state == QuestState::Completed) {
                     std::string btnLabel = fmt::format("Claim {} {}", q.reward_amount, rewardName);
@@ -116,11 +128,8 @@ namespace df {
                     buttons = {"Close", "Next Quest"};
                 }
 
-                if (q.state == QuestState::Active) {
-                    m_notificationSystem->showNotification(q.name, dynamicDesc, buttons);
-                } else {
-                    m_notificationSystem->showNotification(q.name, "Quest completed", buttons);
-                }
+                m_notificationSystem->showNotification(q.name, dynamicDesc, buttons);
+                
                 break;
             }
         }
