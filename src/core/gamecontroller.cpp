@@ -7,14 +7,16 @@
 #include <stdexcept>
 #include <unordered_set>
 
+#include "../systems/renderSnow.h"
 #include "gamecontroller.h"
 #include "hero.h"
+#include "player.h"
 #include "renderNotification.h"
+#include "road.h"
 #include "tile.h"
 #include "types.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
-#include "../systems/renderSnow.h"
 
 
 
@@ -66,7 +68,6 @@ namespace df {
 		auto* snowSystem = registry.getSystem<df::RenderSnowSystem>();
 		if (snowSystem) {
 			snowSystem->increaseIntensity();
-			
 		}
 
 		if (nextPlayerId == 0) {
@@ -288,7 +289,7 @@ namespace df {
 
 
 	bool GameController::canBuildSettlement(size_t playerId, size_t vertexId) const {
-		(void)playerId; // unused for now - simplified building rules
+		// (void)playerId; // unused for now - simplified building rules
 		const Graph& map = this->gameState.getMap();
 		try {
 			fmt::println("[GameController] canBuildSettlement: checking vertex {}", vertexId);
@@ -310,11 +311,48 @@ namespace df {
 				fmt::println("[GameController] canBuildSettlement: neighbour settlement detected for vertex {}", vertexId);
 				return false;
 			}
-			fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
-			return true;
-		} catch (const std::exception&) {
-			return false;
+
+			// check if EITHER vertex is adjacent to hero-tile, OR adjacent to road of current player
+			const auto player = gameState.getPlayer(playerId);
+			const auto hero = player->getHero();
+			const auto tileId = hero->getTileID();
+			const auto tile = map.getTile(tileId);
+			const auto tileVertices = map.getTileVertices(tile);
+			if (tileVertices) {
+				for (const auto& v : *tileVertices) {
+					if (v->getId() == vertexId) { // vertex is adjacent to hero tile
+						fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
+						return true; // player can always build a settlement adjacent to hero-tile
+					}
+				}
+			}
+
+			const auto vertexEdges = map.getVertexEdges(vertex);
+			if (!vertexEdges) {
+				return false;
+			}
+
+			const auto roads = gameState.getRoads();
+
+			for (const auto& e : *vertexEdges) {
+				const auto localRoadId = e->getRoadId();
+				if (!localRoadId) {
+					continue;
+				}
+
+				auto it = std::find_if(roads.begin(), roads.end(), [localRoadId, playerId](const auto& r) {
+					return r->getId() == localRoadId && r->getPlayerId() == playerId;
+				});
+
+				if (it != roads.end()) {
+					fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
+					return true;
+				}
+			}
+		} catch (const std::exception& e) {
+			fmt::println("Error in settlement building validation: {}", e.what());
 		}
+		return false;
 	}
 
 
@@ -396,7 +434,6 @@ namespace df {
 
 	// TODO: validate this in edge class
 	bool GameController::canBuildRoad(size_t playerId, size_t edgeId) const {
-		(void)playerId; // unused for now - simplified building rules
 		const Graph& map = this->gameState.getMap();
 
 		try {
@@ -411,61 +448,52 @@ namespace df {
 				return false;
 			}
 
-			// CRITICAL FIX: Check ALL edges that share the same physical location (same two vertices)
-			// This prevents building multiple roads on the same physical edge due to duplicate edge IDs
-			// This is a safeguard check - if it fails for any reason, we still allow building
-			try {
-				const auto verticesOpt = map.getEdgeVertices(edge);
-				if (verticesOpt) {
-					// Get the two vertex IDs that this edge connects
-					std::unordered_set<size_t> edgeVertexIds;
-					for (const auto& vertex : *verticesOpt) {
-						if (vertex && vertex->getId() != SIZE_MAX) {
-							edgeVertexIds.insert(vertex->getId());
-						}
-					}
+			// roads can only be build if:
+			// 1. they are adjacent to a settlement of the current player
+			// 2. they are adjacent to a road of the current player
 
-					// Only check for duplicates if this edge connects exactly two valid vertices (shared edge)
-					// If it doesn't have 2 vertices, we skip the duplicate check and allow building
-					if (edgeVertexIds.size() == 2) {
-						// Only check edges that already have roads (optimization and safety)
-						// This allows the first road to be built without any checks
-						for (size_t i = 0; i < map.getEdgeCount(); ++i) {
-							EdgeHandle otherEdge = map.getEdge(i);
-							if (!otherEdge || otherEdge->getId() == edgeId || !otherEdge->hasRoad()) {
-								continue; // Skip if no road - no conflict possible
-							}
-
-							const auto otherVerticesOpt = map.getEdgeVertices(otherEdge);
-							if (!otherVerticesOpt)
-								continue;
-
-							// Check if this edge connects the same two vertices
-							std::unordered_set<size_t> otherVertexIds;
-							for (const auto& vertex : *otherVerticesOpt) {
-								if (vertex && vertex->getId() != SIZE_MAX) {
-									otherVertexIds.insert(vertex->getId());
-								}
-							}
-
-							// If the vertex sets match exactly (same two vertices), they're at the same physical location
-							if (otherVertexIds.size() == 2 && edgeVertexIds == otherVertexIds) {
-								fmt::println("[GameController] canBuildRoad: edge {} connects same vertices as edge {} which has a road",
-											 edgeId, otherEdge->getId());
-								return false; // Another edge at the same location already has a road
-							}
-						}
-					}
-					// If edgeVertexIds.size() != 2, we skip the duplicate check and allow building
-				}
-				// If verticesOpt is nullopt, we also allow building (edge case)
-			} catch (const std::exception& e) {
-				// If the duplicate check fails for any reason, we still allow building
-				// This is a safeguard check and shouldn't block legitimate road building
-				fmt::println("[GameController] canBuildRoad: duplicate check failed for edge {}: {}, allowing building", edgeId, e.what());
+			bool canBuild = true;
+			const auto edgeVertices = map.getEdgeVertices(edge);
+			if (!edgeVertices) {
+				canBuild = false;
 			}
 
-			return true;
+			const auto settlements = this->gameState.getSettlements();
+			const auto roads = this->gameState.getRoads();
+			for (const auto& v : *edgeVertices) {
+				// check for adjacent player settlements:
+				if (const auto sid = v->getSettlementId(); sid) {
+					const auto it = std::find_if(settlements.begin(), settlements.end(), [&](const auto& s) {
+						return s->getId() == sid && s->getPlayerId() == playerId;
+					});
+
+					if (it != settlements.end()) {
+						return true;
+					}
+				}
+
+				// check for adjacent roads
+				const auto vertexEdges = map.getVertexEdges(v);
+				if (!vertexEdges) {
+					return false;
+				}
+
+				for (const auto& neighbourEdge : *vertexEdges) {
+					if (neighbourEdge->getId() == edgeId) {
+						continue; // ignore self
+					}
+
+					const auto it = std::find_if(roads.begin(), roads.end(), [playerId, neighbourEdge](const auto& r) {
+						return r->getEdgeId() == neighbourEdge->getId() && r->getPlayerId() == playerId;
+					});
+
+					if (it != roads.end()) {
+						return true;
+					}
+				}
+			}
+
+			return canBuild;
 		} catch (const std::exception&) {
 			return false;
 		}
