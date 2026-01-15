@@ -243,11 +243,23 @@ namespace df {
 					if (!registry->animations.entities.empty()) {
 						Entity hero = registry->animations.entities.front();
 						movementSystem.moveEntityTo(hero, movementSystem.getTargetPosition(), delta_time);
+						if (!movementSystem.getMovementState()) {
+							render.renderTilesSystem.selectedTile = -1; // remove tile highlighting after hero arrived
+						}
 					} else {
 						fmt::println("No hero entity available!");
 					}
 				}
 				// ------------------------------------------------------------
+
+				// Only truly end the turn and start a new one when the hero finished walking
+				if (awaitingTurnEnd && !movementSystem.getMovementState()) {
+					Entity hero = registry->animations.entities.front();
+					gameController->endTurn(*registry);
+					gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
+					gameController->startTurn(*registry); // Start turn for the next player
+					awaitingTurnEnd = false;
+				}
 			} break;
 			case types::GamePhase::END:
 				break;
@@ -538,127 +550,126 @@ namespace df {
 				return;	// notification clicked -> no further actions (including movement) for now
 			}
 
-			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
+			// START Lock all following interactions with the game while the hero is still moving
 			if (!movementSystem.getMovementState()) {
+				// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
 					if (!gameState->isGameOver()) {
-						gameController->endTurn(*registry);
+						
 						auto* step = this->gameState->getCurrentTutorialStep();
 						if (step && step->id == TutorialStepId::MOVE_HERO) {
 							this->gameState->completeCurrentTutorialStep();
 						}
-						// TODO: For multiplayer check only for active player for hazards
+
 						Entity hero = registry->animations.entities.front();
+						// TODO: For multiplayer check only for active player for hazards
 						if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
 							movementSystem.toggleMovementState();
-							gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
 							fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
 						}
-						gameController->startTurn(*registry); // Start turn for the next player
+						awaitingTurnEnd = true;
 						return;
 					}
 				}
-			}
 
-			if (render.renderHudSystem.onMouseButton(mouse, button, action))
-				return;
+				if (render.renderHudSystem.onMouseButton(mouse, button, action))
+					return;
 
-			// TODO: refactor...
-			// Handle building placement -> ONLY possible when preview is active
-			if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-				if (this->world.isSettlementPreviewActive || this->world.isRoadPreviewActive) {
-					fmt::println("Building placement started...");
+				// TODO: refactor...
+				// Handle building placement -> ONLY possible when preview is active
+				if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+					if (this->world.isSettlementPreviewActive || this->world.isRoadPreviewActive) {
+						fmt::println("Building placement started...");
 
-					Entity previewEntity = buildingPreviewSystem.getPreviewEntity();
-					if (!registry->positions.has(previewEntity)) {
-						fmt::println("No preview entity found");
-						return;
-					}
-					const glm::vec2& cameraRelativePos = registry->positions.get(previewEntity);
+						Entity previewEntity = buildingPreviewSystem.getPreviewEntity();
+						if (!registry->positions.has(previewEntity)) {
+							fmt::println("No preview entity found");
+							return;
+						}
+						const glm::vec2& cameraRelativePos = registry->positions.get(previewEntity);
 
-					// Reconstruct absolute world position from camera-relative position
-					Camera& cam = registry->cameras.get(registry->getCamera());
-					glm::vec2 worldPos = cam.position + cameraRelativePos;
+						// Reconstruct absolute world position from camera-relative position
+						Camera& cam = registry->cameras.get(registry->getCamera());
+						glm::vec2 worldPos = cam.position + cameraRelativePos;
 
-					const Graph& map = this->gameState->getMap();
+						const Graph& map = this->gameState->getMap();
 
-					size_t currentPlayerId = this->gameState->getCurrentPlayerId();
+						size_t currentPlayerId = this->gameState->getCurrentPlayerId();
 
-					if (this->world.isSettlementPreviewActive) {
-						fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
-						// Find closest vertex for settlement placement
-						auto vertexIdOpt = WorldNodeMapper::findClosestVertexToWorldPos(worldPos, map);
-						if (vertexIdOpt.has_value()) {
-							fmt::println("Closest vertex found at {}", vertexIdOpt.value());
-							size_t vertexId = vertexIdOpt.value();
-							if (this->gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
-								fmt::println("Player can build settlement at vertex {}", vertexId);
-								const auto settlementCost = this->gameState->getCurrentSettlementCost();
-								bool success = this->gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
+						if (this->world.isSettlementPreviewActive) {
+							fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
+							// Find closest vertex for settlement placement
+							auto vertexIdOpt = WorldNodeMapper::findClosestVertexToWorldPos(worldPos, map);
+							if (vertexIdOpt.has_value()) {
+								fmt::println("Closest vertex found at {}", vertexIdOpt.value());
+								size_t vertexId = vertexIdOpt.value();
+								if (this->gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
+									fmt::println("Player can build settlement at vertex {}", vertexId);
+									const auto settlementCost = this->gameState->getCurrentSettlementCost();
+									bool success = this->gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
 
-								if (success) {
-									fmt::println("Settlement built at vertex {}", vertexId);
-									this->world.isSettlementPreviewActive = false;
+									if (success) {
+										fmt::println("Settlement built at vertex {}", vertexId);
+										this->world.isSettlementPreviewActive = false;
+									} else {
+										fmt::println("Failed to build settlement at vertex {}", vertexId);
+									}
+
 								} else {
-									fmt::println("Failed to build settlement at vertex {}", vertexId);
+									fmt::println("Cannot build settlement at vertex {}: insufficient resources or invalid placement", vertexId);
+								}
+							} else
+								fmt::println("No closest vertex found");
+
+						} else if (this->world.isRoadPreviewActive) {
+							fmt::println("Checking if player can build road at world position {},{}", worldPos.x, worldPos.y);
+							// Find closest edge for road placement
+							auto edgeIdOpt = WorldNodeMapper::findClosestEdgeToWorldPos(worldPos, map);
+							if (edgeIdOpt.has_value()) {
+								fmt::println("Closest edge found at {}", edgeIdOpt.value());
+								size_t edgeId = edgeIdOpt.value();
+
+								if (gameController->canBuildRoad(currentPlayerId, edgeId)) { // validate player can build road
+									fmt::println("Player can build road at edge {}", edgeId);
+									const auto roadCost = this->gameState->getCurrentRoadCost();
+									bool success = gameController->buildRoad(currentPlayerId, edgeId, RoadLevel::Path, roadCost);
+									if (success) {
+										fmt::println("Road built at edge {}", edgeId);
+										this->world.isRoadPreviewActive = false;
+									} else {
+										fmt::println("Failed to build road at edge {}", edgeId);
+									}
+
+								} else {
+									fmt::println("Cannot build road at edge {}: insufficient resources or invalid placement", edgeId);
 								}
 
-							} else {
-								fmt::println("Cannot build settlement at vertex {}: insufficient resources or invalid placement", vertexId);
-							}
-						} else
-							fmt::println("No closest vertex found");
+							} else
+								fmt::println("No closest edge found");
+						}
 
-					} else if (this->world.isRoadPreviewActive) {
-						fmt::println("Checking if player can build road at world position {},{}", worldPos.x, worldPos.y);
-						// Find closest edge for road placement
-						auto edgeIdOpt = WorldNodeMapper::findClosestEdgeToWorldPos(worldPos, map);
-						if (edgeIdOpt.has_value()) {
-							fmt::println("Closest edge found at {}", edgeIdOpt.value());
-							size_t edgeId = edgeIdOpt.value();
-
-							if (gameController->canBuildRoad(currentPlayerId, edgeId)) { // validate player can build road
-								fmt::println("Player can build road at edge {}", edgeId);
-								const auto roadCost = this->gameState->getCurrentRoadCost();
-								bool success = gameController->buildRoad(currentPlayerId, edgeId, RoadLevel::Path, roadCost);
-								if (success) {
-									fmt::println("Road built at edge {}", edgeId);
-									this->world.isRoadPreviewActive = false;
-								} else {
-									fmt::println("Failed to build road at edge {}", edgeId);
-								}
-
-							} else {
-								fmt::println("Cannot build road at edge {}: insufficient resources or invalid placement", edgeId);
-							}
-
-						} else
-							fmt::println("No closest edge found");
+						return; // ignore other mouse callbacks when placing buildings...
 					}
-
-					return; // ignore other mouse callbacks when placing buildings...
 				}
-			}
 
-			if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-				glm::vec2 mouseCoords = glm::vec2(mouseX, mouseY);
-				auto extent = this->window->getWindowExtent();
+				if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+					glm::vec2 mouseCoords = glm::vec2(mouseX, mouseY);
+					auto extent = this->window->getWindowExtent();
 
-				auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
-				auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
-				fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+					auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+					auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+					fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
-				if (mapId >= 0 && !movementSystem.isEntityMoving()) {
-					//movementSystem.setTargetPositionTileID(mapId);
-					//  TODO: For multiplayer use hero of active player
-					Entity hero = registry->animations.entities.front();
-					movementSystem.setTarget(mapId, hero);
-					//movementSystem.setTargetPosition(movementSystem.getTileWorldPosition(mapId));
+					if (mapId >= 0 && !movementSystem.isEntityMoving()) {
+						//  TODO: For multiplayer use hero of active player
+						Entity hero = registry->animations.entities.front();
+						movementSystem.setTarget(mapId, hero);
+						}
 				}
-			}
 
-			world.onMouseButtonCallback(windowParam, button, action, mods);
-			render.onMouseButtonCallback(windowParam, button, action, mods);
+				world.onMouseButtonCallback(windowParam, button, action, mods);
+				render.onMouseButtonCallback(windowParam, button, action, mods);
+			} // END Lock for movement
 		} break;
 		case types::GamePhase::END:
 			break;
