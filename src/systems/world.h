@@ -31,6 +31,9 @@ namespace df {
 
 		bool isTestMovementActive() const { return heroMovementState; }
 
+		void setTradeCallback(std::function<void()> callback) {
+			tradeCallback = std::move(callback);
+		}
 
 		// for rendering building previews on selection
 		bool isSettlementPreviewActive = false;
@@ -55,6 +58,7 @@ namespace df {
 		bool m_reset;
 		bool heroMovementState = false;
 
+		std::function<void()> tradeCallback;
 		std::default_random_engine randomEngine;
 		std::uniform_real_distribution<float> uniformDistribution;
 	};

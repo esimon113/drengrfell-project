@@ -180,7 +180,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
  	"src/systems/entityMovement.cpp"
-)
+ "src/systems/tradingSystem.h" "src/systems/tradingSystem.cpp")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 20

@@ -15,6 +15,7 @@
 #include "systems/questsSystem.h"
 #include "utils/worldNodeMapper.h"
 #include "systems/renderTiles.h"
+#include "tradingSystem.h"
 
 #include <random>
 
@@ -414,6 +415,13 @@ namespace df {
 			player->addResources(types::TileType::GRASS, 10);	 // give player initial grass (cattle)
 
 			fmt::println("[DEBUG] resources distributed to player");
+
+			tradingSystem.init(&render.getRenderNotificationSystem(), player);
+
+			world.setTradeCallback([this]() {
+				tradingSystem.startTrading();
+			});
+
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
 
@@ -533,6 +541,10 @@ namespace df {
 			if (!pressedButton.empty()) {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
 				// TODO: add actions for button pressed in notifications
+				if (pressedButton == "Wood" || pressedButton == "Stone" ||
+					pressedButton == "Clay" || pressedButton == "Grass" || pressedButton == "Grain") {
+					tradingSystem.handleOptionClicked(pressedButton);
+				}
 				if (pressedButton == "Pay ressources") {
 					gameController->payForHazard(*registry);
 				}
