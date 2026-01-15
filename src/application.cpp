@@ -205,7 +205,7 @@ namespace df {
 				// physics.handleCollisions(delta_time);
 				if (gameState->isGameOver()) {
 					window->makeContextCurrent();
-					glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+					glClearColor(0.24f, 0.299f, 0.475f, 1.0f);
 					glClear(GL_COLOR_BUFFER_BIT);
 					render.step(delta_time);
 					if (!victoryScreenShown) {
@@ -234,7 +234,7 @@ namespace df {
 				buildingPreviewSystem.step(delta_time);
 
 				window->makeContextCurrent();
-				glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+				glClearColor(0.24f, 0.299f, 0.475f, 1.0f);
 				glClear(GL_COLOR_BUFFER_BIT);
 
 				render.step(delta_time);
