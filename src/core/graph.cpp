@@ -121,7 +121,7 @@ namespace df {
 			tileTypeStr = "FOREST";
 			break;
 		case types::TileType::GRASS:
-			tileTypeStr = "GRASS";
+			tileTypeStr = "Wool";
 			break;
 		case types::TileType::MOUNTAIN:
 			tileTypeStr = "MOUNTAIN";
