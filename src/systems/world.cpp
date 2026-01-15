@@ -113,6 +113,10 @@ namespace df {
 		Entity hero = registry->animations.entities.front();
 		auto& animComp = registry->animations.get(hero);
 		auto* step = this->gameState->getCurrentTutorialStep();
+
+		if (this->gameState->isGameOver()) {
+			return; 
+		}
 		switch (action) {
 		case GLFW_PRESS:
 			switch (key) {
@@ -184,6 +188,33 @@ namespace df {
 					this->isSettlementPreviewActive = false;
 				}
 				break;
+			case GLFW_KEY_Q: {
+				auto* quests = registry->getSystem<QuestsSystem>();
+				if (quests) {
+					quests->notifyNextActiveQuest(); 
+				}
+				if (step && step->id == TutorialStepId::OPEN_QUEST_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			} 
+				break;
+			case GLFW_KEY_K:{
+				auto* notifications = registry->getSystem<RenderNotificationSystem>();
+				std::vector<std::string> buttons;
+				std::string keybindsList = 
+					"WASD: Move map\n"
+					"Q: Active quests\n"
+					"N: Build settlement\n"
+					"B: Build road\n"
+					"+/-: Zoom\n"
+					"Space: Center camera to hero";
+				buttons = {"Close"};
+				notifications->showNotification("Keybinds", keybindsList, buttons);
+				if (step && step->id == TutorialStepId::OPEN_KEYBINDS_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			}
+				break;
 			case GLFW_KEY_G: {
 				Graph& map = this->gameState->getMap();
 				if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
@@ -239,33 +270,7 @@ namespace df {
 					this->gameState->completeCurrentTutorialStep();
 				}
 				break;
-			case GLFW_KEY_Q: {
-				auto* quests = registry->getSystem<QuestsSystem>();
-				if (quests) {
-					quests->notifyNextActiveQuest(); 
-				}
-				if (step && step->id == TutorialStepId::OPEN_QUEST_MENU) {
-					this->gameState->completeCurrentTutorialStep();
-				}
-			} 
-				break;
-			case GLFW_KEY_K:{
-				auto* notifications = registry->getSystem<RenderNotificationSystem>();
-				std::vector<std::string> buttons;
-				std::string keybindsList = 
-					"WASD: Move map\n"
-					"Q: Active quests\n"
-					"N: Build settlement\n"
-					"B: Build road\n"
-					"+/-: Zoom\n"
-					"Space: Center camera to hero";
-				buttons = {"Close"};
-				notifications->showNotification("Keybinds", keybindsList, buttons);
-				if (step && step->id == TutorialStepId::OPEN_KEYBINDS_MENU) {
-					this->gameState->completeCurrentTutorialStep();
-				}
-			}
-				break;
+			
 			case GLFW_KEY_SPACE: {
 				// TODO: for multiplayer get the hero of the current player
 				Entity e = registry->animations.entities.front();
