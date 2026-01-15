@@ -345,7 +345,7 @@ namespace df {
 	}
 
 	bool GameState::isGameOver() const {
-		const size_t MAX_ROUNDS = 20; // Or whatever limit you want
+		const size_t MAX_ROUNDS = 50; // Or whatever limit you want
 		return this->roundNumber >= MAX_ROUNDS;
 	}
 
