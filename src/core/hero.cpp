@@ -9,17 +9,13 @@ namespace df {
 
 	Hero::Hero() = default;
 
-	Hero::Hero(int tileID, const glm::vec2& coords, const std::string& textureRef = "", int baseRange = 3)
+	Hero::Hero(size_t tileID, const glm::vec2& coords, const std::string& textureRef = "", int baseRange = 3)
 		: tileID(tileID),
 		  coords(coords),
 		  textureRef(textureRef),
 		  baseRange(baseRange),
 		  currentAnim(nullptr) {
 	}
-
-	// Position
-	void Hero::setTileID(int id) { tileID = id; }
-	int Hero::getTileID() const { return tileID; }
 
 	void Hero::setCoords(const glm::vec2& pos) { coords = pos; }
 	const glm::vec2& Hero::getCoords() const { return coords; }
@@ -30,6 +26,14 @@ namespace df {
 
 	void Hero::setBaseRange(int range) { baseRange = range; }
 	int Hero::getBaseRange() const { return baseRange; }
+
+	void Hero::setTileID(size_t id) {
+		tileID = id;
+	}
+
+	size_t Hero::getTileID() const {
+		return tileID;
+	}
 
 	// Animationen verwalten
 	void Hero::setAnimation(const std::string& name, const std::vector<int>& frames, float frameDuration, bool loop = true) {

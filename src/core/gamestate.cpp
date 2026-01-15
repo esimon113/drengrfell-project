@@ -198,7 +198,7 @@ namespace df {
 
 		// Add position and scale components for rendering
 		registry->positions.emplace(e) = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), this->map);
-		registry->scales.emplace(e) = glm::vec2(0.5f, 0.5f); // Scale to match hexagon size -> 1/2 hex radius
+		registry->scales.emplace(e) = glm::vec2(0.45f, 0.45f); // Scale to match hexagon size -> 1/2 hex radius
 
 		settlements.push_back(settlement);
 	}
@@ -230,6 +230,17 @@ namespace df {
 		return roads;
 	}
 
+
+	// TODO: balance costs + make costs scale with total available resources
+	const std::vector<int>& GameState::getCurrentRoadCost() const {
+		return this->roadCosts;
+	}
+
+
+	const std::vector<int>& GameState::getCurrentSettlementCost() const {
+		return this->settlementCosts;
+	}
+
 	// Tutorial
 	void GameState::initTutorial() {
 		tutorialSteps.clear();
@@ -245,7 +256,13 @@ namespace df {
 								 .renderBox = true});
 
 		tutorialSteps.push_back({.id = TutorialStepId::MOVE_CAMERA,
-								 .text = "Use WASD to move the camera. Just try it now!",
+								 .text = "Use WASD to move the camera or simply move the cursor to the edges of the window.\nJust try it now!",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+
+		tutorialSteps.push_back({.id = TutorialStepId::CENTER_CAMERA,
+								 .text = "Use 'Space' to center the camera onto the hero.\nThat way you can always find him no matter where you are!",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
@@ -256,9 +273,22 @@ namespace df {
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
+		tutorialSteps.push_back({.id = TutorialStepId::MOVE_HERO,
+								 .text = "Use the right mouse button to click on a tile on the map to select and highlight it.\nAfter pressing the 'End Turn' button on the bottom right the hero will move there.\n"
+										 "But beware, you might encounter a hazard.",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+
+		tutorialSteps.push_back({.id = TutorialStepId::OPEN_QUEST_MENU,
+								 .text = "You can check your quests by pressing 'Q'! Your first quest will be\n to complete the tutorial.",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+
 		tutorialSteps.push_back({.id = TutorialStepId::BUILD_SETTLEMENT,
 								 .text =
-									 "Build your first settlement using the n Button.\n"
+									 "Build your first settlement using the 'N' button.\n"
 									 "Then you get the hover view.\n"
 									 "Here click any free tile close to your hero to build the settlement.\n"
 									 "Settlements generate resources from nearby tiles each round.",
@@ -267,7 +297,19 @@ namespace df {
 								 .renderBox = true});
 
 		tutorialSteps.push_back({.id = TutorialStepId::BUILD_ROAD,
-								 .text = "Build a road to expand using b Button to create the hover view.\nThen select any free edge close to your hero to build the road.",
+								 .text = "Build a road to expand using 'B' Button to create the hover view.\nThen select any free edge close to your hero to build the road.",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+
+		tutorialSteps.push_back({.id = TutorialStepId::OPEN_TRADE_MENU,
+								 .text = "Use 'T' to open the trade menu and trade your ressources.",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+				
+		tutorialSteps.push_back({.id = TutorialStepId::OPEN_KEYBINDS_MENU,
+								 .text = "You can see all the possible keybinds by pressing the 'K' button.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
@@ -279,6 +321,10 @@ namespace df {
 								 .renderBox = true});
 	}
 
+	void GameState::resetTutorial() {
+		currentTutorialStep = 0;
+		initTutorial();
+	}
 
 	TutorialStep* GameState::getCurrentTutorialStep() {
 		if (currentTutorialStep >= tutorialSteps.size()) {
@@ -299,7 +345,7 @@ namespace df {
 	}
 
 	bool GameState::isGameOver() const {
-		const size_t MAX_ROUNDS = 20; // Or whatever limit you want
+		const size_t MAX_ROUNDS = 50; // Or whatever limit you want
 		return this->roundNumber >= MAX_ROUNDS;
 	}
 

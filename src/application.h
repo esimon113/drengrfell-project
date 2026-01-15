@@ -5,6 +5,7 @@
 #include "core/gamestate.h"
 #include "core/mainMenu.h"
 #include "worldGeneratorConfig.h"
+#include "tradingSystem.h"
 #include <common.h>
 #include <memory>
 #include <utils/commandLineOptions.h>
@@ -47,10 +48,10 @@ namespace df {
 		// PhysicsSystem physics;
 
 		RenderSystem render;
-		RenderSnowSystem renderSnowSystem;
 
 		EntityMovementSystem movementSystem;
 		BuildingPreviewSystem buildingPreviewSystem;
+		TradingSystem tradingSystem;
 
 		void reset() noexcept;
 
@@ -64,9 +65,14 @@ namespace df {
 		void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
 		void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 		void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
+		void spawnHero() noexcept;
 
 
 		bool test = false;
+
+		bool victoryScreenClosed = false;
+		bool victoryScreenShown = false;
+		bool awaitingTurnEnd = false;
 
 		// GameState
 		std::shared_ptr<GameState> gameState;

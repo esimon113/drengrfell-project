@@ -142,18 +142,30 @@ namespace df {
 				fmt::println("Set hex rendering to {}", this->useHex ? "true" : "false");
 			} break;*/
 			case GLFW_KEY_P: {
-                    glm::dvec2 cursor = this->window->getCursorPosition(); 
-                    auto extent = this->window->getWindowExtent();
-
-                    // Use the scaled coordinates
-                    auto tileId = getTileIdAtPosition(static_cast<int>(cursor.x), static_cast<int>(extent.y) - static_cast<int>(cursor.y));
-                    this->selectedTile = tileId;
                     
-                    auto mapId = tileIdToMapId(tileId);
-                    fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, cursor.x, cursor.y);
 			} break;
 			}
 		}
+		}
+	}
+
+	void RenderTilesSystem::onMouseButtonCallback(GLFWwindow* /* pwindow */, int button, int action, int /* mods */) noexcept {
+		if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+			glm::dvec2 cursor = this->window->getCursorPosition();
+			auto extent = this->window->getWindowExtent();
+
+			// Use the scaled coordinates
+			auto tileId = getTileIdAtPosition(static_cast<int>(cursor.x), static_cast<int>(extent.y) - static_cast<int>(cursor.y));
+
+			// When clicking on the already selected tile, un-select it, otherwise select the new tile
+			if (this->selectedTile == static_cast<int>(tileId)) {
+				this->selectedTile = -1;
+			} else {
+				this->selectedTile = tileId;
+			}
+
+			auto mapId = tileIdToMapId(tileId);
+			fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, cursor.x, cursor.y);
 		}
 	}
 
@@ -245,7 +257,7 @@ namespace df {
 			.setFloat("time", timeInSeconds)
 			.setInt("frames", 4)
 			.setInt("selectedTile", this->selectedTile)
-			.setSampler("tileAtlas", 0);
+			.setSampler("tileAtlas1", 0);
 
 		glBindVertexArray(useHex ? hexVao : tileVao);
 		glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>((useHex ? this->hexMesh : this->tileMesh).size()), static_cast<GLsizei>(this->tileInstances.size()));
@@ -321,7 +333,11 @@ namespace df {
 	}
 
 
-	void RenderTilesSystem::reset() noexcept {}
+	void RenderTilesSystem::reset() noexcept {
+		this->tileAtlas.deinit(); 
+		this->tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
+		this->updateRequired = true;
+	}
 
 
 	std::vector<RenderTilesSystem::TileVertex> RenderTilesSystem::createHexagonalTileMesh() noexcept {

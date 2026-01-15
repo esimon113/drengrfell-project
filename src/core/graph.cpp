@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "assets.h"
 #include "fmt/base.h"
 #include "vertex.h"
 #include "worldGenerator.h"
@@ -80,6 +81,69 @@ namespace df {
 
 		return this->tiles[index].get();
 	}
+
+	TileHandle Graph::getTileFromWorldPosition(float worldX, float worldY) const {
+		int row = static_cast<int>(std::floor((worldY + 0.75f) / 1.5f));
+
+		if (row < 0) {
+			fmt::println("Improper world Position: row < 0");
+			return nullptr;
+		}
+
+		float rowOffset = (row % 2 == 1) ? 1.0f : 0.0f;
+
+		int col = static_cast<int>(std::floor((worldX - rowOffset + 1.0f) / 2.0f));
+
+		if (col < 0) {
+			fmt::println("Improper world Position: col < 0");
+			return nullptr;
+		}
+
+		size_t index = static_cast<size_t>(row) * mapWidth + static_cast<size_t>(col);
+
+		if (index >= tiles.size()) {
+			fmt::println("Improper world Position: index out of map bounds");
+			return nullptr;
+		}
+
+		auto tileType = getTile(index)->getType();
+		// auto t = tiles[index].get()->getType();
+		std::string tileTypeStr = "";
+
+		switch (tileType) {
+		case types::TileType::EMPTY:
+			tileTypeStr = "EMPTY";
+			break;
+		case types::TileType::WATER:
+			tileTypeStr = "WATER";
+			break;
+		case types::TileType::FOREST:
+			tileTypeStr = "FOREST";
+			break;
+		case types::TileType::GRASS:
+			tileTypeStr = "GRASS";
+			break;
+		case types::TileType::MOUNTAIN:
+			tileTypeStr = "MOUNTAIN";
+			break;
+		case types::TileType::FIELD:
+			tileTypeStr = "FIELD";
+			break;
+		case types::TileType::CLAY:
+			tileTypeStr = "CLAY";
+			break;
+		case types::TileType::ICE:
+			tileTypeStr = "ICE";
+			break;
+		default:
+			tileTypeStr = "UNKNOWN";
+			break;
+		}
+		fmt::println("tile: {}", tileTypeStr);
+
+		return getTile(index);
+	}
+
 
 
 	// Throws out_of_range if no edge with id
@@ -773,6 +837,8 @@ namespace df {
 
 		for (auto newTile : newTiles) {
 			std::unique_ptr<Tile> tile = std::make_unique<Tile>(newTile.getId(), newTile.getType(), newTile.getPotency());
+			// TODO: Place hazards only with certain probabilities, if they should be rendered
+			tile->initializeHazardProfile();
 			this->addTile(std::move(tile));
 		}
 		fmt::println("[DEBUG] finished initializing tiles");
@@ -817,315 +883,145 @@ namespace df {
 		std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash> edgeIdMap;
 		std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash> vertexIdMap;
 
-		fmt::println("[DEBUG].[populate] start defining some helpers: getNeighbor, getVertexKey, getEdgeKey");
-		// helper to get neighbouring tile id at some offset (dRow, dCol)
-		fmt::println("[DEBUG].[populate] defining getNeighbour lambda");
-		auto getNeighbour = [columns, rows](size_t tileId, int dRow, int dCol) -> std::optional<size_t> {
-			size_t row = tileId / columns;
-			size_t col = tileId % columns;
-			int newRow = static_cast<int>(row) + dRow;
-			int newCol = static_cast<int>(col) + dCol;
+		fmt::println("[DEBUG].[populate] start defining neighbour helpers");
 
-			// Check bounds
+		// Build lookup from tile id to its position in the grid (row-major order).
+		std::unordered_map<size_t, size_t> tileIdToIndex;
+		tileIdToIndex.reserve(this->tiles.size());
+		for (size_t idx = 0; idx < this->tiles.size(); ++idx) {
+			if (this->tiles[idx]) {
+				tileIdToIndex[this->tiles[idx]->getId()] = idx;
+			}
+		}
+
+		// Odd-R offset neighbour deltas (Red Blob style)
+		const std::array<std::pair<int, int>, 6> oddOffsets = {
+			std::pair{-1, 0}, // NW
+			std::pair{-1, 1}, // NE
+			std::pair{0, 1},  // E
+			std::pair{1, 1},  // SE
+			std::pair{1, 0},  // SW
+			std::pair{0, -1}  // W
+		};
+		const std::array<std::pair<int, int>, 6> evenOffsets = {
+			std::pair{-1, -1}, // NW
+			std::pair{-1, 0},  // NE
+			std::pair{0, 1},   // E
+			std::pair{1, 0},   // SE
+			std::pair{1, -1},  // SW
+			std::pair{0, -1}   // W
+		};
+
+		// neighbour lookup by tile index (row-major position), independent of tile IDs
+		auto getNeighbourIndex = [&](size_t tileIndex, size_t direction) -> std::optional<size_t> {
+			const size_t row = tileIndex / columns;
+			const size_t col = tileIndex % columns;
+			const auto& offsets = (row & 1) ? oddOffsets : evenOffsets;
+			int newRow = static_cast<int>(row) + offsets[direction].first;
+			int newCol = static_cast<int>(col) + offsets[direction].second;
+
 			if (newRow < 0 || newRow >= static_cast<int>(rows) || newCol < 0 || newCol >= static_cast<int>(columns))
 				return std::nullopt;
 
-			size_t neighbourId = static_cast<size_t>(newRow) * columns + static_cast<size_t>(newCol);
-			// Check if neighbourId is valid and within expected range
-			// Note: We can't directly check tiles[neighbourId] because tiles might not be indexed by ID
-			// Instead, we just verify the calculated ID is within the expected grid bounds
-			if (neighbourId >= rows * columns) {
+			const size_t neighbourIndex = static_cast<size_t>(newRow) * columns + static_cast<size_t>(newCol);
+			if (neighbourIndex >= this->tiles.size() || !this->tiles[neighbourIndex])
 				return std::nullopt;
-			}
-			return std::optional<size_t>(neighbourId);
-		};
-		fmt::println("[DEBUG].[populate] finished defining getNeighbour");
 
-		// make sure shared vertices (by tiles) get same id -> no duplicats
-		// use "canonical key" for a vertex -> "refrence" tile with smallest id
-		fmt::println("[DEBUG].[populate] defining getVertexKey lambda");
-		auto getVertexKey = [&getNeighbour, columns](size_t tileId, size_t vertexIndex) -> std::pair<size_t, size_t> {
-			if (columns == 0) {
-				throw std::logic_error("getVertexKey: columns is zero!");
-			}
-			size_t row = tileId / columns;
-			bool isOdd = (row & 1) == 1; // odd rows have different neighbours -> hexagonal represented by row/col
-			size_t minTileId = tileId;
-			std::vector<size_t> sharingTiles = {tileId};
+			return neighbourIndex;
+		};
+
+		// Returns which tiles share a vertex, with which vertex index on each neighbor
+		// Vertex positions: V0=bottom-right, V1=top-right, V2=top, V3=top-left, V4=bottom-left, V5=bottom
+		// Neighbor directions: 0=NW (below-left), 1=NE (below-right), 2=E (right), 3=SE (above-right), 4=SW (above-left), 5=W (left)
+		auto buildVertexSharingInfo = [&](size_t tileIndex, size_t vertexIndex) -> std::vector<std::pair<size_t, size_t>> {
+			std::vector<std::pair<size_t, size_t>> sharingInfo;
+			sharingInfo.push_back({tileIndex, vertexIndex});
 
 			switch (vertexIndex) {
-			case 0: // Top
-				if (isOdd) {
-					// Odd row: top-left (row-1, col), top-right (row-1, col+1)
-					if (auto n = getNeighbour(tileId, -1, 0))
-						sharingTiles.push_back(*n);
-					if (auto n = getNeighbour(tileId, -1, 1))
-						sharingTiles.push_back(*n);
-				} else {
-					// Even row: top-left (row-1, col-1), top-right (row-1, col)
-					if (auto n = getNeighbour(tileId, -1, -1))
-						sharingTiles.push_back(*n);
-					if (auto n = getNeighbour(tileId, -1, 0))
-						sharingTiles.push_back(*n);
-				}
+			case 0: // Bottom-right -> connect with neighbour directions: east (to right) and noth-east (below-right)
+				if (auto n = getNeighbourIndex(tileIndex, 2); n)
+					sharingInfo.push_back({*n, 4}); // E.V4
+				if (auto n = getNeighbourIndex(tileIndex, 1); n)
+					sharingInfo.push_back({*n, 2}); // NE.V2
 				break;
-			case 1: // Top-right
-				if (auto n = getNeighbour(tileId, 0, 1))
-					sharingTiles.push_back(*n);
+			case 1: // Top-right -> connect with neighbour east and south-east (above-right)
+				if (auto n = getNeighbourIndex(tileIndex, 2); n)
+					sharingInfo.push_back({*n, 3}); // E.V3
+				if (auto n = getNeighbourIndex(tileIndex, 3); n)
+					sharingInfo.push_back({*n, 5}); // SE.V5
 				break;
-			case 2: // Bottom-right -> right flat edge (sharde with right neighbour)
-				if (auto n = getNeighbour(tileId, 0, 1))
-					sharingTiles.push_back(*n);
+			case 2: // Top -> connect  with enighbor south-east and south-west (above-left)
+				if (auto n = getNeighbourIndex(tileIndex, 3); n)
+					sharingInfo.push_back({*n, 4}); // SE.V4
+				if (auto n = getNeighbourIndex(tileIndex, 4); n)
+					sharingInfo.push_back({*n, 0}); // SW.V0
 				break;
-			case 3: // Bottom vertex
-				if (isOdd) {
-					// Odd row: bottom-left (row+1, col), bottom-right (row+1, col+1)
-					if (auto n = getNeighbour(tileId, 1, 0))
-						sharingTiles.push_back(*n);
-					if (auto n = getNeighbour(tileId, 1, 1))
-						sharingTiles.push_back(*n);
-				} else {
-					// Even row: bottom-left (row+1, col-1), bottom-right (row+1, col)
-					if (auto n = getNeighbour(tileId, 1, -1))
-						sharingTiles.push_back(*n);
-					if (auto n = getNeighbour(tileId, 1, 0))
-						sharingTiles.push_back(*n);
-				}
+			case 3: // Top-left -> connect with neighbour south-west and west (left)
+				if (auto n = getNeighbourIndex(tileIndex, 4); n)
+					sharingInfo.push_back({*n, 5}); // SW.V5
+				if (auto n = getNeighbourIndex(tileIndex, 5); n)
+					sharingInfo.push_back({*n, 1}); // W.V1
 				break;
-			case 4: // bottom-left -> shared with left neighbuor
-				if (auto n = getNeighbour(tileId, 0, -1))
-					sharingTiles.push_back(*n);
+			case 4: // Bottom-left -> connect with neighbour west and north-west (below-left)
+				if (auto n = getNeighbourIndex(tileIndex, 5); n)
+					sharingInfo.push_back({*n, 0}); // W.V0
+				if (auto n = getNeighbourIndex(tileIndex, 0); n)
+					sharingInfo.push_back({*n, 2}); // NW.V2
 				break;
-			case 5: // top-left vertex ->left neighboor
-				if (auto n = getNeighbour(tileId, 0, -1))
-					sharingTiles.push_back(*n);
+			case 5: // Bottom -> connect with neighbour north-west and north-east
+				if (auto n = getNeighbourIndex(tileIndex, 0); n)
+					sharingInfo.push_back({*n, 1}); // NW.V1
+				if (auto n = getNeighbourIndex(tileIndex, 1); n)
+					sharingInfo.push_back({*n, 3}); // NE.V3
 				break;
 			}
 
-			// get canconical tile
-			for (size_t tid : sharingTiles)
-				if (tid < minTileId)
-					minTileId = tid;
-
-			// Determine the vertex index in the canonical tile
-			// If the canonical tile is the current tile, use the current vertexIndex
-			// Otherwise, determine what index this vertex has in the canonical tile
-			size_t canonicalVertexIndex = vertexIndex;
-			if (minTileId != tileId) {
-				std::sort(sharingTiles.begin(), sharingTiles.end());
-				bool isCanonicalOdd = ((minTileId / columns) & 1) == 1;
-
-				// For vertices shared by 3 tiles, determine the canonical index
-				// by checking the relative positions of sharing tiles
-				if (sharingTiles.size() == 3) {
-
-					// Determine which vertex index in the canonical tile corresponds to this shared vertex
-					// by checking which neighbours the canonical tile has which match the sharing tiles
-					for (size_t vi = 0; vi < 6; ++vi) {
-						std::vector<size_t> canonicalSharingTiles = {minTileId};
-
-						switch (vi) {
-						case 0: // Top
-							if (isCanonicalOdd) {
-								if (auto n = getNeighbour(minTileId, -1, 0))
-									canonicalSharingTiles.push_back(*n);
-								if (auto n = getNeighbour(minTileId, -1, 1))
-									canonicalSharingTiles.push_back(*n);
-							} else {
-								if (auto n = getNeighbour(minTileId, -1, -1))
-									canonicalSharingTiles.push_back(*n);
-								if (auto n = getNeighbour(minTileId, -1, 0))
-									canonicalSharingTiles.push_back(*n);
-							}
-							break;
-						case 1: // Top-right
-							if (auto n = getNeighbour(minTileId, 0, 1))
-								canonicalSharingTiles.push_back(*n);
-							break;
-						case 2: // Bottom-right
-							if (auto n = getNeighbour(minTileId, 0, 1))
-								canonicalSharingTiles.push_back(*n);
-							break;
-						case 3: // Bottom
-							if (isCanonicalOdd) {
-								if (auto n = getNeighbour(minTileId, 1, 0))
-									canonicalSharingTiles.push_back(*n);
-								if (auto n = getNeighbour(minTileId, 1, 1))
-									canonicalSharingTiles.push_back(*n);
-							} else {
-								if (auto n = getNeighbour(minTileId, 1, -1))
-									canonicalSharingTiles.push_back(*n);
-								if (auto n = getNeighbour(minTileId, 1, 0))
-									canonicalSharingTiles.push_back(*n);
-							}
-							break;
-						case 4: // Bottom-left
-							if (auto n = getNeighbour(minTileId, 0, -1))
-								canonicalSharingTiles.push_back(*n);
-							break;
-						case 5: // Top-left
-							if (auto n = getNeighbour(minTileId, 0, -1))
-								canonicalSharingTiles.push_back(*n);
-							break;
-						}
-
-						std::sort(canonicalSharingTiles.begin(), canonicalSharingTiles.end());
-						if (canonicalSharingTiles == sharingTiles) {
-							canonicalVertexIndex = vi;
-							break;
-						}
-					}
-				}
-				// else {
-				// 	// For vertices shared by 2 tiles (edge vertices), we need to determine the vertex index in the canonical tile
-				// 	// Try to find which vertex index in the canonical tile corresponds to this shared vertex
-				// 	// size_t canonicalRow = minTileId / columns;
-				// 	// bool canonicalIsOdd = ((minTileId / columns) & 1) == 1;
-				//
-				// 	for (size_t vi = 0; vi < 6; ++vi) {
-				// 		std::vector<size_t> canonicalSharingTiles = {minTileId};
-				//
-				// 		switch (vi) {
-				// 		case 0: // Top
-				// 			if (isCanonicalOdd) {
-				// 				if (auto n = getNeighbour(minTileId, -1, 0))
-				// 					canonicalSharingTiles.push_back(*n);
-				// 				if (auto n = getNeighbour(minTileId, -1, 1))
-				// 					canonicalSharingTiles.push_back(*n);
-				// 			} else {
-				// 				if (auto n = getNeighbour(minTileId, -1, -1))
-				// 					canonicalSharingTiles.push_back(*n);
-				// 				if (auto n = getNeighbour(minTileId, -1, 0))
-				// 					canonicalSharingTiles.push_back(*n);
-				// 			}
-				// 			break;
-				// 		case 1: // Top-right
-				// 			if (auto n = getNeighbour(minTileId, 0, 1))
-				// 				canonicalSharingTiles.push_back(*n);
-				// 			break;
-				// 		case 2: // Bottom-right
-				// 			if (auto n = getNeighbour(minTileId, 0, 1))
-				// 				canonicalSharingTiles.push_back(*n);
-				// 			break;
-				// 		case 3: // Bottom
-				// 			if (isCanonicalOdd) {
-				// 				if (auto n = getNeighbour(minTileId, 1, 0))
-				// 					canonicalSharingTiles.push_back(*n);
-				// 				if (auto n = getNeighbour(minTileId, 1, 1))
-				// 					canonicalSharingTiles.push_back(*n);
-				// 			} else {
-				// 				if (auto n = getNeighbour(minTileId, 1, -1))
-				// 					canonicalSharingTiles.push_back(*n);
-				// 				if (auto n = getNeighbour(minTileId, 1, 0))
-				// 					canonicalSharingTiles.push_back(*n);
-				// 			}
-				// 			break;
-				// 		case 4: // Bottom-left
-				// 			if (auto n = getNeighbour(minTileId, 0, -1))
-				// 				canonicalSharingTiles.push_back(*n);
-				// 			break;
-				// 		case 5: // Top-left
-				// 			if (auto n = getNeighbour(minTileId, 0, -1))
-				// 				canonicalSharingTiles.push_back(*n);
-				// 			break;
-				// 		}
-				//
-				// 		std::sort(canonicalSharingTiles.begin(), canonicalSharingTiles.end());
-				// 		if (canonicalSharingTiles == sharingTiles) {
-				// 			canonicalVertexIndex = vi;
-				// 			break;
-				// 		}
-				// 	}
-				//
-				// 	// If we still couldn't find a match, use a hash of the sorted sharing tiles as a fallback
-				// 	// This ensures we still get a consistent key even if the matching logic fails
-				// 	if (canonicalVertexIndex == vertexIndex && minTileId != tileId) {
-				// 		// Use a simple hash of the sorted sharing tile IDs to create a unique but consistent key
-				// 		size_t hash = 0;
-				// 		for (size_t tid : sharingTiles) {
-				// 			hash = hash * 31 + tid; // Simple hash function
-				// 		}
-				// 		// Map hash to a vertex index (0-5) using modulo
-				// 		canonicalVertexIndex = hash % 6;
-				// 	}
-				// }
-			}
-
-			// (canonicalTileId, canonicalVertexIndex)
-			return {minTileId, canonicalVertexIndex};
+			return sharingInfo;
 		};
 
-		// similar to above, just for edges (shard among at most 2 tiles)
-		fmt::println("[DEBUG].[populate] defining getEdgeKey lambda");
-		auto getEdgeKey = [&getNeighbour, columns](size_t tileId, size_t edgeIndex) -> std::pair<size_t, size_t> {
-			size_t row = tileId / columns;
-			bool isOdd = (row & 1) == 1;
-			size_t minTileId = tileId;
-			std::optional<size_t> neighbour;
+		// Return the canonical tile index and its corresponding vertex index
+		auto getVertexKey = [&](size_t tileIndex, size_t vertexIndex) -> std::pair<size_t, size_t> {
+			auto sharingInfo = buildVertexSharingInfo(tileIndex, vertexIndex);
+			if (sharingInfo.empty())
+				return {tileIndex, vertexIndex};
 
-			switch (edgeIndex) {
-			case 0:
-				neighbour = isOdd ? getNeighbour(tileId, -1, 1) : getNeighbour(tileId, -1, 0);
-				break;
-			case 1:
-				neighbour = getNeighbour(tileId, 0, 1);
-				break;
-			case 2:
-				neighbour = isOdd ? getNeighbour(tileId, 1, 1) : getNeighbour(tileId, 1, 0);
-				break;
-			case 3:
-				neighbour = isOdd ? getNeighbour(tileId, 1, 0) : getNeighbour(tileId, 1, -1);
-				break;
-			case 4:
-				neighbour = getNeighbour(tileId, 0, -1);
-				break;
-			case 5:
-				neighbour = isOdd ? getNeighbour(tileId, -1, 0) : getNeighbour(tileId, -1, -1);
-				break;
-			}
+			// Sort by tile index to get canonical tile
+			std::sort(sharingInfo.begin(), sharingInfo.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+			return sharingInfo.front();
+		};
 
-			if (neighbour && *neighbour < minTileId)
-				minTileId = *neighbour;
+		// Edge i connects vertex i to vertex (i+1)%6.
+		// The shared neighbour is the one that shares both vertices of the edge:
+		// Edge 0: V0-V1 (right edge) -> E shares V0 and V1 -> direction 2
+		// Edge 1: V1-V2 (top-right edge) -> SE shares V1 and V2 -> direction 3
+		// Edge 2: V2-V3 (top-left edge) -> SW shares V2 and V3 -> direction 4
+		// Edge 3: V3-V4 (left edge) -> W shares V3 and V4 -> direction 5
+		// Edge 4: V4-V5 (bottom-left edge) -> NW shares V4 and V5 -> direction 0
+		// Edge 5: V5-V0 (bottom-right edge) -> NE shares V5 and V0 -> direction 1
+		const std::array<size_t, 6> edgeDirections = {2, 3, 4, 5, 0, 1}; // E, SE, SW, W, NW, NE
+
+		auto getEdgeNeighbourIndex = [&](size_t tileIndex, size_t edgeIndex) -> std::optional<size_t> {
+			return getNeighbourIndex(tileIndex, edgeDirections[edgeIndex]);
+		};
+
+		auto getEdgeKey = [&](size_t tileIndex, size_t edgeIndex) -> std::pair<size_t, size_t> {
+			auto neighbour = getEdgeNeighbourIndex(tileIndex, edgeIndex);
+			size_t canonicalTileIndex = tileIndex;
+			if (neighbour && *neighbour < canonicalTileIndex)
+				canonicalTileIndex = *neighbour;
 
 			size_t canonicalEdgeIndex = edgeIndex;
-			if (minTileId != tileId && neighbour.has_value()) {
-				bool isCanonicalOdd = ((minTileId / columns) & 1) == 1;
-
-				// Which edge index in the canonical tile corresponds to this edge
-				// checking which neighbour the canonical tile has which matches the current tile
+			if (neighbour) {
+				const size_t otherTileIndex = (canonicalTileIndex == tileIndex) ? *neighbour : tileIndex;
 				for (size_t ei = 0; ei < 6; ++ei) {
-					std::optional<size_t> canonicalNeighbour;
-
-					switch (ei) {
-					case 0:
-						canonicalNeighbour = isCanonicalOdd ? getNeighbour(minTileId, -1, 1) : getNeighbour(minTileId, -1, 0);
-						break;
-					case 1:
-						canonicalNeighbour = getNeighbour(minTileId, 0, 1);
-						break;
-					case 2:
-						canonicalNeighbour = isCanonicalOdd ? getNeighbour(minTileId, 1, 1) : getNeighbour(minTileId, 1, 0);
-						break;
-					case 3:
-						canonicalNeighbour = isCanonicalOdd ? getNeighbour(minTileId, 1, 0) : getNeighbour(minTileId, 1, -1);
-						break;
-					case 4:
-						canonicalNeighbour = getNeighbour(minTileId, 0, -1);
-						break;
-					case 5:
-						canonicalNeighbour = isCanonicalOdd ? getNeighbour(minTileId, -1, 0) : getNeighbour(minTileId, -1, -1);
-						break;
-					}
-
-					// If the canonical tile's edge connects to the same neighbour (=current tile), that's the correct edge index
-					if (canonicalNeighbour.has_value() && *canonicalNeighbour == tileId) {
+					if (auto n = getEdgeNeighbourIndex(canonicalTileIndex, ei); n && *n == otherTileIndex) {
 						canonicalEdgeIndex = ei;
 						break;
 					}
 				}
 			}
 
-			return {minTileId, canonicalEdgeIndex};
+			return {canonicalTileIndex, canonicalEdgeIndex};
 		};
 
 		// Calculate the maximum tile ID to avoid ID conflicts
@@ -1142,9 +1038,9 @@ namespace df {
 		fmt::println("[DEBUG].[populate] about to iterate over {} tiles", this->tiles.size());
 
 		fmt::println("[DEBUG].[populate] starting tile iteration loop");
-		size_t tileIndex = 0;
-		for (const auto& tile : this->tiles) {
-			fmt::println("[DEBUG].[populate] processing tile index {}", tileIndex++);
+		for (size_t tileIndex = 0; tileIndex < this->tiles.size(); ++tileIndex) {
+			const auto& tile = this->tiles[tileIndex];
+			fmt::println("[DEBUG].[populate] processing tile index {}", tileIndex);
 			if (!tile) {
 				fmt::println("[DEBUG].[populate] ERROR: Found null tile pointer!");
 				continue;
@@ -1159,7 +1055,7 @@ namespace df {
 			for (size_t vi = 0; vi < 6; ++vi) {
 				// canonical key for vertex
 				fmt::println("[DEBUG].[populate] calling getVertexKey for tile {}, vertex index {}", tileId, vi);
-				auto key = getVertexKey(tileId, vi);
+				auto key = getVertexKey(tileIndex, vi);
 				fmt::println("[DEBUG].[populate] got vertex key: ({}, {})", key.first, key.second);
 				VertexHandle tmpVertex = nullptr;
 
@@ -1213,7 +1109,7 @@ namespace df {
 
 			// simliar to above
 			for (size_t ei = 0; ei < 6; ++ei) {
-				auto key = getEdgeKey(tileId, ei);
+				auto key = getEdgeKey(tileIndex, ei);
 				EdgeHandle tmpEdge = nullptr;
 				size_t edgeId;
 
@@ -1238,8 +1134,8 @@ namespace df {
 
 				// connect edge to the 2 vertices
 				// Edge i connects vertex i to vertex (i+1) % 6
-				auto vertex1Key = getVertexKey(tileId, ei);
-				auto vertex2Key = getVertexKey(tileId, (ei + 1) % 6);
+				auto vertex1Key = getVertexKey(tileIndex, ei);
+				auto vertex2Key = getVertexKey(tileIndex, (ei + 1) % 6);
 				auto v1It = vertexIdMap.find(vertex1Key);
 				auto v2It = vertexIdMap.find(vertex2Key);
 				if (v1It != vertexIdMap.end() && v2It != vertexIdMap.end()) {

@@ -5,7 +5,7 @@
 
 namespace df {
 
-	RenderSystem RenderSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept {
+	RenderSystem RenderSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState, GameController* gameController) noexcept {
 		RenderSystem self;
 
 		self.window = window;
@@ -20,11 +20,11 @@ namespace df {
 		self.renderTilesSystem = RenderTilesSystem::init(*window, *registry, gameState);
 		self.renderHeroSystem = RenderHeroSystem::init(window, registry, gameState);
 		self.renderBuildingsSystem = RenderBuildingsSystem::init(window, registry, gameState);
-		self.renderBuildingPreviewsSystem = RenderBuildingPreviewsSystem::init(window, registry, gameState);
+		self.renderBuildingPreviewsSystem = RenderBuildingPreviewsSystem::init(window, registry, gameState, gameController);
 		self.renderHudSystem = RenderHudSystem::init(window, registry, gameState);
 		self.renderTextSystem = RenderTextSystem::init(window, registry);
 		self.renderSnowSystem = RenderSnowSystem::init(window, registry, gameState);
-
+		self.renderNotificationSystem = RenderNotificationSystem::init(window, registry);
 		return self;
 	}
 
@@ -37,6 +37,7 @@ namespace df {
 		this->renderHudSystem.deinit();
 		this->renderTextSystem.deinit();
 		this->renderSnowSystem.deinit();
+		this->renderNotificationSystem.deinit();
 		this->intermediateFramebuffer.deinit();
 	}
 
@@ -47,6 +48,7 @@ namespace df {
 		this->renderHeroSystem.step(dt);
 		this->renderTextSystem.step(dt);
 		this->renderSnowSystem.step(dt);
+		this->renderNotificationSystem.step(dt);
 		this->renderHudSystem.step(dt); // always rendered last
 	}
 
@@ -58,6 +60,7 @@ namespace df {
 		this->renderHeroSystem.reset();
 		this->renderHudSystem.reset();
 		this->renderTextSystem.reset();
+		this->renderNotificationSystem.reset();
 		this->renderSnowSystem.reset();
 	}
 
@@ -101,5 +104,8 @@ namespace df {
 
 	void RenderSystem::onKeyCallback(GLFWwindow* pwindow, int key, int scancode, int action, int mods) noexcept {
 		this->renderTilesSystem.onKeyCallback(pwindow, key, scancode, action, mods);
+	}
+	void RenderSystem::onMouseButtonCallback(GLFWwindow* pwindow, int button, int action, int mods) noexcept {
+		this->renderTilesSystem.onMouseButtonCallback(pwindow, button, action, mods);
 	}
 } // namespace df

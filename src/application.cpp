@@ -10,8 +10,14 @@
 // test for entityMovement
 #include "core/road.h"
 #include "entityMovement.h"
+// #include "utils/graphDebugDump.h"
+// #include "utils/graphDebugImage.h"
+#include "systems/questsSystem.h"
 #include "utils/worldNodeMapper.h"
+#include "systems/renderTiles.h"
+#include "tradingSystem.h"
 
+#include <random>
 
 #include <fstream>
 #include <iostream>
@@ -19,6 +25,8 @@
 #include "events/eventBus.h"
 #include "window.h"
 
+#include "ai/behaviorTree.h"
+#include "ai/commandRegistry.h"
 
 namespace df {
 	static void glfwErrorCallback(int error, const char* description) {
@@ -65,10 +73,11 @@ namespace df {
 		self.gameController = std::make_shared<GameController>(*self.gameState);
 		self.world = WorldSystem::init(self.window.get(), self.registry, self.audioEngine.get(), *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState);
+		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get());
 		// Create main menu
 		self.mainMenu.init(self.window.get());
-		// for testing hero movement until we have a triggerpoint
+		// for testing
+		// movement until we have a triggerpoint
 		self.movementSystem = EntityMovementSystem::init(self.registry, *self.gameState);
 		// building preview system
 		self.buildingPreviewSystem = BuildingPreviewSystem::init(self.window.get(), self.registry, *self.gameState);
@@ -98,6 +107,22 @@ namespace df {
 
 		// Store RenderTextSystem in registry to use it in any other System.
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
+		// Store RenderNofificationSystem in registry to use it in any other System.
+		registry->addSystem<RenderNotificationSystem>(&render.getRenderNotificationSystem());
+		// Store RenderSnowSystem in registry to use it in any other System.
+		registry->addSystem<RenderSnowSystem>(&render.getRenderSnowSystem());
+
+		registry->addSystem<RenderTilesSystem>(&render.getRenderTilesSystem());
+
+		auto* qSys = gameController->getQuestsSystem();
+		if (qSys) {
+			registry->addSystem<QuestsSystem>(qSys);
+
+			qSys->init(&render.getRenderNotificationSystem());
+		}
+
+
+
 		if (!this->window || !this->window->getHandle()) {
 			std::cerr << "Invalid window or GLFWwindow handle!" << std::endl;
 			return;
@@ -159,8 +184,11 @@ namespace df {
 
 			// Start turn when first entering PLAY phase -> future TODO: adjust for multiple players + ending game + reentering
 			if (gamePhase == types::GamePhase::PLAY && previousGamePhase != types::GamePhase::PLAY) {
-				gameController->startTurn();
+				gameController->startTurn(*registry);
 				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
+				// Prepare the camera so it can be centered
+				world.step(0.0f);
+				world.centerCameraOnPoint(movementSystem.getTargetPosition());
 			}
 
 			switch (gamePhase) {
@@ -176,11 +204,26 @@ namespace df {
 				world.step(delta_time);
 				// physics.step(delta_time);
 				// physics.handleCollisions(delta_time);
-
 				if (gameState->isGameOver()) {
-					fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
-					this->reset();
-					gameState->setPhase(types::GamePhase::START);
+					window->makeContextCurrent();
+					glClearColor(0.24f, 0.299f, 0.475f, 1.0f);
+					glClear(GL_COLOR_BUFFER_BIT);
+					render.step(delta_time);
+					if (!victoryScreenShown) {
+						// Render victory notification
+						RenderNotificationSystem* notification = registry->getSystem<RenderNotificationSystem>();
+						std::string message = fmt::format("\nYou have played for {} rounds!\n\nYou build {} settlements and {} roads.\n",
+							gameState->getRoundNumber(), gameState->getSettlements().size(), gameState->getRoads().size());
+						notification->showNotification("You won the Game!", message, {"Back to Menu"});
+						fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
+						victoryScreenShown = true;
+					}
+					if (victoryScreenClosed) {
+						// reset application once victory screen was closed
+						this->reset();
+						gameState->resetTutorial();
+						gameState->setPhase(types::GamePhase::START);
+					}
 					break;
 				}
 
@@ -192,34 +235,32 @@ namespace df {
 				buildingPreviewSystem.step(delta_time);
 
 				window->makeContextCurrent();
-				glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+				glClearColor(0.24f, 0.299f, 0.475f, 1.0f);
 				glClear(GL_COLOR_BUFFER_BIT);
 
 				render.step(delta_time);
 				// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
 				if (movementSystem.getMovementState()) {
 					if (!registry->animations.entities.empty()) {
-
-						glm::vec2 mouseCoords = glm::vec2(world.getMouseX(), world.getMouseY());
-						auto extent = this->window->getWindowExtent();
-
-						auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
-						auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
-						// fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
-
-						glm::vec2 tilePosition = movementSystem.getTileWorldPosition(mapId);
-						// fmt::println("Tile Position: ({},{})", tilePosition.x, tilePosition.y);
-
 						Entity hero = registry->animations.entities.front();
-						glm::vec2 targetPos = tilePosition;
-						// glm::vec2 currentTargetPos = targetPos;
-
-						movementSystem.moveEntityTo(hero, targetPos, delta_time);
+						movementSystem.moveEntityTo(hero, movementSystem.getTargetPosition(), delta_time);
+						if (!movementSystem.getMovementState()) {
+							render.renderTilesSystem.selectedTile = -1; // remove tile highlighting after hero arrived
+						}
 					} else {
 						fmt::println("No hero entity available!");
 					}
 				}
 				// ------------------------------------------------------------
+
+				// Only truly end the turn and start a new one when the hero finished walking
+				if (awaitingTurnEnd && !movementSystem.getMovementState()) {
+					Entity hero = registry->animations.entities.front();
+					gameController->endTurn(*registry);
+					gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
+					gameController->startTurn(*registry); // Start turn for the next player
+					awaitingTurnEnd = false;
+				}
 			} break;
 			case types::GamePhase::END:
 				break;
@@ -239,6 +280,10 @@ namespace df {
 	void Application::reset() noexcept {
 		registry->clear();
 
+		auto* qSys = gameController->getQuestsSystem();
+		if (qSys) {
+			qSys->reset(); 
+		}
 
 		Entity camEntity = registry->getCamera();
 
@@ -259,10 +304,15 @@ namespace df {
 
 		gameState->setRoundNumber(0);
 		gameState->setCurrentPlayerId(0);
+		gameState->setTurnCount(0);
 
 		registry->animations.emplace(playerEntity);
+		registry->tileID.emplace(playerEntity, 0);
 
 
+
+		victoryScreenClosed = false;
+		victoryScreenShown = false;
 		world.reset();
 		render.reset();
 	}
@@ -344,23 +394,39 @@ namespace df {
 		} else {
 			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
 		}
+		// lets the hero spawn with on a random Tile (water excluded)
+		spawnHero();
+
+		// 		// This is only for DEBUGGING purposes:
+		// #if defined(__unix__) || defined(__linux__)
+		// 		fmt::println("Log map config");
+		// 		df::utils::writeGraphDebugDump(this->gameState->getMap(), "~/Pictures/debug/graph_debug.txt");
+		// 		df::utils::writeGraphDebugImage(this->gameState->getMap(), "~/Pictures/debug/graph_debug.png");
+		// #endif
+
 		fmt::println("[DEBUG] regenerated world");
 		{
 			// only supports one player for now. TODO: if we do multplayer update this.
-			if (gameState->getPlayer(0)) {
-				Player* player = gameState->getPlayer(0);
-				player->reset();
-				player->addResources(types::TileType::FOREST, 100);	  // give player 100 wood
-				player->addResources(types::TileType::MOUNTAIN, 100); // give player 100 stone
-				player->addResources(types::TileType::FIELD, 50);	  // give player 50 grain
-			} else {
-				Player player{};
-				player.addResources(types::TileType::FOREST, 100);	 // give player 100 wood
-				player.addResources(types::TileType::MOUNTAIN, 100); // give player 100 stone
-				player.addResources(types::TileType::FIELD, 50);	 // give player 50 grain
-				gameState->addPlayer(player);
+			Player* player = this->gameState->getPlayer(0);
+			if (!player) {
+				gameState->addPlayer(Player{});
+				player = this->gameState->getPlayer(0);
 			}
+			player->reset();
+			player->addResources(types::TileType::FOREST, 10);	 // give player initial wood
+			player->addResources(types::TileType::CLAY, 10);	 // give player initial clay
+			player->addResources(types::TileType::MOUNTAIN, 10); // give player initial stone
+			player->addResources(types::TileType::FIELD, 10);	 // give player initial grain
+			player->addResources(types::TileType::GRASS, 10);	 // give player initial grass (cattle)
+
 			fmt::println("[DEBUG] resources distributed to player");
+
+			tradingSystem.init(&render.getRenderNotificationSystem(), player);
+
+			world.setTradeCallback([this]() {
+				tradingSystem.startTrading();
+			});
+
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
 
@@ -388,7 +454,6 @@ namespace df {
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
 		types::GamePhase gamePhase = gameState->getPhase();
-		auto* step = this->gameState->getCurrentTutorialStep();
 		switch (gamePhase) {
 		case types::GamePhase::START:
 			mainMenu.onKeyCallback(windowParam, key, scancode, action, mods);
@@ -399,16 +464,48 @@ namespace df {
 		case types::GamePhase::PLAY:
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
 			render.onKeyCallback(windowParam, key, scancode, action, mods);
-			// Update Tutorial if step == moveCamera
-			if (step && step->id == TutorialStepId::MOVE_CAMERA) {
-				if (action == GLFW_PRESS && (key == GLFW_KEY_W || key == GLFW_KEY_S || key == GLFW_KEY_A || key == GLFW_KEY_D)) {
-					this->gameState->completeCurrentTutorialStep();
-				}
-			}
 			break;
 		case types::GamePhase::END:
 			break;
 		}
+	}
+
+	void Application::spawnHero() noexcept {
+		Entity hero;
+		if (!registry->animations.entities.empty()) {
+			hero = registry->animations.entities.front();
+		} else {
+			hero = registry->getPlayer();
+			registry->animations.emplace(hero);
+		}
+
+		Graph& map = gameState->getMap();
+		int mapWidth = map.getMapWidth();
+		int mapHeight = map.getTileCount() / mapWidth;
+
+		std::random_device rd;
+		std::mt19937 rng(rd());
+		std::uniform_int_distribution<int> dist(0, mapWidth * mapHeight - 1);
+		int randomTileID;
+		do {
+			randomTileID = dist(rng);
+		} while (map.getTile(randomTileID)->getType() == types::TileType::WATER);
+
+		glm::vec2 startPosition = movementSystem.getTileWorldPosition(randomTileID);
+		fmt::println("Hero spawned at TileID: {} with coords: X: {}, Y: {}", randomTileID, startPosition.x, startPosition.y);
+
+		if (registry->positions.has(hero)) {
+			registry->positions.get(hero) = startPosition;
+		} else {
+			registry->positions.emplace(hero, startPosition);
+		}
+
+		if (registry->tileID.has(hero)) {
+			registry->tileID.get(hero) = randomTileID;
+		} else {
+			registry->tileID.emplace(hero, randomTileID);
+		}
+		movementSystem.setTarget(randomTileID, hero);
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
@@ -442,119 +539,156 @@ namespace df {
 				mouseX,
 				static_cast<float>(window->getWindowExtent().y) - mouseY};
 
-			// Check if End Turn button was clicked -> needs to be adjusted for AI-players
-			if (!movementSystem.getMovementState()) {
-				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
-					gameController->endTurn();
-					movementSystem.toggleMovementState();
-					gameController->startTurn(); // Start turn for the next player
-					return;
+
+			// Check if any Notification buttons were pressed
+			std::string pressedButton = render.renderNotificationSystem.onMouseButton(mouse, button, action);
+			// If any button was pressed continue
+			if (!pressedButton.empty()) {
+				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
+				// TODO: add actions for button pressed in notifications
+				if (pressedButton == "Wood" || pressedButton == "Stone" ||
+					pressedButton == "Clay" || pressedButton == "Grass" || pressedButton == "Grain") {
+					tradingSystem.handleOptionClicked(pressedButton);
 				}
+				if (pressedButton == "Pay ressources") {
+					gameController->payForHazard(*registry);
+				}
+				// Quests
+				if (pressedButton == "Next Quest") {
+					this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
+				} 
+
+				if (pressedButton.find("Claim") == 0) { 
+					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
+					gameController->claimQuestReward(currentId);
+				}
+
+				if (pressedButton == "Back to Menu") {
+					victoryScreenClosed = true;	// close victory screen and go back to menu
+				}
+				return;	// notification clicked -> no further actions (including movement) for now
 			}
 
-			if (render.renderHudSystem.onMouseButton(mouse, button, action))
-				return;
+			// START Lock all following interactions with the game while the hero is still moving
+			if (!movementSystem.getMovementState()) {
+				// Check if End Turn button was clicked -> needs to be adjusted for AI-players
+				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
+					if (!gameState->isGameOver()) {
+						
+						auto* step = this->gameState->getCurrentTutorialStep();
+						if (step && step->id == TutorialStepId::MOVE_HERO) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 
-			// TODO: refactor...
-			// Handle building placement -> ONLY possible when preview is active
-			if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-				if (this->world.isSettlementPreviewActive || this->world.isRoadPreviewActive) {
-					fmt::println("Building placement started...");
-
-					Entity previewEntity = buildingPreviewSystem.getPreviewEntity();
-					if (!registry->positions.has(previewEntity)) {
-						fmt::println("No preview entity found");
+						Entity hero = registry->animations.entities.front();
+						// TODO: For multiplayer check only for active player for hazards
+						if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
+							movementSystem.toggleMovementState();
+							fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
+						}
+						awaitingTurnEnd = true;
 						return;
 					}
-					const glm::vec2& cameraRelativePos = registry->positions.get(previewEntity);
-
-					// Reconstruct absolute world position from camera-relative position
-					Camera& cam = registry->cameras.get(registry->getCamera());
-					glm::vec2 worldPos = cam.position + cameraRelativePos;
-
-					const Graph& map = this->gameState->getMap();
-
-					size_t currentPlayerId = this->gameState->getCurrentPlayerId();
-
-					// TODO: This is just temporary...
-					// Settlement: 1 WOOD, 1 CLAY, 1 GRASS
-					const std::vector<int> settlementCost = {
-						0, // EMPTY
-						0, // WATER
-						1, // FOREST (wood)
-						1, // GRASS
-						0, // MOUNTAIN
-						0, // FIELD
-						1, // CLAY
-						0  // ICE
-					};
-					// Road: 1 WOOD
-					const std::vector<int> roadCost = {
-						0, // EMPTY
-						0, // WATER
-						1, // FOREST (wood)
-						0, // GRASS
-						0, // MOUNTAIN
-						0, // FIELD
-						0, // CLAY
-						0  // ICE
-					};
-
-					if (this->world.isSettlementPreviewActive) {
-						fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
-						// Find closest vertex for settlement placement
-						auto vertexIdOpt = WorldNodeMapper::findClosestVertexToWorldPos(worldPos, map);
-						if (vertexIdOpt.has_value()) {
-							fmt::println("Closest vertex found at {}", vertexIdOpt.value());
-							size_t vertexId = vertexIdOpt.value();
-							if (gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
-								fmt::println("Player can build settlement at vertex {}", vertexId);
-								bool success = gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
-
-								if (success) {
-									fmt::println("Settlement built at vertex {}", vertexId);
-									this->world.isSettlementPreviewActive = false;
-								} else {
-									fmt::println("Failed to build settlement at vertex {}", vertexId);
-								}
-
-							} else {
-								fmt::println("Cannot build settlement at vertex {}: insufficient resources or invalid placement", vertexId);
-							}
-						} else
-							fmt::println("No closest vertex found");
-
-					} else if (this->world.isRoadPreviewActive) {
-						fmt::println("Checking if player can build road at world position {},{}", worldPos.x, worldPos.y);
-						// Find closest edge for road placement
-						auto edgeIdOpt = WorldNodeMapper::findClosestEdgeToWorldPos(worldPos, map);
-						if (edgeIdOpt.has_value()) {
-							fmt::println("Closest edge found at {}", edgeIdOpt.value());
-							size_t edgeId = edgeIdOpt.value();
-
-							if (gameController->canBuildRoad(currentPlayerId, edgeId)) { // validate player can build road
-								fmt::println("Player can build road at edge {}", edgeId);
-								bool success = gameController->buildRoad(currentPlayerId, edgeId, RoadLevel::Path, roadCost);
-								if (success) {
-									fmt::println("Road built at edge {}", edgeId);
-									this->world.isRoadPreviewActive = false;
-								} else {
-									fmt::println("Failed to build road at edge {}", edgeId);
-								}
-
-							} else {
-								fmt::println("Cannot build road at edge {}: insufficient resources or invalid placement", edgeId);
-							}
-
-						} else
-							fmt::println("No closest edge found");
-					}
-
-					return; // ignore other mouse callbacks when placing buildings...
 				}
-			}
 
-			world.onMouseButtonCallback(windowParam, button, action, mods);
+				if (render.renderHudSystem.onMouseButton(mouse, button, action))
+					return;
+
+				// TODO: refactor...
+				// Handle building placement -> ONLY possible when preview is active
+				if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+					if (this->world.isSettlementPreviewActive || this->world.isRoadPreviewActive) {
+						fmt::println("Building placement started...");
+
+						Entity previewEntity = buildingPreviewSystem.getPreviewEntity();
+						if (!registry->positions.has(previewEntity)) {
+							fmt::println("No preview entity found");
+							return;
+						}
+						const glm::vec2& cameraRelativePos = registry->positions.get(previewEntity);
+
+						// Reconstruct absolute world position from camera-relative position
+						Camera& cam = registry->cameras.get(registry->getCamera());
+						glm::vec2 worldPos = cam.position + cameraRelativePos;
+
+						const Graph& map = this->gameState->getMap();
+
+						size_t currentPlayerId = this->gameState->getCurrentPlayerId();
+
+						if (this->world.isSettlementPreviewActive) {
+							fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
+							// Find closest vertex for settlement placement
+							auto vertexIdOpt = WorldNodeMapper::findClosestVertexToWorldPos(worldPos, map);
+							if (vertexIdOpt.has_value()) {
+								fmt::println("Closest vertex found at {}", vertexIdOpt.value());
+								size_t vertexId = vertexIdOpt.value();
+								if (this->gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
+									fmt::println("Player can build settlement at vertex {}", vertexId);
+									const auto settlementCost = this->gameState->getCurrentSettlementCost();
+									bool success = this->gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
+
+									if (success) {
+										fmt::println("Settlement built at vertex {}", vertexId);
+										this->world.isSettlementPreviewActive = false;
+									} else {
+										fmt::println("Failed to build settlement at vertex {}", vertexId);
+									}
+
+								} else {
+									fmt::println("Cannot build settlement at vertex {}: insufficient resources or invalid placement", vertexId);
+								}
+							} else
+								fmt::println("No closest vertex found");
+
+						} else if (this->world.isRoadPreviewActive) {
+							fmt::println("Checking if player can build road at world position {},{}", worldPos.x, worldPos.y);
+							// Find closest edge for road placement
+							auto edgeIdOpt = WorldNodeMapper::findClosestEdgeToWorldPos(worldPos, map);
+							if (edgeIdOpt.has_value()) {
+								fmt::println("Closest edge found at {}", edgeIdOpt.value());
+								size_t edgeId = edgeIdOpt.value();
+
+								if (gameController->canBuildRoad(currentPlayerId, edgeId)) { // validate player can build road
+									fmt::println("Player can build road at edge {}", edgeId);
+									const auto roadCost = this->gameState->getCurrentRoadCost();
+									bool success = gameController->buildRoad(currentPlayerId, edgeId, RoadLevel::Path, roadCost);
+									if (success) {
+										fmt::println("Road built at edge {}", edgeId);
+										this->world.isRoadPreviewActive = false;
+									} else {
+										fmt::println("Failed to build road at edge {}", edgeId);
+									}
+
+								} else {
+									fmt::println("Cannot build road at edge {}: insufficient resources or invalid placement", edgeId);
+								}
+
+							} else
+								fmt::println("No closest edge found");
+						}
+
+						return; // ignore other mouse callbacks when placing buildings...
+					}
+				}
+
+				if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+					glm::vec2 mouseCoords = glm::vec2(mouseX, mouseY);
+					auto extent = this->window->getWindowExtent();
+
+					auto tileId = render.renderTilesSystem.getTileIdAtPosition(mouseCoords.x, extent.y - mouseCoords.y);
+					auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
+					fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
+
+					if (mapId >= 0 && !movementSystem.isEntityMoving()) {
+						//  TODO: For multiplayer use hero of active player
+						Entity hero = registry->animations.entities.front();
+						movementSystem.setTarget(mapId, hero);
+						}
+				}
+
+				world.onMouseButtonCallback(windowParam, button, action, mods);
+				render.onMouseButtonCallback(windowParam, button, action, mods);
+			} // END Lock for movement
 		} break;
 		case types::GamePhase::END:
 			break;
@@ -578,9 +712,12 @@ namespace df {
 	}
 
 	void Application::onResizeCallback(GLFWwindow* windowParam, int width, int height) noexcept {
+		if (width <= 0 || height <= 0) // prevent crashing window under windows when minimizing
+			return;
 		mainMenu.onResizeCallback(windowParam, width, height);
 		render.onResizeCallback(windowParam, width, height);
 		render.renderHudSystem.onResizeCallback(windowParam, width, height);
 		configMenu.onResizeCallback(windowParam, width, height);
+		render.renderNotificationSystem.onResizeCallback(windowParam, width, height);
 	}
 } // namespace df

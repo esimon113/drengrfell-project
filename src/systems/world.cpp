@@ -1,6 +1,8 @@
 #include "world.h"
 #include "fmt/base.h"
 #include "hero.h"
+#include "questsSystem.h"
+#include "renderNotification.h"
 #include <iostream>
 
 namespace df {
@@ -44,6 +46,13 @@ namespace df {
 		// Player& player = registry->players.get(registry->getPlayer());
 		// score = player.getSettlementIds().size();
 
+		int fbWidth, fbHeight;
+		glfwGetFramebufferSize(window->getHandle(), &fbWidth, &fbHeight);
+		auto [scaledMouseX, scaledMouseY] = calculateScaledMousePosition();
+
+		double edgePercent = 0.03;	// How big the zone is where the camera moves on the window edge
+		double edgeX = fbWidth * edgePercent;
+		double edgeY = fbHeight * edgePercent;
 
 
 		const Graph& map = gameState->getMap();
@@ -58,14 +67,22 @@ namespace df {
 		float camMaxX = worldWidth - cam.viewWidth + offset / 2;
 		float camMaxY = worldHeight - cam.viewHeight + offset;
 
-		if (input.up)
+		if (input.up || scaledMouseY < edgeY) {
 			cam.position.y += cam.scrollSpeed * delta;
-		if (input.down)
+			completeCameraTutorial();
+		}
+		if (input.down || scaledMouseY > fbHeight - edgeY) {
 			cam.position.y -= cam.scrollSpeed * delta;
-		if (input.left)
+			completeCameraTutorial();
+		}
+		if (input.left || scaledMouseX < edgeX) {
 			cam.position.x -= cam.scrollSpeed * delta;
-		if (input.right)
+			completeCameraTutorial();
+		}
+		if (input.right || scaledMouseX > fbWidth - edgeX) {
 			cam.position.x += cam.scrollSpeed * delta;
+			completeCameraTutorial();
+		}
 		if (cam.position.x > camMaxX)
 			cam.position.x = camMaxX;
 		if (cam.position.y > camMaxY)
@@ -76,12 +93,30 @@ namespace df {
 			cam.position.y = camMinY;
 	}
 
+	void WorldSystem::completeCameraTutorial() {
+		auto* step = this->gameState->getCurrentTutorialStep();
+		// Update Tutorial if step == moveCamera
+		if (step && step->id == TutorialStepId::MOVE_CAMERA) {
+			this->gameState->completeCurrentTutorialStep();
+		}
+	}
+
+	void WorldSystem::centerCameraOnPoint(glm::vec2 pos) {
+		Camera& cam = registry->cameras.get(registry->getCamera());
+		cam.position.x = pos.x - (0.5f * cam.viewWidth);
+		cam.position.y = pos.y - (0.5f * cam.viewHeight);
+	}
+
 
 	void WorldSystem::onKeyCallback(GLFWwindow* /* window */, int key, int /* scancode */, int action, int /* mods */) noexcept {
 		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
 		Entity hero = registry->animations.entities.front();
 		auto& animComp = registry->animations.get(hero);
 		auto* step = this->gameState->getCurrentTutorialStep();
+
+		if (this->gameState->isGameOver()) {
+			return; 
+		}
 		switch (action) {
 		case GLFW_PRESS:
 			switch (key) {
@@ -153,6 +188,61 @@ namespace df {
 					this->isSettlementPreviewActive = false;
 				}
 				break;
+			case GLFW_KEY_Q: {
+				auto* quests = registry->getSystem<QuestsSystem>();
+				if (quests) {
+					quests->notifyNextActiveQuest(); 
+				}
+				if (step && step->id == TutorialStepId::OPEN_QUEST_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			} 
+				break;
+			case GLFW_KEY_T: {
+
+				if (tradeCallback) {
+					tradeCallback();
+				}
+				if (step && step->id == TutorialStepId::OPEN_TRADE_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			} break;
+			case GLFW_KEY_K:{
+				auto* notifications = registry->getSystem<RenderNotificationSystem>();
+				std::vector<std::string> buttons;
+				std::string keybindsList = 
+					"WASD: Move map\n"
+					"Q: Active quests\n"
+					"N: Build settlement\n"
+					"B: Build road\n"
+					"T: Open trade menu\n"
+					"C: See costs\n"
+					"+/-: Zoom\n"
+					"Space: Center camera to hero";
+				buttons = {"Close"};
+				notifications->showNotification("Keybinds", keybindsList, buttons);
+				if (step && step->id == TutorialStepId::OPEN_KEYBINDS_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			}
+				break;
+			
+			case GLFW_KEY_C:{
+				auto* notifications = registry->getSystem<RenderNotificationSystem>();
+				std::vector<std::string> buttons;
+				std::string costsList = 
+					"SETTLEMENT\n"
+					"  - 5 wood\n"
+					"  - 5 clay\n"
+					"  - 3 grain\n"
+					"  - 3 grass\n"
+					"ROAD\n"
+					"  - 1 wood\n"
+					"  - 1 clay";
+				buttons = {"Close"};
+				notifications->showNotification("COSTS", costsList, buttons);
+			}
+				break;
 			case GLFW_KEY_G: {
 				Graph& map = this->gameState->getMap();
 				if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
@@ -208,6 +298,17 @@ namespace df {
 					this->gameState->completeCurrentTutorialStep();
 				}
 				break;
+			
+			case GLFW_KEY_SPACE: {
+				// TODO: for multiplayer get the hero of the current player
+				Entity e = registry->animations.entities.front();
+				auto pos = registry->positions.get(e);
+				centerCameraOnPoint(pos);
+				if (step && step->id == TutorialStepId::CENTER_CAMERA) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			}
+				break;
 			default:
 				break;
 			}
@@ -243,21 +344,54 @@ namespace df {
 		return mouseY;
 	}
 
-	void WorldSystem::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int /* mods */) noexcept {
+	std::pair<double, double> WorldSystem::calculateScaledMousePosition() {
+		double rawX, rawY;
+		glfwGetCursorPos(this->window->getHandle(), &rawX, &rawY);
+
+		int winWidth, winHeight;
+		glfwGetWindowSize(this->window->getHandle(), &winWidth, &winHeight);
+
+		int fbWidth, fbHeight;
+		glfwGetFramebufferSize(this->window->getHandle(), &fbWidth, &fbHeight);
+
+		float xScale = (winWidth > 0) ? (float)fbWidth / winWidth : 1.f;
+		float yScale = (winHeight > 0) ? (float)fbHeight / winHeight : 1.f;
+
+		return {rawX * xScale, rawY * yScale};
+	}
+
+	void WorldSystem::onMouseButtonCallback(GLFWwindow* /* windowParam */, int button, int action, int /* mods */) noexcept {
 		auto* step = this->gameState->getCurrentTutorialStep();
+
+		// Changed how mouse is captured
 
 		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 			// LMB gedrückt
-			glfwGetCursorPos(this->window->getHandle(), &mouseX, &mouseY);
-			fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
+
+			//auto [ scaledMouseX, scaledMouseY ] = calculateScaledMousePosition();
+			
+			//mouseX = scaledMouseX;
+			//mouseY = scaledMouseY;
+			
+			//fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
 			// Update Tutorial if finished
-			if ((step && step->id == TutorialStepId::END) || (step && step->id == TutorialStepId::WELCOME)) {
+			if (step && step->id == TutorialStepId::WELCOME) {
 				this->gameState->completeCurrentTutorialStep();
+			} else if (step && step->id == TutorialStepId::END) {
+				this->gameState->completeCurrentTutorialStep();
+				auto* quests = registry->getSystem<QuestsSystem>();
+				if (quests) {
+					quests->updateProgress(types::QuestGoalType::TUTORIAL, 1);
+				}
 			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
 			// RMB gedrückt
-			glfwGetCursorPos(windowParam, &mouseX, &mouseY);
+			auto [scaledMouseX, scaledMouseY] = calculateScaledMousePosition();
+
+			mouseX = scaledMouseX;
+			mouseY = scaledMouseY;
+			
 			fmt::println("RMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 		}
 	}

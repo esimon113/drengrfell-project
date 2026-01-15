@@ -170,9 +170,59 @@ add_executable(${PROJECT_NAME}
 	# ${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
 	# 	"src/systems/entityMovement.cpp"
 
-	${PROJECT_SOURCE_DIR}/src/multiplayer/tcpServer.cpp
-	${PROJECT_SOURCE_DIR}/src/multiplayer/tcpClient.cpp
- )
+	${PROJECT_SOURCE_DIR}/src/core/graph.cpp
+	${PROJECT_SOURCE_DIR}/src/core/tile.cpp
+	${PROJECT_SOURCE_DIR}/src/core/edge.cpp
+	${PROJECT_SOURCE_DIR}/src/core/vertex.cpp
+	${PROJECT_SOURCE_DIR}/src/core/settlement.cpp
+	${PROJECT_SOURCE_DIR}/src/core/road.cpp
+	${PROJECT_SOURCE_DIR}/src/core/player.cpp
+	${PROJECT_SOURCE_DIR}/src/core/gamestate.cpp
+	${PROJECT_SOURCE_DIR}/src/core/gamecontroller.cpp
+	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
+	${PROJECT_SOURCE_DIR}/src/core/mainMenu.cpp
+	${PROJECT_SOURCE_DIR}/src/core/configMenu.cpp
+	${PROJECT_SOURCE_DIR}/src/core/hazards.cpp
+
+	${PROJECT_SOURCE_DIR}/src/core/ai/behaviorTree.cpp
+	${PROJECT_SOURCE_DIR}/src/core/ai/commandRegistry.cpp
+
+	${PROJECT_SOURCE_DIR}/src/core/ai/behaviorTree.cpp
+	${PROJECT_SOURCE_DIR}/src/core/ai/commandRegistry.cpp
+
+	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/questsSystem.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/render.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/audio.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/animationSystem.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderText.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderNotification.cpp
+
+	${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/framebuffer.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/texture.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/textureArray.h
+	${PROJECT_SOURCE_DIR}/src/utils/textureArray.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/worldNodeMapper.cpp
+	# ${PROJECT_SOURCE_DIR}/src/utils/graphDebugDump.cpp
+	# ${PROJECT_SOURCE_DIR}/src/utils/graphDebugImage.cpp
+
+	${PROJECT_SOURCE_DIR}/src/systems/renderHero.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderBuildings.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderBuildingPreviews.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/buildingPreview.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderTiles.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderCommon.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderHud.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderSnow.cpp
+	${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
+	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
+		"src/systems/entityMovement.cpp"
+	"src/systems/tradingSystem.h" "src/systems/tradingSystem.cpp")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 20

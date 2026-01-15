@@ -25,6 +25,7 @@ namespace df {
 		[[nodiscard]] Result<void, ResultError> updateMap() noexcept;
 
 		void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+		void onMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) noexcept;
 
 		// Render tile id. 0 = no tile
 		unsigned getTileIdAtPosition(int x, int y) noexcept;
@@ -33,6 +34,11 @@ namespace df {
 		[[nodiscard]] int tileIdToMapId(unsigned tileId) const noexcept;
 
 		[[nodiscard]] int getMapIdAtMouse() noexcept;
+
+		void updateTileAtlas(){ 
+			this->tileAtlas.deinit(); 
+			this->tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS2);
+			this->updateRequired = true;}
 
 		int selectedTile = -1;
 

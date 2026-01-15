@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <random> // Para std::mt19937 (El nuevo generador)
+#include <cmath>  // Para funciones matemáticas si fueran necesarias
 
 /*
  *   Used the OPENGL particle system tutorial :
@@ -28,7 +30,14 @@ namespace df {
 		0.0f,
 	};
 
-	void RenderSnowSystem::reset() {}
+	void RenderSnowSystem::reset() {
+
+		for (int i = 0; i < maxParticles; i++) {
+			particlesContainer[i].life = -1.0f;
+		}
+		this->particlesCount = 0;
+		this->snowIntensity = 0.0f; 
+	}
 
 	RenderSnowSystem RenderSnowSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept {
 		RenderSnowSystem self;
@@ -110,20 +119,32 @@ namespace df {
 
 	void RenderSnowSystem::step(float deltaTime) noexcept {
 
+		// Changed random function to make it work in Windows
+		static std::random_device rd;
+		static std::mt19937 gen(rd()); 
+		static std::uniform_real_distribution<float> dis(0.0f, 1.0f); // Rango 0.0 a 1.0
+
 		const float screenWidth = 100.0f;
 		const float screenHeight = 100.0f;
 		
 
 		float density = 0.5f; 
-		int newparticles = static_cast<int>(screenWidth * density * deltaTime * 4.0f);
+		// Problem if delta time is too small -> accumulate the results for it to work correctly
+		static float spawnAccumulator = 0.0f; 
+		float particlesToSpawnFloat = screenWidth * density * deltaTime * 4.0f * snowIntensity;
+
+		spawnAccumulator += particlesToSpawnFloat;
+
+		int newparticles = static_cast<int>(spawnAccumulator);
+		spawnAccumulator -= newparticles;
 
 		for (int i = 0; i < newparticles; i++) {
 			int unParticles = findUnusedParticle();
 			Particle& p = particlesContainer[unParticles];
 
-			float rx = static_cast<float>(rand()) / RAND_MAX;
+			float rx = dis(gen);
 			//float ry = static_cast<float>(rand()) / RAND_MAX;
-			float rz = static_cast<float>(rand()) / RAND_MAX;
+			float rz = dis(gen);
 
 			p.depth = rz * rz;
 

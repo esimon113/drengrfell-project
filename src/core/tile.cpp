@@ -1,4 +1,5 @@
 #include "tile.h"
+#include "fmt/base.h"
 
 #include <random>
 
@@ -53,11 +54,11 @@ namespace df {
 	float Tile::getPotencyProbability(types::TilePotency currPotency) const {
 		switch (currPotency) { // TODO: make probabilities configurable
 		case types::TilePotency::LOW:
-			return 0.10f;
+			return 0.3f;
 		case types::TilePotency::MEDIUM:
-			return 0.25f;
+			return 0.5f;
 		case types::TilePotency::HIGH:
-			return 0.50f;
+			return 0.9f;
 		default:
 			return 0.0f;
 		}
@@ -83,6 +84,13 @@ namespace df {
 		}
 
 		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-		return distribution(rng) <= this->getPotencyProbability(this->potency);
+		auto dist = distribution(rng);
+		auto prob = this->getPotencyProbability(this->potency);
+		fmt::println("Dice Result: {}, resource probability: {}", dist, prob);
+		return dist <= prob;
+	}
+
+	void Tile::initializeHazardProfile() {
+		hazardProfile = HazardDB::getTileHazardProfile(type);
 	}
 } // namespace df

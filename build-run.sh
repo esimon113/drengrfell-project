@@ -36,7 +36,7 @@ else
     cmake -DCMAKE_BUILD_TYPE=Release ..
 fi
 
-make
+make -j$(nproc)
 echo "Running cmake completed..."
 
 if [ "$DEBUG" -eq 1 ]; then

@@ -14,6 +14,8 @@ namespace df {
 		void deinit() noexcept;
 
 		void step(const float delta) noexcept;
+		void completeCameraTutorial();
+		void centerCameraOnPoint(glm::vec2 pos);
 		void reset() noexcept;
 
 		inline bool shouldReset() noexcept { return m_reset; }
@@ -25,9 +27,13 @@ namespace df {
 
 		double getMouseX();
 		double getMouseY();
+		std::pair<double, double> calculateScaledMousePosition();
 
 		bool isTestMovementActive() const { return heroMovementState; }
 
+		void setTradeCallback(std::function<void()> callback) {
+			tradeCallback = std::move(callback);
+		}
 
 		// for rendering building previews on selection
 		bool isSettlementPreviewActive = false;
@@ -39,8 +45,8 @@ namespace df {
 	  private:
 		static constexpr size_t MAX_EAGLES = 15;
 		static constexpr size_t MAX_BUGS = 5;
-		double mouseX;
-		double mouseY;
+		double mouseX = -1;
+		double mouseY = -1;
 
 		Window* window;
 		Registry* registry;
@@ -52,6 +58,7 @@ namespace df {
 		bool m_reset;
 		bool heroMovementState = false;
 
+		std::function<void()> tradeCallback;
 		std::default_random_engine randomEngine;
 		std::uniform_real_distribution<float> uniformDistribution;
 	};

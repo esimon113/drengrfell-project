@@ -8,6 +8,7 @@ namespace df {
 		this->registry = registryParam;
 
 		menuShader = Shader::init(assets::Shader::menu).value();
+		rectShader = Shader::init(assets::Shader::hud).value();
 
 		// load textures
 		aiBtnTexture = Texture::init(assets::MenuTexture::CONFIG_AI);
@@ -58,6 +59,11 @@ namespace df {
 		glm::uvec2 extent = window->getWindowExtent();
 		mouseY = static_cast<float>(extent.y) - mouseY;
 
+		// scale
+		float scaleX = extent.x / DEFAULT_WIDTH;
+		float scaleY = extent.y / DEFAULT_HEIGHT;
+		scale = std::min(scaleX, scaleY);
+
 		startButton.hovered = isCursorOnButton(mouseX, mouseY, startButton);
 		insularButton.hovered = isCursorOnButton(mouseX, mouseY, insularButton);
 		perlinButton.hovered = isCursorOnButton(mouseX, mouseY, perlinButton);
@@ -73,6 +79,11 @@ namespace df {
 		glm::uvec2 extent = window->getWindowExtent();
 		float winW = static_cast<float>(extent.x);
 		float winH = static_cast<float>(extent.y);
+
+		// scale
+		float scaleX = extent.x / DEFAULT_WIDTH;
+		float scaleY = extent.y / DEFAULT_HEIGHT;
+		scale = std::min(scaleX, scaleY);
 
 		// size of each component, all relative to window size
 		float relTitleWidth = 0.7f;
@@ -144,7 +155,7 @@ namespace df {
 		startButton.h = absButtonHeight;
 
 		warningPos = {winW * 0.1f, winH * 0.95f};
-		infoPos = {titlePos - glm::vec2{0.0f, winH * 0.03f}};
+		infoPos = {titlePos - glm::vec2{0.0f, winH * 0.04f}};
 	}
 
 	void ConfigMenu::render() noexcept {
@@ -157,6 +168,11 @@ namespace df {
 		glm::uvec2 extent = window->getWindowExtent();
 		float winW = static_cast<float>(extent.x);
 		float winH = static_cast<float>(extent.y);
+
+		// scale
+		float scaleX = extent.x / DEFAULT_WIDTH;
+		float scaleY = extent.y / DEFAULT_HEIGHT;
+		scale = std::min(scaleX, scaleY);
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -218,56 +234,123 @@ namespace df {
 		*/
 
 		glBindVertexArray(0);
-
+		scale *= 0.9f;
+		paddingX = 20.f * scale;
+		paddingY = 20.f * scale;
+		float boxPosOffsetY = infoPos.y - scale * 35.0f;
 		RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
+		// renders the configMenu using the current window size for good readability across different systems
 		if (textSystem) {
-			// renders the user keyboard-input
-			textSystem->renderText(
-				inputString,
-				{20.0f, 27.0f},
-				0.5f,
-				{1.0f, 1.0f, 1.0f});
+			glm::vec2 textSize{};
+			glm::vec2 boxSize{};
+			glm::vec2 boxPos{};
+			if (!inputString.empty()) {
+				std::string text;
+				if (activeInput == InputField::SEED)
+					text = "Seed: ";
+				else if (activeInput == InputField::WIDTH) {
+					text = "Width: ";
+				} else if (activeInput == InputField::HEIGHT) {
+					text = "Height: ";
+				}
+				textSize = textSystem->measureText(text + inputString, scale);
+				boxSize = {textSize.x + paddingX, textSize.y + paddingY};
+				boxPos = {20.0f * scale, 27.0f * scale};
+				renderBox(boxPos, boxSize); // bottom left corner
+				// renders the user keyboard-input
+				glm::vec2 textPos = {
+					boxPos.x + (boxSize.x - textSize.x) / 2.0f,
+					boxPos.y + (boxSize.y - textSize.y) / 2.0f + textSize.y * 0.15f // shift slightly up to look good
+				};
 
-			if (seedButton.hovered) {
 				textSystem->renderText(
-					"Click this button to start the seed input.\n"
-					"You can enter any number and confirm with enter.\n"
-					"0 as seed generates a random world.",
-					infoPos,
-					0.4f,
-					{1.0f, 0.0f, 0.0f});
+					text + inputString,
+					textPos,
+					scale,
+					{1.0f, 1.0f, 1.0f});
+			}
+			if (seedButton.hovered) {
+				std::string text = "Click this button to start the seed input."
+									"You can enter any number\nand confirm with enter. "
+									"0 as seed generates a random world.";
+				textSize = textSystem->measureText(text, scale);
+				boxSize = {textSize.x + paddingX, textSize.y + paddingY};
+				boxPos = {(winW - textSize.x) / 2.0f, boxPosOffsetY - textSize.y * 0.35};
+				renderBox(boxPos, boxSize);
+
+				glm::vec2 textPos = {
+					boxPos.x + (boxSize.x - textSize.x) / 2.0f,
+					boxPos.y + (boxSize.y - textSize.y) / 2.0f + textSize.y * 0.55f};
+				textSystem->renderText(
+					text,
+					textPos,
+					scale,
+					{1.0f, 1.0f, 1.0f});
 			}
 			if (insularButton.hovered) {
+				std::string text = "Click this button to select the generation mode insular.";
+				textSize = textSystem->measureText(text, scale);
+				boxSize = {textSize.x + paddingX, textSize.y + paddingY};
+				boxPos = {(winW - textSize.x) / 2.0f, boxPosOffsetY - textSize.y * 0.35};
+				renderBox(boxPos, boxSize);
+
+				glm::vec2 textPos = {
+					boxPos.x + (boxSize.x - textSize.x) / 2.0f,
+					boxPos.y + (boxSize.y - textSize.y) / 2.0f + textSize.y * 0.15f};
 				textSystem->renderText(
-					"Click this button to select the generation mode insular.",
-					infoPos,
-					0.4f,
-					{1.0f, 0.0f, 0.0f});
+					text,
+					textPos,
+					scale,
+					{1.0f, 1.0f, 1.0f});
 			}
 			if (perlinButton.hovered) {
+				std::string text = "Click this button to select the generation mode perlin.";
+				textSize = textSystem->measureText(text, scale);
+				boxSize = {textSize.x + paddingX, textSize.y + paddingY};
+				boxPos = {(winW - textSize.x) / 2.0f, boxPosOffsetY - textSize.y * 0.35};
+				renderBox(boxPos, boxSize);
+				glm::vec2 textPos = {
+					boxPos.x + (boxSize.x - textSize.x) / 2.0f,
+					boxPos.y + (boxSize.y - textSize.y) / 2.0f + textSize.y * 0.15f};
 				textSystem->renderText(
-					"Click this button to select the generation mode perlin.",
-					infoPos,
-					0.4f,
-					{1.0f, 0.0f, 0.0f});
+					text,
+					textPos,
+					scale,
+					{1.0f, 1.0f, 1.0f});
 			}
 			if (widthButton.hovered) {
+				std::string text = "Click this button to start the map-size input."
+								   "You can type a number\nbetween 1 and 100 "
+								   "and confirm with enter.";
+				textSize = textSystem->measureText(text, scale);
+				boxSize = {textSize.x + paddingX, textSize.y + paddingY};
+				boxPos = {(winW - textSize.x) / 2.0f, boxPosOffsetY - textSize.y * 0.35};
+				renderBox(boxPos, boxSize);
+				glm::vec2 textPos = {
+					boxPos.x + (boxSize.x - textSize.x) / 2.0f,
+					boxPos.y + (boxSize.y - textSize.y) / 2.0f + textSize.y * 0.55f};
 				textSystem->renderText(
-					"Click this button to start the map-size input.\n"
-					"You can type a number between 1 and 100 \n"
-					"and confirm with enter.",
-					infoPos,
-					0.4f,
-					{1.0f, 0.0f, 0.0f});
+					text,
+					textPos,
+					scale,
+					{1.0f, 1.0f, 1.0f});
 			}
 			if (startButton.hovered) {
+				std::string text = "Click this button to start the game."
+								   "Not selecting parameters\nwill "
+								   "use the ones from the previous map.";
+				textSize = textSystem->measureText(text, scale);
+				boxSize = {textSize.x + paddingX, textSize.y + paddingY};
+				boxPos = {(winW - textSize.x) / 2.0f, boxPosOffsetY - textSize.y * 0.35};
+				renderBox(boxPos, boxSize);
+				glm::vec2 textPos = {
+					boxPos.x + (boxSize.x - textSize.x) / 2.0f,
+					boxPos.y + (boxSize.y - textSize.y) / 2.0f + textSize.y * 0.55f};
 				textSystem->renderText(
-					"Click this button to start the game.\n"
-					"Not selecting parameters will \n"
-					"use the ones from the previous map.",
-					infoPos,
-					0.4f,
-					{1.0f, 0.0f, 0.0f});
+					text,
+					textPos,
+					scale,
+					{1.0f, 1.0f, 1.0f});
 			}
 		}
 		if (warningTimer > 0.0f) {
@@ -288,6 +371,11 @@ namespace df {
 
 		glm::uvec2 extent = window->getWindowExtent();
 		mouseY = static_cast<float>(extent.y) - mouseY;
+
+		// scale
+		float scaleX = extent.x / DEFAULT_WIDTH;
+		float scaleY = extent.y / DEFAULT_HEIGHT;
+		scale = std::min(scaleX, scaleY);
 
 		if (isCursorOnButton(mouseX, mouseY, startButton)) {
 			fmt::println("Game started");
@@ -329,10 +417,18 @@ namespace df {
 		RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
 		if (textSystem) {
 			// renders a warning - input too small
+			glm::vec2 textSize = textSystem->measureText(warningMessage, scale);
+			glm::vec2 boxSize = {textSize.x + paddingX, textSize.y + paddingY};
+			glm::vec2 boxPos = {(window->getWindowExtent().x - textSize.x) / 2.0f, window->getWindowExtent().y * 0.92f};
+			renderBox(boxPos, boxSize);
+
+			glm::vec2 textPos = {
+				boxPos.x + (boxSize.x - textSize.x) / 2.0f,
+				boxPos.y + (boxSize.y - textSize.y) / 2.0f + textSize.y * 0.15f};
 			textSystem->renderText(
 				warningMessage,
-				warningPos,
-				0.5f,
+				textPos,
+				scale,
 				{1.0f, 0.0f, 0.0f});
 		}
 	}
@@ -340,10 +436,12 @@ namespace df {
 	void ConfigMenu::capMapsize() noexcept {
 		if (activeInput == InputField::WIDTH || activeInput == InputField::HEIGHT) {
 			int value = std::stoi(inputString);
-			if (value < 1) {
+			if (value < 10) {
 				warningTimer = 2.0f;
-				warningMessage = "Map size too small, must be >= 1";
-				inputString = "1";
+				warningMessage = "Map size too small, must be >= 10. Enter new value or click start to start with a map size of 10.";
+				//inputString = "1";
+			} else if (value >= 10 && value < 100) {
+				warningTimer = 0.0f;
 			}
 			if (value > 100) {
 				warningTimer = 2.0f;
@@ -396,6 +494,10 @@ namespace df {
 					fmt::println("Seed: {}", value);
 					break;
 				case InputField::WIDTH:
+					// minimum map size >= 10
+					if (value < 10) {
+						value = 10;
+					}
 					worldWidth = value;
 					fmt::println("width: {}", value);
 					// TEMPORARY while map is only quadratic
@@ -403,6 +505,10 @@ namespace df {
 					fmt::println("height: {}", value);
 					break;
 				case InputField::HEIGHT:
+					// minimum map size >= 10
+					if (value < 10) {
+						value = 10;
+					}
 					worldHeight = value;
 					fmt::println("height: {}", value);
 					break;
@@ -464,5 +570,46 @@ namespace df {
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
 		glBindVertexArray(0);
+
+		// rect box behind text init
+		float quad[] = {
+		0.f, 0.f,
+		1.f, 0.f,
+		1.f, 1.f,
+		0.f, 1.f};
+		glGenVertexArrays(1, &rectVao);
+		glBindVertexArray(rectVao);
+
+		glGenBuffers(1, &rectVbo);
+		glBindBuffer(GL_ARRAY_BUFFER, rectVbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+
+		glBindVertexArray(0);
 	}
+
+	void ConfigMenu::renderBox(glm::vec2 pos, glm::vec2 size) {
+		glm::uvec2 extent = window->getWindowExtent();
+
+		glm::mat4 projection = glm::ortho(
+			0.f, (float)extent.x,
+			0.f, (float)extent.y,
+			-1.f, 1.f);
+
+		glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), glm::vec3(pos, 0.f));
+		model = glm::scale(model, glm::vec3(size, 1.f));
+
+		rectShader.use()
+			.setMat4("projection", projection)
+			.setMat4("view", glm::identity<glm::mat4>())
+			.setMat4("model", model)
+			.setVec3("fcolor", {0.f, 0.f, 0.f}); // black
+
+		glBindVertexArray(rectVao);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		glBindVertexArray(0);
+	}
+
 } // namespace df

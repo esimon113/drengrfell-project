@@ -10,6 +10,7 @@ using json = nlohmann::json;
 
 
 #include "types.h"
+#include "hazards.h"
 
 
 namespace df {
@@ -47,6 +48,10 @@ namespace df {
 
 		bool operator==(const Tile& other) const { return this->id == other.id; }
 
+			const std::optional<TileHazardProfile>& getHazardProfile() const { return hazardProfile; }
+
+			void initializeHazardProfile();
+
 
 		// returns a json-representation of meta-info of a tile (id, type, ...).
 		// This can then be used to store the complete topological state of the map.
@@ -56,18 +61,20 @@ namespace df {
 		void deserialize(const json& j);
 
 
-	  private:
-		size_t id;
-		types::TileType type; // Also acts as resource type (?)
-		types::TilePotency potency;
-		std::optional<size_t> buildingId;
-		std::vector<size_t> visibleForPlayers;
-		float rangeFactor = 1.0f;
+		private:
+			size_t id;
+			types::TileType type;	// Also acts as resource type (?)
+			types::TilePotency potency;
+			std::optional<size_t> buildingId;
+			std::vector<size_t> visibleForPlayers;
+			float rangeFactor = 1.0f;
+			std::optional<TileHazardProfile> hazardProfile;
 
-		bool isResourceTile() const;
-		float getPotencyProbability(types::TilePotency potency) const;
+			bool isResourceTile() const;
+			float getPotencyProbability(types::TilePotency potency) const;
+
+			
 	};
-
 
 	using TileHandle = Tile*;
 } // namespace df

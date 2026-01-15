@@ -27,7 +27,28 @@ namespace df {
 	class GameState {
 	  public:
 		GameState() = default;
-		GameState(Registry* reg) : registry(reg) {};
+		GameState(Registry* reg)
+			: registry(reg),
+			  roadCosts{
+				  0, // EMPTY
+				  0, // WATER
+				  1, // FOREST (wood)
+				  0, // GRASS
+				  0, // MOUNTAIN
+				  0, // FIELD
+				  1, // CLAY
+				  0	 // ICE
+			  },
+			  settlementCosts{
+				  0, // EMPTY
+				  0, // WATER
+				  5, // FOREST (wood)
+				  3, // GRASS
+				  0, // MOUNTAIN
+				  3, // FIELD
+				  5, // CLAY
+				  0	 // ICE
+			  } {};
 
 
 		Graph& getMap() { return this->map; }
@@ -52,6 +73,7 @@ namespace df {
 			settlements.clear();
 			registry->settlements.clear();
 		}
+		const std::vector<int>& getCurrentSettlementCost() const;
 
 
 		// roads
@@ -61,6 +83,7 @@ namespace df {
 			roads.clear();
 			registry->roads.clear();
 		}
+		const std::vector<int>& getCurrentRoadCost() const;
 
 
 		// turns
@@ -88,6 +111,7 @@ namespace df {
 
 		// Tutorial
 		void initTutorial();
+		void resetTutorial();
 		TutorialStep* getCurrentTutorialStep();
 		void completeCurrentTutorialStep();
 		bool isTutorialActive() const;
@@ -112,6 +136,9 @@ namespace df {
 		// Tutorial
 		std::vector<TutorialStep> tutorialSteps;
 		size_t currentTutorialStep = 0;
+
+		std::vector<int> roadCosts;
+		std::vector<int> settlementCosts;
 	};
 
 } // namespace df

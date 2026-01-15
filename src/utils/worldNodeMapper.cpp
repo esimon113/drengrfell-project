@@ -23,15 +23,17 @@ namespace df {
 
 	// calculate positions of 6 vertices for the tile (relative to the tile center)
 	std::array<glm::vec2, 6> WorldNodeMapper::getVertexOffsets(const float hexagonRadius) noexcept {
-		const float sqrt3 = 1.732050808f;
+		const float xSide = hexagonRadius;
+		const float ySide = 0.5f * hexagonRadius;
+		const float yTip = hexagonRadius;
 
 		return {
-			glm::vec2(0.0f, hexagonRadius),									 // top
-			glm::vec2(0.5f * sqrt3 * hexagonRadius, 0.5f * hexagonRadius),	 // top-right
-			glm::vec2(0.5f * sqrt3 * hexagonRadius, -0.5f * hexagonRadius),	 // bottom-right
-			glm::vec2(0.0f, -hexagonRadius),								 // bottom
-			glm::vec2(-0.5f * sqrt3 * hexagonRadius, -0.5f * hexagonRadius), // bottom-left
-			glm::vec2(-0.5f * sqrt3 * hexagonRadius, 0.5f * hexagonRadius)	 // top-left
+			glm::vec2(xSide, -ySide),  // V0: bottom-right
+			glm::vec2(xSide, ySide),   // V1: top-right
+			glm::vec2(0.0f, yTip),     // V2: top
+			glm::vec2(-xSide, ySide),  // V3: top-left
+			glm::vec2(-xSide, -ySide), // V4: bottom-left
+			glm::vec2(0.0f, -yTip)     // V5: bottom
 		};
 	}
 
@@ -80,9 +82,12 @@ namespace df {
 
 		fmt::println("[WorldNodeMapper] Map has {} tiles, {} columns", map.getTileCount(), columns);
 
-		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const TileHandle tile = map.getTile(tileId);
+		for (size_t tileIndex = 0; tileIndex < map.getTileCount(); ++tileIndex) {
+			const TileHandle tile = map.getTile(tileIndex);
+			if (!tile)
+				continue;
 
+			const size_t tileId = tile->getId();
 			uint32_t currentRow = tileId / columns;
 			uint32_t currentCol = tileId % columns;
 
@@ -142,9 +147,13 @@ namespace df {
 
 		fmt::println("[WorldNodeMapper] Map has {} tiles, {} columns", map.getTileCount(), columns);
 
-		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const TileHandle tile = map.getTile(tileId);
+		// Iterate through tile indices (not IDs)
+		for (size_t tileIndex = 0; tileIndex < map.getTileCount(); ++tileIndex) {
+			const TileHandle tile = map.getTile(tileIndex);
+			if (!tile)
+				continue;
 
+			const size_t tileId = tile->getId();
 			uint32_t currentRow = tileId / columns;
 			uint32_t currentCol = tileId % columns;
 
@@ -192,13 +201,120 @@ namespace df {
 	};
 
 
+	std::vector<size_t> WorldNodeMapper::findVerticesWithinRadius(const glm::vec2& worldPos, float radius, const Graph& map) noexcept {
+		std::vector<size_t> result;
+
+		if (map.getVertexCount() == 0 || radius <= 0.0f)
+			return result;
+
+		const float hexagonRadius = 1.0f; // TODO: Make configurabel?
+		const uint32_t columns = map.getMapWidth();
+		std::unordered_set<size_t> processedVertexIds;
+
+		for (size_t tileIndex = 0; tileIndex < map.getTileCount(); ++tileIndex) {
+			const TileHandle tile = map.getTile(tileIndex);
+			if (!tile)
+				continue;
+
+			const size_t tileId = tile->getId();
+			uint32_t currentRow = tileId / columns;
+			uint32_t currentCol = tileId % columns;
+
+			glm::vec2 tileCenterPos(WorldNodeMapper::getTilePosition(currentRow, currentCol));
+			const auto verticesOpt = map.getTileVertices(tile);
+			if (!verticesOpt)
+				continue;
+
+			std::array<glm::vec2, 6> vertexOffsets = WorldNodeMapper::getVertexOffsets(hexagonRadius);
+
+			for (size_t i = 0; i < (*verticesOpt).size(); ++i) {
+				const VertexHandle vertex = (*verticesOpt)[i];
+				size_t vertexId = vertex->getId();
+
+				if (vertexId == SIZE_MAX)
+					continue;
+
+				// ignore already processed -> vertices are shared between tiles
+				if (processedVertexIds.find(vertexId) != processedVertexIds.end())
+					continue;
+				processedVertexIds.insert(vertexId);
+
+				glm::vec2 vertexPosition = tileCenterPos + vertexOffsets[i];
+				float distance = glm::distance(worldPos, vertexPosition);
+
+				if (distance <= radius) {
+					result.push_back(vertexId);
+				}
+			}
+		}
+
+		return result;
+	}
+
+
+	std::vector<std::pair<size_t, int>> WorldNodeMapper::findEdgesWithinRadius(const glm::vec2& worldPos, float radius, const Graph& map) noexcept {
+		std::vector<std::pair<size_t, int>> result;
+
+		if (map.getEdgeCount() == 0 || radius <= 0.0f)
+			return result;
+
+		const float hexagonRadius = 1.0f;
+		const uint32_t columns = map.getMapWidth();
+		std::unordered_set<size_t> processedEdgeIds;
+
+		for (size_t tileIndex = 0; tileIndex < map.getTileCount(); ++tileIndex) {
+			const TileHandle tile = map.getTile(tileIndex);
+			if (!tile)
+				continue;
+
+			const size_t tileId = tile->getId();
+			uint32_t currentRow = tileId / columns;
+			uint32_t currentCol = tileId % columns;
+
+			glm::vec2 tileCenterPos(WorldNodeMapper::getTilePosition(currentRow, currentCol));
+			const auto edgesOpt = map.getTileEdges(tile);
+			if (!edgesOpt)
+				continue;
+
+			std::array<glm::vec2, 6> vertexOffsets = WorldNodeMapper::getVertexOffsets(hexagonRadius);
+
+			for (size_t i = 0; i < edgesOpt->size(); ++i) {
+				const EdgeHandle edge = (*edgesOpt)[i];
+				size_t edgeId = edge->getId();
+
+				if (edgeId == SIZE_MAX)
+					continue;
+
+				// make sure each edge is processed only once -> since tehy are shared between tiles, just like vertices
+				if (processedEdgeIds.find(edgeId) != processedEdgeIds.end())
+					continue;
+				processedEdgeIds.insert(edgeId);
+
+				// define edge position as middle between to vertices: necessary for distance calculateions
+				glm::vec2 vertex1Position = tileCenterPos + vertexOffsets[i];
+				glm::vec2 vertex2Position = tileCenterPos + vertexOffsets[(i + 1) % 6];
+				glm::vec2 edgePosition = (vertex1Position + vertex2Position) / 2.0f;
+
+				float distance = glm::distance(worldPos, edgePosition);
+
+				if (distance <= radius)
+					result.push_back({edgeId, static_cast<int>(i)});
+			}
+		}
+
+		return result;
+	}
+
+
 	glm::vec2 WorldNodeMapper::getWorldPositionForVertex(size_t vertexId, const Graph& map) noexcept {
 		const float hexagonRadius = 1.0f;
 		const uint32_t columns = map.getMapWidth();
 
-		// find tiles that have this vertex
-		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const TileHandle tile = map.getTile(tileId);
+		// Find tiles that have this vertex - iterate through indices not IDs
+		for (size_t tileIndex = 0; tileIndex < map.getTileCount(); ++tileIndex) {
+			const TileHandle tile = map.getTile(tileIndex);
+			if (!tile)
+				continue;
 
 			const auto verticesOpt = map.getTileVertices(tile);
 			if (!verticesOpt)
@@ -206,7 +322,8 @@ namespace df {
 			auto vertices = *verticesOpt;
 
 			for (size_t i = 0; i < vertices.size(); ++i) {
-				if (vertices[i]->getId() == vertexId) {
+				if (vertices[i] && vertices[i]->getId() == vertexId) {
+					const size_t tileId = tile->getId();
 					uint32_t row = tileId / columns;
 					uint32_t col = tileId % columns;
 
@@ -220,21 +337,24 @@ namespace df {
 		return glm::vec2(0.0f);
 	}
 
-
 	glm::vec2 WorldNodeMapper::getWorldPositionForEdge(size_t edgeId, const Graph& map) noexcept {
 		const float hexagonRadius = 1.0f;
 		const uint32_t columns = map.getMapWidth();
 
-		// Find tiles that have this edge
-		for (size_t tileId = 0; tileId < map.getTileCount(); ++tileId) {
-			const TileHandle tile = map.getTile(tileId);
+		// Find tiles that have this edge - iterate through indices not IDs
+		for (size_t tileIndex = 0; tileIndex < map.getTileCount(); ++tileIndex) {
+			const TileHandle tile = map.getTile(tileIndex);
+			if (!tile)
+				continue;
+
 			const auto edgesOpt = map.getTileEdges(tile);
 			if (!edgesOpt)
 				continue;
 			auto edges = *edgesOpt;
 
 			for (size_t i = 0; i < edges.size(); ++i) {
-				if (edges[i]->getId() == edgeId) {
+				if (edges[i] && edges[i]->getId() == edgeId) {
+					const size_t tileId = tile->getId();
 					uint32_t row = tileId / columns;
 					uint32_t col = tileId % columns;
 
