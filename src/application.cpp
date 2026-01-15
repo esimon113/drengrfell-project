@@ -25,6 +25,7 @@
 #include "window.h"
 
 #include "ai/behaviorTree.h"
+#include "ai/commandRegistry.h"
 
 namespace df {
 	static void glfwErrorCallback(int error, const char* description) {

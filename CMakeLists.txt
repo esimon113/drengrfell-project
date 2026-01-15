@@ -143,6 +143,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/hazards.cpp
 
 	${PROJECT_SOURCE_DIR}/src/core/ai/behaviorTree.cpp
+	${PROJECT_SOURCE_DIR}/src/core/ai/commandRegistry.cpp
 
 	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
