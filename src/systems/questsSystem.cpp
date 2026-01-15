@@ -14,18 +14,18 @@ namespace df {
 
         m_quests.clear();
 
-        // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress | unblock id | Reward type | Reward | Initial state
+        // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress (-1 if must be updated during gameplay) | unblock id | Reward type | Reward | Initial state
         
-        m_quests.push_back({0, "Apprentice", "Complete the tutorial", "tutorial", 1, 0, {1,3}, types::TileType::FOREST, 5, QuestState::Active});
+        m_quests.push_back({0, "Apprentice", "Complete the tutorial", types::QuestGoalType::TUTORIAL, 1, 0, {1,3}, types::TileType::FOREST, 5, QuestState::Active});
         // Building quests
-        m_quests.push_back({1, "Builder", "Have 3 settlements","settlement", 3, 1, {2}, types::TileType::CLAY,10, QuestState::Locked});
-        m_quests.push_back({2, "The King's Highway", "Build 2 new roads", "road", 2 , 0, {-1}, types::TileType::MOUNTAIN,5,QuestState::Locked});
+        m_quests.push_back({1, "Builder", "Have 3 settlements",types::QuestGoalType::SETTLEMENT, 3, -1, {2}, types::TileType::CLAY,10, QuestState::Locked});
+        m_quests.push_back({2, "The King's Highway", "Build 2 new roads",types::QuestGoalType::ROAD, 2 , 0, {-1}, types::TileType::MOUNTAIN,5,QuestState::Locked});
         
         // Resources quests
-        m_quests.push_back({3, "Lumberjack", "Collect 10 wood" ,"forest", 10, 0, {4}, types::TileType::FIELD,10, QuestState::Locked});
+        m_quests.push_back({3, "Lumberjack", "Collect 10 wood" ,types::QuestGoalType::FOREST, 10, 0, {4}, types::TileType::FIELD,10, QuestState::Locked});
 
         // Surcvival quests1, 
-        m_quests.push_back({4, "Professional Survivor", "Survive 5 rounds", "rounds", 5, 0, {-1}, types::TileType::GRASS, 10, QuestState::Locked});
+        m_quests.push_back({4, "Professional Survivor", "Survive 5 rounds", types::QuestGoalType::ROUNDS, 5, 0, {-1}, types::TileType::GRASS, 10, QuestState::Locked});
 
 
         //loadQuests("../assets/jsons/quests.json");
@@ -71,7 +71,7 @@ namespace df {
     }
 
 
-    void QuestsSystem::updateProgress(const std::string& type, int amount) {
+    void QuestsSystem::updateProgress(types::QuestGoalType type, int amount) {
         for (auto& quest : m_quests) {
             if (quest.state == QuestState::Active && quest.goal_type == type) {
                 
@@ -90,6 +90,15 @@ namespace df {
             if (q.id == questId) {
                 m_currentShowingQuestId = questId;
                 std::vector<std::string> buttons;
+
+                int remaining = q.goal_amount - q.progress;
+                if (remaining < 0) remaining = 0; 
+
+                std::string dynamicDesc = fmt::format(
+                    "{} \nLeft: {} to claim the quest", 
+                    q.desc,     
+                    remaining
+                );
                 
                 if (q.state == QuestState::Completed) {
                     buttons = {"Claim", "Next Quest"};
@@ -98,7 +107,7 @@ namespace df {
                 }
 
                 if (q.state == QuestState::Active) {
-                    m_notificationSystem->showNotification(q.name, q.desc, buttons);
+                    m_notificationSystem->showNotification(q.name, dynamicDesc, buttons);
                 } else {
                     m_notificationSystem->showNotification(q.name, "Quest completed", buttons);
                 }
@@ -108,13 +117,13 @@ namespace df {
     }
 
 
-    void QuestsSystem::claimQuest(int questId) {
+    void QuestsSystem::claimQuest(int questId, Player* player) {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Completed) {
                 q.state = QuestState::Claimed;
 
                 for (int nextId : q.unlocksIds) {
-                    activateQuest(nextId);
+                    activateQuest(nextId, player);
                 }
                 
                 m_currentShowingQuestId = -1; 
@@ -123,10 +132,54 @@ namespace df {
         }
     }
 
-    void QuestsSystem::activateQuest(int questId) {
+    void QuestsSystem::activateQuest(int questId, Player* player) {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Locked) {
                 q.state = QuestState::Active;
+                if (q.progress == -1){
+                    switch (q.goal_type) {
+                        case types::QuestGoalType::SETTLEMENT:
+                            q.progress = static_cast<int>(player->getSettlementIds().size());
+                            break;
+                        case types::QuestGoalType::ROAD:
+                            q.progress = static_cast<int>(player->getRoadIds().size());
+                            break;
+                        case types::QuestGoalType::FOREST:
+                            q.progress = player->getResources(types::TileType::FOREST);
+                            break;
+                        case types::QuestGoalType::CLAY:
+                            q.progress = player->getResources(types::TileType::CLAY);
+                            break;
+                        case types::QuestGoalType::MOUNTAIN:
+                            q.progress = player->getResources(types::TileType::MOUNTAIN);
+                            break;
+                        case types::QuestGoalType::FIELD:
+                            q.progress = player->getResources(types::TileType::FIELD);
+                            break;
+                        case types::QuestGoalType::GRASS:
+                            q.progress = player->getResources(types::TileType::GRASS);
+                            break;
+                        case types::QuestGoalType::WATER:
+                            q.progress = player->getResources(types::TileType::WATER);
+                            break;
+                        case types::QuestGoalType::ICE:
+                            q.progress = player->getResources(types::TileType::ICE);
+                            break;
+
+                        case types::QuestGoalType::ROUNDS:
+                            break;
+
+                        case types::QuestGoalType::TUTORIAL:
+                        case types::QuestGoalType::NONE:
+                        default:
+                            break;
+                    }
+                }
+                
+                if (q.progress >= q.goal_amount) {
+                    q.state = QuestState::Completed;
+                }
+                
                 notifyPlayer(q.id); 
             }
         }
