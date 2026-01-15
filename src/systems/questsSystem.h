@@ -19,7 +19,7 @@ namespace df {
         int id;
         std::string name;
         std::string desc;
-        std::string goal_type; 
+        types::QuestGoalType goal_type;
         int goal_amount; 
         int progress; 
         std::vector<int> unlocksIds;
@@ -28,7 +28,7 @@ namespace df {
         QuestState state ;
         
         
-        Quest(int _id, std::string _name, std::string _desc, std::string _goalType, int _amount, int _prog, std::vector<int> _unlock, types::TileType _res, int _reward, QuestState _state)
+        Quest(int _id, std::string _name, std::string _desc,types::QuestGoalType _goalType, int _amount, int _prog, std::vector<int> _unlock, types::TileType _res, int _reward, QuestState _state)
             : id(_id), 
             name(_name), 
             desc(_desc),
@@ -50,7 +50,7 @@ namespace df {
 
             void init(RenderNotificationSystem* notificationSys);
 
-            void updateProgress(const std::string& type, int amount);
+            void updateProgress(types::QuestGoalType , int amount);
             void notifyPlayer(int questId);
             void addQuest(const Quest& newQuest);
             void claimQuest(int questId, Player* player);

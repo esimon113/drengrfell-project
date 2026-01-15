@@ -95,6 +95,34 @@ namespace df::types {
 		}
 	}
 
+	enum class QuestGoalType {
+		TUTORIAL,
+		SETTLEMENT,
+		ROAD,
+		WATER,
+		FOREST,
+		GRASS,
+		MOUNTAIN,
+		FIELD,
+		CLAY,
+		ICE,
+		ROUNDS,
+		NONE
+	};
+
+	inline QuestGoalType tileToQuestGoal(TileType tileType) {
+        switch (tileType) {
+            case TileType::FOREST:   return QuestGoalType::FOREST;
+            case TileType::CLAY:     return QuestGoalType::CLAY;
+            case TileType::MOUNTAIN: return QuestGoalType::MOUNTAIN;
+            case TileType::FIELD:    return QuestGoalType::FIELD;
+            case TileType::GRASS:    return QuestGoalType::GRASS;
+            case TileType::WATER:    return QuestGoalType::WATER;
+            case TileType::ICE:      return QuestGoalType::ICE;
+            default:                 return QuestGoalType::NONE;
+        }
+    }
+
 	enum class EdgeDirection {
 		VERTICAL = 0,
 		DIAGONAL_DOWN, // NORTH - NORTH_EAST or SOUTH_WEST - SOUTH
@@ -116,4 +144,6 @@ namespace df::types {
 		BEAR,
 		BLIZZARD
 	};
+
+	
 } // namespace df::types

@@ -14,18 +14,18 @@ namespace df {
 
         m_quests.clear();
 
-        // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress | unblock id | Reward type | Reward | Initial state
+        // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress (-1 if must be updated during gameplay) | unblock id | Reward type | Reward | Initial state
         
-        m_quests.push_back({0, "Apprentice", "Complete the tutorial", "tutorial", 1, 0, {1,3}, types::TileType::FOREST, 5, QuestState::Active});
+        m_quests.push_back({0, "Apprentice", "Complete the tutorial", types::QuestGoalType::TUTORIAL, 1, 0, {1,3}, types::TileType::FOREST, 5, QuestState::Active});
         // Building quests
-        m_quests.push_back({1, "Builder", "Have 3 settlements","settlement", 3, -1, {2}, types::TileType::CLAY,10, QuestState::Locked});
-        m_quests.push_back({2, "The King's Highway", "Build 2 new roads", "road", 2 , 0, {-1}, types::TileType::MOUNTAIN,5,QuestState::Locked});
+        m_quests.push_back({1, "Builder", "Have 3 settlements",types::QuestGoalType::SETTLEMENT, 3, -1, {2}, types::TileType::CLAY,10, QuestState::Locked});
+        m_quests.push_back({2, "The King's Highway", "Build 2 new roads",types::QuestGoalType::ROAD, 2 , 0, {-1}, types::TileType::MOUNTAIN,5,QuestState::Locked});
         
         // Resources quests
-        m_quests.push_back({3, "Lumberjack", "Collect 10 wood" ,"forest", 10, 0, {4}, types::TileType::FIELD,10, QuestState::Locked});
+        m_quests.push_back({3, "Lumberjack", "Collect 10 wood" ,types::QuestGoalType::FOREST, 10, 0, {4}, types::TileType::FIELD,10, QuestState::Locked});
 
         // Surcvival quests1, 
-        m_quests.push_back({4, "Professional Survivor", "Survive 5 rounds", "rounds", 5, 0, {-1}, types::TileType::GRASS, 10, QuestState::Locked});
+        m_quests.push_back({4, "Professional Survivor", "Survive 5 rounds", types::QuestGoalType::ROUNDS, 5, 0, {-1}, types::TileType::GRASS, 10, QuestState::Locked});
 
 
         //loadQuests("../assets/jsons/quests.json");
@@ -71,7 +71,7 @@ namespace df {
     }
 
 
-    void QuestsSystem::updateProgress(const std::string& type, int amount) {
+    void QuestsSystem::updateProgress(types::QuestGoalType type, int amount) {
         for (auto& quest : m_quests) {
             if (quest.state == QuestState::Active && quest.goal_type == type) {
                 
@@ -128,18 +128,45 @@ namespace df {
             if (q.id == questId && q.state == QuestState::Locked) {
                 q.state = QuestState::Active;
                 if (q.progress == -1){
-                    if (q.goal_type == "settlement") {
-                        q.progress = (int)player->getSettlementIds().size();
-                    } else if (q.goal_type == "road") {
-                        q.progress = (int)player->getRoadIds().size();
-                    } else if (q.goal_type == "forest") {
-                        q.progress = player->getResources(types::TileType::FOREST);
-                    } else if (q.goal_type == "rounds") {
+                    switch (q.goal_type) {
+                        case types::QuestGoalType::SETTLEMENT:
+                            q.progress = static_cast<int>(player->getSettlementIds().size());
+                            break;
+                        case types::QuestGoalType::ROAD:
+                            q.progress = static_cast<int>(player->getRoadIds().size());
+                            break;
+                        case types::QuestGoalType::FOREST:
+                            q.progress = player->getResources(types::TileType::FOREST);
+                            break;
+                        case types::QuestGoalType::CLAY:
+                            q.progress = player->getResources(types::TileType::CLAY);
+                            break;
+                        case types::QuestGoalType::MOUNTAIN:
+                            q.progress = player->getResources(types::TileType::MOUNTAIN);
+                            break;
+                        case types::QuestGoalType::FIELD:
+                            q.progress = player->getResources(types::TileType::FIELD);
+                            break;
+                        case types::QuestGoalType::GRASS:
+                            q.progress = player->getResources(types::TileType::GRASS);
+                            break;
+                        case types::QuestGoalType::WATER:
+                            q.progress = player->getResources(types::TileType::WATER);
+                            break;
+                        case types::QuestGoalType::ICE:
+                            q.progress = player->getResources(types::TileType::ICE);
+                            break;
+
+                        case types::QuestGoalType::ROUNDS:
+                            break;
+
+                        case types::QuestGoalType::TUTORIAL:
+                        case types::QuestGoalType::NONE:
+                        default:
+                            break;
                     }
                 }
                 
-
-                // Si el jugador ya cumplía los requisitos antes de empezar la misión:
                 if (q.progress >= q.goal_amount) {
                     q.state = QuestState::Completed;
                 }
