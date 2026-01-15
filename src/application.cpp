@@ -284,6 +284,7 @@ namespace df {
 
 		gameState->setRoundNumber(0);
 		gameState->setCurrentPlayerId(0);
+		gameState->setTurnCount(0);
 
 		registry->animations.emplace(playerEntity);
 		registry->tileID.emplace(playerEntity, 0);
