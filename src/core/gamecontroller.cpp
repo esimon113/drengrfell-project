@@ -12,6 +12,7 @@
 #include "renderNotification.h"
 #include "tile.h"
 #include "types.h"
+#include "../systems/renderTiles.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
 #include "../systems/renderSnow.h"
@@ -71,6 +72,14 @@ namespace df {
 
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
+		}
+
+		if(this->gameState.getTurnCount() == 10){
+			auto* tileSystem = registry.getSystem<RenderTilesSystem>();
+			if (tileSystem) {
+				tileSystem->updateTileAtlas();
+				
+			}
 		}
 	}
 
