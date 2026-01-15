@@ -6,6 +6,7 @@ namespace df {
 	enum class TutorialStepId {
 		WELCOME,
 		MOVE_CAMERA,
+		CENTER_CAMERA,
 		ZOOM_CAMERA,
 		MOVE_HERO,
 		OPEN_QUEST_MENU,

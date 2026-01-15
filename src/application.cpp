@@ -215,6 +215,7 @@ namespace df {
 					if (victoryScreenClosed) {
 						// reset application once victory screen was closed
 						this->reset();
+						gameState->resetTutorial();
 						gameState->setPhase(types::GamePhase::START);
 					}
 					break;
