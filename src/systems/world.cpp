@@ -198,6 +198,12 @@ namespace df {
 				}
 			} 
 				break;
+			case GLFW_KEY_T: {
+				// TODO: add trade action
+				if (step && step->id == TutorialStepId::OPEN_TRADE_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
+			} break;
 			case GLFW_KEY_K:{
 				auto* notifications = registry->getSystem<RenderNotificationSystem>();
 				std::vector<std::string> buttons;
