@@ -90,6 +90,15 @@ namespace df {
             if (q.id == questId) {
                 m_currentShowingQuestId = questId;
                 std::vector<std::string> buttons;
+
+                int remaining = q.goal_amount - q.progress;
+                if (remaining < 0) remaining = 0; 
+
+                std::string dynamicDesc = fmt::format(
+                    "{} \nLeft: {} to claim the quest", 
+                    q.desc,     
+                    remaining
+                );
                 
                 if (q.state == QuestState::Completed) {
                     buttons = {"Claim", "Next Quest"};
@@ -98,7 +107,7 @@ namespace df {
                 }
 
                 if (q.state == QuestState::Active) {
-                    m_notificationSystem->showNotification(q.name, q.desc, buttons);
+                    m_notificationSystem->showNotification(q.name, dynamicDesc, buttons);
                 } else {
                     m_notificationSystem->showNotification(q.name, "Quest completed", buttons);
                 }
