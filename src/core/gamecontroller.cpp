@@ -314,7 +314,13 @@ namespace df {
 
 			// check if EITHER vertex is adjacent to hero-tile, OR adjacent to road of current player
 			const auto player = gameState.getPlayer(playerId);
+			if (!player) {
+				return false;
+			}
 			const auto hero = player->getHero();
+			if (!hero) {
+				return false;
+			}
 			const auto tileId = hero->getTileID();
 			const auto tile = map.getTile(tileId);
 			const auto tileVertices = map.getTileVertices(tile);
