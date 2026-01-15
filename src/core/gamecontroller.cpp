@@ -835,7 +835,7 @@ namespace df {
 
 			player->addResources(q->reward_resource, q->reward_amount);
 
-			quests->claimQuest(questId);
+			quests->claimQuest(questId, player);
 
 			fmt::println("Reward given to the  player: {} units of type {}", q->reward_amount, (int)q->reward_resource);
 		}

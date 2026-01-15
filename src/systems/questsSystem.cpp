@@ -18,7 +18,7 @@ namespace df {
         
         m_quests.push_back({0, "Apprentice", "Complete the tutorial", "tutorial", 1, 0, {1,3}, types::TileType::FOREST, 5, QuestState::Active});
         // Building quests
-        m_quests.push_back({1, "Builder", "Have 3 settlements","settlement", 3, 1, {2}, types::TileType::CLAY,10, QuestState::Locked});
+        m_quests.push_back({1, "Builder", "Have 3 settlements","settlement", 3, -1, {2}, types::TileType::CLAY,10, QuestState::Locked});
         m_quests.push_back({2, "The King's Highway", "Build 2 new roads", "road", 2 , 0, {-1}, types::TileType::MOUNTAIN,5,QuestState::Locked});
         
         // Resources quests
@@ -108,13 +108,13 @@ namespace df {
     }
 
 
-    void QuestsSystem::claimQuest(int questId) {
+    void QuestsSystem::claimQuest(int questId, Player* player) {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Completed) {
                 q.state = QuestState::Claimed;
 
                 for (int nextId : q.unlocksIds) {
-                    activateQuest(nextId);
+                    activateQuest(nextId, player);
                 }
                 
                 m_currentShowingQuestId = -1; 
@@ -123,10 +123,27 @@ namespace df {
         }
     }
 
-    void QuestsSystem::activateQuest(int questId) {
+    void QuestsSystem::activateQuest(int questId, Player* player) {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Locked) {
                 q.state = QuestState::Active;
+                if (q.progress == -1){
+                    if (q.goal_type == "settlement") {
+                        q.progress = (int)player->getSettlementIds().size();
+                    } else if (q.goal_type == "road") {
+                        q.progress = (int)player->getRoadIds().size();
+                    } else if (q.goal_type == "forest") {
+                        q.progress = player->getResources(types::TileType::FOREST);
+                    } else if (q.goal_type == "rounds") {
+                    }
+                }
+                
+
+                // Si el jugador ya cumplía los requisitos antes de empezar la misión:
+                if (q.progress >= q.goal_amount) {
+                    q.state = QuestState::Completed;
+                }
+                
                 notifyPlayer(q.id); 
             }
         }

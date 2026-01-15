@@ -53,8 +53,8 @@ namespace df {
             void updateProgress(const std::string& type, int amount);
             void notifyPlayer(int questId);
             void addQuest(const Quest& newQuest);
-            void claimQuest(int questId);
-            void activateQuest(int );
+            void claimQuest(int questId, Player* player);
+            void activateQuest(int, Player* );
 
             void notifyNextActiveQuest();
             const Quest* getQuestById(int id) const;
@@ -68,7 +68,6 @@ namespace df {
             std::vector<Quest> m_quests;
             RenderNotificationSystem* m_notificationSystem = nullptr;
             int m_currentShowingQuestId = -1;
-            //std::string& m_path;
     };
 
 }
