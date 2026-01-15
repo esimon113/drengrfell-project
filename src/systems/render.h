@@ -53,6 +53,9 @@ namespace df {
 			RenderSnowSystem& getRenderSnowSystem() noexcept {
 				return renderSnowSystem;
 			}
+			RenderTilesSystem& getRenderTilesSystem() noexcept {
+				return renderTilesSystem;
+			}
 
 	  private:
 		Registry* registry;

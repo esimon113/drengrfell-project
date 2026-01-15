@@ -15,6 +15,7 @@
 #include "road.h"
 #include "tile.h"
 #include "types.h"
+#include "../systems/renderTiles.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
 
@@ -72,6 +73,14 @@ namespace df {
 
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
+		}
+
+		if(this->gameState.getTurnCount() == 10){
+			auto* tileSystem = registry.getSystem<RenderTilesSystem>();
+			if (tileSystem) {
+				tileSystem->updateTileAtlas();
+				
+			}
 		}
 	}
 
@@ -207,9 +216,12 @@ namespace df {
 				if (tile->givesResourceThisTurn(this->rng)) {
 					player.addResources(tile->getType(), 1); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
 
-					std::string type = types::tileTypeToString(tile->getType());
-					std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
-					this->m_questsSystem->updateProgress(type, 1);
+					//std::string type = types::tileTypeToString(tile->getType());
+					//std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
+					auto goalType = types::tileToQuestGoal(tile->getType());
+					if (goalType != types::QuestGoalType::NONE) {
+						this->m_questsSystem->updateProgress(goalType, 1);
+					}
 				}
 			}
 		}
@@ -420,7 +432,7 @@ namespace df {
 			// this->chargeResourceCost(*player, newSettlement->getBuildingCost());
 			this->chargeResourceCost(*player, buildingCost);
 
-			m_questsSystem->updateProgress("settlement", 1);
+			m_questsSystem->updateProgress(types::QuestGoalType::SETTLEMENT, 1);
 
 
 			fmt::println("[GameController] buildSettlement succeeded: settlement {} built at vertex {} for player {}", newSettlementId, vertexId, playerId);
@@ -613,7 +625,7 @@ namespace df {
 
 			this->chargeResourceCost(*player, buildingCost);
 
-			m_questsSystem->updateProgress("road", 1);
+			m_questsSystem->updateProgress(types::QuestGoalType::ROAD, 1);
 
 			fmt::println("[GameController] buildRoad succeeded: road {} built at edge {} for player {}", roadId, edgeId, playerId);
 			// Finish Tutorial if step is BUILD_ROAD
@@ -860,7 +872,7 @@ namespace df {
 
 			player->addResources(q->reward_resource, q->reward_amount);
 
-			quests->claimQuest(questId);
+			quests->claimQuest(questId, player, &gameState);
 
 			fmt::println("Reward given to the  player: {} units of type {}", q->reward_amount, (int)q->reward_resource);
 		}

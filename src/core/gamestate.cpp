@@ -241,8 +241,6 @@ namespace df {
 		return this->settlementCosts;
 	}
 
-
-
 	// Tutorial
 	void GameState::initTutorial() {
 		tutorialSteps.clear();
@@ -263,6 +261,12 @@ namespace df {
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
+		tutorialSteps.push_back({.id = TutorialStepId::CENTER_CAMERA,
+								 .text = "Use 'Space' to center the camera onto the hero.\nThat way you can always find him no matter where you are!",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+
 		tutorialSteps.push_back({.id = TutorialStepId::ZOOM_CAMERA,
 								 .text = "Use the mousewheel to zoom in/out.\nThis is also possible with +/-.",
 								 .completed = false,
@@ -271,13 +275,13 @@ namespace df {
 
 		tutorialSteps.push_back({.id = TutorialStepId::MOVE_HERO,
 								 .text = "Use the right mouse button to click on a tile on the map to select and highlight it.\nAfter pressing the 'End Turn' button on the bottom right the hero will move there.\n"
-									"But beware, you might encounter a hazard.",
+										 "But beware, you might encounter a hazard.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
 		tutorialSteps.push_back({.id = TutorialStepId::OPEN_QUEST_MENU,
-								 .text = "You can check your quests by pressing 'Q'! Your first quest will be\n to build a settlement which is also coverd in the next tutorial step.",
+								 .text = "You can check your quests by pressing 'Q'! Your first quest will be\n to complete the tutorial.",
 								 .completed = false,
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
@@ -298,6 +302,18 @@ namespace df {
 								 .screenPosition = std::nullopt,
 								 .renderBox = true});
 
+		tutorialSteps.push_back({.id = TutorialStepId::OPEN_TRADE_MENU,
+								 .text = "Use 'T' to open the trade menu and trade your ressources.",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+				
+		tutorialSteps.push_back({.id = TutorialStepId::OPEN_KEYBINDS_MENU,
+								 .text = "You can see all the possible keybinds by pressing the 'K' button.",
+								 .completed = false,
+								 .screenPosition = std::nullopt,
+								 .renderBox = true});
+
 		tutorialSteps.push_back({.id = TutorialStepId::END,
 								 .text = "Tutorial completed! \nPress left mouse button to exit the tutorial.",
 								 .completed = false,
@@ -305,6 +321,10 @@ namespace df {
 								 .renderBox = true});
 	}
 
+	void GameState::resetTutorial() {
+		currentTutorialStep = 0;
+		initTutorial();
+	}
 
 	TutorialStep* GameState::getCurrentTutorialStep() {
 		if (currentTutorialStep >= tutorialSteps.size()) {
@@ -325,7 +345,7 @@ namespace df {
 	}
 
 	bool GameState::isGameOver() const {
-		const size_t MAX_ROUNDS = 20; // Or whatever limit you want
+		const size_t MAX_ROUNDS = 50; // Or whatever limit you want
 		return this->roundNumber >= MAX_ROUNDS;
 	}
 

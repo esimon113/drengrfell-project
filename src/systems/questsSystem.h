@@ -19,23 +19,23 @@ namespace df {
         int id;
         std::string name;
         std::string desc;
-        std::string goal_type; 
+        types::QuestGoalType goal_type;
         int goal_amount; 
         int progress; 
-        int unlocksId;
+        std::vector<int> unlocksIds;
         types::TileType reward_resource; 
         int reward_amount;
         QuestState state ;
         
         
-        Quest(int _id, std::string _name, std::string _desc, std::string _goalType, int _amount, int _prog, int _unlock, types::TileType _res, int _reward, QuestState _state)
+        Quest(int _id, std::string _name, std::string _desc,types::QuestGoalType _goalType, int _amount, int _prog, std::vector<int> _unlock, types::TileType _res, int _reward, QuestState _state)
             : id(_id), 
             name(_name), 
             desc(_desc),
             goal_type(_goalType), 
             goal_amount(_amount), 
             progress(_prog), 
-            unlocksId(_unlock), 
+            unlocksIds(_unlock), 
             reward_resource(_res), 
             reward_amount(_reward),
             state(_state) 
@@ -43,6 +43,16 @@ namespace df {
     };
 
     class QuestsSystem {
+        std::string resourceName(df::types::TileType type) {
+            switch (type) {
+                case df::types::TileType::FOREST:   return "Wood";
+                case df::types::TileType::MOUNTAIN: return "Stone";
+                case df::types::TileType::CLAY:     return "Clay";
+                case df::types::TileType::FIELD:    return "Grain";
+                case df::types::TileType::GRASS:    return "Wool";
+                default:                            return "Resources";
+            }
+        }
         
         public:
             QuestsSystem() : m_notificationSystem(nullptr) {}
@@ -50,11 +60,13 @@ namespace df {
 
             void init(RenderNotificationSystem* notificationSys);
 
-            void updateProgress(const std::string& type, int amount);
+            void updateProgress(types::QuestGoalType , int amount);
             void notifyPlayer(int questId);
             void addQuest(const Quest& newQuest);
-            void claimQuest(int questId);
-            void activateQuest(int );
+            void claimQuest(int questId, Player* player, GameState* gameState);
+            void activateQuest(int, Player* , GameState* gameState);
+
+            void reset();
 
             void notifyNextActiveQuest();
             const Quest* getQuestById(int id) const;
@@ -68,7 +80,6 @@ namespace df {
             std::vector<Quest> m_quests;
             RenderNotificationSystem* m_notificationSystem = nullptr;
             int m_currentShowingQuestId = -1;
-            //std::string& m_path;
     };
 
 }

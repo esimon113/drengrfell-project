@@ -52,7 +52,7 @@ namespace df {
 
 
 		direction = glm::normalize(direction);
-		float speed = 1.5f; // speed in tiles per second
+		float speed = 0.7f; // speed in tiles per second
 		glm::vec2 movement = direction * speed * deltaTime;
 
 		moving = true;
