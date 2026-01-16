@@ -8,14 +8,15 @@
 #include <unordered_set>
 
 #include "../systems/renderSnow.h"
+#include "../systems/renderTiles.h"
 #include "gamecontroller.h"
 #include "hero.h"
 #include "player.h"
 #include "renderNotification.h"
 #include "road.h"
 #include "tile.h"
+#include "tiny_ecs.hpp"
 #include "types.h"
-#include "../systems/renderTiles.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
 
@@ -75,11 +76,10 @@ namespace df {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
 		}
 
-		if(this->gameState.getTurnCount() == 10){
+		if (this->gameState.getTurnCount() == 10) {
 			auto* tileSystem = registry.getSystem<RenderTilesSystem>();
 			if (tileSystem) {
 				tileSystem->updateTileAtlas();
-				
 			}
 		}
 	}
@@ -216,8 +216,8 @@ namespace df {
 				if (tile->givesResourceThisTurn(this->rng)) {
 					player.addResources(tile->getType(), 1); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
 
-					//std::string type = types::tileTypeToString(tile->getType());
-					//std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
+					// std::string type = types::tileTypeToString(tile->getType());
+					// std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
 					auto goalType = types::tileToQuestGoal(tile->getType());
 					if (goalType != types::QuestGoalType::NONE) {
 						this->m_questsSystem->updateProgress(goalType, 1);
@@ -301,10 +301,9 @@ namespace df {
 
 
 	bool GameController::canBuildSettlement(size_t playerId, size_t vertexId) const {
-		// (void)playerId; // unused for now - simplified building rules
+		(void)playerId; // unused for now - simplified building rules
 		const Graph& map = this->gameState.getMap();
 		try {
-			fmt::println("[GameController] canBuildSettlement: checking vertex {}", vertexId);
 			// Find vertex by ID (not index)
 			VertexHandle vertex = map.findVertexById(vertexId);
 			if (!vertex) {
@@ -324,43 +323,88 @@ namespace df {
 				return false;
 			}
 
+			// // Make sure that the vertex is not surrounded by water -> TODO: make this check more robust
+			// const auto vertexTiles = map.getVertexTiles(vertex);
+			// if (!vertexTiles) {
+			// 	return false;
+			// }
+			// auto it = std::find_if(vertexTiles->begin(), vertexTiles->end(), [](const auto& t) {
+			// 	return t->getType() == types::TileType::WATER;
+			// });
+			// if (it != vertexTiles->end()) {
+			// 	return false;
+			// }
+
 			// check if EITHER vertex is adjacent to hero-tile, OR adjacent to road of current player
-			const auto player = gameState.getPlayer(playerId);
-			if (!player) {
+			// const auto player = gameState.getPlayer(playerId);
+			// if (!player) {
+			// 	fmt::println("No player with id {}", playerId);
+			// 	return false;
+			// }
+
+			const auto vertexEdges = map.getVertexEdges(vertex);
+			if (!vertexEdges) {
+				fmt::println("No vertex with id {}", vertexId);
 				return false;
 			}
-			const auto hero = player->getHero();
-			if (!hero) {
+
+
+			Entity hero = this->registry->animations.entities.front();
+			if (!registry->tileID.has(hero)) {
+				fmt::println("No hero found.");
 				return false;
 			}
-			const auto tileId = hero->getTileID();
-			fmt::println("[GameController] canBuildSettlement: hero tile ID: {}", tileId);
-			const auto tile = map.getTile(tileId);
-			const auto tileVertices = map.getTileVertices(tile);
-			if (tileVertices) {
-				for (const auto& v : *tileVertices) {
-					if (v->getId() == vertexId) { // vertex is adjacent to hero tile
-						fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
-						return true; // player can always build a settlement adjacent to hero-tile
+			auto heroTileId = this->registry->tileID.get(hero);
+			fmt::println("[GameController] Hero tile id {}", heroTileId);
+
+			const auto tile = map.getTile(heroTileId);
+			if (tile) {
+				fmt::println("[GameController] Check Hero tile {}", heroTileId);
+				const auto tileVertices = map.getTileVertices(tile);
+				if (tileVertices) {
+					for (const auto& v : *tileVertices) {
+						if (v && v->getId() == vertexId) { // vertex is adjacent to hero tile
+							fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
+							return true; // player can always build a settlement adjacent to hero-tile
+						}
 					}
 				}
 			}
 
-			const auto vertexEdges = map.getVertexEdges(vertex);
-			if (!vertexEdges) {
-				return false;
-			}
+			// // Use hero of player:
+			// const auto hero = player->getHero();
+			// if (!hero) {
+			// 	fmt::println("No hero for player with id {}", playerId);
+			// } else {
+			// 	const auto tileId = hero->getTileID();
+			// 	fmt::println("[GameController] canBuildSettlement: hero tile ID: {}", tileId);
+			// 	const auto tile = map.getTile(tileId);
+			// 	if (tile) {
+			// 		const auto tileVertices = map.getTileVertices(tile);
+			// 		if (tileVertices) {
+			// 			for (const auto& v : *tileVertices) {
+			// 				if (v && v->getId() == vertexId) { // vertex is adjacent to hero tile
+			// 					fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
+			// 					return true; // player can always build a settlement adjacent to hero-tile
+			// 				}
+			// 			}
+			// 		}
+			// 	}
+			// }
 
 			const auto roads = gameState.getRoads();
 
 			for (const auto& e : *vertexEdges) {
+				if (!e) {
+					continue;
+				}
 				const auto localRoadId = e->getRoadId();
 				if (!localRoadId) {
 					continue;
 				}
 
-				auto it = std::find_if(roads.begin(), roads.end(), [localRoadId, playerId](const auto& r) {
-					return r->getId() == localRoadId && r->getPlayerId() == playerId;
+				auto it = std::find_if(roads.begin(), roads.end(), [localRoadId](const auto& r) {
+					return r->getId() == localRoadId; // && r->getPlayerId() == playerId;
 				});
 
 				if (it != roads.end()) {
@@ -368,6 +412,9 @@ namespace df {
 					return true;
 				}
 			}
+
+			fmt::println("[GameController] canBuildSettlement: vertex {} not adjacent to hero and no connected road", vertexId);
+			return false;
 		} catch (const std::exception& e) {
 			fmt::println("Error in settlement building validation: {}", e.what());
 		}
@@ -459,11 +506,13 @@ namespace df {
 			// Find edge by ID (not index)
 			EdgeHandle edge = map.findEdgeById(edgeId);
 			if (!edge) {
+				fmt::println("No edge with id {}", edgeId);
 				return false;
 			}
 
 			// Only check if edge already has a road
 			if (edge->hasRoad()) {
+				fmt::println("Edge already has a road", edgeId);
 				return false;
 			}
 
@@ -471,15 +520,18 @@ namespace df {
 			// 1. they are adjacent to a settlement of the current player
 			// 2. they are adjacent to a road of the current player
 
-			bool canBuild = true;
 			const auto edgeVertices = map.getEdgeVertices(edge);
 			if (!edgeVertices) {
-				canBuild = false;
+				fmt::println("No vertices for edge");
+				return false;
 			}
 
 			const auto settlements = this->gameState.getSettlements();
 			const auto roads = this->gameState.getRoads();
 			for (const auto& v : *edgeVertices) {
+				if (!v) {
+					continue;
+				}
 				// check for adjacent player settlements:
 				if (const auto sid = v->getSettlementId(); sid) {
 					const auto it = std::find_if(settlements.begin(), settlements.end(), [&](const auto& s) {
@@ -494,10 +546,14 @@ namespace df {
 				// check for adjacent roads
 				const auto vertexEdges = map.getVertexEdges(v);
 				if (!vertexEdges) {
+					fmt::println("No edges for vertex");
 					return false;
 				}
 
 				for (const auto& neighbourEdge : *vertexEdges) {
+					if (!neighbourEdge) {
+						continue;
+					}
 					if (neighbourEdge->getId() == edgeId) {
 						continue; // ignore self
 					}
@@ -512,7 +568,7 @@ namespace df {
 				}
 			}
 
-			return canBuild;
+			return false;
 		} catch (const std::exception&) {
 			return false;
 		}

@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "gamestate.h"
+#include "registry.h"
 #include "road.h"
 #include "systems/questsSystem.h"
 
@@ -21,10 +22,10 @@ namespace df {
 	  public:
 		GameController() = default;
 		~GameController() = default;
-		explicit GameController(GameState& state)
-			: gameState(state), rng(std::random_device{}()) {
-				m_questsSystem = std::make_unique<QuestsSystem>();
-			};
+		explicit GameController(GameState& state, Registry* newRegistry)
+			: gameState(state), rng(std::random_device{}()), registry(newRegistry) {
+			m_questsSystem = std::make_unique<QuestsSystem>();
+		};
 
 		GameState& getState() { return this->gameState; }
 		const GameState& getState() const { return this->gameState; }
@@ -32,7 +33,7 @@ namespace df {
 		Player* getCurrentPlayer();
 		const Player* getCurrentPlayer() const;
 
-        void startTurn(Registry& registry);
+		void startTurn(Registry& registry);
 		void endTurn(Registry& registry);
 
 		void applyHazard(Entity hero, Registry& registry, glm::vec2 destination);
@@ -40,7 +41,7 @@ namespace df {
 		void showHazards(Registry& registry);
 		void payForHazard(Registry& registry);
 
-        void giveResourcesTo(Player& player);
+		void giveResourcesTo(Player& player);
 
 		bool moveHeroToTile(size_t playerId, size_t targetTileId);
 
@@ -57,6 +58,7 @@ namespace df {
 		GameState& gameState;
 		std::mt19937 rng;
 		std::unique_ptr<QuestsSystem> m_questsSystem;
+		Registry* registry;
 
 		Player* getPlayerbyId(size_t playerId);
 		const Player* getPlayerById(size_t playerId) const;

@@ -13,9 +13,9 @@
 // #include "utils/graphDebugDump.h"
 // #include "utils/graphDebugImage.h"
 #include "systems/questsSystem.h"
-#include "utils/worldNodeMapper.h"
 #include "systems/renderTiles.h"
 #include "tradingSystem.h"
+#include "utils/worldNodeMapper.h"
 
 #include <random>
 
@@ -70,7 +70,7 @@ namespace df {
 		self.audioEngine = std::make_unique<AudioSystem>(self.eventBus);
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
-		self.gameController = std::make_shared<GameController>(*self.gameState);
+		self.gameController = std::make_shared<GameController>(*self.gameState, self.registry);
 		self.world = WorldSystem::init(self.window.get(), self.registry, self.audioEngine.get(), *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get());
@@ -213,7 +213,7 @@ namespace df {
 						// Render victory notification
 						RenderNotificationSystem* notification = registry->getSystem<RenderNotificationSystem>();
 						std::string message = fmt::format("\nYou have played for {} rounds!\n\nYou build {} settlements and {} roads.\n",
-							gameState->getRoundNumber(), gameState->getSettlements().size(), gameState->getRoads().size());
+														  gameState->getRoundNumber(), gameState->getSettlements().size(), gameState->getRoads().size());
 						notification->showNotification("You won the Game!", message, {"Back to Menu"});
 						fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
 						victoryScreenShown = true;
@@ -282,7 +282,7 @@ namespace df {
 
 		auto* qSys = gameController->getQuestsSystem();
 		if (qSys) {
-			qSys->reset(); 
+			qSys->reset();
 		}
 
 		Entity camEntity = registry->getCamera();
@@ -556,17 +556,17 @@ namespace df {
 				// Quests
 				if (pressedButton == "Next Quest") {
 					this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
-				} 
+				}
 
-				if (pressedButton.find("Claim") == 0) { 
+				if (pressedButton.find("Claim") == 0) {
 					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
 					gameController->claimQuestReward(currentId);
 				}
 
 				if (pressedButton == "Back to Menu") {
-					victoryScreenClosed = true;	// close victory screen and go back to menu
+					victoryScreenClosed = true; // close victory screen and go back to menu
 				}
-				return;	// notification clicked -> no further actions (including movement) for now
+				return; // notification clicked -> no further actions (including movement) for now
 			}
 
 			// START Lock all following interactions with the game while the hero is still moving
@@ -574,7 +574,7 @@ namespace df {
 				// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
 					if (!gameState->isGameOver()) {
-						
+
 						auto* step = this->gameState->getCurrentTutorialStep();
 						if (step && step->id == TutorialStepId::MOVE_HERO) {
 							this->gameState->completeCurrentTutorialStep();
@@ -684,7 +684,7 @@ namespace df {
 						//  TODO: For multiplayer use hero of active player
 						Entity hero = registry->animations.entities.front();
 						movementSystem.setTarget(mapId, hero);
-						}
+					}
 				}
 
 				world.onMouseButtonCallback(windowParam, button, action, mods);
