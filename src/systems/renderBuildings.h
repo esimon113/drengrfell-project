@@ -5,6 +5,7 @@
 #include "renderCommon.h"
 #include <array>
 #include <random>
+#include <unordered_set>
 #include <vector>
 #include <registry.h>
 #include <utils/shader.h>
@@ -45,6 +46,27 @@ namespace df {
 			float baseAlpha = 0.2f;
 		};
 
+		glm::vec2 getCursorWorldPos(const Camera& cam) const noexcept;
+		
+		float distanceToEdge(const Graph& map, const glm::vec2& cursorWorldPos, size_t edgeId) const noexcept;
+
+		size_t findClosestOwnedEdge(const Graph& map,
+			const glm::vec2& cursorWorldPos,
+			const std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
+			float& outClosestDistance) const noexcept;
+
+		std::unordered_set<size_t> collectConnectedOwnedEdges(const Graph& map,
+			size_t startEdgeId,
+			const std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge) const noexcept;
+
+		void renderRoadHighlights(const std::unordered_set<size_t>& edgeIds,
+			const std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge,
+			const std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
+			float time,
+			float baseAlpha,
+			const glm::mat4& view,
+			const glm::mat4& projection) noexcept;
+
 		void spawnDustAt(const glm::vec2& worldPos, float time, int count, float baseSize) noexcept;
 		void renderDust(float time, const glm::mat4& view, const glm::mat4& projection, const Camera& cam) noexcept;
 
@@ -71,5 +93,11 @@ namespace df {
 		std::vector<DustPuff> dustPuffs;
 		size_t lastSettlementCount = 0;
 		size_t lastRoadCount = 0;
+
+		std::unordered_set<size_t> lastHoveredConnectedEdges;
+		size_t lastHoveredEdgeId = SIZE_MAX;
+		float hoverFadeStartTime = 0.0f;
+		float hoverFadeDuration = 0.25f;
+		bool hoverActive = false;
 	};
 } // namespace df
