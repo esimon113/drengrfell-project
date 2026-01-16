@@ -436,6 +436,8 @@ namespace df {
 			return false;
 		}
 		if (!this->hasEnoughResources(*player, buildingCost)) {
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
 			fmt::println("[GameController] buildSettlement failed: player {} does not have enough resources", playerId);
 			return false;
 		}
@@ -590,6 +592,8 @@ namespace df {
 		}
 
 		if (!this->hasEnoughResources(*player, buildingCost)) {
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
 			fmt::println("[GameController] buildRoad failed: player {} does not have enough resources", playerId);
 			return false;
 		}

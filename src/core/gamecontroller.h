@@ -22,10 +22,9 @@ namespace df {
 	  public:
 		GameController() = default;
 		~GameController() = default;
+
 		explicit GameController(GameState& state, Registry* newRegistry)
-			: gameState(state), rng(std::random_device{}()), registry(newRegistry) {
-			m_questsSystem = std::make_unique<QuestsSystem>();
-		};
+			: gameState(state), rng(std::random_device{}()), m_questsSystem(std::make_unique<QuestsSystem>()), registry(newRegistry) {}
 
 		GameState& getState() { return this->gameState; }
 		const GameState& getState() const { return this->gameState; }
