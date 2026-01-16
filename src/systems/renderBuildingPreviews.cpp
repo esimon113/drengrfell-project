@@ -263,7 +263,8 @@ namespace df {
 					.setMat4("model[0]", model)
 					.setVec3("highlightColor", highlightColor)
 					.setFloat("alpha", finalAlpha)
-					.setFloat("time", time);
+					.setFloat("time", time)
+					.setFloat("pulseStrength", 1.0f);
 
 				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 			}
@@ -304,7 +305,8 @@ namespace df {
 					.setMat4("model[0]", model)
 					.setVec3("highlightColor", highlightColor)
 					.setFloat("alpha", finalAlpha)
-					.setFloat("time", time);
+					.setFloat("time", time)
+					.setFloat("pulseStrength", 1.0f);
 
 				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 			}

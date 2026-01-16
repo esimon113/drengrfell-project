@@ -5,6 +5,7 @@ layout(location = 0) in vec2 frag_uv;
 uniform vec3 highlightColor;
 uniform float alpha;
 uniform float time;
+uniform float pulseStrength;
 
 layout(location = 0) out vec4 color;
 
@@ -22,7 +23,8 @@ void main() {
     // use quadratic gradient:
     gradient = gradient * gradient;
 
-    float pulse = 0.85 + 0.15 * sin(time * 3.0);
+    float basePulse = 0.85 + 0.15 * sin(time * 3.0);
+    float pulse = mix(1.0, basePulse, clamp(pulseStrength, 0.0, 1.0));
     float finalAlpha = gradient * alpha * pulse;
 
     // Inner glow

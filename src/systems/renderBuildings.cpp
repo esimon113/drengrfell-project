@@ -3,7 +3,10 @@
 #include "core/camera.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_uint2.hpp"
+#include "glm/gtc/constants.hpp"
 #include "systems/renderCommon.h"
+#include <algorithm>
+#include <cmath>
 #include <GLFW/glfw3.h>
 
 
@@ -21,6 +24,7 @@ namespace df {
 		self.viewport.size = self.window->getWindowExtent();
 
 		self.spriteShader = Shader::init(assets::Shader::sprite).value();
+		self.locationHighlightShader = Shader::init(assets::Shader::locationHighlight).value();
 		self.roadTextureDiagonalUp = Texture::init(assets::Texture::DIRT_ROAD_DIAGONAL_UP);
 		self.roadTextureDiagonalDown = Texture::init(assets::Texture::DIRT_ROAD_DIAGONAL_DOWN);
 		self.roadTextureVertical = Texture::init(assets::Texture::DIRT_ROAD_VERTICAL);
@@ -67,12 +71,15 @@ namespace df {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+		self.rng = std::mt19937(std::random_device{}());
+
 		return self;
 	}
 
 
 	void RenderBuildingsSystem::deinit() noexcept {
 		spriteShader.deinit();
+		locationHighlightShader.deinit();
 		roadTextureDiagonalUp.deinit();
 		roadTextureDiagonalDown.deinit();
 		roadTextureVertical.deinit();
@@ -91,7 +98,11 @@ namespace df {
 	}
 
 
-	void RenderBuildingsSystem::reset() noexcept {}
+	void RenderBuildingsSystem::reset() noexcept {
+		dustPuffs.clear();
+		lastSettlementCount = 0;
+		lastRoadCount = 0;
+	}
 
 
 	const glm::mat4 RenderBuildingsSystem::calculateProjection(const Camera& cam) const {
@@ -114,6 +125,33 @@ namespace df {
 
 		const glm::mat4 view = glm::identity<glm::mat4>();
 		const glm::mat4 projection = this->calculateProjection(cam);
+
+		size_t currentSettlementCount = registry->settlements.entities.size();
+		size_t currentRoadCount = registry->roads.entities.size();
+		if (currentSettlementCount < lastSettlementCount || currentRoadCount < lastRoadCount) {
+			dustPuffs.clear();
+			lastSettlementCount = currentSettlementCount;
+			lastRoadCount = currentRoadCount;
+		}
+
+		if (currentSettlementCount > lastSettlementCount) {
+			for (size_t i = lastSettlementCount; i < currentSettlementCount; ++i) {
+				Entity e = registry->settlements.entities[i];
+				if (registry->positions.has(e)) {
+					spawnDustAt(registry->positions.get(e), time, 8, 0.7f);
+				}
+			}
+		}
+		if (currentRoadCount > lastRoadCount) {
+			for (size_t i = lastRoadCount; i < currentRoadCount; ++i) {
+				Entity e = registry->roads.entities[i];
+				if (registry->positions.has(e)) {
+					spawnDustAt(registry->positions.get(e), time, 6, 0.5f);
+				}
+			}
+		}
+		lastSettlementCount = currentSettlementCount;
+		lastRoadCount = currentRoadCount;
 
 		// TODO: use consistent FPS for animations
 		constexpr float animationSpeed = 5.0f; // fps
@@ -181,6 +219,65 @@ namespace df {
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		}
 
+		renderDust(time, view, projection, cam);
+
 		glBindVertexArray(0);
+	}
+
+	void RenderBuildingsSystem::spawnDustAt(const glm::vec2& worldPos, float time, int count, float baseSize) noexcept {
+		std::uniform_real_distribution<float> angleDist(0.0f, glm::two_pi<float>());
+		std::uniform_real_distribution<float> radiusDist(0.0f, 1.0f);
+		std::uniform_real_distribution<float> sizeJitter(0.6f, 1.1f);
+		std::uniform_real_distribution<float> lifeJitter(0.5f, 0.9f);
+
+		for (int i = 0; i < count; ++i) {
+			float angle = angleDist(rng);
+			float radius = radiusDist(rng) * baseSize * 0.6f;
+			glm::vec2 offset = glm::vec2(std::cos(angle), std::sin(angle)) * radius;
+
+			DustPuff puff;
+			puff.position = worldPos + offset;
+			puff.startTime = time;
+			puff.duration = lifeJitter(rng);
+			puff.size = baseSize * sizeJitter(rng);
+			puff.baseAlpha = 0.22f;
+			dustPuffs.push_back(puff);
+		}
+	}
+
+	void RenderBuildingsSystem::renderDust(float time, const glm::mat4& view, const glm::mat4& projection, const Camera& cam) noexcept {
+		if (dustPuffs.empty())
+			return;
+
+		(void)cam;
+		dustPuffs.erase(std::remove_if(dustPuffs.begin(), dustPuffs.end(), [time](const DustPuff& puff) {
+			return (time - puff.startTime) >= puff.duration;
+		}),
+			dustPuffs.end());
+
+		const glm::vec3 dustColor = glm::vec3(0.82f, 0.76f, 0.66f);
+		for (const auto& puff : dustPuffs) {
+			float age = (time - puff.startTime) / puff.duration;
+			float fade = std::exp(-2.2f * age);
+			float alpha = puff.baseAlpha * fade;
+			if (alpha < 0.02f)
+				continue;
+
+			float size = puff.size * (1.0f + 0.6f * age);
+			glm::mat4 model = glm::identity<glm::mat4>();
+			model = glm::translate(model, glm::vec3(puff.position, 0.0f));
+			model = glm::scale(model, glm::vec3(size, size, 1.0f));
+
+			locationHighlightShader.use()
+				.setMat4("view", view)
+				.setMat4("projection", projection)
+				.setMat4("model[0]", model)
+				.setVec3("highlightColor", dustColor)
+				.setFloat("alpha", alpha)
+				.setFloat("time", time)
+				.setFloat("pulseStrength", 0.0f);
+
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		}
 	}
 } // namespace df
