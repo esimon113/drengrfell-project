@@ -225,6 +225,22 @@ namespace df {
 				}
 			}
 		}
+
+		// Also grant resources from the tile the hero is currently on.
+		if (this->registry && !this->registry->animations.entities.empty()) {
+			Entity hero = this->registry->animations.entities.front();
+			if (this->registry->tileID.has(hero)) {
+				const size_t heroTileId = this->registry->tileID.get(hero);
+				const TileHandle heroTile = this->gameState.getMap().getTile(heroTileId);
+				if (heroTile && heroTile->givesResourceThisTurn(this->rng)) {
+					player.addResources(heroTile->getType(), 1);
+					auto goalType = types::tileToQuestGoal(heroTile->getType());
+					if (goalType != types::QuestGoalType::NONE) {
+						this->m_questsSystem->updateProgress(goalType, 1);
+					}
+				}
+			}
+		}
 	}
 
 
