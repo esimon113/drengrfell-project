@@ -323,17 +323,21 @@ namespace df {
 				return false;
 			}
 
-			// // Make sure that the vertex is not surrounded by water -> TODO: make this check more robust
-			// const auto vertexTiles = map.getVertexTiles(vertex);
-			// if (!vertexTiles) {
-			// 	return false;
-			// }
-			// auto it = std::find_if(vertexTiles->begin(), vertexTiles->end(), [](const auto& t) {
-			// 	return t->getType() == types::TileType::WATER;
-			// });
-			// if (it != vertexTiles->end()) {
-			// 	return false;
-			// }
+			// Make sure that the vertex is not surrounded by water -> TODO: make this check more robust
+			const auto vertexTiles = map.getVertexTiles(vertex);
+			if (!vertexTiles) {
+				return false;
+			}
+			bool hasNonWaterTile = false;
+			for (const auto& t : *vertexTiles) {
+				if (t && t->getType() != types::TileType::WATER) {
+					hasNonWaterTile = true;
+					break;
+				}
+			}
+			if (!hasNonWaterTile) { // no non-water tile
+				return false;
+			}
 
 			// check if EITHER vertex is adjacent to hero-tile, OR adjacent to road of current player
 			// const auto player = gameState.getPlayer(playerId);
@@ -349,6 +353,11 @@ namespace df {
 			}
 
 
+			if (!registry || registry->animations.entities.empty()) {
+				fmt::println("[GameController] canBuildSettlement: no hero animation entity found");
+				return false;
+			}
+
 			Entity hero = this->registry->animations.entities.front();
 			if (!registry->tileID.has(hero)) {
 				fmt::println("No hero found.");
@@ -356,18 +365,11 @@ namespace df {
 			}
 			auto heroTileId = this->registry->tileID.get(hero);
 			fmt::println("[GameController] Hero tile id {}", heroTileId);
-
-			const auto tile = map.getTile(heroTileId);
-			if (tile) {
-				fmt::println("[GameController] Check Hero tile {}", heroTileId);
-				const auto tileVertices = map.getTileVertices(tile);
-				if (tileVertices) {
-					for (const auto& v : *tileVertices) {
-						if (v && v->getId() == vertexId) { // vertex is adjacent to hero tile
-							fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
-							return true; // player can always build a settlement adjacent to hero-tile
-						}
-					}
+			fmt::println("[GameController] Check Hero tile {}", heroTileId);
+			for (const auto& t : *vertexTiles) {
+				if (t && t->getId() == heroTileId) { // vertex is adjacent to hero tile
+					fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
+					return true; // player can always build a settlement adjacent to hero-tile
 				}
 			}
 
