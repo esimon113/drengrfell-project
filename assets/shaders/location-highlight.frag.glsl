@@ -25,5 +25,12 @@ void main() {
     float pulse = 0.85 + 0.15 * sin(time * 3.0);
     float finalAlpha = gradient * alpha * pulse;
 
-    color = vec4(highlightColor, finalAlpha);
+    // Inner glow
+    float innerGradient = exp(-6.0 * dist * dist);
+    float innerAlpha = innerGradient * alpha * pulse * 0.25;
+
+    vec3 innerColor = vec3(1.0);
+    vec3 finalColor = mix(highlightColor, innerColor, innerGradient * 0.35);
+
+    color = vec4(finalColor, clamp(finalAlpha + innerAlpha, 0.0, 1.0));
 }
