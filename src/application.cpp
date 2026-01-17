@@ -24,6 +24,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <set>
 
 #include "events/eventBus.h"
 #include "window.h"
@@ -704,6 +705,36 @@ namespace df {
 					}
 
 					if (hoveredSettlementId != SIZE_MAX) {
+						const Settlement& settlement = registry->settlements.get(hoveredSettlement);
+						if (settlement.isUpgraded()) {
+							Graph& map = gameState->getMap();
+							std::string message = "Resources from adjacent tiles:\n";
+							std::set<types::TileType> resourceTypes;
+							if (auto vertex = map.findVertexById(settlement.getVertexId()); vertex) {
+								if (auto tilesOpt = map.getVertexTiles(vertex); tilesOpt) {
+									for (const auto& tile : *tilesOpt) {
+										if (tile && tile->getType() != types::TileType::WATER) {
+											resourceTypes.insert(tile->getType());
+										}
+									}
+								}
+							}
+							if (resourceTypes.empty()) {
+								message += "- none\n";
+							} else {
+								for (const auto& type : resourceTypes) {
+									message += "- ";
+									message += std::string(types::tileTypeToString(type));
+									message += "\n";
+								}
+							}
+							render.renderNotificationSystem.showNotification(
+								"Settlement Resources",
+								message,
+								{"Close"});
+							return;
+						}
+
 						selectedSettlementId = hoveredSettlementId;
 						render.renderNotificationSystem.showNotification(
 							"Settlement Management",
