@@ -110,6 +110,11 @@ namespace df {
 		lastHoveredEdgeId = SIZE_MAX;
 		hoverFadeStartTime = 0.0f;
 		hoverActive = false;
+		lastHoveredSettlementEntity = Entity();
+		lastHoveredSettlementPos = glm::vec2(0.0f);
+		lastHoveredSettlementScale = glm::vec2(1.0f);
+		settlementHoverFadeStartTime = 0.0f;
+		settlementHoverActive = false;
 	}
 
 	glm::vec2 RenderBuildingsSystem::getCursorWorldPos(const Camera& cam) const noexcept {
@@ -250,6 +255,231 @@ namespace df {
 			-1.0f, 1.0f);
 	}
 
+	
+void RenderBuildingsSystem::updateDustSpawns(float time) noexcept {
+	size_t currentSettlementCount = registry->settlements.entities.size();
+	size_t currentRoadCount = registry->roads.entities.size();
+	if (currentSettlementCount < lastSettlementCount || currentRoadCount < lastRoadCount) {
+		dustPuffs.clear();
+		lastSettlementCount = currentSettlementCount;
+		lastRoadCount = currentRoadCount;
+	}
+
+	if (currentSettlementCount > lastSettlementCount) {
+		for (size_t i = lastSettlementCount; i < currentSettlementCount; ++i) {
+			Entity e = registry->settlements.entities[i];
+			if (registry->positions.has(e)) {
+				spawnDustAt(registry->positions.get(e), time, 8, 0.7f);
+			}
+		}
+	}
+	if (currentRoadCount > lastRoadCount) {
+		for (size_t i = lastRoadCount; i < currentRoadCount; ++i) {
+			Entity e = registry->roads.entities[i];
+			if (registry->positions.has(e)) {
+				spawnDustAt(registry->positions.get(e), time, 6, 0.5f);
+			}
+		}
+	}
+	lastSettlementCount = currentSettlementCount;
+	lastRoadCount = currentRoadCount;
+}
+
+void RenderBuildingsSystem::renderSettlements(const glm::mat4& view, const glm::mat4& projection, int textureIndex) noexcept {
+	for (Entity e : registry->settlements.entities) {
+		if (!registry->positions.has(e) || !registry->scales.has(e))
+			continue;
+
+		const glm::vec2& worldPos = registry->positions.get(e);
+		const glm::vec2& scale = registry->scales.get(e);
+
+		glm::mat4 model = glm::identity<glm::mat4>();
+		model = glm::translate(model, glm::vec3(worldPos, 0.0f));
+		model = glm::scale(model, glm::vec3(scale, 1.0f));
+
+		settlementTextures[textureIndex].bind(0);
+		spriteShader.use()
+			.setMat4("view", view)
+			.setMat4("model[0]", model)
+			.setMat4("projection", projection)
+			.setSampler("sprite", 0)
+			.setVec3("fcolor", glm::vec3(1.0f));
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	}
+}
+
+void RenderBuildingsSystem::updateSettlementHover(const glm::mat4& view, const glm::mat4& projection, const Camera& cam, float time) noexcept {
+	if (registry->settlements.entities.empty())
+		return;
+
+	const bool isBuildingPreviewActive = !registry->buildingPreviews.entities.empty();
+	const size_t currentPlayerId = gamestate->getCurrentPlayerId();
+	const float settlementHoverRadius = 0.3f / cam.zoom;
+	glm::vec2 cursorWorldPos = getCursorWorldPos(cam);
+
+	Entity hoveredSettlement = Entity();
+	glm::vec2 hoveredPos = glm::vec2(0.0f);
+	glm::vec2 hoveredScale = glm::vec2(1.0f);
+	float closestDistance = (std::numeric_limits<float>::max)();
+
+	for (Entity e : registry->settlements.entities) {
+		if (!registry->positions.has(e) || !registry->settlements.has(e))
+			continue;
+		const Settlement& settlement = registry->settlements.get(e);
+		if (settlement.getPlayerId() != currentPlayerId)
+			continue;
+
+		const glm::vec2& worldPos = registry->positions.get(e);
+		const glm::vec2& scale = registry->scales.get(e);
+		float distance = glm::distance(cursorWorldPos, worldPos);
+		if (distance < closestDistance) {
+			closestDistance = distance;
+			hoveredSettlement = e;
+			hoveredPos = worldPos;
+			hoveredScale = scale;
+		}
+	}
+
+	bool isHoveringSettlement = closestDistance <= settlementHoverRadius && !isBuildingPreviewActive;
+	if (isHoveringSettlement && (!settlementHoverActive || hoveredSettlement != lastHoveredSettlementEntity)) {
+		settlementHoverFadeStartTime = time;
+		settlementHoverActive = true;
+		lastHoveredSettlementEntity = hoveredSettlement;
+		lastHoveredSettlementPos = hoveredPos;
+		lastHoveredSettlementScale = hoveredScale;
+	} else if (!isHoveringSettlement && settlementHoverActive) {
+		settlementHoverFadeStartTime = time;
+		settlementHoverActive = false;
+	}
+
+	if (lastHoveredSettlementEntity != Entity()) {
+		float elapsed = time - settlementHoverFadeStartTime;
+		float fadeT = glm::clamp(elapsed / settlementHoverFadeDuration, 0.0f, 1.0f);
+		float fade = settlementHoverActive ? glm::smoothstep(0.0f, 1.0f, fadeT) : (1.0f - glm::smoothstep(0.0f, 1.0f, fadeT));
+		if (!settlementHoverActive && fadeT >= 1.0f) {
+			lastHoveredSettlementEntity = Entity();
+		}
+
+		const glm::vec3 highlightColor = glm::vec3(0.95f, 0.86f, 0.55f);
+		const float baseAlpha = 0.45f * fade;
+		glm::mat4 model = glm::identity<glm::mat4>();
+		model = glm::translate(model, glm::vec3(lastHoveredSettlementPos, 0.0f));
+		// the * 2.0: makes the highlight bigger so that the whole settlement is highlighted
+		model = glm::scale(model, glm::vec3(lastHoveredSettlementScale * 2.5f, 1.0f));
+
+		locationHighlightShader.use()
+			.setMat4("view", view)
+			.setMat4("projection", projection)
+			.setMat4("model[0]", model)
+			.setVec3("highlightColor", highlightColor)
+			.setFloat("alpha", baseAlpha)
+			.setFloat("time", time)
+			.setFloat("pulseStrength", 0.35f);
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	}
+}
+
+void RenderBuildingsSystem::renderRoads(const glm::mat4& view,
+	const glm::mat4& projection,
+	std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
+	std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
+	std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge) noexcept {
+	const size_t currentPlayerId = gamestate->getCurrentPlayerId();
+	for (Entity e : registry->roads.entities) {
+		if (!registry->positions.has(e) || !registry->scales.has(e))
+			continue;
+
+		const glm::vec2& worldPos = registry->positions.get(e);
+		const glm::vec2& scale = registry->scales.get(e);
+		const Road& road = registry->roads.get(e);
+		const size_t roadEdgeId = road.getEdgeId();
+
+		int edgeIndex = this->registry->roadEdgeIndices.has(e) ? this->registry->roadEdgeIndices.get(e) : -1;
+
+		Texture* roadTexture = nullptr;
+		if (edgeIndex == 0 || edgeIndex == 3)
+			roadTexture = &roadTextureVertical;
+		else if (edgeIndex == 1 || edgeIndex == 4)
+			roadTexture = &roadTextureDiagonalDown;
+		else if (edgeIndex == 2 || edgeIndex == 5)
+			roadTexture = &roadTextureDiagonalUp;
+		else
+			roadTexture = &roadTextureVertical;
+
+		glm::mat4 model = glm::identity<glm::mat4>();
+		model = glm::translate(model, glm::vec3(worldPos, 0.0f));
+		model = glm::scale(model, glm::vec3(scale, 1.0f));
+
+		assert(roadTexture != nullptr); // should not fail
+		roadTexture->bind(0);
+		spriteShader.use()
+			.setMat4("model[0]", model)
+			.setMat4("view", view)
+			.setMat4("projection", projection)
+			.setSampler("sprite", 0)
+			.setVec3("fcolor", glm::vec3(1.0f));
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+		if (road.getPlayerId() == currentPlayerId) {
+			ownedRoadEntitiesByEdge[roadEdgeId] = e;
+			ownedRoadEdgeIndexByEdge[roadEdgeId] = edgeIndex;
+			ownedRoadPosByEdge[roadEdgeId] = worldPos;
+		}
+	}
+}
+
+void RenderBuildingsSystem::updateRoadHover(const glm::mat4& view,
+	const glm::mat4& projection,
+	const Camera& cam,
+	float time,
+	const std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
+	const std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
+	const std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge) noexcept {
+	if (ownedRoadEntitiesByEdge.empty())
+		return;
+
+	const Graph& map = gamestate->getMap();
+	const float hoverRadius = 0.12f / cam.zoom;
+	size_t hoveredEdgeId = SIZE_MAX;
+	float closestDistance = (std::numeric_limits<float>::max)();
+	bool isHovering = false;
+
+	const bool isBuildingPreviewActive = !registry->buildingPreviews.entities.empty();
+	if (!isBuildingPreviewActive) {
+		glm::vec2 cursorWorldPos = getCursorWorldPos(cam);
+		hoveredEdgeId = findClosestOwnedEdge(map, cursorWorldPos, ownedRoadEntitiesByEdge, closestDistance);
+		isHovering = hoveredEdgeId != SIZE_MAX && closestDistance <= hoverRadius;
+	}
+	if (isHovering && (!hoverActive || hoveredEdgeId != lastHoveredEdgeId)) {
+		hoverFadeStartTime = time;
+		hoverActive = true;
+		lastHoveredEdgeId = hoveredEdgeId;
+	} else if (!isHovering && hoverActive) {
+		hoverFadeStartTime = time;
+		hoverActive = false;
+	}
+
+	if (isHovering) {
+		lastHoveredConnectedEdges = collectConnectedOwnedEdges(map, hoveredEdgeId, ownedRoadEntitiesByEdge);
+	}
+
+	if (!lastHoveredConnectedEdges.empty()) {
+		float elapsed = time - hoverFadeStartTime;
+		float fadeT = glm::clamp(elapsed / hoverFadeDuration, 0.0f, 1.0f);
+		float fade = hoverActive ? glm::smoothstep(0.0f, 1.0f, fadeT) : (1.0f - glm::smoothstep(0.0f, 1.0f, fadeT));
+		if (!hoverActive && fadeT >= 1.0f) {
+			lastHoveredConnectedEdges.clear();
+			lastHoveredEdgeId = SIZE_MAX;
+		}
+
+		const float baseAlpha = 0.32f * fade;
+		renderRoadHighlights(lastHoveredConnectedEdges, ownedRoadPosByEdge, ownedRoadEdgeIndexByEdge, time, baseAlpha, view, projection);
+	}
+}
+
 
 	void RenderBuildingsSystem::renderBuildings(float time) noexcept {
 		if (!registry || !gamestate)
@@ -261,150 +491,22 @@ namespace df {
 		const glm::mat4 view = glm::identity<glm::mat4>();
 		const glm::mat4 projection = this->calculateProjection(cam);
 
-		size_t currentSettlementCount = registry->settlements.entities.size();
-		size_t currentRoadCount = registry->roads.entities.size();
-		if (currentSettlementCount < lastSettlementCount || currentRoadCount < lastRoadCount) {
-			dustPuffs.clear();
-			lastSettlementCount = currentSettlementCount;
-			lastRoadCount = currentRoadCount;
-		}
-
-		if (currentSettlementCount > lastSettlementCount) {
-			for (size_t i = lastSettlementCount; i < currentSettlementCount; ++i) {
-				Entity e = registry->settlements.entities[i];
-				if (registry->positions.has(e)) {
-					spawnDustAt(registry->positions.get(e), time, 8, 0.7f);
-				}
-			}
-		}
-		if (currentRoadCount > lastRoadCount) {
-			for (size_t i = lastRoadCount; i < currentRoadCount; ++i) {
-				Entity e = registry->roads.entities[i];
-				if (registry->positions.has(e)) {
-					spawnDustAt(registry->positions.get(e), time, 6, 0.5f);
-				}
-			}
-		}
-		lastSettlementCount = currentSettlementCount;
-		lastRoadCount = currentRoadCount;
+		updateDustSpawns(time);
 
 		// TODO: use consistent FPS for animations
 		constexpr float animationSpeed = 5.0f; // fps
 		constexpr int numFrames = 5;		   // how many frames per animation run
 		int textureIndex = static_cast<int>(time * animationSpeed) % numFrames;
 
-		// Render settlements from ECS
-		for (Entity e : registry->settlements.entities) {
-			if (!registry->positions.has(e) || !registry->scales.has(e))
-				continue;
-
-			// const Settlement& settlement = registry->settlements.get(e);
-			const glm::vec2& worldPos = registry->positions.get(e);
-			const glm::vec2& scale = registry->scales.get(e);
-
-			glm::mat4 model = glm::identity<glm::mat4>();
-			model = glm::translate(model, glm::vec3(worldPos, 0.0f));
-			model = glm::scale(model, glm::vec3(scale, 1.0f));
-
-			// Use animated settlement texture
-			settlementTextures[textureIndex].bind(0);
-			spriteShader.use()
-				.setMat4("view", view)
-				.setMat4("model[0]", model)
-				.setMat4("projection", projection)
-				.setSampler("sprite", 0)
-				.setVec3("fcolor", glm::vec3(1.0f));
-
-			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-		}
+		renderSettlements(view, projection, textureIndex);
+		updateSettlementHover(view, projection, cam, time);
 
 		// Render roads from ECS
 		std::unordered_map<size_t, Entity> ownedRoadEntitiesByEdge;
 		std::unordered_map<size_t, int> ownedRoadEdgeIndexByEdge;
 		std::unordered_map<size_t, glm::vec2> ownedRoadPosByEdge;
-		const size_t currentPlayerId = gamestate->getCurrentPlayerId();
-		for (Entity e : registry->roads.entities) {
-			if (!registry->positions.has(e) || !registry->scales.has(e))
-				continue;
-
-			const glm::vec2& worldPos = registry->positions.get(e);
-			const glm::vec2& scale = registry->scales.get(e);
-			const Road& road = registry->roads.get(e);
-			const size_t roadEdgeId = road.getEdgeId();
-
-			int edgeIndex = this->registry->roadEdgeIndices.has(e) ? this->registry->roadEdgeIndices.get(e) : -1;
-
-			Texture* roadTexture = nullptr;
-			if (edgeIndex == 0 || edgeIndex == 3)
-				roadTexture = &roadTextureVertical;
-			else if (edgeIndex == 1 || edgeIndex == 4)
-				roadTexture = &roadTextureDiagonalDown;
-			else if (edgeIndex == 2 || edgeIndex == 5)
-				roadTexture = &roadTextureDiagonalUp;
-			else
-				roadTexture = &roadTextureVertical;
-
-			glm::mat4 model = glm::identity<glm::mat4>();
-			model = glm::translate(model, glm::vec3(worldPos, 0.0f));
-			model = glm::scale(model, glm::vec3(scale, 1.0f));
-
-			assert(roadTexture != nullptr); // should not fail
-			roadTexture->bind(0);
-			spriteShader.use()
-				.setMat4("model[0]", model)
-				.setMat4("view", view)
-				.setMat4("projection", projection)
-				.setSampler("sprite", 0)
-				.setVec3("fcolor", glm::vec3(1.0f));
-
-			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-			if (road.getPlayerId() == currentPlayerId) {
-				ownedRoadEntitiesByEdge[roadEdgeId] = e;
-				ownedRoadEdgeIndexByEdge[roadEdgeId] = edgeIndex;
-				ownedRoadPosByEdge[roadEdgeId] = worldPos;
-			}
-		}
-
-		const bool isBuildingPreviewActive = !registry->buildingPreviews.entities.empty();
-		if (!ownedRoadEntitiesByEdge.empty()) {
-			const Graph& map = gamestate->getMap();
-			const float hoverRadius = 0.12f / cam.zoom;
-			size_t hoveredEdgeId = SIZE_MAX;
-			float closestDistance = (std::numeric_limits<float>::max)();
-			bool isHovering = false;
-
-			if (!isBuildingPreviewActive) {
-				glm::vec2 cursorWorldPos = getCursorWorldPos(cam);
-				hoveredEdgeId = findClosestOwnedEdge(map, cursorWorldPos, ownedRoadEntitiesByEdge, closestDistance);
-				isHovering = hoveredEdgeId != SIZE_MAX && closestDistance <= hoverRadius;
-			}
-			if (isHovering && (!hoverActive || hoveredEdgeId != lastHoveredEdgeId)) {
-				hoverFadeStartTime = time;
-				hoverActive = true;
-				lastHoveredEdgeId = hoveredEdgeId;
-			} else if (!isHovering && hoverActive) {
-				hoverFadeStartTime = time;
-				hoverActive = false;
-			}
-
-			if (isHovering) {
-				lastHoveredConnectedEdges = collectConnectedOwnedEdges(map, hoveredEdgeId, ownedRoadEntitiesByEdge);
-			}
-
-			if (!lastHoveredConnectedEdges.empty()) {
-				float elapsed = time - hoverFadeStartTime;
-				float fadeT = glm::clamp(elapsed / hoverFadeDuration, 0.0f, 1.0f);
-				float fade = hoverActive ? glm::smoothstep(0.0f, 1.0f, fadeT) : (1.0f - glm::smoothstep(0.0f, 1.0f, fadeT));
-				if (!hoverActive && fadeT >= 1.0f) {
-					lastHoveredConnectedEdges.clear();
-					lastHoveredEdgeId = SIZE_MAX;
-				}
-
-				const float baseAlpha = 0.32f * fade;
-				renderRoadHighlights(lastHoveredConnectedEdges, ownedRoadPosByEdge, ownedRoadEdgeIndexByEdge, time, baseAlpha, view, projection);
-			}
-		}
+		renderRoads(view, projection, ownedRoadEntitiesByEdge, ownedRoadEdgeIndexByEdge, ownedRoadPosByEdge);
+		updateRoadHover(view, projection, cam, time, ownedRoadEntitiesByEdge, ownedRoadEdgeIndexByEdge, ownedRoadPosByEdge);
 
 		renderDust(time, view, projection, cam);
 

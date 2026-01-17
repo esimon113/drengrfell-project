@@ -5,6 +5,7 @@
 #include "renderCommon.h"
 #include <array>
 #include <random>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include <registry.h>
@@ -67,6 +68,26 @@ namespace df {
 			const glm::mat4& view,
 			const glm::mat4& projection) noexcept;
 
+		void updateDustSpawns(float time) noexcept;
+
+		void renderSettlements(const glm::mat4& view, const glm::mat4& projection, int textureIndex) noexcept;
+
+		void updateSettlementHover(const glm::mat4& view, const glm::mat4& projection, const Camera& cam, float time) noexcept;
+
+		void renderRoads(const glm::mat4& view,
+			const glm::mat4& projection,
+			std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
+			std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
+			std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge) noexcept;
+			
+		void updateRoadHover(const glm::mat4& view,
+			const glm::mat4& projection,
+			const Camera& cam,
+			float time,
+			const std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
+			const std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
+			const std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge) noexcept;
+
 		void spawnDustAt(const glm::vec2& worldPos, float time, int count, float baseSize) noexcept;
 		void renderDust(float time, const glm::mat4& view, const glm::mat4& projection, const Camera& cam) noexcept;
 
@@ -99,5 +120,12 @@ namespace df {
 		float hoverFadeStartTime = 0.0f;
 		float hoverFadeDuration = 0.25f;
 		bool hoverActive = false;
+
+		Entity lastHoveredSettlementEntity = Entity();
+		glm::vec2 lastHoveredSettlementPos = glm::vec2(0.0f);
+		glm::vec2 lastHoveredSettlementScale = glm::vec2(1.0f);
+		float settlementHoverFadeStartTime = 0.0f;
+		float settlementHoverFadeDuration = 0.2f;
+		bool settlementHoverActive = false;
 	};
 } // namespace df

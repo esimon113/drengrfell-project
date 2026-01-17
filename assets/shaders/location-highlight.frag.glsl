@@ -19,7 +19,7 @@ void main() {
     }
 
     // gradient: bright at center, fading to edge
-    float gradient = 1.0 - smoothstep(0.7, 0.9, dist);
+    float gradient = 1.0 - smoothstep(0.4, 0.95, dist);
     // use quadratic gradient:
     gradient = gradient * gradient;
 
