@@ -34,11 +34,18 @@ namespace df {
 		self.roadTextureVertical = Texture::init(assets::Texture::DIRT_ROAD_VERTICAL);
 
 		// Load all settlement textures
-		self.settlementTextures[0] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT1);
-		self.settlementTextures[1] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT2);
-		self.settlementTextures[2] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT3);
-		self.settlementTextures[3] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT4);
-		self.settlementTextures[4] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT5);
+		self.woodSettlementTextures[0] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT1);
+		self.woodSettlementTextures[1] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT2);
+		self.woodSettlementTextures[2] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT3);
+		self.woodSettlementTextures[3] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT4);
+		self.woodSettlementTextures[4] = Texture::init(assets::Texture::VIKING_WOOD_SETTLEMENT5);
+
+		self.stoneSettlementTextures[0] = Texture::init(assets::Texture::STONE_SETTLEMENT1);
+		self.stoneSettlementTextures[1] = Texture::init(assets::Texture::STONE_SETTLEMENT2);
+		self.stoneSettlementTextures[2] = Texture::init(assets::Texture::STONE_SETTLEMENT3);
+		self.stoneSettlementTextures[3] = Texture::init(assets::Texture::STONE_SETTLEMENT4);
+		self.stoneSettlementTextures[4] = Texture::init(assets::Texture::STONE_SETTLEMENT5);
+		self.stoneSettlementTextures[5] = Texture::init(assets::Texture::STONE_SETTLEMENT6);
 
 		glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true});
@@ -88,7 +95,10 @@ namespace df {
 		roadTextureDiagonalDown.deinit();
 		roadTextureVertical.deinit();
 
-		for (auto& tex : settlementTextures) {
+		for (auto& tex : woodSettlementTextures) {
+			tex.deinit();
+		}
+		for (auto& tex : stoneSettlementTextures) {
 			tex.deinit();
 		}
 
@@ -285,19 +295,28 @@ void RenderBuildingsSystem::updateDustSpawns(float time) noexcept {
 	lastRoadCount = currentRoadCount;
 }
 
-void RenderBuildingsSystem::renderSettlements(const glm::mat4& view, const glm::mat4& projection, int textureIndex) noexcept {
+void RenderBuildingsSystem::renderSettlements(const glm::mat4& view, const glm::mat4& projection, float time) noexcept {
+	constexpr float animationSpeed = 5.0f; // fps
 	for (Entity e : registry->settlements.entities) {
-		if (!registry->positions.has(e) || !registry->scales.has(e))
+		if (!registry->positions.has(e) || !registry->scales.has(e) || !registry->settlements.has(e))
 			continue;
 
 		const glm::vec2& worldPos = registry->positions.get(e);
 		const glm::vec2& scale = registry->scales.get(e);
+		const Settlement& settlement = registry->settlements.get(e);
+		const bool upgraded = settlement.isUpgraded();
+		const int frameCount = upgraded ? static_cast<int>(stoneSettlementTextures.size()) : static_cast<int>(woodSettlementTextures.size());
+		const int textureIndex = static_cast<int>(time * animationSpeed) % frameCount;
 
 		glm::mat4 model = glm::identity<glm::mat4>();
 		model = glm::translate(model, glm::vec3(worldPos, 0.0f));
 		model = glm::scale(model, glm::vec3(scale, 1.0f));
 
-		settlementTextures[textureIndex].bind(0);
+		if (upgraded) {
+			stoneSettlementTextures[textureIndex].bind(0);
+		} else {
+			woodSettlementTextures[textureIndex].bind(0);
+		}
 		spriteShader.use()
 			.setMat4("view", view)
 			.setMat4("model[0]", model)
@@ -493,12 +512,7 @@ void RenderBuildingsSystem::updateRoadHover(const glm::mat4& view,
 
 		updateDustSpawns(time);
 
-		// TODO: use consistent FPS for animations
-		constexpr float animationSpeed = 5.0f; // fps
-		constexpr int numFrames = 5;		   // how many frames per animation run
-		int textureIndex = static_cast<int>(time * animationSpeed) % numFrames;
-
-		renderSettlements(view, projection, textureIndex);
+		renderSettlements(view, projection, time);
 		updateSettlementHover(view, projection, cam, time);
 
 		// Render roads from ECS

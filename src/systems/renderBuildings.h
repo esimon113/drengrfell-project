@@ -70,7 +70,7 @@ namespace df {
 
 		void updateDustSpawns(float time) noexcept;
 
-		void renderSettlements(const glm::mat4& view, const glm::mat4& projection, int textureIndex) noexcept;
+		void renderSettlements(const glm::mat4& view, const glm::mat4& projection, float time) noexcept;
 
 		void updateSettlementHover(const glm::mat4& view, const glm::mat4& projection, const Camera& cam, float time) noexcept;
 
@@ -103,7 +103,8 @@ namespace df {
 		Texture roadTextureDiagonalDown;		   // 0, 3
 		Texture roadTextureDiagonalUp;			   // 2, 5
 		Texture roadTextureVertical;			   // 1, 4
-		std::array<Texture, 5> settlementTextures; // wood settlement textures for animation
+		std::array<Texture, 5> woodSettlementTextures;  // wood settlement textures for animation
+		std::array<Texture, 6> stoneSettlementTextures; // stone settlement textures for animation
 
 		GLuint m_quad_vao;
 		GLuint m_quad_ebo;

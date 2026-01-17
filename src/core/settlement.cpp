@@ -22,6 +22,9 @@ namespace df {
 	const std::vector<int>& Settlement::getBuildingCost() const { return buildingCost; }
 	void Settlement::setBuildingCost(std::vector<int> newBuildingCost) { buildingCost = newBuildingCost; }
 
+bool Settlement::isUpgraded() const { return upgraded; }
+void Settlement::setUpgraded(bool value) { upgraded = value; }
+
 
 	const json Settlement::serialize() const {
 		json j;
@@ -30,6 +33,7 @@ namespace df {
 		j["playerId"] = playerId;
 		j["vertexId"] = vertexId;
 		j["buildingCost"] = buildingCost;
+	j["upgraded"] = upgraded;
 
 		return j;
 	}
@@ -39,6 +43,11 @@ namespace df {
 		this->setPlayerId(j.at("playerId").get<size_t>());
 		this->setVertexId(j.at("vertexId").get<size_t>());
 		this->setBuildingCost(j.at("buildingCost").get<std::vector<int>>());
+	if (j.contains("upgraded")) {
+		this->setUpgraded(j.at("upgraded").get<bool>());
+	} else {
+		this->setUpgraded(false);
+	}
 	}
 
 } // namespace df

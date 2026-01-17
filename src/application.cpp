@@ -14,6 +14,7 @@
 // #include "utils/graphDebugImage.h"
 #include "systems/questsSystem.h"
 #include "systems/renderTiles.h"
+#include "systems/renderCommon.h"
 #include "tradingSystem.h"
 #include "utils/worldNodeMapper.h"
 
@@ -21,9 +22,12 @@
 
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <map>
 
 #include "events/eventBus.h"
 #include "window.h"
+#include "core/settlement.h"
 
 #include "ai/behaviorTree.h"
 #include "ai/commandRegistry.h"
@@ -462,6 +466,13 @@ namespace df {
 			configMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::PLAY:
+		if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
+			if (render.renderNotificationSystem.isActive()) {
+				render.renderNotificationSystem.close();
+				selectedSettlementId = SIZE_MAX;
+				return;
+			}
+		}
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
 			render.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
@@ -550,6 +561,66 @@ namespace df {
 					pressedButton == "Clay" || pressedButton == "Grass" || pressedButton == "Grain") {
 					tradingSystem.handleOptionClicked(pressedButton);
 				}
+				if (pressedButton == "Upgrade") {
+					if (selectedSettlementId != SIZE_MAX) {
+						Player* player = gameState->getPlayer(gameState->getCurrentPlayerId());
+						if (player) {
+							bool alreadyUpgraded = false;
+							for (Entity e : registry->settlements.entities) {
+								if (registry->settlements.has(e) && registry->settlements.get(e).getId() == selectedSettlementId) {
+									if (registry->settlements.get(e).isUpgraded()) {
+										alreadyUpgraded = true;
+									}
+									break;
+								}
+							}
+							if (alreadyUpgraded) {
+								render.renderNotificationSystem.showNotification(
+									"Settlement Management",
+									"This settlement is already upgraded.",
+									{"Close"});
+								selectedSettlementId = SIZE_MAX;
+								return;
+							}
+
+							std::map<types::TileType, int> upgradeCost = {
+								{types::TileType::FOREST, 10},
+								{types::TileType::MOUNTAIN, 20},
+								{types::TileType::FIELD, 10},
+								{types::TileType::CLAY, 10},
+								{types::TileType::GRASS, 10},
+							};
+							bool canAfford = player->hasResources(upgradeCost);
+							if (canAfford) {
+								for (const auto& [type, amount] : upgradeCost) {
+									player->removeResources(type, amount);
+								}
+
+								for (Entity e : registry->settlements.entities) {
+									if (registry->settlements.has(e) && registry->settlements.get(e).getId() == selectedSettlementId) {
+										registry->settlements.get(e).setUpgraded(true);
+										break;
+									}
+								}
+								for (auto& s : gameState->getSettlements()) {
+									if (s && s->getId() == selectedSettlementId) {
+										s->setUpgraded(true);
+										break;
+									}
+								}
+							} else {
+								render.renderNotificationSystem.showNotification(
+									"You don't have enough ressources!",
+									"You need more ressources to upgrade this.\nPress 'C' to check for ressource cost.",
+									{"Okay"});
+							}
+						}
+					}
+					selectedSettlementId = SIZE_MAX;
+				}
+				if (pressedButton == "Close") {
+					selectedSettlementId = SIZE_MAX;
+				}
 				if (pressedButton == "Pay ressources") {
 					gameController->payForHazard(*registry);
 				}
@@ -567,6 +638,9 @@ namespace df {
 					victoryScreenClosed = true; // close victory screen and go back to menu
 				}
 				return; // notification clicked -> no further actions (including movement) for now
+			}
+			if (render.renderNotificationSystem.isActive()) {
+				return;
 			}
 
 			// START Lock all following interactions with the game while the hero is still moving
@@ -593,6 +667,56 @@ namespace df {
 
 				if (render.renderHudSystem.onMouseButton(mouse, button, action))
 					return;
+
+				// Settlement management popup
+				if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS &&
+					!this->world.isSettlementPreviewActive && !this->world.isRoadPreviewActive) {
+					Camera& cam = registry->cameras.get(registry->getCamera());
+					Viewport viewport{glm::uvec2(0), window->getWindowExtent()};
+					glm::vec2 cursorScreenPos = window->getCursorPosition();
+					glm::vec2 cursorWorldOffset = screenToWorldCoordinates(
+						cursorScreenPos,
+						viewport,
+						glm::vec2(cam.viewWidth, cam.viewHeight));
+					glm::vec2 cursorWorldPos = cam.position + cursorWorldOffset;
+
+					Entity hoveredSettlement = Entity();
+					size_t hoveredSettlementId = SIZE_MAX;
+					float closestDistance = (std::numeric_limits<float>::max)();
+
+					size_t currentPlayerId = gameState->getCurrentPlayerId();
+					for (Entity e : registry->settlements.entities) {
+						if (!registry->positions.has(e) || !registry->settlements.has(e) || !registry->scales.has(e))
+							continue;
+						const Settlement& settlement = registry->settlements.get(e);
+						if (settlement.getPlayerId() != currentPlayerId)
+							continue;
+
+						const glm::vec2& worldPos = registry->positions.get(e);
+						const glm::vec2& scale = registry->scales.get(e);
+						float hitRadius = std::max(scale.x, scale.y) * 0.6f;
+						float distance = glm::distance(cursorWorldPos, worldPos);
+						if (distance < closestDistance && distance <= hitRadius) {
+							closestDistance = distance;
+							hoveredSettlement = e;
+							hoveredSettlementId = settlement.getId();
+						}
+					}
+
+					if (hoveredSettlementId != SIZE_MAX) {
+						selectedSettlementId = hoveredSettlementId;
+						render.renderNotificationSystem.showNotification(
+							"Settlement Management",
+							"Upgrade cost:\n"
+							"- 10 wood\n"
+							"- 20 stone\n"
+							"- 10 grain\n"
+							"- 10 clay\n"
+							"- 10 grass",
+							{"Upgrade", "Close"});
+						return;
+					}
+				}
 
 				// TODO: refactor...
 				// Handle building placement -> ONLY possible when preview is active

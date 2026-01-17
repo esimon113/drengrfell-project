@@ -26,6 +26,9 @@ namespace df {
 		const std::vector<int>& getBuildingCost() const;
 		void setBuildingCost(std::vector<int> newBuildingCost);
 
+		bool isUpgraded() const;
+		void setUpgraded(bool value);
+
 		const json serialize() const;
 
 		void deserialize(const json& j);
@@ -35,6 +38,7 @@ namespace df {
 		size_t playerId{0};
 		size_t vertexId{0};
 		std::vector<int> buildingCost{};
+		bool upgraded{false};
 	};
 
 } // namespace df
