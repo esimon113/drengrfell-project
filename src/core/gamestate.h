@@ -10,6 +10,7 @@ using json = nlohmann::json;
 
 #include "graph.h"
 #include "player.h"
+#include "productivityBuilding.h"
 #include "road.h"
 #include "settlement.h"
 #include "tutorial.h"
@@ -85,6 +86,14 @@ namespace df {
 		}
 		const std::vector<int>& getCurrentRoadCost() const;
 
+		// productivity buildings
+		std::vector<std::shared_ptr<ProductivityBuilding>> getProductivityBuildings();
+		void addProductivityBuilding(std::shared_ptr<ProductivityBuilding> building);
+		void clearProductivityBuildings() {
+			productivityBuildings.clear();
+			registry->productivityBuildings.clear();
+		}
+
 
 		// turns
 		size_t getCurrentPlayerId() const { return this->currentPlayerId; }
@@ -126,6 +135,7 @@ namespace df {
 		// Smart pointer storage for safe ownership
 		std::vector<std::shared_ptr<Settlement>> settlements;
 		std::vector<std::shared_ptr<Road>> roads;
+		std::vector<std::shared_ptr<ProductivityBuilding>> productivityBuildings;
 
 		// turns
 		size_t currentPlayerId = 0;

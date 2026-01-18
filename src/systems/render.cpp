@@ -25,6 +25,7 @@ namespace df {
 		self.renderTextSystem = RenderTextSystem::init(window, registry);
 		self.renderSnowSystem = RenderSnowSystem::init(window, registry, gameState);
 		self.renderNotificationSystem = RenderNotificationSystem::init(window, registry);
+	self.renderSettlementMenuSystem = RenderSettlementMenuSystem::init(window, registry, gameState, gameController);
 		return self;
 	}
 
@@ -38,6 +39,7 @@ namespace df {
 		this->renderTextSystem.deinit();
 		this->renderSnowSystem.deinit();
 		this->renderNotificationSystem.deinit();
+	this->renderSettlementMenuSystem.deinit();
 		this->intermediateFramebuffer.deinit();
 	}
 
@@ -49,6 +51,7 @@ namespace df {
 		this->renderTextSystem.step(dt);
 		this->renderSnowSystem.step(dt);
 		this->renderNotificationSystem.step(dt);
+	this->renderSettlementMenuSystem.step(dt);
 		this->renderHudSystem.step(dt); // always rendered last
 	}
 
@@ -62,6 +65,7 @@ namespace df {
 		this->renderTextSystem.reset();
 		this->renderNotificationSystem.reset();
 		this->renderSnowSystem.reset();
+	this->renderSettlementMenuSystem.reset();
 	}
 
 
@@ -96,6 +100,7 @@ namespace df {
 		this->renderBuildingPreviewsSystem.updateViewport(origin, size);
 		this->renderTextSystem.updateViewport(origin, size);
 		this->renderHudSystem.updateViewport(origin, size);
+	this->renderSettlementMenuSystem.updateViewport(origin, size);
 
 		// reinitialize off-screen framebuffer
 		intermediateFramebuffer.deinit();
@@ -104,6 +109,7 @@ namespace df {
 
 	void RenderSystem::onKeyCallback(GLFWwindow* pwindow, int key, int scancode, int action, int mods) noexcept {
 		this->renderTilesSystem.onKeyCallback(pwindow, key, scancode, action, mods);
+	this->renderSettlementMenuSystem.onKeyCallback(key, action);
 	}
 	void RenderSystem::onMouseButtonCallback(GLFWwindow* pwindow, int button, int action, int mods) noexcept {
 		this->renderTilesSystem.onMouseButtonCallback(pwindow, button, action, mods);

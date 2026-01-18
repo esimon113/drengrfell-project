@@ -74,6 +74,8 @@ namespace df {
 
 		void updateSettlementHover(const glm::mat4& view, const glm::mat4& projection, const Camera& cam, float time) noexcept;
 
+		void renderProductivityBuildings(const glm::mat4& view, const glm::mat4& projection) noexcept;
+
 		void renderRoads(const glm::mat4& view,
 			const glm::mat4& projection,
 			std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
@@ -105,6 +107,13 @@ namespace df {
 		Texture roadTextureVertical;			   // 1, 4
 		std::array<Texture, 5> woodSettlementTextures;  // wood settlement textures for animation
 		std::array<Texture, 6> stoneSettlementTextures; // stone settlement textures for animation
+		Texture castleTexture;
+		Texture lumberCampTexture;
+		Texture stoneQuarryTexture;
+		Texture stableTexture;
+		Texture millTexture;
+		Texture brickKilnTexture;
+		Texture productivityPlaceholderTexture;
 
 		GLuint m_quad_vao;
 		GLuint m_quad_ebo;

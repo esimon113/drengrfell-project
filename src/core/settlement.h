@@ -5,6 +5,8 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+#include "types.h"
+
 namespace df {
 
 	class Settlement {
@@ -26,8 +28,8 @@ namespace df {
 		const std::vector<int>& getBuildingCost() const;
 		void setBuildingCost(std::vector<int> newBuildingCost);
 
-		bool isUpgraded() const;
-		void setUpgraded(bool value);
+		types::SettlementType getSettlementType() const;
+		void setSettlementType(types::SettlementType type);
 
 		const json serialize() const;
 
@@ -38,7 +40,7 @@ namespace df {
 		size_t playerId{0};
 		size_t vertexId{0};
 		std::vector<int> buildingCost{};
-		bool upgraded{false};
+		types::SettlementType settlementType{types::SettlementType::WOOD};
 	};
 
 } // namespace df

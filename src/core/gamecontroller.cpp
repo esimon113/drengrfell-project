@@ -214,7 +214,13 @@ namespace df {
 				const TileHandle tile = this->gameState.getMap().getTile(tileId);
 				fmt::println("Get TileId {}, tile has type {} and potency {}", tileId, std::string(types::tileTypeToString(tile->getType())), types::potencyToString(tile->getPotency()));
 				if (tile->givesResourceThisTurn(this->rng)) {
-					player.addResources(tile->getType(), 1); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
+					int resourceAmount = 1;
+					if (tile->hasBuilding() && tile->getBuildingId().has_value()) {
+						if (tile->getBuildingId().value() == player.getId()) {
+							resourceAmount = 2;
+						}
+					}
+					player.addResources(tile->getType(), resourceAmount); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
 
 					// std::string type = types::tileTypeToString(tile->getType());
 					// std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -233,7 +239,13 @@ namespace df {
 				const size_t heroTileId = this->registry->tileID.get(hero);
 				const TileHandle heroTile = this->gameState.getMap().getTile(heroTileId);
 				if (heroTile && heroTile->givesResourceThisTurn(this->rng)) {
-					player.addResources(heroTile->getType(), 1);
+					int resourceAmount = 1;
+					if (heroTile->hasBuilding() && heroTile->getBuildingId().has_value()) {
+						if (heroTile->getBuildingId().value() == player.getId()) {
+							resourceAmount = 2;
+						}
+					}
+					player.addResources(heroTile->getType(), resourceAmount);
 					auto goalType = types::tileToQuestGoal(heroTile->getType());
 					if (goalType != types::QuestGoalType::NONE) {
 						this->m_questsSystem->updateProgress(goalType, 1);
@@ -720,6 +732,132 @@ namespace df {
 		}
 	}
 
+	bool GameController::canBuildProductivityBuilding(size_t playerId, size_t tileId, types::TileType tileType) const {
+		const Graph& map = this->gameState.getMap();
+		const TileHandle tile = map.getTile(tileId);
+		if (!tile) {
+			return false;
+		}
+
+		if (tile->hasBuilding()) {
+			return false;
+		}
+
+		if (tile->getType() != tileType) {
+			return false;
+		}
+
+		const auto settlements = this->gameState.getSettlements();
+		for (const auto& settlement : settlements) {
+			if (!settlement || settlement->getPlayerId() != playerId) {
+				continue;
+			}
+			const auto adjacentTiles = this->getSettlementTiles(*settlement);
+			if (std::find(adjacentTiles.begin(), adjacentTiles.end(), tileId) != adjacentTiles.end()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool GameController::buildProductivityBuilding(size_t playerId, size_t tileId, types::TileType tileType, const std::vector<int>& buildingCost) {
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player) {
+			fmt::println("[GameController] buildProductivityBuilding failed: player {} not found", playerId);
+			return false;
+		}
+		if (!this->hasEnoughResources(*player, buildingCost)) {
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
+			return false;
+		}
+		if (!this->canBuildProductivityBuilding(playerId, tileId, tileType)) {
+			return false;
+		}
+
+		Graph& map = this->gameState.getMap();
+		TileHandle tile = map.getTile(tileId);
+		if (!tile || tile->hasBuilding()) {
+			return false;
+		}
+
+		size_t newBuildingId = 0;
+		const auto& existingBuildings = this->gameState.getProductivityBuildings();
+		if (!existingBuildings.empty()) {
+			size_t maxId = 0;
+			for (const auto& building : existingBuildings) {
+				if (building && building->getId() > maxId) {
+					maxId = building->getId();
+				}
+			}
+			newBuildingId = maxId + 1;
+		}
+
+		auto newBuilding = std::make_shared<ProductivityBuilding>(newBuildingId, playerId, tileId);
+		tile->setBuildingId(playerId);
+		this->gameState.addProductivityBuilding(newBuilding);
+		player->addProductivityBuilding(newBuildingId);
+		this->chargeResourceCost(*player, buildingCost);
+
+		return true;
+	}
+
+	bool GameController::canUpgradeSettlement(size_t playerId, size_t settlementId, types::SettlementType targetType) const {
+		const Settlement* settlement = this->findSettlementById(settlementId);
+		if (!settlement || settlement->getPlayerId() != playerId) {
+			return false;
+		}
+
+		const types::SettlementType currentType = settlement->getSettlementType();
+		if (targetType == types::SettlementType::STONE && currentType != types::SettlementType::WOOD) {
+			return false;
+		}
+		if (targetType == types::SettlementType::CASTLE && currentType != types::SettlementType::STONE) {
+			return false;
+		}
+
+		return true;
+	}
+
+	bool GameController::upgradeSettlement(size_t playerId, size_t settlementId, types::SettlementType targetType, const std::vector<int>& buildingCost) {
+		if (!canUpgradeSettlement(playerId, settlementId, targetType)) {
+			return false;
+		}
+
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player) {
+			return false;
+		}
+		if (!this->hasEnoughResources(*player, buildingCost)) {
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
+			return false;
+		}
+
+		const auto settlements = this->gameState.getSettlements();
+		for (const auto& settlement : settlements) {
+			if (settlement && settlement->getId() == settlementId) {
+				settlement->setSettlementType(targetType);
+				break;
+			}
+		}
+
+		for (Entity e : this->registry->settlements.entities) {
+			if (!this->registry->settlements.has(e)) {
+				continue;
+			}
+			Settlement& registrySettlement = this->registry->settlements.get(e);
+			if (registrySettlement.getId() == settlementId) {
+				registrySettlement.setSettlementType(targetType);
+				break;
+			}
+		}
+
+		this->chargeResourceCost(*player, buildingCost);
+		return true;
+	}
+
 
 	// TODO: move this functionality to settlement class
 	std::vector<size_t> GameController::getSettlementTiles(const Settlement& settlement) const {
@@ -932,6 +1070,30 @@ namespace df {
 		for (const auto& settlement : settlements) {
 			if (settlement && settlement->getId() == settlementId) {
 				return settlement.get();
+			}
+		}
+
+		return nullptr;
+	}
+
+	const ProductivityBuilding* GameController::findProductivityBuildingById(size_t buildingId) const {
+		const auto& buildings = this->gameState.getProductivityBuildings();
+
+		for (const auto& building : buildings) {
+			if (building && building->getId() == buildingId) {
+				return building.get();
+			}
+		}
+
+		return nullptr;
+	}
+
+	const ProductivityBuilding* GameController::findProductivityBuildingByTileId(size_t tileId) const {
+		const auto& buildings = this->gameState.getProductivityBuildings();
+
+		for (const auto& building : buildings) {
+			if (building && building->getTileId() == tileId) {
+				return building.get();
 			}
 		}
 

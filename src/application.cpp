@@ -418,11 +418,11 @@ namespace df {
 				player = this->gameState->getPlayer(0);
 			}
 			player->reset();
-			player->addResources(types::TileType::FOREST, 10);	 // give player initial wood
-			player->addResources(types::TileType::CLAY, 10);	 // give player initial clay
-			player->addResources(types::TileType::MOUNTAIN, 10); // give player initial stone
-			player->addResources(types::TileType::FIELD, 10);	 // give player initial grain
-			player->addResources(types::TileType::GRASS, 10);	 // give player initial grass (cattle)
+			player->addResources(types::TileType::FOREST, 1000);	 // give player initial wood
+			player->addResources(types::TileType::CLAY, 1000);	 // give player initial clay
+			player->addResources(types::TileType::MOUNTAIN, 1000); // give player initial stone
+			player->addResources(types::TileType::FIELD, 1000);	 // give player initial grain
+			player->addResources(types::TileType::GRASS, 1000);	 // give player initial grass (cattle)
 
 			fmt::println("[DEBUG] resources distributed to player");
 
@@ -470,6 +470,11 @@ namespace df {
 		if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 			if (render.renderNotificationSystem.isActive()) {
 				render.renderNotificationSystem.close();
+				selectedSettlementId = SIZE_MAX;
+				return;
+			}
+			if (render.renderSettlementMenuSystem.isActive()) {
+				render.renderSettlementMenuSystem.close();
 				selectedSettlementId = SIZE_MAX;
 				return;
 			}
@@ -562,66 +567,6 @@ namespace df {
 					pressedButton == "Clay" || pressedButton == "Grass" || pressedButton == "Grain") {
 					tradingSystem.handleOptionClicked(pressedButton);
 				}
-				if (pressedButton == "Upgrade") {
-					if (selectedSettlementId != SIZE_MAX) {
-						Player* player = gameState->getPlayer(gameState->getCurrentPlayerId());
-						if (player) {
-							bool alreadyUpgraded = false;
-							for (Entity e : registry->settlements.entities) {
-								if (registry->settlements.has(e) && registry->settlements.get(e).getId() == selectedSettlementId) {
-									if (registry->settlements.get(e).isUpgraded()) {
-										alreadyUpgraded = true;
-									}
-									break;
-								}
-							}
-							if (alreadyUpgraded) {
-								render.renderNotificationSystem.showNotification(
-									"Settlement Management",
-									"This settlement is already upgraded.",
-									{"Close"});
-								selectedSettlementId = SIZE_MAX;
-								return;
-							}
-
-							std::map<types::TileType, int> upgradeCost = {
-								{types::TileType::FOREST, 10},
-								{types::TileType::MOUNTAIN, 20},
-								{types::TileType::FIELD, 10},
-								{types::TileType::CLAY, 10},
-								{types::TileType::GRASS, 10},
-							};
-							bool canAfford = player->hasResources(upgradeCost);
-							if (canAfford) {
-								for (const auto& [type, amount] : upgradeCost) {
-									player->removeResources(type, amount);
-								}
-
-								for (Entity e : registry->settlements.entities) {
-									if (registry->settlements.has(e) && registry->settlements.get(e).getId() == selectedSettlementId) {
-										registry->settlements.get(e).setUpgraded(true);
-										break;
-									}
-								}
-								for (auto& s : gameState->getSettlements()) {
-									if (s && s->getId() == selectedSettlementId) {
-										s->setUpgraded(true);
-										break;
-									}
-								}
-							} else {
-								render.renderNotificationSystem.showNotification(
-									"You don't have enough ressources!",
-									"You need more ressources to upgrade this.\nPress 'C' to check for ressource cost.",
-									{"Okay"});
-							}
-						}
-					}
-					selectedSettlementId = SIZE_MAX;
-				}
-				if (pressedButton == "Close") {
-					selectedSettlementId = SIZE_MAX;
-				}
 				if (pressedButton == "Pay ressources") {
 					gameController->payForHazard(*registry);
 				}
@@ -641,6 +586,54 @@ namespace df {
 				return; // notification clicked -> no further actions (including movement) for now
 			}
 			if (render.renderNotificationSystem.isActive()) {
+				return;
+			}
+			if (render.renderSettlementMenuSystem.isActive()) {
+				if (render.renderSettlementMenuSystem.onMouseButton(mouse, button, action)) {
+					return;
+				}
+			}
+
+			size_t hoveredSettlementId = SIZE_MAX;
+			if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS &&
+				!this->world.isSettlementPreviewActive && !this->world.isRoadPreviewActive) {
+				Camera& cam = registry->cameras.get(registry->getCamera());
+				Viewport viewport{glm::uvec2(0), window->getWindowExtent()};
+				glm::vec2 cursorScreenPos = window->getCursorPosition();
+				glm::vec2 cursorWorldOffset = screenToWorldCoordinates(
+					cursorScreenPos,
+					viewport,
+					glm::vec2(cam.viewWidth, cam.viewHeight));
+				glm::vec2 cursorWorldPos = cam.position + cursorWorldOffset;
+
+				float closestDistance = (std::numeric_limits<float>::max)();
+				size_t currentPlayerId = gameState->getCurrentPlayerId();
+				for (Entity e : registry->settlements.entities) {
+					if (!registry->positions.has(e) || !registry->settlements.has(e) || !registry->scales.has(e)) {
+						continue;
+					}
+					const Settlement& settlement = registry->settlements.get(e);
+					if (settlement.getPlayerId() != currentPlayerId) {
+						continue;
+					}
+
+					const glm::vec2& worldPos = registry->positions.get(e);
+					const glm::vec2& scale = registry->scales.get(e);
+					float hitRadius = std::max(scale.x, scale.y) * 0.6f;
+					float distance = glm::distance(cursorWorldPos, worldPos);
+					if (distance < closestDistance && distance <= hitRadius) {
+						closestDistance = distance;
+						hoveredSettlementId = settlement.getId();
+					}
+				}
+			}
+
+			if (render.renderSettlementMenuSystem.isActive() &&
+				button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS &&
+				hoveredSettlementId == SIZE_MAX &&
+				!render.renderSettlementMenuSystem.isPointInsideMenu(mouse)) {
+				render.renderSettlementMenuSystem.close();
+				selectedSettlementId = SIZE_MAX;
 				return;
 			}
 
@@ -669,82 +662,12 @@ namespace df {
 				if (render.renderHudSystem.onMouseButton(mouse, button, action))
 					return;
 
-				// Settlement management popup
+				// Settlement management menu
 				if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS &&
 					!this->world.isSettlementPreviewActive && !this->world.isRoadPreviewActive) {
-					Camera& cam = registry->cameras.get(registry->getCamera());
-					Viewport viewport{glm::uvec2(0), window->getWindowExtent()};
-					glm::vec2 cursorScreenPos = window->getCursorPosition();
-					glm::vec2 cursorWorldOffset = screenToWorldCoordinates(
-						cursorScreenPos,
-						viewport,
-						glm::vec2(cam.viewWidth, cam.viewHeight));
-					glm::vec2 cursorWorldPos = cam.position + cursorWorldOffset;
-
-					Entity hoveredSettlement = Entity();
-					size_t hoveredSettlementId = SIZE_MAX;
-					float closestDistance = (std::numeric_limits<float>::max)();
-
-					size_t currentPlayerId = gameState->getCurrentPlayerId();
-					for (Entity e : registry->settlements.entities) {
-						if (!registry->positions.has(e) || !registry->settlements.has(e) || !registry->scales.has(e))
-							continue;
-						const Settlement& settlement = registry->settlements.get(e);
-						if (settlement.getPlayerId() != currentPlayerId)
-							continue;
-
-						const glm::vec2& worldPos = registry->positions.get(e);
-						const glm::vec2& scale = registry->scales.get(e);
-						float hitRadius = std::max(scale.x, scale.y) * 0.6f;
-						float distance = glm::distance(cursorWorldPos, worldPos);
-						if (distance < closestDistance && distance <= hitRadius) {
-							closestDistance = distance;
-							hoveredSettlement = e;
-							hoveredSettlementId = settlement.getId();
-						}
-					}
-
 					if (hoveredSettlementId != SIZE_MAX) {
-						const Settlement& settlement = registry->settlements.get(hoveredSettlement);
-						if (settlement.isUpgraded()) {
-							Graph& map = gameState->getMap();
-							std::string message = "Resources from adjacent tiles:\n";
-							std::set<types::TileType> resourceTypes;
-							if (auto vertex = map.findVertexById(settlement.getVertexId()); vertex) {
-								if (auto tilesOpt = map.getVertexTiles(vertex); tilesOpt) {
-									for (const auto& tile : *tilesOpt) {
-										if (tile && tile->getType() != types::TileType::WATER) {
-											resourceTypes.insert(tile->getType());
-										}
-									}
-								}
-							}
-							if (resourceTypes.empty()) {
-								message += "- none\n";
-							} else {
-								for (const auto& type : resourceTypes) {
-									message += "- ";
-									message += std::string(types::tileTypeToString(type));
-									message += "\n";
-								}
-							}
-							render.renderNotificationSystem.showNotification(
-								"Settlement Resources",
-								message,
-								{"Close"});
-							return;
-						}
-
 						selectedSettlementId = hoveredSettlementId;
-						render.renderNotificationSystem.showNotification(
-							"Settlement Management",
-							"Upgrade cost:\n"
-							"- 10 wood\n"
-							"- 20 stone\n"
-							"- 10 grain\n"
-							"- 10 clay\n"
-							"- 10 grass",
-							{"Upgrade", "Close"});
+						render.renderSettlementMenuSystem.showMenu(hoveredSettlementId);
 						return;
 					}
 				}

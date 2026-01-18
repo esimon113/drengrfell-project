@@ -133,6 +133,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/edge.cpp
 	${PROJECT_SOURCE_DIR}/src/core/vertex.cpp
 	${PROJECT_SOURCE_DIR}/src/core/settlement.cpp
+	${PROJECT_SOURCE_DIR}/src/core/productivityBuilding.cpp
 	${PROJECT_SOURCE_DIR}/src/core/road.cpp
 	${PROJECT_SOURCE_DIR}/src/core/player.cpp
 	${PROJECT_SOURCE_DIR}/src/core/gamestate.cpp
@@ -156,6 +157,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/animationSystem.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderText.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderNotification.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderSettlementMenu.cpp
 
 	${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp

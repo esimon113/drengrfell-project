@@ -89,6 +89,13 @@ namespace df {
 			HERO_RUN_3,
 			HERO_RUN_4,
 			HERO_RUN_5,
+			CASTLE,
+			LUMBER_CAMP,
+			STONE_QUARRY,
+			STABLE,
+			MILL,
+			BRICK_KILN,
+			PRODUCTIVITY_PLACEHOLDER,
 			count
 		};
 

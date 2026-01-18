@@ -99,6 +99,13 @@ namespace df {
 		"hero/run/run_3.png",
 		"hero/run/run_4.png",
 		"hero/run/run_5.png",
+	"settlements/castle/castle.png",
+	"settlements/productivity-boost/placeholder.png",
+	"settlements/productivity-boost/stone-quarry.png",
+	"settlements/productivity-boost/placeholder.png",
+	"settlements/productivity-boost/mill.png",
+	"settlements/productivity-boost/placeholder.png",
+	"settlements/productivity-boost/placeholder.png",
 	};
 
 

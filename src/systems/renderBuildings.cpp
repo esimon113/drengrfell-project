@@ -46,6 +46,13 @@ namespace df {
 		self.stoneSettlementTextures[3] = Texture::init(assets::Texture::STONE_SETTLEMENT4);
 		self.stoneSettlementTextures[4] = Texture::init(assets::Texture::STONE_SETTLEMENT5);
 		self.stoneSettlementTextures[5] = Texture::init(assets::Texture::STONE_SETTLEMENT6);
+	self.castleTexture = Texture::init(assets::Texture::CASTLE);
+	self.lumberCampTexture = Texture::init(assets::Texture::LUMBER_CAMP);
+	self.stoneQuarryTexture = Texture::init(assets::Texture::STONE_QUARRY);
+	self.stableTexture = Texture::init(assets::Texture::STABLE);
+	self.millTexture = Texture::init(assets::Texture::MILL);
+	self.brickKilnTexture = Texture::init(assets::Texture::BRICK_KILN);
+	self.productivityPlaceholderTexture = Texture::init(assets::Texture::PRODUCTIVITY_PLACEHOLDER);
 
 		glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true});
@@ -304,19 +311,81 @@ void RenderBuildingsSystem::renderSettlements(const glm::mat4& view, const glm::
 		const glm::vec2& worldPos = registry->positions.get(e);
 		const glm::vec2& scale = registry->scales.get(e);
 		const Settlement& settlement = registry->settlements.get(e);
-		const bool upgraded = settlement.isUpgraded();
-		const int frameCount = upgraded ? static_cast<int>(stoneSettlementTextures.size()) : static_cast<int>(woodSettlementTextures.size());
-		const int textureIndex = static_cast<int>(time * animationSpeed) % frameCount;
+	const types::SettlementType settlementType = settlement.getSettlementType();
+	const bool isCastle = settlementType == types::SettlementType::CASTLE;
+	const bool isStone = settlementType == types::SettlementType::STONE;
+	const int frameCount = isStone ? static_cast<int>(stoneSettlementTextures.size()) : static_cast<int>(woodSettlementTextures.size());
+	const int textureIndex = static_cast<int>(time * animationSpeed) % frameCount;
 
 		glm::mat4 model = glm::identity<glm::mat4>();
 		model = glm::translate(model, glm::vec3(worldPos, 0.0f));
 		model = glm::scale(model, glm::vec3(scale, 1.0f));
 
-		if (upgraded) {
+	if (isCastle) {
+		castleTexture.bind(0);
+	} else if (isStone) {
 			stoneSettlementTextures[textureIndex].bind(0);
 		} else {
 			woodSettlementTextures[textureIndex].bind(0);
 		}
+		spriteShader.use()
+			.setMat4("view", view)
+			.setMat4("model[0]", model)
+			.setMat4("projection", projection)
+			.setSampler("sprite", 0)
+			.setVec3("fcolor", glm::vec3(1.0f));
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	}
+}
+
+void RenderBuildingsSystem::renderProductivityBuildings(const glm::mat4& view, const glm::mat4& projection) noexcept {
+	if (!registry || !gamestate) {
+		return;
+	}
+
+	const Graph& map = gamestate->getMap();
+	for (Entity e : registry->productivityBuildings.entities) {
+		if (!registry->positions.has(e) || !registry->scales.has(e) || !registry->productivityBuildings.has(e)) {
+			continue;
+		}
+
+		const ProductivityBuilding& building = registry->productivityBuildings.get(e);
+		const TileHandle tile = map.getTile(building.getTileId());
+		if (!tile) {
+			continue;
+		}
+
+		const glm::vec2& worldPos = registry->positions.get(e);
+		const glm::vec2& scale = registry->scales.get(e);
+
+		Texture* texture = &productivityPlaceholderTexture;
+		switch (tile->getType()) {
+		case types::TileType::FOREST:
+			texture = &lumberCampTexture;
+			break;
+		case types::TileType::MOUNTAIN:
+			texture = &stoneQuarryTexture;
+			break;
+		case types::TileType::GRASS:
+			texture = &stableTexture;
+			break;
+		case types::TileType::FIELD:
+			texture = &millTexture;
+			break;
+		case types::TileType::CLAY:
+			texture = &brickKilnTexture;
+			break;
+		default:
+			texture = &productivityPlaceholderTexture;
+			break;
+		}
+
+		glm::mat4 model = glm::identity<glm::mat4>();
+		model = glm::translate(model, glm::vec3(worldPos, 0.0f));
+		model = glm::scale(model, glm::vec3(scale, 1.0f));
+
+		texture->bind(0);
 		spriteShader.use()
 			.setMat4("view", view)
 			.setMat4("model[0]", model)
@@ -513,6 +582,7 @@ void RenderBuildingsSystem::updateRoadHover(const glm::mat4& view,
 		updateDustSpawns(time);
 
 		renderSettlements(view, projection, time);
+	renderProductivityBuildings(view, projection);
 		updateSettlementHover(view, projection, cam, time);
 
 		// Render roads from ECS
