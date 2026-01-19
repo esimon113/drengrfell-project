@@ -35,10 +35,21 @@ namespace df {
 
 		[[nodiscard]] int getMapIdAtMouse() noexcept;
 
-		void updateTileAtlas(){ 
+		void updateTileAtlas(int atlasType) { 
+			if (this->selectedTileAtlas == atlasType) return;
+
 			this->tileAtlas.deinit(); 
-			this->tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS2);
-			this->updateRequired = true;}
+			
+			if (atlasType == 2) { 
+				this->tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS2);
+				this->selectedTileAtlas = 2;
+			} else{
+				this->tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
+				this->selectedTileAtlas = 1;
+			}
+			
+			this->updateRequired = true;
+		}
 
 		int selectedTile = -1;
 
@@ -47,6 +58,7 @@ namespace df {
 		Window* window = nullptr;
 		std::shared_ptr<GameState> gameState = nullptr;
 		Framebuffer intermediateFramebuffer;
+		int selectedTileAtlas = 1;
 
 		Shader tileShader{};
 		Shader tilePickerShader{};

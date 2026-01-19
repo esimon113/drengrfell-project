@@ -15,6 +15,7 @@ namespace df {
 		static RenderWeatherSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept;
 		void increaseIntensity() { weatherIntensity += 0.20f; }
 		void decreaseIntensity() { weatherIntensity -= 0.20f; }
+		float getIntensity() { return weatherIntensity;}
 
 
 		void step(float deltaTime) noexcept;

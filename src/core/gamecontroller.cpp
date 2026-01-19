@@ -67,19 +67,45 @@ namespace df {
 		this->gameState.setTurnCount(this->gameState.getTurnCount() + 1);
 
 
-		auto* snowSystem = this->registry->getSystem<df::RenderWeatherSystem>();
-		if (snowSystem) {
+		// Changed in snow and rain
+		auto* WeatherSystem = this->registry->getSystem<df::RenderWeatherSystem>();
+		auto* tileSystem = this->registry->getSystem<RenderTilesSystem>();
+
+		if (WeatherSystem && tileSystem) {
 			std::uniform_int_distribution<int> weatherDist(0, 2); 
 			int change = weatherDist(this->rng);
 
+			const float step = 0.2f;
+			const float maxIntensity = step * 3.0f; 
+			const float minIntensity = -step * 3.0f;
+
 			if (change == 1) {
-				snowSystem->increaseIntensity();
-				//fmt::println("[Weather] Intensity increased (towards Snow)");
+				if (WeatherSystem->getIntensity() >= maxIntensity) {
+
+				}
+				else{
+					WeatherSystem->increaseIntensity();
+				}
+				
+				fmt::println("[Weather] Intensity increased");
 			} else if (change == 0) {
-				snowSystem->decreaseIntensity();
-				//fmt::println("[Weather] Intensity decreased (towards Rain)");
-			} else {
-				//fmt::println("[Weather] No change this turn");
+				if (WeatherSystem->getIntensity() <= minIntensity) {
+					
+				}
+				else{
+					WeatherSystem->decreaseIntensity();
+				}
+				fmt::println("[Weather] Intensity decreased");
+			}
+
+			float intensity = WeatherSystem->getIntensity();
+
+			const float snowThreshold = 0.4f; 
+			fmt::println("[Weather] Snow: {}", intensity);
+			if (intensity >= (snowThreshold - 0.1f)) {
+				tileSystem->updateTileAtlas(2); 
+			} else if ( intensity <= 0.1f) {
+				tileSystem->updateTileAtlas(1); 
 			}
 			
 		}
@@ -88,12 +114,7 @@ namespace df {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
 		}
 
-		if (this->gameState.getTurnCount() == 10) {
-			auto* tileSystem = this->registry->getSystem<RenderTilesSystem>();
-			if (tileSystem) {
-				tileSystem->updateTileAtlas();
-			}
-		}
+		
 	}
 
 	// This function checks if the hero encounters a hazard at the destination (in world coordinates)
