@@ -184,7 +184,7 @@ namespace df {
 
 			// Start turn when first entering PLAY phase -> future TODO: adjust for multiple players + ending game + reentering
 			if (gamePhase == types::GamePhase::PLAY && previousGamePhase != types::GamePhase::PLAY) {
-				gameController->startTurn(*registry);
+				gameController->startTurn();
 				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
 				// Prepare the camera so it can be centered
 				world.step(0.0f);
@@ -256,9 +256,9 @@ namespace df {
 				// Only truly end the turn and start a new one when the hero finished walking
 				if (awaitingTurnEnd && !movementSystem.getMovementState()) {
 					Entity hero = registry->animations.entities.front();
-					gameController->endTurn(*registry);
-					gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
-					gameController->startTurn(*registry); // Start turn for the next player
+					gameController->endTurn();
+					gameController->applyHazard(hero, movementSystem.getTargetPosition());
+					gameController->startTurn(); // Start turn for the next player
 					awaitingTurnEnd = false;
 				}
 			} break;
@@ -551,7 +551,7 @@ namespace df {
 					tradingSystem.handleOptionClicked(pressedButton);
 				}
 				if (pressedButton == "Pay ressources") {
-					gameController->payForHazard(*registry);
+					gameController->payForHazard();
 				}
 				// Quests
 				if (pressedButton == "Next Quest") {

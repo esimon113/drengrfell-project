@@ -34,7 +34,7 @@ namespace df {
 	const Player* GameController::getPlayerById(size_t playerId) const { return this->gameState.getPlayer(playerId); }
 
 
-	void GameController::startTurn(Registry& registry) {
+	void GameController::startTurn() {
 		Player* player = this->getCurrentPlayer();
 		if (!player) {
 			fmt::println("Current Player does not exist!");
@@ -48,18 +48,18 @@ namespace df {
 		// TODO: For multiplayer only update hazards for current player/hero
 		if (this->gameState.getTurnCount() > 0) {
 			// Entity hero = registry.animations.entities.front();
-			showHazards(registry);
+			showHazards();
 		}
 	}
 
 
-	void GameController::endTurn(Registry& registry) {
+	void GameController::endTurn() {
 		const size_t playerCount = this->gameState.getPlayerCount();
 		if (playerCount == 0) {
 			return;
 		} // should not happen
 
-		updateHazards(registry);
+		updateHazards();
 
 		// TODO: maybe add some "setNextTurn()" etc. functions
 		size_t nextPlayerId = (this->gameState.getCurrentPlayerId() + 1) % playerCount;
@@ -67,7 +67,7 @@ namespace df {
 		this->gameState.setTurnCount(this->gameState.getTurnCount() + 1);
 
 
-		auto* snowSystem = registry.getSystem<df::RenderSnowSystem>();
+		auto* snowSystem = this->registry->getSystem<df::RenderSnowSystem>();
 		if (snowSystem) {
 			snowSystem->increaseIntensity();
 		}
@@ -77,7 +77,7 @@ namespace df {
 		}
 
 		if (this->gameState.getTurnCount() == 10) {
-			auto* tileSystem = registry.getSystem<RenderTilesSystem>();
+			auto* tileSystem = this->registry->getSystem<RenderTilesSystem>();
 			if (tileSystem) {
 				tileSystem->updateTileAtlas();
 			}
@@ -85,9 +85,9 @@ namespace df {
 	}
 
 	// This function checks if the hero encounters a hazard at the destination (in world coordinates)
-	void GameController::applyHazard(Entity hero, Registry& registry, glm::vec2 destination) {
+	void GameController::applyHazard(Entity hero, glm::vec2 destination) {
 		// Hero is already caught in a hazard
-		if (registry.hazards.has(hero)) {
+		if (this->registry->hazards.has(hero)) {
 			fmt::println("Hazard can not be applied, as hero already has hazard");
 			return;
 		}
@@ -119,25 +119,25 @@ namespace df {
 
 		const auto& def = HazardDB::getDefinition(profile.hazardType);
 
-		registry.hazards.emplace(hero) = {profile.hazardType, def.defaultRoundDuration};
+		this->registry->hazards.emplace(hero) = {profile.hazardType, def.defaultRoundDuration};
 		fmt::println("[Hazard] You encountered a {}, which will stop your movement for {} turns", def.name, def.defaultRoundDuration);
 	}
 
 	// TODO: Only update hazards for active player in multiplayer
-	void GameController::updateHazards(Registry& registry) {
-		for (Entity e : registry.hazards.entities) {
-			auto& hazard = registry.hazards.get(e);
+	void GameController::updateHazards() {
+		for (Entity e : this->registry->hazards.entities) {
+			auto& hazard = this->registry->hazards.get(e);
 			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
 
 			hazard.turnsLeft--;
 		}
 	}
 
-	void GameController::showHazards(Registry& registry) {
-		for (Entity e : registry.hazards.entities) {
-			auto& hazard = registry.hazards.get(e);
+	void GameController::showHazards() {
+		for (Entity e : this->registry->hazards.entities) {
+			auto& hazard = this->registry->hazards.get(e);
 			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
-			RenderNotificationSystem* notification = registry.getSystem<RenderNotificationSystem>();
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
 
 			if (hazard.turnsLeft <= 0) {
 				fmt::println("[Hazard] {} encounter ended", hazardDefinition.name);
@@ -146,7 +146,7 @@ namespace df {
 												   "Your encounter with the {} ended",
 												   hazardDefinition.name),
 											   {"Continue"});
-				registry.hazards.remove(e);
+				this->registry->hazards.remove(e);
 			} else if (hazard.turnsLeft == hazardDefinition.defaultRoundDuration) {
 				fmt::println("[Hazard] {} encountered. It is active for {} turns", hazardDefinition.name, hazard.turnsLeft);
 				notification->showNotification("You encountered a hazard",
@@ -175,11 +175,11 @@ namespace df {
 		}
 	}
 
-	void GameController::payForHazard(Registry& registry) {
-		for (Entity e : registry.hazards.entities) {
-			auto& hazard = registry.hazards.get(e);
+	void GameController::payForHazard() {
+		for (Entity e : this->registry->hazards.entities) {
+			auto& hazard = this->registry->hazards.get(e);
 			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
-			RenderNotificationSystem* notification = registry.getSystem<RenderNotificationSystem>();
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
 
 			Player* player = this->getCurrentPlayer();
 
@@ -194,7 +194,7 @@ namespace df {
 				return;
 			}
 			player->removeResources(hazardDefinition.skipRessource, hazard.turnsLeft * hazardDefinition.skipCost);
-			registry.hazards.remove(e);
+			this->registry->hazards.remove(e);
 		}
 	}
 
