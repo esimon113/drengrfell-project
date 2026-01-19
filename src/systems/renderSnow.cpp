@@ -36,7 +36,7 @@ namespace df {
 			particlesContainer[i].life = -1.0f;
 		}
 		this->particlesCount = 0;
-		this->snowIntensity = 0.0f; 
+		this->weatherIntensity = 0.0f; 
 	}
 
 	RenderSnowSystem RenderSnowSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept {
@@ -118,68 +118,79 @@ namespace df {
 	}
 
 	void RenderSnowSystem::step(float deltaTime) noexcept {
+	
+    static std::random_device rd;
+    static std::mt19937 gen(rd()); 
+    static std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 
-		// Changed random function to make it work in Windows
-		static std::random_device rd;
-		static std::mt19937 gen(rd()); 
-		static std::uniform_real_distribution<float> dis(0.0f, 1.0f); // Rango 0.0 a 1.0
+    const float screenWidth = 100.0f;
+    const float screenHeight = 100.0f;
+    static float spawnAccumulator = 0.0f; 
 
-		const float screenWidth = 100.0f;
-		const float screenHeight = 100.0f;
-		
+    if (std::abs(weatherIntensity) < 0.01f) {
+        spawnAccumulator = 0.0f;
+    } 
+    else if (weatherIntensity > 0) {
+        float particlesToSpawnFloat = screenWidth * deltaTime * 2.0f * weatherIntensity;
+        spawnAccumulator += particlesToSpawnFloat;
+        int newparticles = static_cast<int>(spawnAccumulator);
+        spawnAccumulator -= newparticles;
 
-		float density = 0.5f; 
-		// Problem if delta time is too small -> accumulate the results for it to work correctly
-		static float spawnAccumulator = 0.0f; 
-		float particlesToSpawnFloat = screenWidth * density * deltaTime * 4.0f * snowIntensity;
+        for (int i = 0; i < newparticles; i++) {
+            int unParticles = findUnusedParticle();
+            Particle& p = particlesContainer[unParticles];
+            float rx = dis(gen);
+            float rz = dis(gen);
+            p.depth = rz * rz;
+            p.pos = glm::vec3(rx * screenWidth, screenHeight + 5.0f, 0.0f);
+            float baseFall = -3.0f; 
+            float depthFall = -3.0f;
+            p.speed.y = baseFall + p.depth * depthFall;
+            p.speed.x = ((rand() % 60 - 30) / 10.0f);
+            p.life = 15.0f + (rand() % 5); 
+            p.size = 0.5f + p.depth * 0.4f;
+            p.r = 235; p.g = 238; p.b = 242;
+            p.a = 50 + p.depth * 150;
+        }
+	}	else if (weatherIntensity < 0) {
+			float intensityAbs = std::abs(weatherIntensity);
+			float particlesToSpawnFloat = screenWidth * deltaTime * 10.0f * intensityAbs ;
+			spawnAccumulator += particlesToSpawnFloat;
+			int newparticles = static_cast<int>(spawnAccumulator);
+			spawnAccumulator -= newparticles;
 
-		spawnAccumulator += particlesToSpawnFloat;
-
-		int newparticles = static_cast<int>(spawnAccumulator);
-		spawnAccumulator -= newparticles;
-
-		for (int i = 0; i < newparticles; i++) {
-			int unParticles = findUnusedParticle();
-			Particle& p = particlesContainer[unParticles];
-
-			float rx = dis(gen);
-			//float ry = static_cast<float>(rand()) / RAND_MAX;
-			float rz = dis(gen);
-
-			p.depth = rz * rz;
-
-			// Changed to appear in the screen 
-			p.pos = glm::vec3(
-				rx * screenWidth,
-				screenHeight + 5.0f, 
-				0.0f
-			);
-
-			float baseFall = -3.0f; 
-			float depthFall = -3.0f;
-
-			p.speed.y = baseFall + p.depth * depthFall;
-			p.speed.x = ((rand() % 60 - 30) / 10.0f);
-
-			p.life = 15.0f + (rand() % 5); 
-			p.size = 0.5f + p.depth * 0.4f;
-
-			p.r = 235; p.g = 238; p.b = 242;
-			p.a = 50 + p.depth * 150;
-		}
+			for (int i = 0; i < newparticles; i++) {
+				int unParticles = findUnusedParticle();
+				Particle& p = particlesContainer[unParticles];
+				float rx = dis(gen);
+				float rz = dis(gen);
+				p.depth = rz * rz;
+				p.pos = glm::vec3(rx * screenWidth, screenHeight + 5.0f, 0.0f);
+				float baseFall = -40.0f; 
+				float depthFall = -20.0f; 
+				p.speed.y = (baseFall + p.depth * depthFall) * (1.0f + intensityAbs * 0.2f);
+				p.speed.x = 0.0f;
+				p.life = 4.0f + (dis(gen) * 2.0f); 
+				p.size = 0.4f + p.depth * 0.15f;
+				p.r = 160;
+				p.g = 210;
+				p.b = 255;
+				p.a = 140;
+			}
+		} 
 
 		particlesCount = 0;
-
 		for (int i = 0; i < maxParticles; i++) {
 			Particle& p = particlesContainer[i];
-
 			if (p.life > 0.0f) {
 				p.life -= deltaTime;
 				p.pos += p.speed * deltaTime;
 
-				p.pos.x += sin(p.life * 2.0f) * 0.5f * deltaTime;
+				if (weatherIntensity > 0.0f) {
+					p.pos.x += sin(p.life * 2.0f) * 0.5f * deltaTime;
+				}
 
-				if (p.pos.y < -5.0f || p.pos.x < -5.0f || p.pos.x > screenWidth + 5.0f) {
+				if (p.pos.y < -5.0f || p.pos.x < -5.0f || p.pos.x > screenWidth + 5.0f || weatherIntensity==0) {
 					p.life = -1.0f;
 					continue;
 				}
@@ -188,26 +199,15 @@ namespace df {
 				g_particule_position_size_data[4 * particlesCount + 1] = p.pos.y;
 				g_particule_position_size_data[4 * particlesCount + 2] = p.pos.z;
 				g_particule_position_size_data[4 * particlesCount + 3] = p.size;
-
 				g_particule_color_data[4 * particlesCount + 0] = p.r;
 				g_particule_color_data[4 * particlesCount + 1] = p.g;
 				g_particule_color_data[4 * particlesCount + 2] = p.b;
 				g_particule_color_data[4 * particlesCount + 3] = p.a;
-
 				particlesCount++;
 			}
 		}
 
-		
-		const glm::mat4 projection = glm::ortho(
-			0.0f,
-			screenWidth,
-			0.0f,
-			screenHeight,
-			-1.0f,
-			1.0f
-		);
-
+		const glm::mat4 projection = glm::ortho(0.0f, screenWidth, 0.0f, screenHeight, -1.0f, 1.0f);
 		render(glm::mat4(1.0f), projection);
 	}
 
@@ -226,9 +226,13 @@ namespace df {
 		glBufferSubData(GL_ARRAY_BUFFER, 0, particlesCount * sizeof(GLubyte) * 4, g_particule_color_data.data());
 
 		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+		
 		particleShader.use();
+
+		particleShader.setFloat("weatherIntensity", weatherIntensity);
+
 		particleShader.setMat4("V", view);
 		particleShader.setMat4("P", projection);
 

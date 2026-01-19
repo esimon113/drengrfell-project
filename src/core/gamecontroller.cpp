@@ -69,7 +69,19 @@ namespace df {
 
 		auto* snowSystem = this->registry->getSystem<df::RenderSnowSystem>();
 		if (snowSystem) {
-			snowSystem->increaseIntensity();
+			std::uniform_int_distribution<int> weatherDist(0, 2); 
+			int change = weatherDist(this->rng);
+
+			if (change == 1) {
+				snowSystem->increaseIntensity();
+				fmt::println("[Weather] Intensity increased (towards Snow)");
+			} else if (change == 0) {
+				snowSystem->decreaseIntensity();
+				fmt::println("[Weather] Intensity decreased (towards Rain)");
+			} else {
+				fmt::println("[Weather] No change this turn");
+			}
+			
 		}
 
 		if (nextPlayerId == 0) {
