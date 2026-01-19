@@ -5,6 +5,7 @@
 #include "registry.h"
 #include "renderCommon.h"
 #include "window.h"
+#include <core/camera.h>
 #include <renderText.h>
 #include <utils/shader.h>
 
@@ -55,6 +56,8 @@ namespace df {
 
 		void rebuildLayout();
 		void renderBox(glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept;
+		void renderHoveredTileHighlight(size_t tileId, float time) const noexcept;
+		const glm::mat4 calculateProjection(const Camera& cam) const;
 		std::string formatCostLine(const std::vector<int>& cost) const;
 		int getPotencyPercent(types::TilePotency potency) const;
 
@@ -65,8 +68,11 @@ namespace df {
 		Viewport viewport;
 
 		Shader rectShader;
+		Shader locationHighlightShader;
 		GLuint quadVao = 0;
 		GLuint vbo = 0;
+		GLuint highlightVao = 0;
+		GLuint highlightVbo = 0;
 
 		bool active = false;
 		size_t selectedSettlementId = SIZE_MAX;

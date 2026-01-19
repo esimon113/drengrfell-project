@@ -89,7 +89,16 @@ namespace df {
 			HERO_RUN_3,
 			HERO_RUN_4,
 			HERO_RUN_5,
-			CASTLE,
+			
+			CASTLE1,
+			CASTLE2,
+			CASTLE3,
+			CASTLE4,
+			CASTLE5,
+			CASTLE6,
+			CASTLE7,
+			CASTLE8,
+
 			LUMBER_CAMP,
 			STONE_QUARRY,
 			STABLE,

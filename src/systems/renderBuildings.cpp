@@ -46,7 +46,14 @@ namespace df {
 		self.stoneSettlementTextures[3] = Texture::init(assets::Texture::STONE_SETTLEMENT4);
 		self.stoneSettlementTextures[4] = Texture::init(assets::Texture::STONE_SETTLEMENT5);
 		self.stoneSettlementTextures[5] = Texture::init(assets::Texture::STONE_SETTLEMENT6);
-	self.castleTexture = Texture::init(assets::Texture::CASTLE);
+	self.castleSettlementTextures[0] = Texture::init(assets::Texture::CASTLE1);
+	self.castleSettlementTextures[1] = Texture::init(assets::Texture::CASTLE2);
+	self.castleSettlementTextures[2] = Texture::init(assets::Texture::CASTLE3);
+	self.castleSettlementTextures[3] = Texture::init(assets::Texture::CASTLE4);
+	self.castleSettlementTextures[4] = Texture::init(assets::Texture::CASTLE5);
+	self.castleSettlementTextures[5] = Texture::init(assets::Texture::CASTLE6);
+	self.castleSettlementTextures[6] = Texture::init(assets::Texture::CASTLE7);
+	self.castleSettlementTextures[7] = Texture::init(assets::Texture::CASTLE8);
 	self.lumberCampTexture = Texture::init(assets::Texture::LUMBER_CAMP);
 	self.stoneQuarryTexture = Texture::init(assets::Texture::STONE_QUARRY);
 	self.stableTexture = Texture::init(assets::Texture::STABLE);
@@ -108,6 +115,9 @@ namespace df {
 		for (auto& tex : stoneSettlementTextures) {
 			tex.deinit();
 		}
+	for (auto& tex : castleSettlementTextures) {
+		tex.deinit();
+	}
 
 		intermediateFramebuffer.deinit();
 	}
@@ -314,15 +324,19 @@ void RenderBuildingsSystem::renderSettlements(const glm::mat4& view, const glm::
 	const types::SettlementType settlementType = settlement.getSettlementType();
 	const bool isCastle = settlementType == types::SettlementType::CASTLE;
 	const bool isStone = settlementType == types::SettlementType::STONE;
-	const int frameCount = isStone ? static_cast<int>(stoneSettlementTextures.size()) : static_cast<int>(woodSettlementTextures.size());
+	const int frameCount = isCastle
+		? static_cast<int>(castleSettlementTextures.size())
+		: (isStone ? static_cast<int>(stoneSettlementTextures.size())
+				   : static_cast<int>(woodSettlementTextures.size()));
 	const int textureIndex = static_cast<int>(time * animationSpeed) % frameCount;
 
 		glm::mat4 model = glm::identity<glm::mat4>();
 		model = glm::translate(model, glm::vec3(worldPos, 0.0f));
-		model = glm::scale(model, glm::vec3(scale, 1.0f));
+		const float castleScale = isCastle ? 1.2f : 1.0f;
+		model = glm::scale(model, glm::vec3(scale * castleScale, 1.0f));
 
 	if (isCastle) {
-		castleTexture.bind(0);
+		castleSettlementTextures[textureIndex].bind(0);
 	} else if (isStone) {
 			stoneSettlementTextures[textureIndex].bind(0);
 		} else {
@@ -581,16 +595,16 @@ void RenderBuildingsSystem::updateRoadHover(const glm::mat4& view,
 
 		updateDustSpawns(time);
 
-		renderSettlements(view, projection, time);
-	renderProductivityBuildings(view, projection);
-		updateSettlementHover(view, projection, cam, time);
-
-		// Render roads from ECS
+		// Render roads from ECS (below settlements)
 		std::unordered_map<size_t, Entity> ownedRoadEntitiesByEdge;
 		std::unordered_map<size_t, int> ownedRoadEdgeIndexByEdge;
 		std::unordered_map<size_t, glm::vec2> ownedRoadPosByEdge;
 		renderRoads(view, projection, ownedRoadEntitiesByEdge, ownedRoadEdgeIndexByEdge, ownedRoadPosByEdge);
 		updateRoadHover(view, projection, cam, time, ownedRoadEntitiesByEdge, ownedRoadEdgeIndexByEdge, ownedRoadPosByEdge);
+
+		renderSettlements(view, projection, time);
+		renderProductivityBuildings(view, projection);
+		updateSettlementHover(view, projection, cam, time);
 
 		renderDust(time, view, projection, cam);
 

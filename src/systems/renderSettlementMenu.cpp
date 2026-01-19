@@ -1,8 +1,10 @@
 #include "renderSettlementMenu.h"
+#include "core/camera.h"
+#include "glm/ext/matrix_transform.hpp"
+#include "utils/worldNodeMapper.h"
 
 #include <algorithm>
 #include <sstream>
-#include <unordered_set>
 
 #include <GLFW/glfw3.h>
 
@@ -20,6 +22,7 @@ namespace df {
 		self.viewport.size = self.window->getWindowExtent();
 
 		self.rectShader = Shader::init(assets::Shader::hud).value();
+		self.locationHighlightShader = Shader::init(assets::Shader::locationHighlight).value();
 
 		float quad[] = {
 			0.f, 0.f,
@@ -39,11 +42,41 @@ namespace df {
 
 		glBindVertexArray(0);
 
+		float highlightQuadVertices[] = {
+			// positions (centered at origin)	// texcoords
+			-0.5f, -0.5f, 0.0f, 0.0f,
+			0.5f, -0.5f, 1.0f, 0.0f,
+			0.5f, 0.5f, 1.0f, 1.0f,
+			-0.5f, 0.5f, 0.0f, 1.0f};
+
+		glGenVertexArrays(1, &self.highlightVao);
+		glBindVertexArray(self.highlightVao);
+
+		glGenBuffers(1, &self.highlightVbo);
+		glBindBuffer(GL_ARRAY_BUFFER, self.highlightVbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(highlightQuadVertices), highlightQuadVertices, GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+		glBindVertexArray(0);
+
 		return self;
 	}
 
 	void RenderSettlementMenuSystem::deinit() noexcept {
 		rectShader.deinit();
+		locationHighlightShader.deinit();
+		if (highlightVbo != 0) {
+			glDeleteBuffers(1, &highlightVbo);
+			highlightVbo = 0;
+		}
+		if (highlightVao != 0) {
+			glDeleteVertexArrays(1, &highlightVao);
+			highlightVao = 0;
+		}
 	}
 
 	void RenderSettlementMenuSystem::reset() noexcept {
@@ -132,11 +165,12 @@ namespace df {
 		if (settlementType == types::SettlementType::WOOD) {
 			textLines.emplace_back("Stone Settlement: " + formatCostLine(stoneSettlementCost));
 			buttons.push_back({"Stone Settlement", ButtonAction::UpgradeStone});
-		} else if (settlementType == types::SettlementType::STONE) {
-			textLines.emplace_back("Castle: " + formatCostLine(castleCost));
-			buttons.push_back({"Castle", ButtonAction::UpgradeCastle});
+		} else {
+			if (settlementType == types::SettlementType::STONE) {
+				textLines.emplace_back("Castle: " + formatCostLine(castleCost));
+				buttons.push_back({"Castle", ButtonAction::UpgradeCastle});
+			}
 
-			std::unordered_set<types::TileType> addedTypes;
 			if (vertex) {
 				if (auto tilesOpt = map.getVertexTiles(vertex); tilesOpt) {
 					for (const auto& tile : *tilesOpt) {
@@ -147,34 +181,26 @@ namespace df {
 							continue;
 						}
 						const auto type = tile->getType();
-						if (addedTypes.find(type) != addedTypes.end()) {
-							continue;
-						}
 						switch (type) {
 						case types::TileType::FOREST:
 							textLines.emplace_back("Lumber Camp: " + formatCostLine(lumberCampCost));
 							buttons.push_back({"Lumber Camp", ButtonAction::BuildProductivity, type, tile->getId()});
-							addedTypes.insert(type);
 							break;
 						case types::TileType::MOUNTAIN:
 							textLines.emplace_back("Stone Quarry: " + formatCostLine(stoneQuarryCost));
 							buttons.push_back({"Stone Quarry", ButtonAction::BuildProductivity, type, tile->getId()});
-							addedTypes.insert(type);
 							break;
 						case types::TileType::GRASS:
 							textLines.emplace_back("Stable: " + formatCostLine(stableCost));
 							buttons.push_back({"Stable", ButtonAction::BuildProductivity, type, tile->getId()});
-							addedTypes.insert(type);
 							break;
 						case types::TileType::FIELD:
 							textLines.emplace_back("Mill: " + formatCostLine(millCost));
 							buttons.push_back({"Mill", ButtonAction::BuildProductivity, type, tile->getId()});
-							addedTypes.insert(type);
 							break;
 						case types::TileType::CLAY:
 							textLines.emplace_back("Brick Kiln: " + formatCostLine(brickKilnCost));
 							buttons.push_back({"Brick Kiln", ButtonAction::BuildProductivity, type, tile->getId()});
-							addedTypes.insert(type);
 							break;
 						default:
 							break;
@@ -293,6 +319,30 @@ namespace df {
 	void RenderSettlementMenuSystem::step(float /*dt*/) noexcept {
 		if (!active) {
 			return;
+		}
+
+		float time = static_cast<float>(glfwGetTime());
+		size_t hoveredTileId = SIZE_MAX;
+		if (window) {
+			glm::vec2 cursor = window->getCursorPosition();
+			glm::vec2 mouse{
+				cursor.x,
+				static_cast<float>(viewport.size.y) - cursor.y};
+
+			for (const auto& btn : buttons) {
+				if (btn.action != ButtonAction::BuildProductivity) {
+					continue;
+				}
+				if (mouse.x >= btn.x && mouse.x <= btn.x + btn.w &&
+					mouse.y >= btn.y && mouse.y <= btn.y + btn.h) {
+					hoveredTileId = btn.tileId;
+					break;
+				}
+			}
+		}
+
+		if (hoveredTileId != SIZE_MAX) {
+			renderHoveredTileHighlight(hoveredTileId, time);
 		}
 
 		auto* textSystem = registry->getSystem<RenderTextSystem>();
@@ -438,6 +488,55 @@ namespace df {
 		glBindVertexArray(quadVao);
 		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		glBindVertexArray(0);
+	}
+
+	void RenderSettlementMenuSystem::renderHoveredTileHighlight(size_t tileId, float time) const noexcept {
+		if (!registry || !gameState || highlightVao == 0) {
+			return;
+		}
+
+		const Graph& map = gameState->getMap();
+		const TileHandle tile = map.getTile(tileId);
+		if (!tile) {
+			return;
+		}
+
+		Camera& cam = registry->cameras.get(registry->getCamera());
+		const glm::mat4 view = glm::identity<glm::mat4>();
+		const glm::mat4 projection = calculateProjection(cam);
+
+		const uint32_t columns = map.getMapWidth();
+		uint32_t row = static_cast<uint32_t>(tileId / columns);
+		uint32_t col = static_cast<uint32_t>(tileId % columns);
+		glm::vec2 tilePos = WorldNodeMapper::getTilePosition(row, col);
+
+		glm::mat4 model = glm::identity<glm::mat4>();
+		model = glm::translate(model, glm::vec3(tilePos, 0.0f));
+		model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
+
+		const glm::vec3 highlightColor = glm::vec3(0.53f, 0.73f, 0.57f);
+		locationHighlightShader.use()
+			.setMat4("view", view)
+			.setMat4("projection", projection)
+			.setMat4("model[0]", model)
+			.setVec3("highlightColor", highlightColor)
+			.setFloat("alpha", 0.55f)
+			.setFloat("time", time)
+			.setFloat("pulseStrength", 0.4f);
+
+		glBindVertexArray(highlightVao);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		glBindVertexArray(0);
+	}
+
+	const glm::mat4 RenderSettlementMenuSystem::calculateProjection(const Camera& cam) const {
+		glm::uvec2 extent = window->getWindowExtent();
+		glViewport(0, 0, extent.x, extent.y);
+
+		return glm::ortho(
+			cam.minX(), cam.maxX(),
+			cam.minY(), cam.maxY(),
+			-1.0f, 1.0f);
 	}
 
 	std::string RenderSettlementMenuSystem::formatCostLine(const std::vector<int>& cost) const {

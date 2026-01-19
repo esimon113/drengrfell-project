@@ -107,7 +107,7 @@ namespace df {
 		Texture roadTextureVertical;			   // 1, 4
 		std::array<Texture, 5> woodSettlementTextures;  // wood settlement textures for animation
 		std::array<Texture, 6> stoneSettlementTextures; // stone settlement textures for animation
-		Texture castleTexture;
+		std::array<Texture, 8> castleSettlementTextures;
 		Texture lumberCampTexture;
 		Texture stoneQuarryTexture;
 		Texture stableTexture;
