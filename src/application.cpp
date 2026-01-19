@@ -459,16 +459,37 @@ namespace df {
                     int centerRow = heroTileId / width;
                     int centerCol = heroTileId % width;
                     int radius = 1; 
-                    for (int r = -radius; r <= radius; ++r) {
-                        for (int c = -radius; c <= radius; ++c) {
-                            int targetRow = centerRow + r;
-                            int targetCol = centerCol + c;
-                            if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
-                                size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
-                                player->exploreTile(idToExplore);
-                            }
-                        }
-                    }
+					if(centerRow%2 == 0){
+						for (int r = -radius; r <= radius; ++r) {
+							for (int c = -radius; c <= radius; ++c) {
+								int targetRow = centerRow + r;
+								int targetCol = centerCol + c;
+								
+								if(!((c == 1 && r==1) || (c == 1 && r == -1)) ) {
+									if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
+										size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
+										player->exploreTile(idToExplore);
+									}
+								}
+							}
+						}
+					} else {
+						for (int r = -radius; r <= radius; ++r) {
+							for (int c = -radius; c <= radius; ++c) {
+								int targetRow = centerRow + r;
+								int targetCol = centerCol + c;
+								if(!((c == -1 && r==-1) || (c == -1 && r == 1)) ) {
+									if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
+										size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
+										player->exploreTile(idToExplore);
+									}
+								}
+								
+								
+							}
+						}
+					}
+                    
                 }
 			}
 		}
