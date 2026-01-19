@@ -396,6 +396,7 @@ namespace df {
 		}
 		// lets the hero spawn with on a random Tile (water excluded)
 		spawnHero();
+		
 
 		// 		// This is only for DEBUGGING purposes:
 		// #if defined(__unix__) || defined(__linux__)
@@ -430,17 +431,46 @@ namespace df {
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
 
-			auto randomEngine = std::default_random_engine(std::random_device()());
-			auto uniformDistribution = std::uniform_int_distribution();
+			//auto randomEngine = std::default_random_engine(std::random_device()());
+			//auto uniformDistribution = std::uniform_int_distribution();
 
+
+			// Remove this if we dont want to be the water tiles already explored
+			// same for ice 
 			for (int row = 0; row < height; ++row) {
 				for (int col = 0; col < width; ++col) {
-					if (uniformDistribution(randomEngine) % 4 != 0) {
-						gameState->getPlayer(0)->exploreTile(row * width + col);
+					size_t tileId = row * width + col;
+					const TileHandle tile = gameState->getMap().getTile(tileId);
+
+					if (tile && tile->getType() == types::TileType::WATER) {
+						gameState->getPlayer(0)->exploreTile(tileId);
+					} else if ( tile && tile->getType() == types::TileType::ICE){
+						gameState->getPlayer(0)->exploreTile(tileId);
 					}
 				}
 			}
-			fmt::println("[DEBUG] randomly explored tiles for player");
+
+			// Discover a radius of one tile around the hero
+			if (!registry->animations.entities.empty()) {
+                Entity hero = registry->animations.entities.front();
+                if (registry->tileID.has(hero)) {
+                    int heroTileId = static_cast<int>(registry->tileID.get(hero));
+                    
+                    int centerRow = heroTileId / width;
+                    int centerCol = heroTileId % width;
+                    int radius = 1; 
+                    for (int r = -radius; r <= radius; ++r) {
+                        for (int c = -radius; c <= radius; ++c) {
+                            int targetRow = centerRow + r;
+                            int targetCol = centerCol + c;
+                            if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
+                                size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
+                                player->exploreTile(idToExplore);
+                            }
+                        }
+                    }
+                }
+			}
 		}
 		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
@@ -506,6 +536,8 @@ namespace df {
 			registry->tileID.emplace(hero, randomTileID);
 		}
 		movementSystem.setTarget(randomTileID, hero);
+		
+			
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
