@@ -29,7 +29,7 @@ namespace df::types {
 		case TileType::FOREST:
 			return "FOREST";
 		case TileType::GRASS:
-			return "Wool";
+			return "GRASS";
 		case TileType::MOUNTAIN:
 			return "MOUNTAIN";
 		case TileType::FIELD:
