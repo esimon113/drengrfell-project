@@ -449,6 +449,28 @@ namespace df {
 					}
 				}
 			}
+
+			// Discover a radius of one tile around the hero
+			if (!registry->animations.entities.empty()) {
+                Entity hero = registry->animations.entities.front();
+                if (registry->tileID.has(hero)) {
+                    int heroTileId = static_cast<int>(registry->tileID.get(hero));
+                    
+                    int centerRow = heroTileId / width;
+                    int centerCol = heroTileId % width;
+                    int radius = 1; 
+                    for (int r = -radius; r <= radius; ++r) {
+                        for (int c = -radius; c <= radius; ++c) {
+                            int targetRow = centerRow + r;
+                            int targetCol = centerCol + c;
+                            if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
+                                size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
+                                player->exploreTile(idToExplore);
+                            }
+                        }
+                    }
+                }
+			}
 		}
 		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
@@ -514,6 +536,8 @@ namespace df {
 			registry->tileID.emplace(hero, randomTileID);
 		}
 		movementSystem.setTarget(randomTileID, hero);
+		
+			
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
