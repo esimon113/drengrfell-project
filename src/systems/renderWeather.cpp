@@ -1,4 +1,4 @@
-#include "renderSnow.h"
+#include "renderWeather.h"
 #include "../core/camera.h"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
@@ -30,7 +30,7 @@ namespace df {
 		0.0f,
 	};
 
-	void RenderSnowSystem::reset() {
+	void RenderWeatherSystem::reset() {
 
 		for (int i = 0; i < maxParticles; i++) {
 			particlesContainer[i].life = -1.0f;
@@ -39,8 +39,8 @@ namespace df {
 		this->weatherIntensity = 0.0f; 
 	}
 
-	RenderSnowSystem RenderSnowSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept {
-		RenderSnowSystem self;
+	RenderWeatherSystem RenderWeatherSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept {
+		RenderWeatherSystem self;
 
 		self.window = window;
 		self.registry = registry;
@@ -64,7 +64,7 @@ namespace df {
 		return self;
 	}
 
-	void RenderSnowSystem::initBuffers() noexcept {
+	void RenderWeatherSystem::initBuffers() noexcept {
 		// Create VAO
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
@@ -89,7 +89,7 @@ namespace df {
 		glBindVertexArray(0);
 	}
 
-	void RenderSnowSystem::deinit() noexcept {
+	void RenderWeatherSystem::deinit() noexcept {
 		glDeleteBuffers(1, &billboard_vertex_buffer);
 		glDeleteBuffers(1, &particles_position_buffer);
 		glDeleteBuffers(1, &particles_color_buffer);
@@ -98,7 +98,7 @@ namespace df {
 		particleShader.deinit();
 	}
 
-	int RenderSnowSystem::findUnusedParticle() noexcept {
+	int RenderWeatherSystem::findUnusedParticle() noexcept {
 		static int lastUsedParticle = 0;
 		for (int i = lastUsedParticle; i < maxParticles; i++) {
 			if (particlesContainer[i].life < 0) {
@@ -117,7 +117,7 @@ namespace df {
 		return 0; // All particles are taken, override the first one
 	}
 
-	void RenderSnowSystem::step(float deltaTime) noexcept {
+	void RenderWeatherSystem::step(float deltaTime) noexcept {
 	
     static std::random_device rd;
     static std::mt19937 gen(rd()); 
@@ -213,7 +213,7 @@ namespace df {
 
 
 
-	void RenderSnowSystem::render(const glm::mat4& view, const glm::mat4& projection) noexcept {
+	void RenderWeatherSystem::render(const glm::mat4& view, const glm::mat4& projection) noexcept {
 		if (particlesCount == 0)
 			return;
 

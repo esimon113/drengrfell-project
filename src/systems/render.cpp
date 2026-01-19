@@ -23,7 +23,7 @@ namespace df {
 		self.renderBuildingPreviewsSystem = RenderBuildingPreviewsSystem::init(window, registry, gameState, gameController);
 		self.renderHudSystem = RenderHudSystem::init(window, registry, gameState);
 		self.renderTextSystem = RenderTextSystem::init(window, registry);
-		self.renderSnowSystem = RenderSnowSystem::init(window, registry, gameState);
+		self.renderWeatherSystem = RenderWeatherSystem::init(window, registry, gameState);
 		self.renderNotificationSystem = RenderNotificationSystem::init(window, registry);
 		return self;
 	}
@@ -36,7 +36,7 @@ namespace df {
 		this->renderHeroSystem.deinit();
 		this->renderHudSystem.deinit();
 		this->renderTextSystem.deinit();
-		this->renderSnowSystem.deinit();
+		this->renderWeatherSystem.deinit();
 		this->renderNotificationSystem.deinit();
 		this->intermediateFramebuffer.deinit();
 	}
@@ -47,7 +47,7 @@ namespace df {
 		this->renderBuildingPreviewsSystem.step(dt);
 		this->renderHeroSystem.step(dt);
 		this->renderTextSystem.step(dt);
-		this->renderSnowSystem.step(dt);
+		this->renderWeatherSystem.step(dt);
 		this->renderNotificationSystem.step(dt);
 		this->renderHudSystem.step(dt); // always rendered last
 	}
@@ -61,7 +61,7 @@ namespace df {
 		this->renderHudSystem.reset();
 		this->renderTextSystem.reset();
 		this->renderNotificationSystem.reset();
-		this->renderSnowSystem.reset();
+		this->renderWeatherSystem.reset();
 	}
 
 

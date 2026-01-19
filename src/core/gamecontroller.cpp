@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <unordered_set>
 
-#include "../systems/renderSnow.h"
+#include "../systems/renderWeather.h"
 #include "../systems/renderTiles.h"
 #include "gamecontroller.h"
 #include "hero.h"
@@ -67,19 +67,19 @@ namespace df {
 		this->gameState.setTurnCount(this->gameState.getTurnCount() + 1);
 
 
-		auto* snowSystem = this->registry->getSystem<df::RenderSnowSystem>();
+		auto* snowSystem = this->registry->getSystem<df::RenderWeatherSystem>();
 		if (snowSystem) {
 			std::uniform_int_distribution<int> weatherDist(0, 2); 
 			int change = weatherDist(this->rng);
 
 			if (change == 1) {
 				snowSystem->increaseIntensity();
-				fmt::println("[Weather] Intensity increased (towards Snow)");
+				//fmt::println("[Weather] Intensity increased (towards Snow)");
 			} else if (change == 0) {
 				snowSystem->decreaseIntensity();
-				fmt::println("[Weather] Intensity decreased (towards Rain)");
+				//fmt::println("[Weather] Intensity decreased (towards Rain)");
 			} else {
-				fmt::println("[Weather] No change this turn");
+				//fmt::println("[Weather] No change this turn");
 			}
 			
 		}
