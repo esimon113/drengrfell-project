@@ -100,21 +100,20 @@ namespace df {
 		"hero/run/run_4.png",
 		"hero/run/run_5.png",
 
-	"settlements/castle/castle-sprites1.png",
-	"settlements/castle/castle-sprites2.png",
-	"settlements/castle/castle-sprites3.png",
-	"settlements/castle/castle-sprites4.png",
-	"settlements/castle/castle-sprites5.png",
-	"settlements/castle/castle-sprites6.png",
-	"settlements/castle/castle-sprites7.png",
-	"settlements/castle/castle-sprites8.png",
-	
-	"settlements/productivity-boost/placeholder.png",
-	"settlements/productivity-boost/stone-quarry.png",
-	"settlements/productivity-boost/placeholder.png",
-	"settlements/productivity-boost/mill.png",
-	"settlements/productivity-boost/placeholder.png",
-	"settlements/productivity-boost/placeholder.png",
+		"settlements/castle/castle-sprites1.png",
+		"settlements/castle/castle-sprites2.png",
+		"settlements/castle/castle-sprites3.png",
+		"settlements/castle/castle-sprites4.png",
+		"settlements/castle/castle-sprites5.png",
+		"settlements/castle/castle-sprites6.png",
+		"settlements/castle/castle-sprites7.png",
+		"settlements/castle/castle-sprites8.png",
+
+		"settlements/productivity-boost/lumber-camp.png",
+		"settlements/productivity-boost/stone-quarry.png",
+		"settlements/productivity-boost/stable.png",
+		"settlements/productivity-boost/mill.png",
+		"settlements/productivity-boost/brick-kiln.png",
 	};
 
 

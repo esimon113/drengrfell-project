@@ -1,17 +1,18 @@
 #include "renderBuildings.h"
 #include "GL/glcorearb.h"
 #include "core/camera.h"
+#include "fmt/base.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_uint2.hpp"
 #include "glm/gtc/constants.hpp"
 #include "systems/renderCommon.h"
 #include "utils/worldNodeMapper.h"
+#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <cmath>
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
-#include <GLFW/glfw3.h>
 
 
 
@@ -46,20 +47,19 @@ namespace df {
 		self.stoneSettlementTextures[3] = Texture::init(assets::Texture::STONE_SETTLEMENT4);
 		self.stoneSettlementTextures[4] = Texture::init(assets::Texture::STONE_SETTLEMENT5);
 		self.stoneSettlementTextures[5] = Texture::init(assets::Texture::STONE_SETTLEMENT6);
-	self.castleSettlementTextures[0] = Texture::init(assets::Texture::CASTLE1);
-	self.castleSettlementTextures[1] = Texture::init(assets::Texture::CASTLE2);
-	self.castleSettlementTextures[2] = Texture::init(assets::Texture::CASTLE3);
-	self.castleSettlementTextures[3] = Texture::init(assets::Texture::CASTLE4);
-	self.castleSettlementTextures[4] = Texture::init(assets::Texture::CASTLE5);
-	self.castleSettlementTextures[5] = Texture::init(assets::Texture::CASTLE6);
-	self.castleSettlementTextures[6] = Texture::init(assets::Texture::CASTLE7);
-	self.castleSettlementTextures[7] = Texture::init(assets::Texture::CASTLE8);
-	self.lumberCampTexture = Texture::init(assets::Texture::LUMBER_CAMP);
-	self.stoneQuarryTexture = Texture::init(assets::Texture::STONE_QUARRY);
-	self.stableTexture = Texture::init(assets::Texture::STABLE);
-	self.millTexture = Texture::init(assets::Texture::MILL);
-	self.brickKilnTexture = Texture::init(assets::Texture::BRICK_KILN);
-	self.productivityPlaceholderTexture = Texture::init(assets::Texture::PRODUCTIVITY_PLACEHOLDER);
+		self.castleSettlementTextures[0] = Texture::init(assets::Texture::CASTLE1);
+		self.castleSettlementTextures[1] = Texture::init(assets::Texture::CASTLE2);
+		self.castleSettlementTextures[2] = Texture::init(assets::Texture::CASTLE3);
+		self.castleSettlementTextures[3] = Texture::init(assets::Texture::CASTLE4);
+		self.castleSettlementTextures[4] = Texture::init(assets::Texture::CASTLE5);
+		self.castleSettlementTextures[5] = Texture::init(assets::Texture::CASTLE6);
+		self.castleSettlementTextures[6] = Texture::init(assets::Texture::CASTLE7);
+		self.castleSettlementTextures[7] = Texture::init(assets::Texture::CASTLE8);
+		self.lumberCampTexture = Texture::init(assets::Texture::LUMBER_CAMP);
+		self.stoneQuarryTexture = Texture::init(assets::Texture::STONE_QUARRY);
+		self.stableTexture = Texture::init(assets::Texture::STABLE);
+		self.millTexture = Texture::init(assets::Texture::MILL);
+		self.brickKilnTexture = Texture::init(assets::Texture::BRICK_KILN);
 
 		glm::uvec2 extent = self.window->getWindowExtent();
 		self.intermediateFramebuffer = Framebuffer::init({static_cast<GLsizei>(extent.x), static_cast<GLsizei>(extent.y), 1, true});
@@ -115,9 +115,9 @@ namespace df {
 		for (auto& tex : stoneSettlementTextures) {
 			tex.deinit();
 		}
-	for (auto& tex : castleSettlementTextures) {
-		tex.deinit();
-	}
+		for (auto& tex : castleSettlementTextures) {
+			tex.deinit();
+		}
 
 		intermediateFramebuffer.deinit();
 	}
@@ -177,9 +177,9 @@ namespace df {
 	}
 
 	size_t RenderBuildingsSystem::findClosestOwnedEdge(const Graph& map,
-		const glm::vec2& cursorWorldPos,
-		const std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
-		float& outClosestDistance) const noexcept {
+													   const glm::vec2& cursorWorldPos,
+													   const std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
+													   float& outClosestDistance) const noexcept {
 		size_t hoveredEdgeId = SIZE_MAX;
 		float closestDistance = (std::numeric_limits<float>::max)();
 		for (const auto& [edgeId, _] : ownedRoadEntitiesByEdge) {
@@ -194,8 +194,8 @@ namespace df {
 	}
 
 	std::unordered_set<size_t> RenderBuildingsSystem::collectConnectedOwnedEdges(const Graph& map,
-		size_t startEdgeId,
-		const std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge) const noexcept {
+																				 size_t startEdgeId,
+																				 const std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge) const noexcept {
 		std::unordered_set<size_t> visited;
 		if (startEdgeId == SIZE_MAX)
 			return visited;
@@ -236,12 +236,12 @@ namespace df {
 	}
 
 	void RenderBuildingsSystem::renderRoadHighlights(const std::unordered_set<size_t>& edgeIds,
-		const std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge,
-		const std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
-		float time,
-		float baseAlpha,
-		const glm::mat4& view,
-		const glm::mat4& projection) noexcept {
+													 const std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge,
+													 const std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
+													 float time,
+													 float baseAlpha,
+													 const glm::mat4& view,
+													 const glm::mat4& projection) noexcept {
 		const glm::vec3 highlightColor = glm::vec3(0.95f, 0.86f, 0.55f);
 		const float diagonalAngle = std::atan(2.0f);
 		const std::array<float, 3> rotationAngles = {0.0f, diagonalAngle, -diagonalAngle};
@@ -282,305 +282,305 @@ namespace df {
 			-1.0f, 1.0f);
 	}
 
-	
-void RenderBuildingsSystem::updateDustSpawns(float time) noexcept {
-	size_t currentSettlementCount = registry->settlements.entities.size();
-	size_t currentRoadCount = registry->roads.entities.size();
-	if (currentSettlementCount < lastSettlementCount || currentRoadCount < lastRoadCount) {
-		dustPuffs.clear();
+
+	void RenderBuildingsSystem::updateDustSpawns(float time) noexcept {
+		size_t currentSettlementCount = registry->settlements.entities.size();
+		size_t currentRoadCount = registry->roads.entities.size();
+		if (currentSettlementCount < lastSettlementCount || currentRoadCount < lastRoadCount) {
+			dustPuffs.clear();
+			lastSettlementCount = currentSettlementCount;
+			lastRoadCount = currentRoadCount;
+		}
+
+		if (currentSettlementCount > lastSettlementCount) {
+			for (size_t i = lastSettlementCount; i < currentSettlementCount; ++i) {
+				Entity e = registry->settlements.entities[i];
+				if (registry->positions.has(e)) {
+					spawnDustAt(registry->positions.get(e), time, 8, 0.7f);
+				}
+			}
+		}
+		if (currentRoadCount > lastRoadCount) {
+			for (size_t i = lastRoadCount; i < currentRoadCount; ++i) {
+				Entity e = registry->roads.entities[i];
+				if (registry->positions.has(e)) {
+					spawnDustAt(registry->positions.get(e), time, 6, 0.5f);
+				}
+			}
+		}
 		lastSettlementCount = currentSettlementCount;
 		lastRoadCount = currentRoadCount;
 	}
 
-	if (currentSettlementCount > lastSettlementCount) {
-		for (size_t i = lastSettlementCount; i < currentSettlementCount; ++i) {
-			Entity e = registry->settlements.entities[i];
-			if (registry->positions.has(e)) {
-				spawnDustAt(registry->positions.get(e), time, 8, 0.7f);
+	void RenderBuildingsSystem::renderSettlements(const glm::mat4& view, const glm::mat4& projection, float time) noexcept {
+		constexpr float animationSpeed = 5.0f; // fps
+		for (Entity e : registry->settlements.entities) {
+			if (!registry->positions.has(e) || !registry->scales.has(e) || !registry->settlements.has(e))
+				continue;
+
+			const glm::vec2& worldPos = registry->positions.get(e);
+			const glm::vec2& scale = registry->scales.get(e);
+			const Settlement& settlement = registry->settlements.get(e);
+			const types::SettlementType settlementType = settlement.getSettlementType();
+			const bool isCastle = settlementType == types::SettlementType::CASTLE;
+			const bool isStone = settlementType == types::SettlementType::STONE;
+			const int frameCount = isCastle
+									   ? static_cast<int>(castleSettlementTextures.size())
+									   : (isStone ? static_cast<int>(stoneSettlementTextures.size())
+												  : static_cast<int>(woodSettlementTextures.size()));
+			const int textureIndex = static_cast<int>(time * animationSpeed) % frameCount;
+
+			glm::mat4 model = glm::identity<glm::mat4>();
+			model = glm::translate(model, glm::vec3(worldPos, 0.0f));
+			const float castleScale = isCastle ? 1.2f : 1.0f;
+			model = glm::scale(model, glm::vec3(scale * castleScale, 1.0f));
+
+			if (isCastle) {
+				castleSettlementTextures[textureIndex].bind(0);
+			} else if (isStone) {
+				stoneSettlementTextures[textureIndex].bind(0);
+			} else {
+				woodSettlementTextures[textureIndex].bind(0);
 			}
+			spriteShader.use()
+				.setMat4("view", view)
+				.setMat4("model[0]", model)
+				.setMat4("projection", projection)
+				.setSampler("sprite", 0)
+				.setVec3("fcolor", glm::vec3(1.0f));
+
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		}
 	}
-	if (currentRoadCount > lastRoadCount) {
-		for (size_t i = lastRoadCount; i < currentRoadCount; ++i) {
-			Entity e = registry->roads.entities[i];
-			if (registry->positions.has(e)) {
-				spawnDustAt(registry->positions.get(e), time, 6, 0.5f);
+
+	void RenderBuildingsSystem::renderProductivityBuildings(const glm::mat4& view, const glm::mat4& projection) noexcept {
+		if (!registry || !gamestate) {
+			return;
+		}
+
+		const Graph& map = gamestate->getMap();
+		for (Entity e : registry->productivityBuildings.entities) {
+			if (!registry->positions.has(e) || !registry->scales.has(e) || !registry->productivityBuildings.has(e)) {
+				continue;
 			}
-		}
-	}
-	lastSettlementCount = currentSettlementCount;
-	lastRoadCount = currentRoadCount;
-}
 
-void RenderBuildingsSystem::renderSettlements(const glm::mat4& view, const glm::mat4& projection, float time) noexcept {
-	constexpr float animationSpeed = 5.0f; // fps
-	for (Entity e : registry->settlements.entities) {
-		if (!registry->positions.has(e) || !registry->scales.has(e) || !registry->settlements.has(e))
-			continue;
+			const ProductivityBuilding& building = registry->productivityBuildings.get(e);
+			const TileHandle tile = map.getTile(building.getTileId());
+			if (!tile) {
+				continue;
+			}
 
-		const glm::vec2& worldPos = registry->positions.get(e);
-		const glm::vec2& scale = registry->scales.get(e);
-		const Settlement& settlement = registry->settlements.get(e);
-	const types::SettlementType settlementType = settlement.getSettlementType();
-	const bool isCastle = settlementType == types::SettlementType::CASTLE;
-	const bool isStone = settlementType == types::SettlementType::STONE;
-	const int frameCount = isCastle
-		? static_cast<int>(castleSettlementTextures.size())
-		: (isStone ? static_cast<int>(stoneSettlementTextures.size())
-				   : static_cast<int>(woodSettlementTextures.size()));
-	const int textureIndex = static_cast<int>(time * animationSpeed) % frameCount;
+			const glm::vec2& worldPos = registry->positions.get(e);
+			const glm::vec2& scale = registry->scales.get(e);
 
-		glm::mat4 model = glm::identity<glm::mat4>();
-		model = glm::translate(model, glm::vec3(worldPos, 0.0f));
-		const float castleScale = isCastle ? 1.2f : 1.0f;
-		model = glm::scale(model, glm::vec3(scale * castleScale, 1.0f));
+			Texture* texture = &productivityPlaceholderTexture;
+			switch (tile->getType()) {
+			case types::TileType::FOREST:
+				texture = &lumberCampTexture;
+				break;
+			case types::TileType::MOUNTAIN:
+				texture = &stoneQuarryTexture;
+				break;
+			case types::TileType::GRASS:
+				texture = &stableTexture;
+				break;
+			case types::TileType::FIELD:
+				texture = &millTexture;
+				break;
+			case types::TileType::CLAY:
+				texture = &brickKilnTexture;
+				break;
+			default:
+				fmt::println("Unexpected TileType for Upgrade Texture Lookup -> No Texture found!");
+				return;
+			}
 
-	if (isCastle) {
-		castleSettlementTextures[textureIndex].bind(0);
-	} else if (isStone) {
-			stoneSettlementTextures[textureIndex].bind(0);
-		} else {
-			woodSettlementTextures[textureIndex].bind(0);
-		}
-		spriteShader.use()
-			.setMat4("view", view)
-			.setMat4("model[0]", model)
-			.setMat4("projection", projection)
-			.setSampler("sprite", 0)
-			.setVec3("fcolor", glm::vec3(1.0f));
+			glm::mat4 model = glm::identity<glm::mat4>();
+			model = glm::translate(model, glm::vec3(worldPos, 0.0f));
+			model = glm::scale(model, glm::vec3(scale, 1.0f));
 
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-	}
-}
+			texture->bind(0);
+			spriteShader.use()
+				.setMat4("view", view)
+				.setMat4("model[0]", model)
+				.setMat4("projection", projection)
+				.setSampler("sprite", 0)
+				.setVec3("fcolor", glm::vec3(1.0f));
 
-void RenderBuildingsSystem::renderProductivityBuildings(const glm::mat4& view, const glm::mat4& projection) noexcept {
-	if (!registry || !gamestate) {
-		return;
-	}
-
-	const Graph& map = gamestate->getMap();
-	for (Entity e : registry->productivityBuildings.entities) {
-		if (!registry->positions.has(e) || !registry->scales.has(e) || !registry->productivityBuildings.has(e)) {
-			continue;
-		}
-
-		const ProductivityBuilding& building = registry->productivityBuildings.get(e);
-		const TileHandle tile = map.getTile(building.getTileId());
-		if (!tile) {
-			continue;
-		}
-
-		const glm::vec2& worldPos = registry->positions.get(e);
-		const glm::vec2& scale = registry->scales.get(e);
-
-		Texture* texture = &productivityPlaceholderTexture;
-		switch (tile->getType()) {
-		case types::TileType::FOREST:
-			texture = &lumberCampTexture;
-			break;
-		case types::TileType::MOUNTAIN:
-			texture = &stoneQuarryTexture;
-			break;
-		case types::TileType::GRASS:
-			texture = &stableTexture;
-			break;
-		case types::TileType::FIELD:
-			texture = &millTexture;
-			break;
-		case types::TileType::CLAY:
-			texture = &brickKilnTexture;
-			break;
-		default:
-			texture = &productivityPlaceholderTexture;
-			break;
-		}
-
-		glm::mat4 model = glm::identity<glm::mat4>();
-		model = glm::translate(model, glm::vec3(worldPos, 0.0f));
-		model = glm::scale(model, glm::vec3(scale, 1.0f));
-
-		texture->bind(0);
-		spriteShader.use()
-			.setMat4("view", view)
-			.setMat4("model[0]", model)
-			.setMat4("projection", projection)
-			.setSampler("sprite", 0)
-			.setVec3("fcolor", glm::vec3(1.0f));
-
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-	}
-}
-
-void RenderBuildingsSystem::updateSettlementHover(const glm::mat4& view, const glm::mat4& projection, const Camera& cam, float time) noexcept {
-	if (registry->settlements.entities.empty())
-		return;
-
-	const bool isBuildingPreviewActive = !registry->buildingPreviews.entities.empty();
-	const size_t currentPlayerId = gamestate->getCurrentPlayerId();
-	const float settlementHoverRadius = 0.3f / cam.zoom;
-	glm::vec2 cursorWorldPos = getCursorWorldPos(cam);
-
-	Entity hoveredSettlement = Entity();
-	glm::vec2 hoveredPos = glm::vec2(0.0f);
-	glm::vec2 hoveredScale = glm::vec2(1.0f);
-	float closestDistance = (std::numeric_limits<float>::max)();
-
-	for (Entity e : registry->settlements.entities) {
-		if (!registry->positions.has(e) || !registry->settlements.has(e))
-			continue;
-		const Settlement& settlement = registry->settlements.get(e);
-		if (settlement.getPlayerId() != currentPlayerId)
-			continue;
-
-		const glm::vec2& worldPos = registry->positions.get(e);
-		const glm::vec2& scale = registry->scales.get(e);
-		float distance = glm::distance(cursorWorldPos, worldPos);
-		if (distance < closestDistance) {
-			closestDistance = distance;
-			hoveredSettlement = e;
-			hoveredPos = worldPos;
-			hoveredScale = scale;
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		}
 	}
 
-	bool isHoveringSettlement = closestDistance <= settlementHoverRadius && !isBuildingPreviewActive;
-	if (isHoveringSettlement && (!settlementHoverActive || hoveredSettlement != lastHoveredSettlementEntity)) {
-		settlementHoverFadeStartTime = time;
-		settlementHoverActive = true;
-		lastHoveredSettlementEntity = hoveredSettlement;
-		lastHoveredSettlementPos = hoveredPos;
-		lastHoveredSettlementScale = hoveredScale;
-	} else if (!isHoveringSettlement && settlementHoverActive) {
-		settlementHoverFadeStartTime = time;
-		settlementHoverActive = false;
-	}
+	void RenderBuildingsSystem::updateSettlementHover(const glm::mat4& view, const glm::mat4& projection, const Camera& cam, float time) noexcept {
+		if (registry->settlements.entities.empty())
+			return;
 
-	if (lastHoveredSettlementEntity != Entity()) {
-		float elapsed = time - settlementHoverFadeStartTime;
-		float fadeT = glm::clamp(elapsed / settlementHoverFadeDuration, 0.0f, 1.0f);
-		float fade = settlementHoverActive ? glm::smoothstep(0.0f, 1.0f, fadeT) : (1.0f - glm::smoothstep(0.0f, 1.0f, fadeT));
-		if (!settlementHoverActive && fadeT >= 1.0f) {
-			lastHoveredSettlementEntity = Entity();
-		}
-
-		const glm::vec3 highlightColor = glm::vec3(0.95f, 0.86f, 0.55f);
-		const float baseAlpha = 0.45f * fade;
-		glm::mat4 model = glm::identity<glm::mat4>();
-		model = glm::translate(model, glm::vec3(lastHoveredSettlementPos, 0.0f));
-		// the * 2.0: makes the highlight bigger so that the whole settlement is highlighted
-		model = glm::scale(model, glm::vec3(lastHoveredSettlementScale * 2.5f, 1.0f));
-
-		locationHighlightShader.use()
-			.setMat4("view", view)
-			.setMat4("projection", projection)
-			.setMat4("model[0]", model)
-			.setVec3("highlightColor", highlightColor)
-			.setFloat("alpha", baseAlpha)
-			.setFloat("time", time)
-			.setFloat("pulseStrength", 0.35f);
-
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-	}
-}
-
-void RenderBuildingsSystem::renderRoads(const glm::mat4& view,
-	const glm::mat4& projection,
-	std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
-	std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
-	std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge) noexcept {
-	const size_t currentPlayerId = gamestate->getCurrentPlayerId();
-	for (Entity e : registry->roads.entities) {
-		if (!registry->positions.has(e) || !registry->scales.has(e))
-			continue;
-
-		const glm::vec2& worldPos = registry->positions.get(e);
-		const glm::vec2& scale = registry->scales.get(e);
-		const Road& road = registry->roads.get(e);
-		const size_t roadEdgeId = road.getEdgeId();
-
-		int edgeIndex = this->registry->roadEdgeIndices.has(e) ? this->registry->roadEdgeIndices.get(e) : -1;
-
-		Texture* roadTexture = nullptr;
-		if (edgeIndex == 0 || edgeIndex == 3)
-			roadTexture = &roadTextureVertical;
-		else if (edgeIndex == 1 || edgeIndex == 4)
-			roadTexture = &roadTextureDiagonalDown;
-		else if (edgeIndex == 2 || edgeIndex == 5)
-			roadTexture = &roadTextureDiagonalUp;
-		else
-			roadTexture = &roadTextureVertical;
-
-		glm::mat4 model = glm::identity<glm::mat4>();
-		model = glm::translate(model, glm::vec3(worldPos, 0.0f));
-		model = glm::scale(model, glm::vec3(scale, 1.0f));
-
-		assert(roadTexture != nullptr); // should not fail
-		roadTexture->bind(0);
-		spriteShader.use()
-			.setMat4("model[0]", model)
-			.setMat4("view", view)
-			.setMat4("projection", projection)
-			.setSampler("sprite", 0)
-			.setVec3("fcolor", glm::vec3(1.0f));
-
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-		if (road.getPlayerId() == currentPlayerId) {
-			ownedRoadEntitiesByEdge[roadEdgeId] = e;
-			ownedRoadEdgeIndexByEdge[roadEdgeId] = edgeIndex;
-			ownedRoadPosByEdge[roadEdgeId] = worldPos;
-		}
-	}
-}
-
-void RenderBuildingsSystem::updateRoadHover(const glm::mat4& view,
-	const glm::mat4& projection,
-	const Camera& cam,
-	float time,
-	const std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
-	const std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
-	const std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge) noexcept {
-	if (ownedRoadEntitiesByEdge.empty())
-		return;
-
-	const Graph& map = gamestate->getMap();
-	const float hoverRadius = 0.12f / cam.zoom;
-	size_t hoveredEdgeId = SIZE_MAX;
-	float closestDistance = (std::numeric_limits<float>::max)();
-	bool isHovering = false;
-
-	const bool isBuildingPreviewActive = !registry->buildingPreviews.entities.empty();
-	if (!isBuildingPreviewActive) {
+		const bool isBuildingPreviewActive = !registry->buildingPreviews.entities.empty();
+		const size_t currentPlayerId = gamestate->getCurrentPlayerId();
+		const float settlementHoverRadius = 0.3f / cam.zoom;
 		glm::vec2 cursorWorldPos = getCursorWorldPos(cam);
-		hoveredEdgeId = findClosestOwnedEdge(map, cursorWorldPos, ownedRoadEntitiesByEdge, closestDistance);
-		isHovering = hoveredEdgeId != SIZE_MAX && closestDistance <= hoverRadius;
-	}
-	if (isHovering && (!hoverActive || hoveredEdgeId != lastHoveredEdgeId)) {
-		hoverFadeStartTime = time;
-		hoverActive = true;
-		lastHoveredEdgeId = hoveredEdgeId;
-	} else if (!isHovering && hoverActive) {
-		hoverFadeStartTime = time;
-		hoverActive = false;
-	}
 
-	if (isHovering) {
-		lastHoveredConnectedEdges = collectConnectedOwnedEdges(map, hoveredEdgeId, ownedRoadEntitiesByEdge);
-	}
+		Entity hoveredSettlement = Entity();
+		glm::vec2 hoveredPos = glm::vec2(0.0f);
+		glm::vec2 hoveredScale = glm::vec2(1.0f);
+		float closestDistance = (std::numeric_limits<float>::max)();
 
-	if (!lastHoveredConnectedEdges.empty()) {
-		float elapsed = time - hoverFadeStartTime;
-		float fadeT = glm::clamp(elapsed / hoverFadeDuration, 0.0f, 1.0f);
-		float fade = hoverActive ? glm::smoothstep(0.0f, 1.0f, fadeT) : (1.0f - glm::smoothstep(0.0f, 1.0f, fadeT));
-		if (!hoverActive && fadeT >= 1.0f) {
-			lastHoveredConnectedEdges.clear();
-			lastHoveredEdgeId = SIZE_MAX;
+		for (Entity e : registry->settlements.entities) {
+			if (!registry->positions.has(e) || !registry->settlements.has(e))
+				continue;
+			const Settlement& settlement = registry->settlements.get(e);
+			if (settlement.getPlayerId() != currentPlayerId)
+				continue;
+
+			const glm::vec2& worldPos = registry->positions.get(e);
+			const glm::vec2& scale = registry->scales.get(e);
+			float distance = glm::distance(cursorWorldPos, worldPos);
+			if (distance < closestDistance) {
+				closestDistance = distance;
+				hoveredSettlement = e;
+				hoveredPos = worldPos;
+				hoveredScale = scale;
+			}
 		}
 
-		const float baseAlpha = 0.32f * fade;
-		renderRoadHighlights(lastHoveredConnectedEdges, ownedRoadPosByEdge, ownedRoadEdgeIndexByEdge, time, baseAlpha, view, projection);
+		bool isHoveringSettlement = closestDistance <= settlementHoverRadius && !isBuildingPreviewActive;
+		if (isHoveringSettlement && (!settlementHoverActive || hoveredSettlement != lastHoveredSettlementEntity)) {
+			settlementHoverFadeStartTime = time;
+			settlementHoverActive = true;
+			lastHoveredSettlementEntity = hoveredSettlement;
+			lastHoveredSettlementPos = hoveredPos;
+			lastHoveredSettlementScale = hoveredScale;
+		} else if (!isHoveringSettlement && settlementHoverActive) {
+			settlementHoverFadeStartTime = time;
+			settlementHoverActive = false;
+		}
+
+		if (lastHoveredSettlementEntity != Entity()) {
+			float elapsed = time - settlementHoverFadeStartTime;
+			float fadeT = glm::clamp(elapsed / settlementHoverFadeDuration, 0.0f, 1.0f);
+			float fade = settlementHoverActive ? glm::smoothstep(0.0f, 1.0f, fadeT) : (1.0f - glm::smoothstep(0.0f, 1.0f, fadeT));
+			if (!settlementHoverActive && fadeT >= 1.0f) {
+				lastHoveredSettlementEntity = Entity();
+			}
+
+			const glm::vec3 highlightColor = glm::vec3(0.95f, 0.86f, 0.55f);
+			const float baseAlpha = 0.45f * fade;
+			glm::mat4 model = glm::identity<glm::mat4>();
+			model = glm::translate(model, glm::vec3(lastHoveredSettlementPos, 0.0f));
+			// the * 2.0: makes the highlight bigger so that the whole settlement is highlighted
+			model = glm::scale(model, glm::vec3(lastHoveredSettlementScale * 2.5f, 1.0f));
+
+			locationHighlightShader.use()
+				.setMat4("view", view)
+				.setMat4("projection", projection)
+				.setMat4("model[0]", model)
+				.setVec3("highlightColor", highlightColor)
+				.setFloat("alpha", baseAlpha)
+				.setFloat("time", time)
+				.setFloat("pulseStrength", 0.35f);
+
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		}
 	}
-}
+
+	void RenderBuildingsSystem::renderRoads(const glm::mat4& view,
+											const glm::mat4& projection,
+											std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
+											std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
+											std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge) noexcept {
+		const size_t currentPlayerId = gamestate->getCurrentPlayerId();
+		for (Entity e : registry->roads.entities) {
+			if (!registry->positions.has(e) || !registry->scales.has(e))
+				continue;
+
+			const glm::vec2& worldPos = registry->positions.get(e);
+			const glm::vec2& scale = registry->scales.get(e);
+			const Road& road = registry->roads.get(e);
+			const size_t roadEdgeId = road.getEdgeId();
+
+			int edgeIndex = this->registry->roadEdgeIndices.has(e) ? this->registry->roadEdgeIndices.get(e) : -1;
+
+			Texture* roadTexture = nullptr;
+			if (edgeIndex == 0 || edgeIndex == 3)
+				roadTexture = &roadTextureVertical;
+			else if (edgeIndex == 1 || edgeIndex == 4)
+				roadTexture = &roadTextureDiagonalDown;
+			else if (edgeIndex == 2 || edgeIndex == 5)
+				roadTexture = &roadTextureDiagonalUp;
+			else
+				roadTexture = &roadTextureVertical;
+
+			glm::mat4 model = glm::identity<glm::mat4>();
+			model = glm::translate(model, glm::vec3(worldPos, 0.0f));
+			model = glm::scale(model, glm::vec3(scale, 1.0f));
+
+			assert(roadTexture != nullptr); // should not fail
+			roadTexture->bind(0);
+			spriteShader.use()
+				.setMat4("model[0]", model)
+				.setMat4("view", view)
+				.setMat4("projection", projection)
+				.setSampler("sprite", 0)
+				.setVec3("fcolor", glm::vec3(1.0f));
+
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+			if (road.getPlayerId() == currentPlayerId) {
+				ownedRoadEntitiesByEdge[roadEdgeId] = e;
+				ownedRoadEdgeIndexByEdge[roadEdgeId] = edgeIndex;
+				ownedRoadPosByEdge[roadEdgeId] = worldPos;
+			}
+		}
+	}
+
+	void RenderBuildingsSystem::updateRoadHover(const glm::mat4& view,
+												const glm::mat4& projection,
+												const Camera& cam,
+												float time,
+												const std::unordered_map<size_t, Entity>& ownedRoadEntitiesByEdge,
+												const std::unordered_map<size_t, int>& ownedRoadEdgeIndexByEdge,
+												const std::unordered_map<size_t, glm::vec2>& ownedRoadPosByEdge) noexcept {
+		if (ownedRoadEntitiesByEdge.empty())
+			return;
+
+		const Graph& map = gamestate->getMap();
+		const float hoverRadius = 0.12f / cam.zoom;
+		size_t hoveredEdgeId = SIZE_MAX;
+		float closestDistance = (std::numeric_limits<float>::max)();
+		bool isHovering = false;
+
+		const bool isBuildingPreviewActive = !registry->buildingPreviews.entities.empty();
+		if (!isBuildingPreviewActive) {
+			glm::vec2 cursorWorldPos = getCursorWorldPos(cam);
+			hoveredEdgeId = findClosestOwnedEdge(map, cursorWorldPos, ownedRoadEntitiesByEdge, closestDistance);
+			isHovering = hoveredEdgeId != SIZE_MAX && closestDistance <= hoverRadius;
+		}
+		if (isHovering && (!hoverActive || hoveredEdgeId != lastHoveredEdgeId)) {
+			hoverFadeStartTime = time;
+			hoverActive = true;
+			lastHoveredEdgeId = hoveredEdgeId;
+		} else if (!isHovering && hoverActive) {
+			hoverFadeStartTime = time;
+			hoverActive = false;
+		}
+
+		if (isHovering) {
+			lastHoveredConnectedEdges = collectConnectedOwnedEdges(map, hoveredEdgeId, ownedRoadEntitiesByEdge);
+		}
+
+		if (!lastHoveredConnectedEdges.empty()) {
+			float elapsed = time - hoverFadeStartTime;
+			float fadeT = glm::clamp(elapsed / hoverFadeDuration, 0.0f, 1.0f);
+			float fade = hoverActive ? glm::smoothstep(0.0f, 1.0f, fadeT) : (1.0f - glm::smoothstep(0.0f, 1.0f, fadeT));
+			if (!hoverActive && fadeT >= 1.0f) {
+				lastHoveredConnectedEdges.clear();
+				lastHoveredEdgeId = SIZE_MAX;
+			}
+
+			const float baseAlpha = 0.32f * fade;
+			renderRoadHighlights(lastHoveredConnectedEdges, ownedRoadPosByEdge, ownedRoadEdgeIndexByEdge, time, baseAlpha, view, projection);
+		}
+	}
 
 
 	void RenderBuildingsSystem::renderBuildings(float time) noexcept {
@@ -638,9 +638,9 @@ void RenderBuildingsSystem::updateRoadHover(const glm::mat4& view,
 
 		(void)cam;
 		dustPuffs.erase(std::remove_if(dustPuffs.begin(), dustPuffs.end(), [time](const DustPuff& puff) {
-			return (time - puff.startTime) >= puff.duration;
-		}),
-			dustPuffs.end());
+							return (time - puff.startTime) >= puff.duration;
+						}),
+						dustPuffs.end());
 
 		const glm::vec3 dustColor = glm::vec3(0.82f, 0.76f, 0.66f);
 		for (const auto& puff : dustPuffs) {
