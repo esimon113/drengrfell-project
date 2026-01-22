@@ -73,7 +73,7 @@ namespace df {
 		self.gameController = std::make_shared<GameController>(*self.gameState, self.registry);
 		self.world = WorldSystem::init(self.window.get(), self.registry, self.audioEngine.get(), *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get());
+		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get(), self.eventBus.get());
 		// Create main menu
 		self.mainMenu.init(self.window.get());
 		// for testing
@@ -113,6 +113,7 @@ namespace df {
 		registry->addSystem<RenderSnowSystem>(&render.getRenderSnowSystem());
 
 		registry->addSystem<RenderTilesSystem>(&render.getRenderTilesSystem());
+		registry->addSystem<EventPresentationSystem>(&render.getEventPresentationSystem());
 
 		auto* qSys = gameController->getQuestsSystem();
 		if (qSys) {
@@ -552,6 +553,10 @@ namespace df {
 				}
 				if (pressedButton == "Pay ressources") {
 					gameController->payForHazard();
+					render.eventPresentationSystem.endEvent();
+				}
+				if (pressedButton == "Wait") {
+					render.eventPresentationSystem.endEvent();
 				}
 				// Quests
 				if (pressedButton == "Next Quest") {
@@ -720,5 +725,6 @@ namespace df {
 		render.renderHudSystem.onResizeCallback(windowParam, width, height);
 		configMenu.onResizeCallback(windowParam, width, height);
 		render.renderNotificationSystem.onResizeCallback(windowParam, width, height);
+		render.eventPresentationSystem.onResizeCallback(windowParam, width, height);
 	}
 } // namespace df

@@ -49,4 +49,15 @@ namespace df {
 		return empty;
 	}
 
+	std::unordered_map<types::HazardType, types::EventType> HazardDB::hazardEventMapping = {
+		{types::HazardType::BEAR, types::EventType::HAZARD_BEAR},
+		{types::HazardType::BLIZZARD, types::EventType::HAZARD_BLIZZARD},
+		{types::HazardType::ROCKSLIDE, types::EventType::HAZARD_ROCKSLIDE},
+		{types::HazardType::MUD, types::EventType::HAZARD_MUD},
+	};
+
+	const types::EventType& HazardDB::getEvent(types::HazardType type) {
+		return hazardEventMapping.at(type);
+	}
+
 } // namespace df

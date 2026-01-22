@@ -5,7 +5,7 @@
 
 namespace df {
 
-	RenderSystem RenderSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState, GameController* gameController) noexcept {
+	RenderSystem RenderSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState, GameController* gameController, EventBus* eventBus) noexcept {
 		RenderSystem self;
 
 		self.window = window;
@@ -25,6 +25,7 @@ namespace df {
 		self.renderTextSystem = RenderTextSystem::init(window, registry);
 		self.renderSnowSystem = RenderSnowSystem::init(window, registry, gameState);
 		self.renderNotificationSystem = RenderNotificationSystem::init(window, registry);
+		self.eventPresentationSystem = EventPresentationSystem::init(window, registry, eventBus);
 		return self;
 	}
 
@@ -38,6 +39,7 @@ namespace df {
 		this->renderTextSystem.deinit();
 		this->renderSnowSystem.deinit();
 		this->renderNotificationSystem.deinit();
+		this->eventPresentationSystem.deinit();
 		this->intermediateFramebuffer.deinit();
 	}
 
@@ -46,8 +48,9 @@ namespace df {
 		this->renderBuildingsSystem.step(dt);
 		this->renderBuildingPreviewsSystem.step(dt);
 		this->renderHeroSystem.step(dt);
-		this->renderTextSystem.step(dt);
 		this->renderSnowSystem.step(dt);
+		this->eventPresentationSystem.step(dt);	// everything rendered before this will be dimmed by events
+		this->renderTextSystem.step(dt);
 		this->renderNotificationSystem.step(dt);
 		this->renderHudSystem.step(dt); // always rendered last
 	}
@@ -62,6 +65,7 @@ namespace df {
 		this->renderTextSystem.reset();
 		this->renderNotificationSystem.reset();
 		this->renderSnowSystem.reset();
+		this->eventPresentationSystem.reset();
 	}
 
 
