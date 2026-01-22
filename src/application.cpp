@@ -13,8 +13,8 @@
 // #include "utils/graphDebugDump.h"
 // #include "utils/graphDebugImage.h"
 #include "systems/questsSystem.h"
-#include "systems/renderTiles.h"
 #include "systems/renderCommon.h"
+#include "systems/renderTiles.h"
 #include "tradingSystem.h"
 #include "utils/worldNodeMapper.h"
 
@@ -26,9 +26,9 @@
 #include <map>
 #include <set>
 
+#include "core/settlement.h"
 #include "events/eventBus.h"
 #include "window.h"
-#include "core/settlement.h"
 
 #include "ai/behaviorTree.h"
 #include "ai/commandRegistry.h"
@@ -401,7 +401,7 @@ namespace df {
 		}
 		// lets the hero spawn with on a random Tile (water excluded)
 		spawnHero();
-		
+
 
 		// 		// This is only for DEBUGGING purposes:
 		// #if defined(__unix__) || defined(__linux__)
@@ -419,11 +419,12 @@ namespace df {
 				player = this->gameState->getPlayer(0);
 			}
 			player->reset();
-			player->addResources(types::TileType::FOREST, 1000);	 // give player initial wood
-			player->addResources(types::TileType::CLAY, 1000);	 // give player initial clay
-			player->addResources(types::TileType::MOUNTAIN, 1000); // give player initial stone
-			player->addResources(types::TileType::FIELD, 1000);	 // give player initial grain
-			player->addResources(types::TileType::GRASS, 1000);	 // give player initial grass (cattle)
+			// TODO: add 'test' mode where the player starts with a lot more resources (to show upgrading system)
+			player->addResources(types::TileType::FOREST, 10);	 // give player initial wood
+			player->addResources(types::TileType::CLAY, 10);	 // give player initial clay
+			player->addResources(types::TileType::MOUNTAIN, 10); // give player initial stone
+			player->addResources(types::TileType::FIELD, 10);	 // give player initial grain
+			player->addResources(types::TileType::GRASS, 10);	 // give player initial grass (cattle)
 
 			fmt::println("[DEBUG] resources distributed to player");
 
@@ -436,12 +437,12 @@ namespace df {
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
 
-			//auto randomEngine = std::default_random_engine(std::random_device()());
-			//auto uniformDistribution = std::uniform_int_distribution();
+			// auto randomEngine = std::default_random_engine(std::random_device()());
+			// auto uniformDistribution = std::uniform_int_distribution();
 
 
 			// Remove this if we dont want to be the water tiles already explored
-			// same for ice 
+			// same for ice
 			for (int row = 0; row < height; ++row) {
 				for (int col = 0; col < width; ++col) {
 					size_t tileId = row * width + col;
@@ -449,7 +450,7 @@ namespace df {
 
 					if (tile && tile->getType() == types::TileType::WATER) {
 						gameState->getPlayer(0)->exploreTile(tileId);
-					} else if ( tile && tile->getType() == types::TileType::ICE){
+					} else if (tile && tile->getType() == types::TileType::ICE) {
 						gameState->getPlayer(0)->exploreTile(tileId);
 					}
 				}
@@ -457,21 +458,21 @@ namespace df {
 
 			// Discover a radius of one tile around the hero
 			if (!registry->animations.entities.empty()) {
-                Entity hero = registry->animations.entities.front();
-                if (registry->tileID.has(hero)) {
-                    int heroTileId = static_cast<int>(registry->tileID.get(hero));
-                    
-                    int centerRow = heroTileId / width;
-                    int centerCol = heroTileId % width;
-                    int radius = 1; 
-					if(centerRow%2 == 0){
+				Entity hero = registry->animations.entities.front();
+				if (registry->tileID.has(hero)) {
+					int heroTileId = static_cast<int>(registry->tileID.get(hero));
+
+					int centerRow = heroTileId / width;
+					int centerCol = heroTileId % width;
+					int radius = 1;
+					if (centerRow % 2 == 0) {
 						for (int r = -radius; r <= radius; ++r) {
 							for (int c = -radius; c <= radius; ++c) {
 								int targetRow = centerRow + r;
 								int targetCol = centerCol + c;
-								
-								if(!((c == 1 && r==1) || (c == 1 && r == -1)) ) {
-									if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
+
+								if (!((c == 1 && r == 1) || (c == 1 && r == -1))) {
+									if (targetRow >= 0 && targetRow < height && targetCol >= 0 && targetCol < width) {
 										size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
 										player->exploreTile(idToExplore);
 									}
@@ -483,19 +484,16 @@ namespace df {
 							for (int c = -radius; c <= radius; ++c) {
 								int targetRow = centerRow + r;
 								int targetCol = centerCol + c;
-								if(!((c == -1 && r==-1) || (c == -1 && r == 1)) ) {
-									if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
+								if (!((c == -1 && r == -1) || (c == -1 && r == 1))) {
+									if (targetRow >= 0 && targetRow < height && targetCol >= 0 && targetCol < width) {
 										size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
 										player->exploreTile(idToExplore);
 									}
 								}
-								
-								
 							}
 						}
 					}
-                    
-                }
+				}
 			}
 		}
 		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
@@ -518,18 +516,18 @@ namespace df {
 			configMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::PLAY:
-		if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
-			if (render.renderNotificationSystem.isActive()) {
-				render.renderNotificationSystem.close();
-				selectedSettlementId = SIZE_MAX;
-				return;
+			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
+				if (render.renderNotificationSystem.isActive()) {
+					render.renderNotificationSystem.close();
+					selectedSettlementId = SIZE_MAX;
+					return;
+				}
+				if (render.renderSettlementMenuSystem.isActive()) {
+					render.renderSettlementMenuSystem.close();
+					selectedSettlementId = SIZE_MAX;
+					return;
+				}
 			}
-			if (render.renderSettlementMenuSystem.isActive()) {
-				render.renderSettlementMenuSystem.close();
-				selectedSettlementId = SIZE_MAX;
-				return;
-			}
-		}
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
 			render.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
@@ -574,8 +572,6 @@ namespace df {
 			registry->tileID.emplace(hero, randomTileID);
 		}
 		movementSystem.setTarget(randomTileID, hero);
-		
-			
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
