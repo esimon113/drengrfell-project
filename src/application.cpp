@@ -189,7 +189,7 @@ namespace df {
 
 			// Start turn when first entering PLAY phase -> future TODO: adjust for multiple players + ending game + reentering
 			if (gamePhase == types::GamePhase::PLAY && previousGamePhase != types::GamePhase::PLAY) {
-				gameController->startTurn(*registry);
+				gameController->startTurn();
 				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
 				// Prepare the camera so it can be centered
 				world.step(0.0f);
@@ -261,9 +261,9 @@ namespace df {
 				// Only truly end the turn and start a new one when the hero finished walking
 				if (awaitingTurnEnd && !movementSystem.getMovementState()) {
 					Entity hero = registry->animations.entities.front();
-					gameController->endTurn(*registry);
-					gameController->applyHazard(hero, *registry, movementSystem.getTargetPosition());
-					gameController->startTurn(*registry); // Start turn for the next player
+					gameController->endTurn();
+					gameController->applyHazard(hero, movementSystem.getTargetPosition());
+					gameController->startTurn(); // Start turn for the next player
 					awaitingTurnEnd = false;
 				}
 			} break;
@@ -401,6 +401,7 @@ namespace df {
 		}
 		// lets the hero spawn with on a random Tile (water excluded)
 		spawnHero();
+		
 
 		// 		// This is only for DEBUGGING purposes:
 		// #if defined(__unix__) || defined(__linux__)
@@ -435,17 +436,67 @@ namespace df {
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
 
-			auto randomEngine = std::default_random_engine(std::random_device()());
-			auto uniformDistribution = std::uniform_int_distribution();
+			//auto randomEngine = std::default_random_engine(std::random_device()());
+			//auto uniformDistribution = std::uniform_int_distribution();
 
+
+			// Remove this if we dont want to be the water tiles already explored
+			// same for ice 
 			for (int row = 0; row < height; ++row) {
 				for (int col = 0; col < width; ++col) {
-					if (uniformDistribution(randomEngine) % 4 != 0) {
-						gameState->getPlayer(0)->exploreTile(row * width + col);
+					size_t tileId = row * width + col;
+					const TileHandle tile = gameState->getMap().getTile(tileId);
+
+					if (tile && tile->getType() == types::TileType::WATER) {
+						gameState->getPlayer(0)->exploreTile(tileId);
+					} else if ( tile && tile->getType() == types::TileType::ICE){
+						gameState->getPlayer(0)->exploreTile(tileId);
 					}
 				}
 			}
-			fmt::println("[DEBUG] randomly explored tiles for player");
+
+			// Discover a radius of one tile around the hero
+			if (!registry->animations.entities.empty()) {
+                Entity hero = registry->animations.entities.front();
+                if (registry->tileID.has(hero)) {
+                    int heroTileId = static_cast<int>(registry->tileID.get(hero));
+                    
+                    int centerRow = heroTileId / width;
+                    int centerCol = heroTileId % width;
+                    int radius = 1; 
+					if(centerRow%2 == 0){
+						for (int r = -radius; r <= radius; ++r) {
+							for (int c = -radius; c <= radius; ++c) {
+								int targetRow = centerRow + r;
+								int targetCol = centerCol + c;
+								
+								if(!((c == 1 && r==1) || (c == 1 && r == -1)) ) {
+									if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
+										size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
+										player->exploreTile(idToExplore);
+									}
+								}
+							}
+						}
+					} else {
+						for (int r = -radius; r <= radius; ++r) {
+							for (int c = -radius; c <= radius; ++c) {
+								int targetRow = centerRow + r;
+								int targetCol = centerCol + c;
+								if(!((c == -1 && r==-1) || (c == -1 && r == 1)) ) {
+									if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
+										size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
+										player->exploreTile(idToExplore);
+									}
+								}
+								
+								
+							}
+						}
+					}
+                    
+                }
+			}
 		}
 		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;
@@ -523,6 +574,8 @@ namespace df {
 			registry->tileID.emplace(hero, randomTileID);
 		}
 		movementSystem.setTarget(randomTileID, hero);
+		
+			
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
@@ -564,11 +617,11 @@ namespace df {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
 				// TODO: add actions for button pressed in notifications
 				if (pressedButton == "Wood" || pressedButton == "Stone" ||
-					pressedButton == "Clay" || pressedButton == "Grass" || pressedButton == "Grain") {
+					pressedButton == "Clay" || pressedButton == "Wool" || pressedButton == "Grain") {
 					tradingSystem.handleOptionClicked(pressedButton);
 				}
 				if (pressedButton == "Pay ressources") {
-					gameController->payForHazard(*registry);
+					gameController->payForHazard();
 				}
 				// Quests
 				if (pressedButton == "Next Quest") {

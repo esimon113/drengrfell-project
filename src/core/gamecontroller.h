@@ -32,13 +32,13 @@ namespace df {
 		Player* getCurrentPlayer();
 		const Player* getCurrentPlayer() const;
 
-		void startTurn(Registry& registry);
-		void endTurn(Registry& registry);
+		void startTurn();
+		void endTurn();
 
-		void applyHazard(Entity hero, Registry& registry, glm::vec2 destination);
-		void updateHazards(Registry& registry);
-		void showHazards(Registry& registry);
-		void payForHazard(Registry& registry);
+		void applyHazard(Entity hero, glm::vec2 destination);
+		void updateHazards();
+		void showHazards();
+		void payForHazard();
 
 		void giveResourcesTo(Player& player);
 

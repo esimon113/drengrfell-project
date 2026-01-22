@@ -33,6 +33,6 @@ namespace df {
 		std::string selectedResource;
 
 		std::vector<std::string> allResources = {
-			"Wood", "Stone", "Clay", "Grass", "Grain", "Cancel"};
+			"Wood", "Stone", "Clay", "Wool", "Grain", "Cancel"};
 	};
 } // namespace df
