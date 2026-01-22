@@ -228,11 +228,12 @@ namespace df {
 
 		const glm::vec2& cursorCamRelative = registry->positions.get(previewEntity);
 		glm::vec2 cursorWorldPos = cam.position + cursorCamRelative;
-		const float highlightRadius = baseHighlightRadius / cam.zoom;
+		float highlightRadius = baseHighlightRadius / cam.zoom;
 		const Graph& map = gamestate->getMap();
 		const glm::vec3 highlightColor = glm::vec3(0.53f, 0.73f, 0.57f); // mint-greenish -> i liked in a game i can't remember the name of...
 
 		if (previewType == BuildingPreviewType::Settlement) {
+			highlightRadius *= 1.2f;
 			std::vector<size_t> nearbyVertices = WorldNodeMapper::findVerticesWithinRadius(cursorWorldPos, highlightRadius, map);
 
 			for (size_t vertexId : nearbyVertices) {
@@ -263,7 +264,8 @@ namespace df {
 					.setMat4("model[0]", model)
 					.setVec3("highlightColor", highlightColor)
 					.setFloat("alpha", finalAlpha)
-					.setFloat("time", time);
+					.setFloat("time", time)
+					.setFloat("pulseStrength", 1.0f);
 
 				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 			}
@@ -304,7 +306,8 @@ namespace df {
 					.setMat4("model[0]", model)
 					.setVec3("highlightColor", highlightColor)
 					.setFloat("alpha", finalAlpha)
-					.setFloat("time", time);
+					.setFloat("time", time)
+					.setFloat("pulseStrength", 1.0f);
 
 				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 			}

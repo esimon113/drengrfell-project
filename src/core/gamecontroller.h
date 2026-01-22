@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "gamestate.h"
+#include "registry.h"
 #include "road.h"
 #include "systems/questsSystem.h"
 
@@ -21,10 +22,9 @@ namespace df {
 	  public:
 		GameController() = default;
 		~GameController() = default;
-		explicit GameController(GameState& state)
-			: gameState(state), rng(std::random_device{}()) {
-				m_questsSystem = std::make_unique<QuestsSystem>();
-			};
+
+		explicit GameController(GameState& state, Registry* newRegistry)
+			: gameState(state), rng(std::random_device{}()), m_questsSystem(std::make_unique<QuestsSystem>()), registry(newRegistry) {}
 
 		GameState& getState() { return this->gameState; }
 		const GameState& getState() const { return this->gameState; }
@@ -32,15 +32,15 @@ namespace df {
 		Player* getCurrentPlayer();
 		const Player* getCurrentPlayer() const;
 
-        void startTurn(Registry& registry);
-		void endTurn(Registry& registry);
+		void startTurn();
+		void endTurn();
 
-		void applyHazard(Entity hero, Registry& registry, glm::vec2 destination);
-		void updateHazards(Registry& registry);
-		void showHazards(Registry& registry);
-		void payForHazard(Registry& registry);
+		void applyHazard(Entity hero, glm::vec2 destination);
+		void updateHazards();
+		void showHazards();
+		void payForHazard();
 
-        void giveResourcesTo(Player& player);
+		void giveResourcesTo(Player& player);
 
 		bool moveHeroToTile(size_t playerId, size_t targetTileId);
 
@@ -50,6 +50,12 @@ namespace df {
 		bool canBuildRoad(size_t playerId, size_t edgeId) const;
 		bool buildRoad(size_t playerId, size_t edgeId, RoadLevel level, const std::vector<int>& buildingCost);
 
+		bool canBuildProductivityBuilding(size_t playerId, size_t tileId, types::TileType tileType) const;
+		bool buildProductivityBuilding(size_t playerId, size_t tileId, types::TileType tileType, const std::vector<int>& buildingCost);
+
+		bool canUpgradeSettlement(size_t playerId, size_t settlementId, types::SettlementType targetType) const;
+		bool upgradeSettlement(size_t playerId, size_t settlementId, types::SettlementType targetType, const std::vector<int>& buildingCost);
+
 		QuestsSystem* getQuestsSystem() const { return m_questsSystem.get(); }
 		void claimQuestReward(int questId);
 
@@ -57,6 +63,7 @@ namespace df {
 		GameState& gameState;
 		std::mt19937 rng;
 		std::unique_ptr<QuestsSystem> m_questsSystem;
+		Registry* registry;
 
 		Player* getPlayerbyId(size_t playerId);
 		const Player* getPlayerById(size_t playerId) const;
@@ -75,6 +82,8 @@ namespace df {
 
 		const Road* findRoadById(size_t roadId) const;
 		const Settlement* findSettlementById(size_t settlementId) const;
+		const ProductivityBuilding* findProductivityBuildingById(size_t buildingId) const;
+		const ProductivityBuilding* findProductivityBuildingByTileId(size_t tileId) const;
 	};
 
 } // namespace df

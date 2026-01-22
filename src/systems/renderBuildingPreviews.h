@@ -55,6 +55,6 @@ namespace df {
 
 		// Highlight configuration
 		static constexpr float baseHighlightRadius = 1.5f; // Base radius in world units
-		static constexpr float highlightBaseAlpha = 1.0f;  // Maximum alpha for highlights
+		static constexpr float highlightBaseAlpha = 1.35f;  // Maximum alpha for highlights
 	};
 } // namespace df

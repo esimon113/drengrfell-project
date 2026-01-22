@@ -7,15 +7,18 @@
 #include <stdexcept>
 #include <unordered_set>
 
+#include "../systems/renderSnow.h"
+#include "../systems/renderTiles.h"
 #include "gamecontroller.h"
 #include "hero.h"
+#include "player.h"
 #include "renderNotification.h"
+#include "road.h"
 #include "tile.h"
+#include "tiny_ecs.hpp"
 #include "types.h"
-#include "../systems/renderTiles.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
-#include "../systems/renderSnow.h"
 
 
 
@@ -31,7 +34,7 @@ namespace df {
 	const Player* GameController::getPlayerById(size_t playerId) const { return this->gameState.getPlayer(playerId); }
 
 
-	void GameController::startTurn(Registry& registry) {
+	void GameController::startTurn() {
 		Player* player = this->getCurrentPlayer();
 		if (!player) {
 			fmt::println("Current Player does not exist!");
@@ -45,18 +48,18 @@ namespace df {
 		// TODO: For multiplayer only update hazards for current player/hero
 		if (this->gameState.getTurnCount() > 0) {
 			// Entity hero = registry.animations.entities.front();
-			showHazards(registry);
+			showHazards();
 		}
 	}
 
 
-	void GameController::endTurn(Registry& registry) {
+	void GameController::endTurn() {
 		const size_t playerCount = this->gameState.getPlayerCount();
 		if (playerCount == 0) {
 			return;
 		} // should not happen
 
-		updateHazards(registry);
+		updateHazards();
 
 		// TODO: maybe add some "setNextTurn()" etc. functions
 		size_t nextPlayerId = (this->gameState.getCurrentPlayerId() + 1) % playerCount;
@@ -64,29 +67,27 @@ namespace df {
 		this->gameState.setTurnCount(this->gameState.getTurnCount() + 1);
 
 
-		auto* snowSystem = registry.getSystem<df::RenderSnowSystem>();
+		auto* snowSystem = this->registry->getSystem<df::RenderSnowSystem>();
 		if (snowSystem) {
 			snowSystem->increaseIntensity();
-			
 		}
 
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
 		}
 
-		if(this->gameState.getTurnCount() == 10){
-			auto* tileSystem = registry.getSystem<RenderTilesSystem>();
+		if (this->gameState.getTurnCount() == 10) {
+			auto* tileSystem = this->registry->getSystem<RenderTilesSystem>();
 			if (tileSystem) {
 				tileSystem->updateTileAtlas();
-				
 			}
 		}
 	}
 
 	// This function checks if the hero encounters a hazard at the destination (in world coordinates)
-	void GameController::applyHazard(Entity hero, Registry& registry, glm::vec2 destination) {
+	void GameController::applyHazard(Entity hero, glm::vec2 destination) {
 		// Hero is already caught in a hazard
-		if (registry.hazards.has(hero)) {
+		if (this->registry->hazards.has(hero)) {
 			fmt::println("Hazard can not be applied, as hero already has hazard");
 			return;
 		}
@@ -118,25 +119,25 @@ namespace df {
 
 		const auto& def = HazardDB::getDefinition(profile.hazardType);
 
-		registry.hazards.emplace(hero) = {profile.hazardType, def.defaultRoundDuration};
+		this->registry->hazards.emplace(hero) = {profile.hazardType, def.defaultRoundDuration};
 		fmt::println("[Hazard] You encountered a {}, which will stop your movement for {} turns", def.name, def.defaultRoundDuration);
 	}
 
 	// TODO: Only update hazards for active player in multiplayer
-	void GameController::updateHazards(Registry& registry) {
-		for (Entity e : registry.hazards.entities) {
-			auto& hazard = registry.hazards.get(e);
+	void GameController::updateHazards() {
+		for (Entity e : this->registry->hazards.entities) {
+			auto& hazard = this->registry->hazards.get(e);
 			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
 
 			hazard.turnsLeft--;
 		}
 	}
 
-	void GameController::showHazards(Registry& registry) {
-		for (Entity e : registry.hazards.entities) {
-			auto& hazard = registry.hazards.get(e);
+	void GameController::showHazards() {
+		for (Entity e : this->registry->hazards.entities) {
+			auto& hazard = this->registry->hazards.get(e);
 			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
-			RenderNotificationSystem* notification = registry.getSystem<RenderNotificationSystem>();
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
 
 			if (hazard.turnsLeft <= 0) {
 				fmt::println("[Hazard] {} encounter ended", hazardDefinition.name);
@@ -145,7 +146,7 @@ namespace df {
 												   "Your encounter with the {} ended",
 												   hazardDefinition.name),
 											   {"Continue"});
-				registry.hazards.remove(e);
+				this->registry->hazards.remove(e);
 			} else if (hazard.turnsLeft == hazardDefinition.defaultRoundDuration) {
 				fmt::println("[Hazard] {} encountered. It is active for {} turns", hazardDefinition.name, hazard.turnsLeft);
 				notification->showNotification("You encountered a hazard",
@@ -174,11 +175,11 @@ namespace df {
 		}
 	}
 
-	void GameController::payForHazard(Registry& registry) {
-		for (Entity e : registry.hazards.entities) {
-			auto& hazard = registry.hazards.get(e);
+	void GameController::payForHazard() {
+		for (Entity e : this->registry->hazards.entities) {
+			auto& hazard = this->registry->hazards.get(e);
 			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
-			RenderNotificationSystem* notification = registry.getSystem<RenderNotificationSystem>();
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
 
 			Player* player = this->getCurrentPlayer();
 
@@ -193,7 +194,7 @@ namespace df {
 				return;
 			}
 			player->removeResources(hazardDefinition.skipRessource, hazard.turnsLeft * hazardDefinition.skipCost);
-			registry.hazards.remove(e);
+			this->registry->hazards.remove(e);
 		}
 	}
 
@@ -213,11 +214,39 @@ namespace df {
 				const TileHandle tile = this->gameState.getMap().getTile(tileId);
 				fmt::println("Get TileId {}, tile has type {} and potency {}", tileId, std::string(types::tileTypeToString(tile->getType())), types::potencyToString(tile->getPotency()));
 				if (tile->givesResourceThisTurn(this->rng)) {
-					player.addResources(tile->getType(), 1); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
+					int resourceAmount = 1;
+					if (tile->hasBuilding() && tile->getBuildingId().has_value()) {
+						if (tile->getBuildingId().value() == player.getId()) {
+							resourceAmount = 2;
+						}
+					}
+					player.addResources(tile->getType(), resourceAmount); // TODO: make amount configurable -> i.e. in settlers of catan a town gives 2 resources
 
-					//std::string type = types::tileTypeToString(tile->getType());
-					//std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
+					// std::string type = types::tileTypeToString(tile->getType());
+					// std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
 					auto goalType = types::tileToQuestGoal(tile->getType());
+					if (goalType != types::QuestGoalType::NONE) {
+						this->m_questsSystem->updateProgress(goalType, 1);
+					}
+				}
+			}
+		}
+
+		// Also grant resources from the tile the hero is currently on.
+		if (this->registry && !this->registry->animations.entities.empty()) {
+			Entity hero = this->registry->animations.entities.front();
+			if (this->registry->tileID.has(hero)) {
+				const size_t heroTileId = this->registry->tileID.get(hero);
+				const TileHandle heroTile = this->gameState.getMap().getTile(heroTileId);
+				if (heroTile && heroTile->givesResourceThisTurn(this->rng)) {
+					int resourceAmount = 1;
+					if (heroTile->hasBuilding() && heroTile->getBuildingId().has_value()) {
+						if (heroTile->getBuildingId().value() == player.getId()) {
+							resourceAmount = 2;
+						}
+					}
+					player.addResources(heroTile->getType(), resourceAmount);
+					auto goalType = types::tileToQuestGoal(heroTile->getType());
 					if (goalType != types::QuestGoalType::NONE) {
 						this->m_questsSystem->updateProgress(goalType, 1);
 					}
@@ -303,7 +332,6 @@ namespace df {
 		(void)playerId; // unused for now - simplified building rules
 		const Graph& map = this->gameState.getMap();
 		try {
-			fmt::println("[GameController] canBuildSettlement: checking vertex {}", vertexId);
 			// Find vertex by ID (not index)
 			VertexHandle vertex = map.findVertexById(vertexId);
 			if (!vertex) {
@@ -322,11 +350,105 @@ namespace df {
 				fmt::println("[GameController] canBuildSettlement: neighbour settlement detected for vertex {}", vertexId);
 				return false;
 			}
-			fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
-			return true;
-		} catch (const std::exception&) {
+
+			// Make sure that the vertex is not surrounded by water -> TODO: make this check more robust
+			const auto vertexTiles = map.getVertexTiles(vertex);
+			if (!vertexTiles) {
+				return false;
+			}
+			bool hasNonWaterTile = false;
+			for (const auto& t : *vertexTiles) {
+				if (t && t->getType() != types::TileType::WATER) {
+					hasNonWaterTile = true;
+					break;
+				}
+			}
+			if (!hasNonWaterTile) { // no non-water tile
+				return false;
+			}
+
+			// check if EITHER vertex is adjacent to hero-tile, OR adjacent to road of current player
+			// const auto player = gameState.getPlayer(playerId);
+			// if (!player) {
+			// 	fmt::println("No player with id {}", playerId);
+			// 	return false;
+			// }
+
+			const auto vertexEdges = map.getVertexEdges(vertex);
+			if (!vertexEdges) {
+				fmt::println("No vertex with id {}", vertexId);
+				return false;
+			}
+
+
+			if (!registry || registry->animations.entities.empty()) {
+				fmt::println("[GameController] canBuildSettlement: no hero animation entity found");
+				return false;
+			}
+
+			Entity hero = this->registry->animations.entities.front();
+			if (!registry->tileID.has(hero)) {
+				fmt::println("No hero found.");
+				return false;
+			}
+			auto heroTileId = this->registry->tileID.get(hero);
+			fmt::println("[GameController] Hero tile id {}", heroTileId);
+			fmt::println("[GameController] Check Hero tile {}", heroTileId);
+			for (const auto& t : *vertexTiles) {
+				if (t && t->getId() == heroTileId) { // vertex is adjacent to hero tile
+					fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
+					return true; // player can always build a settlement adjacent to hero-tile
+				}
+			}
+
+			// // Use hero of player:
+			// const auto hero = player->getHero();
+			// if (!hero) {
+			// 	fmt::println("No hero for player with id {}", playerId);
+			// } else {
+			// 	const auto tileId = hero->getTileID();
+			// 	fmt::println("[GameController] canBuildSettlement: hero tile ID: {}", tileId);
+			// 	const auto tile = map.getTile(tileId);
+			// 	if (tile) {
+			// 		const auto tileVertices = map.getTileVertices(tile);
+			// 		if (tileVertices) {
+			// 			for (const auto& v : *tileVertices) {
+			// 				if (v && v->getId() == vertexId) { // vertex is adjacent to hero tile
+			// 					fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
+			// 					return true; // player can always build a settlement adjacent to hero-tile
+			// 				}
+			// 			}
+			// 		}
+			// 	}
+			// }
+
+			const auto roads = gameState.getRoads();
+
+			for (const auto& e : *vertexEdges) {
+				if (!e) {
+					continue;
+				}
+				const auto localRoadId = e->getRoadId();
+				if (!localRoadId) {
+					continue;
+				}
+
+				auto it = std::find_if(roads.begin(), roads.end(), [localRoadId](const auto& r) {
+					return r->getId() == localRoadId; // && r->getPlayerId() == playerId;
+				});
+
+				if (it != roads.end()) {
+					fmt::println("[GameController] canBuildSettlement: vertex {} is a valid placement", vertexId);
+					return true;
+				}
+			}
+
+			fmt::println("[GameController] canBuildSettlement: vertex {} not adjacent to hero and no connected road", vertexId);
 			return false;
+		} catch (const std::exception& e) {
+			fmt::println("Error in settlement building validation: {}", e.what());
 		}
+		return false;
 	}
 
 
@@ -342,6 +464,8 @@ namespace df {
 			return false;
 		}
 		if (!this->hasEnoughResources(*player, buildingCost)) {
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
 			fmt::println("[GameController] buildSettlement failed: player {} does not have enough resources", playerId);
 			return false;
 		}
@@ -408,76 +532,75 @@ namespace df {
 
 	// TODO: validate this in edge class
 	bool GameController::canBuildRoad(size_t playerId, size_t edgeId) const {
-		(void)playerId; // unused for now - simplified building rules
 		const Graph& map = this->gameState.getMap();
 
 		try {
 			// Find edge by ID (not index)
 			EdgeHandle edge = map.findEdgeById(edgeId);
 			if (!edge) {
+				fmt::println("No edge with id {}", edgeId);
 				return false;
 			}
 
 			// Only check if edge already has a road
 			if (edge->hasRoad()) {
+				fmt::println("Edge already has a road", edgeId);
 				return false;
 			}
 
-			// CRITICAL FIX: Check ALL edges that share the same physical location (same two vertices)
-			// This prevents building multiple roads on the same physical edge due to duplicate edge IDs
-			// This is a safeguard check - if it fails for any reason, we still allow building
-			try {
-				const auto verticesOpt = map.getEdgeVertices(edge);
-				if (verticesOpt) {
-					// Get the two vertex IDs that this edge connects
-					std::unordered_set<size_t> edgeVertexIds;
-					for (const auto& vertex : *verticesOpt) {
-						if (vertex && vertex->getId() != SIZE_MAX) {
-							edgeVertexIds.insert(vertex->getId());
-						}
-					}
+			// roads can only be build if:
+			// 1. they are adjacent to a settlement of the current player
+			// 2. they are adjacent to a road of the current player
 
-					// Only check for duplicates if this edge connects exactly two valid vertices (shared edge)
-					// If it doesn't have 2 vertices, we skip the duplicate check and allow building
-					if (edgeVertexIds.size() == 2) {
-						// Only check edges that already have roads (optimization and safety)
-						// This allows the first road to be built without any checks
-						for (size_t i = 0; i < map.getEdgeCount(); ++i) {
-							EdgeHandle otherEdge = map.getEdge(i);
-							if (!otherEdge || otherEdge->getId() == edgeId || !otherEdge->hasRoad()) {
-								continue; // Skip if no road - no conflict possible
-							}
-
-							const auto otherVerticesOpt = map.getEdgeVertices(otherEdge);
-							if (!otherVerticesOpt)
-								continue;
-
-							// Check if this edge connects the same two vertices
-							std::unordered_set<size_t> otherVertexIds;
-							for (const auto& vertex : *otherVerticesOpt) {
-								if (vertex && vertex->getId() != SIZE_MAX) {
-									otherVertexIds.insert(vertex->getId());
-								}
-							}
-
-							// If the vertex sets match exactly (same two vertices), they're at the same physical location
-							if (otherVertexIds.size() == 2 && edgeVertexIds == otherVertexIds) {
-								fmt::println("[GameController] canBuildRoad: edge {} connects same vertices as edge {} which has a road",
-											 edgeId, otherEdge->getId());
-								return false; // Another edge at the same location already has a road
-							}
-						}
-					}
-					// If edgeVertexIds.size() != 2, we skip the duplicate check and allow building
-				}
-				// If verticesOpt is nullopt, we also allow building (edge case)
-			} catch (const std::exception& e) {
-				// If the duplicate check fails for any reason, we still allow building
-				// This is a safeguard check and shouldn't block legitimate road building
-				fmt::println("[GameController] canBuildRoad: duplicate check failed for edge {}: {}, allowing building", edgeId, e.what());
+			const auto edgeVertices = map.getEdgeVertices(edge);
+			if (!edgeVertices) {
+				fmt::println("No vertices for edge");
+				return false;
 			}
 
-			return true;
+			const auto settlements = this->gameState.getSettlements();
+			const auto roads = this->gameState.getRoads();
+			for (const auto& v : *edgeVertices) {
+				if (!v) {
+					continue;
+				}
+				// check for adjacent player settlements:
+				if (const auto sid = v->getSettlementId(); sid) {
+					const auto it = std::find_if(settlements.begin(), settlements.end(), [&](const auto& s) {
+						return s->getId() == sid && s->getPlayerId() == playerId;
+					});
+
+					if (it != settlements.end()) {
+						return true;
+					}
+				}
+
+				// check for adjacent roads
+				const auto vertexEdges = map.getVertexEdges(v);
+				if (!vertexEdges) {
+					fmt::println("No edges for vertex");
+					return false;
+				}
+
+				for (const auto& neighbourEdge : *vertexEdges) {
+					if (!neighbourEdge) {
+						continue;
+					}
+					if (neighbourEdge->getId() == edgeId) {
+						continue; // ignore self
+					}
+
+					const auto it = std::find_if(roads.begin(), roads.end(), [playerId, neighbourEdge](const auto& r) {
+						return r->getEdgeId() == neighbourEdge->getId() && r->getPlayerId() == playerId;
+					});
+
+					if (it != roads.end()) {
+						return true;
+					}
+				}
+			}
+
+			return false;
 		} catch (const std::exception&) {
 			return false;
 		}
@@ -497,6 +620,8 @@ namespace df {
 		}
 
 		if (!this->hasEnoughResources(*player, buildingCost)) {
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
 			fmt::println("[GameController] buildRoad failed: player {} does not have enough resources", playerId);
 			return false;
 		}
@@ -605,6 +730,132 @@ namespace df {
 			fmt::println("[GameController] buildRoad failed: exception - {}", e.what());
 			return false;
 		}
+	}
+
+	bool GameController::canBuildProductivityBuilding(size_t playerId, size_t tileId, types::TileType tileType) const {
+		const Graph& map = this->gameState.getMap();
+		const TileHandle tile = map.getTile(tileId);
+		if (!tile) {
+			return false;
+		}
+
+		if (tile->hasBuilding()) {
+			return false;
+		}
+
+		if (tile->getType() != tileType) {
+			return false;
+		}
+
+		const auto settlements = this->gameState.getSettlements();
+		for (const auto& settlement : settlements) {
+			if (!settlement || settlement->getPlayerId() != playerId) {
+				continue;
+			}
+			const auto adjacentTiles = this->getSettlementTiles(*settlement);
+			if (std::find(adjacentTiles.begin(), adjacentTiles.end(), tileId) != adjacentTiles.end()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool GameController::buildProductivityBuilding(size_t playerId, size_t tileId, types::TileType tileType, const std::vector<int>& buildingCost) {
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player) {
+			fmt::println("[GameController] buildProductivityBuilding failed: player {} not found", playerId);
+			return false;
+		}
+		if (!this->hasEnoughResources(*player, buildingCost)) {
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
+			return false;
+		}
+		if (!this->canBuildProductivityBuilding(playerId, tileId, tileType)) {
+			return false;
+		}
+
+		Graph& map = this->gameState.getMap();
+		TileHandle tile = map.getTile(tileId);
+		if (!tile || tile->hasBuilding()) {
+			return false;
+		}
+
+		size_t newBuildingId = 0;
+		const auto& existingBuildings = this->gameState.getProductivityBuildings();
+		if (!existingBuildings.empty()) {
+			size_t maxId = 0;
+			for (const auto& building : existingBuildings) {
+				if (building && building->getId() > maxId) {
+					maxId = building->getId();
+				}
+			}
+			newBuildingId = maxId + 1;
+		}
+
+		auto newBuilding = std::make_shared<ProductivityBuilding>(newBuildingId, playerId, tileId);
+		tile->setBuildingId(playerId);
+		this->gameState.addProductivityBuilding(newBuilding);
+		player->addProductivityBuilding(newBuildingId);
+		this->chargeResourceCost(*player, buildingCost);
+
+		return true;
+	}
+
+	bool GameController::canUpgradeSettlement(size_t playerId, size_t settlementId, types::SettlementType targetType) const {
+		const Settlement* settlement = this->findSettlementById(settlementId);
+		if (!settlement || settlement->getPlayerId() != playerId) {
+			return false;
+		}
+
+		const types::SettlementType currentType = settlement->getSettlementType();
+		if (targetType == types::SettlementType::STONE && currentType != types::SettlementType::WOOD) {
+			return false;
+		}
+		if (targetType == types::SettlementType::CASTLE && currentType != types::SettlementType::STONE) {
+			return false;
+		}
+
+		return true;
+	}
+
+	bool GameController::upgradeSettlement(size_t playerId, size_t settlementId, types::SettlementType targetType, const std::vector<int>& buildingCost) {
+		if (!canUpgradeSettlement(playerId, settlementId, targetType)) {
+			return false;
+		}
+
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player) {
+			return false;
+		}
+		if (!this->hasEnoughResources(*player, buildingCost)) {
+			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
+			return false;
+		}
+
+		const auto settlements = this->gameState.getSettlements();
+		for (const auto& settlement : settlements) {
+			if (settlement && settlement->getId() == settlementId) {
+				settlement->setSettlementType(targetType);
+				break;
+			}
+		}
+
+		for (Entity e : this->registry->settlements.entities) {
+			if (!this->registry->settlements.has(e)) {
+				continue;
+			}
+			Settlement& registrySettlement = this->registry->settlements.get(e);
+			if (registrySettlement.getId() == settlementId) {
+				registrySettlement.setSettlementType(targetType);
+				break;
+			}
+		}
+
+		this->chargeResourceCost(*player, buildingCost);
+		return true;
 	}
 
 
@@ -819,6 +1070,30 @@ namespace df {
 		for (const auto& settlement : settlements) {
 			if (settlement && settlement->getId() == settlementId) {
 				return settlement.get();
+			}
+		}
+
+		return nullptr;
+	}
+
+	const ProductivityBuilding* GameController::findProductivityBuildingById(size_t buildingId) const {
+		const auto& buildings = this->gameState.getProductivityBuildings();
+
+		for (const auto& building : buildings) {
+			if (building && building->getId() == buildingId) {
+				return building.get();
+			}
+		}
+
+		return nullptr;
+	}
+
+	const ProductivityBuilding* GameController::findProductivityBuildingByTileId(size_t tileId) const {
+		const auto& buildings = this->gameState.getProductivityBuildings();
+
+		for (const auto& building : buildings) {
+			if (building && building->getTileId() == tileId) {
+				return building.get();
 			}
 		}
 

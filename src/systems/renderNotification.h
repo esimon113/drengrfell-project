@@ -21,6 +21,8 @@ namespace df {
 
 		// Returns pressed button text or empty string
 		std::string onMouseButton(glm::vec2 mouse, int button, int action) noexcept;
+		bool isActive() const noexcept { return active; }
+		void close() noexcept { active = false; }
 		void onResizeCallback(GLFWwindow*, int width, int height) noexcept;
 		void renderBox(glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept;
 
@@ -47,7 +49,7 @@ namespace df {
 		std::string message;
 		std::vector<Button> buttons;
 		std::vector<std::string> buttonTexts;
-		bool isActive = false;
+		bool active = false;
 
 		glm::vec2 boxPos{};
 		glm::vec2 boxSize{};

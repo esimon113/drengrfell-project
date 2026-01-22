@@ -39,7 +39,7 @@ namespace df {
 	}
 
 	void RenderNotificationSystem::reset() noexcept {
-		isActive = false;
+		active = false;
 		title.clear();
 		message.clear();
 		buttons.clear();
@@ -122,11 +122,11 @@ namespace df {
 			buttonX += btn.w + paddingX;	// add current width for next button
 		}
 		// set visible
-		isActive = true;
+		active = true;
 	}
 
 	void RenderNotificationSystem::step(float /*dt*/) noexcept {
-		if (!isActive)
+		if (!active)
 			return;
 
 		auto* textSystem = registry->getSystem<RenderTextSystem>();
@@ -169,14 +169,14 @@ namespace df {
 
 	std::string RenderNotificationSystem::onMouseButton(glm::vec2 mouse, int button, int action) noexcept {
 		// if nothing to show or not klicked the left mouse button return empty string
-		if (!isActive || button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS)
+		if (!active || button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS)
 			return "";
 
 		// check if any button pressed
 		for (Button& btn : buttons) {
 			if (mouse.x >= btn.x && mouse.x <= btn.x + btn.w &&
 				mouse.y >= btn.y && mouse.y <= btn.y + btn.h) {
-				isActive = false;
+				active = false;
 				return btn.text;
 			}
 		}
@@ -189,7 +189,7 @@ namespace df {
 			static_cast<uint32_t>(height)};
 
 		// redraw the notification with given width/height
-		if (isActive) {
+		if (active) {
 			showNotification(title, message, buttonTexts);
 		}
 	}

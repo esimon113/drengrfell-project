@@ -78,6 +78,15 @@ namespace df {
 		}
 		j["roads"] = roadsJson;
 
+	// productivity buildings
+	json productivityBuildingsJson = json::array();
+	for (const auto& building : this->productivityBuildings) {
+		if (building) {
+			productivityBuildingsJson.push_back(building->serialize());
+		}
+	}
+	j["productivityBuildings"] = productivityBuildingsJson;
+
 		// turns
 		j["currentPlayerId"] = this->currentPlayerId;
 		j["turnCount"] = this->turnCount;
@@ -132,6 +141,15 @@ namespace df {
 				this->addRoad(road);
 			}
 		}
+
+	// productivity buildings
+	if (j.contains("productivityBuildings") && j["productivityBuildings"].is_array()) {
+		for (const auto& buildingJson : j["productivityBuildings"]) {
+			auto building = std::make_shared<ProductivityBuilding>();
+			building->deserialize(buildingJson);
+			this->addProductivityBuilding(building);
+		}
+	}
 
 		// turns
 		if (j.contains("currentPlayerId")) {
@@ -229,6 +247,31 @@ namespace df {
 	std::vector<std::shared_ptr<Road>> GameState::getRoads() {
 		return roads;
 	}
+
+std::vector<std::shared_ptr<ProductivityBuilding>> GameState::getProductivityBuildings() {
+	return productivityBuildings;
+}
+
+void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> building) {
+	if (!building || !registry) {
+		return;
+	}
+
+	Entity e;
+	ProductivityBuilding& pb = registry->productivityBuildings.emplace(e);
+	pb = *building;
+
+	const uint32_t columns = map.getMapWidth();
+	const size_t tileId = building->getTileId();
+	uint32_t row = static_cast<uint32_t>(tileId / columns);
+	uint32_t col = static_cast<uint32_t>(tileId % columns);
+	glm::vec2 tileCenterPos = WorldNodeMapper::getTilePosition(row, col);
+
+	registry->positions.emplace(e) = tileCenterPos;
+	registry->scales.emplace(e) = glm::vec2(0.4f, 0.4f);
+
+	productivityBuildings.push_back(building);
+}
 
 
 	// TODO: balance costs + make costs scale with total available resources
