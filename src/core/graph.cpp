@@ -760,7 +760,6 @@ namespace df {
 		return reachableNodes;
 	}
 
-
 	// Get the distance between two nodes (of same type) using basic BFS implementaiton
 	template <HasIdProperty T>
 	size_t Graph::getDistanceBetween(const T& start, const T& end) const {
