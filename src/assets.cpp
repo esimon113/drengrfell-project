@@ -100,6 +100,8 @@ namespace df {
 		"hero/run/run_4.png",
 		"hero/run/run_5.png",
 
+		"ressources/tmp_wood_frame.png",
+
 		"settlements/castle/castle-sprites1.png",
 		"settlements/castle/castle-sprites2.png",
 		"settlements/castle/castle-sprites3.png",

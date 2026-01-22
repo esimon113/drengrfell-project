@@ -89,6 +89,9 @@ namespace df {
 			HERO_RUN_3,
 			HERO_RUN_4,
 			HERO_RUN_5,
+
+			// Hud ressources
+			RESSOURCE_WOOD,
 			
 			CASTLE1,
 			CASTLE2,
