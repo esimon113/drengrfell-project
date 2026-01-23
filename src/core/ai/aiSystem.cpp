@@ -1,5 +1,7 @@
 #include "aiSystem.h"
 
+#include "fmt/color.h"
+
 namespace df {
 	AiSystem::AiSystem() {
 		loadBehaviorTrees();
@@ -9,8 +11,15 @@ namespace df {
 		this->commands.registerCommand(
 			"print",
 			[](Agent, const CommandRegistry::Args &a) {
-				std::cout << std::get<std::string>(a.at("text")) << std::endl;
+				std::cout << CommandRegistry::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
 				return BTState::Success;
+			}
+		);
+		this->commands.registerCommand(
+			"error",
+			[](Agent, const CommandRegistry::Args &a) {
+				std::cerr << CommandRegistry::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
+				return BTState::Failed;
 			}
 		);
 		this->commandsLoaded = true;

@@ -17,6 +17,17 @@ namespace df {
 		void registerCommand(const std::string& name, const Command& command);
 		bool hasCommand(const std::string& name) const;
 		Command getCommand(const std::string& name) const;
+
+		// Function for safe keyword argument lookup
+		template<typename T>
+		static T getArg(const Args& args, const std::string& key, T defaultValue) {
+			if (auto iterator = args.find(key); iterator != args.end()) {
+				if (std::holds_alternative<T>(iterator->second)) {
+					return std::get<T>(iterator->second);
+				}
+			}
+			return defaultValue;
+		}
 	private:
 		std::unordered_map<std::string, Command> commands{};
 	};
