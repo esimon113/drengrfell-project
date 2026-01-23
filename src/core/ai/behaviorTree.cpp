@@ -11,13 +11,13 @@ using json = nlohmann::json;
 namespace df {
 	std::shared_ptr<BTNode> BTNode::deserialize(const json &j, const CommandRegistry& c) {
 		std::string kind = j.value("kind", "");
-		if (kind == "sequence") {
+		if (kind == "sequence" || kind == "and") {
 			auto ptr = std::make_shared<BTSequence>();
 			if (ptr->deserializeInplace(j, c)) return ptr;
-		} else if (kind == "selector") {
+		} else if (kind == "selector" || kind == "or") {
 			auto ptr = std::make_shared<BTSelector>();
 			if (ptr->deserializeInplace(j, c)) return ptr;
-		} else if (kind == "inverter") {
+		} else if (kind == "inverter" || kind == "not") {
 			auto ptr = std::make_shared<BTInverter>();
 			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "succeeder") {

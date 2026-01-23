@@ -1,7 +1,19 @@
 {
-	"kind": "function",
-	"name": "error",
-	"args": {
-		"texts": "Hello, Germany!"
-	}
+	"kind": "and",
+	"children": [
+		{
+			"kind": "function",
+			"name": "error",
+			"args": {
+				"text": "Hello, Germany!"
+			}
+		},
+		{
+			"kind": "function",
+			"name": "print",
+			"args": {
+				"text": "Hello, France!"
+			}
+		}
+	]
 }
