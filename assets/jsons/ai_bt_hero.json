@@ -1,4 +1,7 @@
 {
 	"kind": "function",
-	"name": "print_hello"
+	"name": "print",
+	"args": {
+		"text": "Hello, Germany!"
+	}
 }

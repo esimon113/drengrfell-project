@@ -3,6 +3,7 @@
 #include <utility>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <variant>
 
 #include "assets.h"
 #include "resultError.h"
@@ -134,7 +135,10 @@ namespace df {
 
 	class BTFunction final : public BTNode {
 	public:
-		using Function = std::function<BTState(Agent)>;
+		using JsonType = std::variant<std::string, double, bool>;
+		using Args = std::unordered_map<std::string, JsonType>;
+		using Function = std::function<BTState(Agent, Args)>;
+
 		BTFunction() = default;
 		explicit BTFunction(std::string name, const CommandRegistry& commandRegistry);
 		void init(Agent) override;
@@ -143,6 +147,7 @@ namespace df {
 		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
 		std::string name = "success";
-		Function fn = [](Agent){ return BTState::Success; };
+		Args args{};
+		Function fn = [](Agent, const Args&){ return BTState::Success; };
 	};
 }
