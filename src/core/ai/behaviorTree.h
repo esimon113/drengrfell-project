@@ -3,7 +3,11 @@
 #include <utility>
 #include <nlohmann/json.hpp>
 
+#include "assets.h"
+#include "resultError.h"
+
 namespace df {
+	class CommandRegistry;
 	/* Assumptions:
 	 * - The players are the only actors needing an AI
 	 * - The game is round-based
@@ -25,8 +29,9 @@ namespace df {
 		virtual void init(Agent) {};
 		virtual BTState process(Agent) = 0;
 		virtual nlohmann::json serialize() const = 0;
-		static std::shared_ptr<BTNode> deserialize(const nlohmann::json&);
-		virtual bool deserializeInplace(const nlohmann::json&) = 0;
+		static std::shared_ptr<BTNode> deserialize(const nlohmann::json&, const CommandRegistry&);
+		virtual bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) = 0;
+		static Result<std::shared_ptr<BTNode>, ResultError> deserialize(const CommandRegistry&, assets::JsonFile asset = assets::JsonFile::WORLD_GENERATION_CONFIGURATION);
 	};
 
 
@@ -37,7 +42,7 @@ namespace df {
 		void init(Agent) override;
 		BTState process(Agent) override;
 		nlohmann::json serialize() const override;
-		bool deserializeInplace(const nlohmann::json&) override;
+		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
 		std::vector<std::shared_ptr<BTNode>> children;
 		std::map<Agent, unsigned> currentChildIndex;
@@ -51,7 +56,7 @@ namespace df {
 		void init(Agent) override;
 		BTState process(Agent) override;
 		nlohmann::json serialize() const override;
-		bool deserializeInplace(const nlohmann::json&) override;
+		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
 		std::vector<std::shared_ptr<BTNode>> children;
 		std::map<Agent, unsigned> currentChildIndex;
@@ -65,7 +70,7 @@ namespace df {
 		void init(Agent) override;
 		BTState process(Agent) override;
 		nlohmann::json serialize() const override;
-		bool deserializeInplace(const nlohmann::json&) override;
+		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
 		std::shared_ptr<BTNode> child;
 	};
@@ -78,7 +83,7 @@ namespace df {
 		void init(Agent) override;
 		BTState process(Agent) override;
 		nlohmann::json serialize() const override;
-		bool deserializeInplace(const nlohmann::json&) override;
+		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
 		std::shared_ptr<BTNode> child;
 	};
@@ -91,7 +96,7 @@ namespace df {
 		void init(Agent) override;
 		BTState process(Agent) override;
 		nlohmann::json serialize() const override;
-		bool deserializeInplace(const nlohmann::json&) override;
+		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
 		std::shared_ptr<BTNode> child;
 	};
@@ -104,7 +109,7 @@ namespace df {
 		void init(Agent) override;
 		BTState process(Agent) override;
 		nlohmann::json serialize() const override;
-		bool deserializeInplace(const nlohmann::json&) override;
+		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
 		std::shared_ptr<BTNode> child;
 		unsigned times = 1;
@@ -116,11 +121,11 @@ namespace df {
 	public:
 		using Function = std::function<BTState(Agent)>;
 		BTFunction() = default;
-		explicit BTFunction(std::string name);
+		explicit BTFunction(std::string name, const CommandRegistry& commandRegistry);
 		void init(Agent) override;
 		BTState process(Agent) override;
 		nlohmann::json serialize() const override;
-		bool deserializeInplace(const nlohmann::json&) override;
+		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
 		std::string name = "success";
 		Function fn = [](Agent){ return BTState::Success; };
