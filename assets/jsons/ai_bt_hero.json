@@ -1,7 +1,7 @@
 {
 	"kind": "function",
-	"name": "print",
+	"name": "error",
 	"args": {
-		"text": "Hello, Germany!"
+		"texts": "Hello, Germany!"
 	}
 }
