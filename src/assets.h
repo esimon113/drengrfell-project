@@ -89,7 +89,7 @@ namespace df {
 			HERO_RUN_3,
 			HERO_RUN_4,
 			HERO_RUN_5,
-			
+
 			CASTLE1,
 			CASTLE2,
 			CASTLE3,
@@ -110,6 +110,7 @@ namespace df {
 
 		enum struct JsonFile {
 			WORLD_GENERATION_CONFIGURATION,
+			AI_BEHAVIOR_TREE_HERO,
 			COUNT,
 		};
 
