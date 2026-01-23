@@ -4,6 +4,7 @@
 
 #include "behaviorTree.h"
 #include "commandRegistry.h"
+#include "jsonUtils.h"
 
 using json = nlohmann::json;
 
@@ -290,13 +291,14 @@ namespace df {
 	void BTFunction::init(const Agent) {}
 
 	BTState BTFunction::process(const Agent a) {
-		return fn(a);
+		return this->fn(a, this->args);
 	}
 
 	nlohmann::json BTFunction::serialize() const {
 		return {
 				{"kind", "function"},
-				{"name", name}
+				{"name", this->name},
+				{"args", args}
 		};
 	}
 
@@ -304,6 +306,7 @@ namespace df {
 		this->name = j.value("name", "");
 		if (!commandRegistry.hasCommand(this->name)) return false;
 		this->fn = commandRegistry.getCommand(this->name);
+		this->args = j.value("args", this->args);
 		return true;
 	}
 }

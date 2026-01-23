@@ -10,10 +10,17 @@ namespace df {
 
 		/*void step(float dt) noexcept;*/
 
-		void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+		void loadCommands();
+		Result<void, ResultError> loadBehaviorTrees();
+
+		void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+		CommandRegistry& getCommandRegistry() { return commands; };
 
 	private:
 		CommandRegistry commands{};
+		bool commandsLoaded{false};
+
 		std::shared_ptr<BTNode> btRoot{};
 	};
 }
