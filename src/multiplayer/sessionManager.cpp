@@ -9,6 +9,22 @@
 #include <fmt/core.h>
 
 
+namespace {
+	/**
+	 * Convert bifrost::RoadLevel to df::RoadLevel for GameController.
+	 */
+	df::RoadLevel toGameRoadLevel(df::bifrost::RoadLevel level) {
+		switch (level) {
+			case df::bifrost::RoadLevel::Path: return df::RoadLevel::Path;
+			case df::bifrost::RoadLevel::DirtRoad: return df::RoadLevel::DirtRoad;
+			case df::bifrost::RoadLevel::StoneRoad: return df::RoadLevel::StoneRoad;
+			case df::bifrost::RoadLevel::HighQualityRoad: return df::RoadLevel::HighQualityRoad;
+		}
+		return df::RoadLevel::Path;
+	}
+}  // anonymous namespace
+
+
 namespace df::bifrost {
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -391,6 +407,13 @@ SessionManager::MessageResult SessionManager::processMessage(int socket, const M
 			break;
 		}
 
+		case MessageType::LEAVE_REQUEST: {
+			// Client is leaving - Asgard will handle the actual removal
+			result.response = createActionResult(msg.seq, true);
+			result.broadcastLobby = true;
+			break;
+		}
+
 		default:
 			result.response = createErrorMessage(msg.seq, ErrorCode::INVALID_MESSAGE,
 				"Unknown or unsupported message type");
@@ -604,8 +627,8 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::buildRoad(int socket, 
 	// Get costs from server config
 	auto costs = buildingCosts_.getRoadCostVector(level);
 
-	// Try to build
-	bool success = gameController_->buildRoad(playerId, edgeId, level, costs);
+	// Try to build (convert bifrost::RoadLevel to df::RoadLevel)
+	bool success = gameController_->buildRoad(playerId, edgeId, toGameRoadLevel(level), costs);
 
 	if (!success) {
 		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "Not enough resources"}};
@@ -795,7 +818,7 @@ void SessionManager::initializeGame() {
 	createPlayers();
 
 	// Initialize game controller
-	gameController_ = std::make_unique<GameController>(*gameState_);
+	gameController_ = std::make_unique<GameController>(*gameState_, registry_.get());
 
 	// Set initial game phase
 	gameState_->setPhase(types::GamePhase::PLAY);

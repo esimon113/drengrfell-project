@@ -56,6 +56,7 @@ namespace df::bifrost {
 
 
 	void Asgard::setInitialConfig(const LobbyConfig& config) {
+		(void)config;
 		// Update config through session's internal mechanism
 		// This is a bit of a workaround since we're setting initial config
 		// before any client connects

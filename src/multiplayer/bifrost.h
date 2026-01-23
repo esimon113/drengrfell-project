@@ -28,6 +28,7 @@
 // Forward declarations to avoid heavy dependencies
 // These are lightweight includes that don't pull in OpenGL
 #include "../core/types.h"
+#include "../core/worldGeneratorConfig.h"
 
 
 namespace df::bifrost {
@@ -181,6 +182,21 @@ namespace df::bifrost {
 
 		[[nodiscard]] nlohmann::json serialize() const;
 		static LobbyConfig deserialize(const nlohmann::json& j);
+
+		/**
+		 * Convert to WorldGeneratorConfig for game initialization.
+		 */
+		[[nodiscard]] df::WorldGeneratorConfig toWorldGeneratorConfig() const {
+			df::WorldGeneratorConfig wgc;
+			wgc.version = version;
+			wgc.columns = columns;
+			wgc.rows = rows;
+			wgc.generationMode = (generationMode == GenerationMode::INSULAR)
+				? df::WorldGeneratorConfig::GenerationMode::INSULAR
+				: df::WorldGeneratorConfig::GenerationMode::PERLIN;
+			wgc.seed = seed;
+			return wgc;
+		}
 	};
 
 

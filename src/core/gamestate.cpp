@@ -54,9 +54,8 @@ namespace df {
 
 		// players
 		json playersJson = json::array();
-		for (const auto& player : this->players) { // TODO
-			// playersJson.push_back(player.serialize());
-			playersJson.push_back(player.getId());
+		for (const auto& player : this->players) {
+			playersJson.push_back(player.serialize());
 		}
 		j["players"] = playersJson;
 
@@ -113,13 +112,8 @@ namespace df {
 		// players
 		if (j.contains("players") && j["players"].is_array()) {
 			for (const auto& playerJson : j["players"]) {
-				size_t playerId = 0;
-				if (playerJson.contains("id") && playerJson["id"].is_number()) {
-					playerId = playerJson["id"].get<size_t>();
-				}
-
-				Player player(playerId); // TODO
-				// player.deserialize(playerJson);
+				Player player;
+				player.deserialize(playerJson);
 				this->players.push_back(player);
 			}
 		}

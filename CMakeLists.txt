@@ -17,47 +17,46 @@ endif()
 
 # Fetch some basic dependencies for creating windows (glfw), vector math (glm),
 # audio (miniaudio) and loading OpenGL profiles (gl3w)
-# FetchContent_Declare(
-# 	glfw # Licensed under Zlib
-# 	GIT_REPOSITORY https://github.com/glfw/glfw.git
-# 	GIT_TAG 3.4
-# 	GIT_SHALLOW TRUE
-# 	GIT_PROGRESS TRUE
-# 	EXCLUDE_FROM_ALL
-# )
-# FetchContent_Declare(
-# 	glm # Licensed under MIT (or the Happy Bunny License [modified MIT])
-# 	GIT_REPOSITORY https://github.com/g-truc/glm.git
-# 	GIT_TAG 1.0.1
-# 	GIT_SHALLOW TRUE
-# 	GIT_PROGRESS TRUE
-# 	EXCLUDE_FROM_ALL
-# )
-# FetchContent_Declare(
-# 	miniaudio # Public Domain (or licensed under MIT)
-# 	GIT_REPOSITORY https://github.com/mackron/miniaudio.git
-# 	GIT_TAG 0.11.22
-# 	GIT_SHALLOW TRUE
-# 	GIT_PROGRESS TRUE
-# 	EXCLUDE_FROM_ALL
-# )
-# FetchContent_Declare(
-# 	gl3w # Public Domain
-# 	GIT_REPOSITORY https://github.com/skaslev/gl3w.git
-# 	GIT_TAG        master
-# 	GIT_SHALLOW    TRUE
-# 	GIT_PROGRESS   TRUE
-# 	EXCLUDE_FROM_ALL
-# )
-# FetchContent_Declare(
-# 	tinyECS # Licensed under MIT
-# 	GIT_REPOSITORY https://github.com/hrhodin/tinyECS.git
-# 	GIT_TAG        main
-# 	GIT_SHALLOW    TRUE
-# 	GIT_PROGRESS   TRUE
-# 	EXCLUDE_FROM_ALL
-# )
-# FetchContent_MakeAvailable(glfw glm miniaudio gl3w tinyECS)
+FetchContent_Declare(
+	glfw # Licensed under Zlib
+	GIT_REPOSITORY https://github.com/glfw/glfw.git
+	GIT_TAG 3.4
+	GIT_SHALLOW TRUE
+	GIT_PROGRESS TRUE
+	EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+	glm # Licensed under MIT (or the Happy Bunny License [modified MIT])
+	GIT_REPOSITORY https://github.com/g-truc/glm.git
+	GIT_TAG 1.0.1
+	GIT_SHALLOW TRUE
+	GIT_PROGRESS TRUE
+	EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+	miniaudio # Public Domain (or licensed under MIT)
+	GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+	GIT_TAG 0.11.22
+	GIT_SHALLOW TRUE
+	GIT_PROGRESS TRUE
+	EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+	gl3w # Public Domain
+	GIT_REPOSITORY https://github.com/skaslev/gl3w.git
+	GIT_TAG        master
+	GIT_SHALLOW    TRUE
+	GIT_PROGRESS   TRUE
+	EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+	tinyECS # Licensed under MIT
+	GIT_REPOSITORY https://github.com/hrhodin/tinyECS.git
+	GIT_TAG        main
+	GIT_SHALLOW    TRUE
+	GIT_PROGRESS   TRUE
+	EXCLUDE_FROM_ALL
+)
 
 # You can fetch additional libraries here, e.g. `fmt`
 FetchContent_Declare(
@@ -68,41 +67,46 @@ FetchContent_Declare(
 	GIT_PROGRESS TRUE
 	EXCLUDE_FROM_ALL
 )
-# FetchContent_Declare(
-# 	tinyobj # Licensed under MIT
-# 	GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
-# 	GIT_TAG release
-# 	GIT_SHALLOW TRUE
-# 	GIT_PROGRESS TRUE
-# 	EXCLUDE_FROM_ALL
-# )
-# FetchContent_Declare(
-# 	stb # Public Domain
-# 	GIT_REPOSITORY https://github.com/nothings/stb.git
-# 	GIT_TAG master
-# 	GIT_SHALLOW TRUE
-# 	GIT_PROGRESS TRUE
-# 	EXCLUDE_FROM_ALL
-# )
-# FetchContent_Declare(
-# 	nlohmann_json # MIT Licence
-# 	GIT_REPOSITORY https://github.com/nlohmann/json.git
-# 	GIT_TAG v3.12.0
-# 	GIT_SHALLOW TRUE
-# 	GIT_PROGRESS TRUE
-# 	EXCLUDE_FROM_ALL
-# )
-# FetchContent_Declare(
-#     freetype
-#     GIT_REPOSITORY https://github.com/freetype/freetype.git
-#     GIT_TAG VER-2-13-2
-# )
+FetchContent_Declare(
+	tinyobj # Licensed under MIT
+	GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
+	GIT_TAG release
+	GIT_SHALLOW TRUE
+	GIT_PROGRESS TRUE
+	EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+	stb # Public Domain
+	GIT_REPOSITORY https://github.com/nothings/stb.git
+	GIT_TAG master
+	GIT_SHALLOW TRUE
+	GIT_PROGRESS TRUE
+	EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+	nlohmann_json # MIT Licence
+	GIT_REPOSITORY https://github.com/nlohmann/json.git
+	GIT_TAG v3.12.0
+	GIT_SHALLOW TRUE
+	GIT_PROGRESS TRUE
+	EXCLUDE_FROM_ALL
+)
+FetchContent_Declare(
+    freetype
+    GIT_REPOSITORY https://github.com/freetype/freetype.git
+    GIT_TAG VER-2-13-2
+)
 FetchContent_MakeAvailable(
+	glfw
+	glm
 	fmt
-	# tinyobj
-	# stb
-	# nlohmann_json
-	# freetype
+	gl3w
+	tinyECS
+	tinyobj
+	stb
+	miniaudio
+	nlohmann_json
+	freetype
 )
 
 # Configure compiler flags as an interface library
@@ -122,53 +126,11 @@ configure_file(${PROJECT_SOURCE_DIR}/src/project_config.h.in project_config.h)
 
 add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/main.cpp
-	# ${PROJECT_SOURCE_DIR}/src/common.cpp
-	# ${PROJECT_SOURCE_DIR}/src/assets.cpp
-	# ${PROJECT_SOURCE_DIR}/src/application.cpp
-	# ${PROJECT_SOURCE_DIR}/src/registry.cpp
-	# ${PROJECT_SOURCE_DIR}/src/window.cpp
-	#
-	# ${PROJECT_SOURCE_DIR}/src/core/graph.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/tile.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/edge.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/vertex.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/settlement.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/road.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/player.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/gamestate.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/gamecontroller.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/hero.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/mainMenu.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/configMenu.cpp
-	#
-	# ${PROJECT_SOURCE_DIR}/src/systems/world.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/render.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/audio.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/animationSystem.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/renderText.cpp
-	#
-	# ${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
-	# ${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
-	# ${PROJECT_SOURCE_DIR}/src/utils/framebuffer.cpp
-	# ${PROJECT_SOURCE_DIR}/src/utils/texture.cpp
-	# ${PROJECT_SOURCE_DIR}/src/utils/textureArray.h
-	# ${PROJECT_SOURCE_DIR}/src/utils/textureArray.cpp
-	# ${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
-	# ${PROJECT_SOURCE_DIR}/src/utils/worldNodeMapper.cpp
-	#
-	# ${PROJECT_SOURCE_DIR}/src/systems/renderHero.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/renderBuildings.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/renderBuildingPreviews.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/buildingPreview.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/renderTiles.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/renderCommon.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/renderHud.cpp
-	# ${PROJECT_SOURCE_DIR}/src/systems/renderSnow.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
-	# ${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
-	# ${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
-	# 	"src/systems/entityMovement.cpp"
+	${PROJECT_SOURCE_DIR}/src/common.cpp
+	${PROJECT_SOURCE_DIR}/src/assets.cpp
+	${PROJECT_SOURCE_DIR}/src/application.cpp
+	${PROJECT_SOURCE_DIR}/src/registry.cpp
+	${PROJECT_SOURCE_DIR}/src/window.cpp
 
 	${PROJECT_SOURCE_DIR}/src/core/graph.cpp
 	${PROJECT_SOURCE_DIR}/src/core/tile.cpp
@@ -184,9 +146,8 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/mainMenu.cpp
 	${PROJECT_SOURCE_DIR}/src/core/configMenu.cpp
 	${PROJECT_SOURCE_DIR}/src/core/hazards.cpp
-
-	${PROJECT_SOURCE_DIR}/src/core/ai/behaviorTree.cpp
-	${PROJECT_SOURCE_DIR}/src/core/ai/commandRegistry.cpp
+	${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
+	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
 
 	${PROJECT_SOURCE_DIR}/src/core/ai/behaviorTree.cpp
 	${PROJECT_SOURCE_DIR}/src/core/ai/commandRegistry.cpp
@@ -200,6 +161,17 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/renderText.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderNotification.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderSettlementMenu.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderHero.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderBuildings.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderBuildingPreviews.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/buildingPreview.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderTiles.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderCommon.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderHud.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderWeather.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/entityMovement.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/tradingSystem.h
+	${PROJECT_SOURCE_DIR}/src/systems/tradingSystem.cpp
 
 	${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
@@ -209,22 +181,15 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/utils/textureArray.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/worldNodeMapper.cpp
-	# ${PROJECT_SOURCE_DIR}/src/utils/graphDebugDump.cpp
-	# ${PROJECT_SOURCE_DIR}/src/utils/graphDebugImage.cpp
-
-	${PROJECT_SOURCE_DIR}/src/systems/renderHero.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderBuildings.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderBuildingPreviews.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/buildingPreview.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderTiles.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderCommon.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderHud.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderWeather.cpp
-	${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
-	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
-		"src/systems/entityMovement.cpp"
-	"src/systems/tradingSystem.h" "src/systems/tradingSystem.cpp")
+
+	${PROJECT_SOURCE_DIR}/src/multiplayer/tcpClient.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/tcpServer.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/bifrost.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/sessionManager.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/midgard.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/asgard.cpp
+)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 20
@@ -241,17 +206,17 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 	${PROJECT_SOURCE_DIR}/src/systems # location of systems
 	${PROJECT_SOURCE_DIR}/src/utils # location of utils
 	${stb_SOURCE_DIR} # location of the `stb_image` header
+	${miniaudio_SOURCE_DIR} # location of the `miniaudio.h` header
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	compiler_flags
-	# glfw
-	# glm::glm
-	# miniaudio
-	# tinyobjloader
-	# gl3w
+	glfw
+	glm::glm
+	tinyobjloader
+	gl3w
 	fmt
-	# tinyECS
-	# nlohmann_json::nlohmann_json
-	# freetype
+	tinyECS
+	nlohmann_json::nlohmann_json
+	freetype
 )
