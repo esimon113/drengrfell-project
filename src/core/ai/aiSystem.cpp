@@ -19,8 +19,11 @@ namespace df {
 
 	void AiSystem::onKeyCallback(GLFWwindow* /*window*/, const int key, int /*scancode*/, const int action, int /*mods*/) noexcept {
 		if (action == GLFW_PRESS) {
-			if (key == GLFW_KEY_P) {
+			if (key == GLFW_KEY_L) {
 				fmt::println("{}", btRoot->serialize().dump());
+			}
+			if (key == GLFW_KEY_P) {
+				fmt::println("{}", to_string(btRoot->process(Agent())));
 			}
 		}
 	}
