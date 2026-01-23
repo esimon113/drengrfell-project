@@ -13,6 +13,7 @@
 // #include "utils/graphDebugDump.h"
 // #include "utils/graphDebugImage.h"
 #include "systems/questsSystem.h"
+#include "systems/renderCommon.h"
 #include "systems/renderTiles.h"
 #include "tradingSystem.h"
 #include "utils/worldNodeMapper.h"
@@ -21,7 +22,11 @@
 
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <map>
+#include <set>
 
+#include "core/settlement.h"
 #include "events/eventBus.h"
 #include "window.h"
 
@@ -396,7 +401,7 @@ namespace df {
 		}
 		// lets the hero spawn with on a random Tile (water excluded)
 		spawnHero();
-		
+
 
 		// 		// This is only for DEBUGGING purposes:
 		// #if defined(__unix__) || defined(__linux__)
@@ -414,6 +419,7 @@ namespace df {
 				player = this->gameState->getPlayer(0);
 			}
 			player->reset();
+			// TODO: add 'test' mode where the player starts with a lot more resources (to show upgrading system)
 			player->addResources(types::TileType::FOREST, 10);	 // give player initial wood
 			player->addResources(types::TileType::CLAY, 10);	 // give player initial clay
 			player->addResources(types::TileType::MOUNTAIN, 10); // give player initial stone
@@ -431,12 +437,12 @@ namespace df {
 			const int width = gameState->getMap().getMapWidth();
 			const int height = gameState->getMap().getTileCount() / width;
 
-			//auto randomEngine = std::default_random_engine(std::random_device()());
-			//auto uniformDistribution = std::uniform_int_distribution();
+			// auto randomEngine = std::default_random_engine(std::random_device()());
+			// auto uniformDistribution = std::uniform_int_distribution();
 
 
 			// Remove this if we dont want to be the water tiles already explored
-			// same for ice 
+			// same for ice
 			for (int row = 0; row < height; ++row) {
 				for (int col = 0; col < width; ++col) {
 					size_t tileId = row * width + col;
@@ -444,7 +450,7 @@ namespace df {
 
 					if (tile && tile->getType() == types::TileType::WATER) {
 						gameState->getPlayer(0)->exploreTile(tileId);
-					} else if ( tile && tile->getType() == types::TileType::ICE){
+					} else if (tile && tile->getType() == types::TileType::ICE) {
 						gameState->getPlayer(0)->exploreTile(tileId);
 					}
 				}
@@ -452,21 +458,21 @@ namespace df {
 
 			// Discover a radius of one tile around the hero
 			if (!registry->animations.entities.empty()) {
-                Entity hero = registry->animations.entities.front();
-                if (registry->tileID.has(hero)) {
-                    int heroTileId = static_cast<int>(registry->tileID.get(hero));
-                    
-                    int centerRow = heroTileId / width;
-                    int centerCol = heroTileId % width;
-                    int radius = 1; 
-					if(centerRow%2 == 0){
+				Entity hero = registry->animations.entities.front();
+				if (registry->tileID.has(hero)) {
+					int heroTileId = static_cast<int>(registry->tileID.get(hero));
+
+					int centerRow = heroTileId / width;
+					int centerCol = heroTileId % width;
+					int radius = 1;
+					if (centerRow % 2 == 0) {
 						for (int r = -radius; r <= radius; ++r) {
 							for (int c = -radius; c <= radius; ++c) {
 								int targetRow = centerRow + r;
 								int targetCol = centerCol + c;
-								
-								if(!((c == 1 && r==1) || (c == 1 && r == -1)) ) {
-									if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
+
+								if (!((c == 1 && r == 1) || (c == 1 && r == -1))) {
+									if (targetRow >= 0 && targetRow < height && targetCol >= 0 && targetCol < width) {
 										size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
 										player->exploreTile(idToExplore);
 									}
@@ -478,19 +484,16 @@ namespace df {
 							for (int c = -radius; c <= radius; ++c) {
 								int targetRow = centerRow + r;
 								int targetCol = centerCol + c;
-								if(!((c == -1 && r==-1) || (c == -1 && r == 1)) ) {
-									if (targetRow >= 0  &&  targetRow < height  &&  targetCol >= 0 &&  targetCol < width) {
+								if (!((c == -1 && r == -1) || (c == -1 && r == 1))) {
+									if (targetRow >= 0 && targetRow < height && targetCol >= 0 && targetCol < width) {
 										size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
 										player->exploreTile(idToExplore);
 									}
 								}
-								
-								
 							}
 						}
 					}
-                    
-                }
+				}
 			}
 		}
 		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
@@ -513,6 +516,18 @@ namespace df {
 			configMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::PLAY:
+			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
+				if (render.renderNotificationSystem.isActive()) {
+					render.renderNotificationSystem.close();
+					selectedSettlementId = SIZE_MAX;
+					return;
+				}
+				if (render.renderSettlementMenuSystem.isActive()) {
+					render.renderSettlementMenuSystem.close();
+					selectedSettlementId = SIZE_MAX;
+					return;
+				}
+			}
 			world.onKeyCallback(windowParam, key, scancode, action, mods);
 			render.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
@@ -557,8 +572,6 @@ namespace df {
 			registry->tileID.emplace(hero, randomTileID);
 		}
 		movementSystem.setTarget(randomTileID, hero);
-		
-			
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
@@ -621,6 +634,57 @@ namespace df {
 				}
 				return; // notification clicked -> no further actions (including movement) for now
 			}
+			if (render.renderNotificationSystem.isActive()) {
+				return;
+			}
+			if (render.renderSettlementMenuSystem.isActive()) {
+				if (render.renderSettlementMenuSystem.onMouseButton(mouse, button, action)) {
+					return;
+				}
+			}
+
+			size_t hoveredSettlementId = SIZE_MAX;
+			if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS &&
+				!this->world.isSettlementPreviewActive && !this->world.isRoadPreviewActive) {
+				Camera& cam = registry->cameras.get(registry->getCamera());
+				Viewport viewport{glm::uvec2(0), window->getWindowExtent()};
+				glm::vec2 cursorScreenPos = window->getCursorPosition();
+				glm::vec2 cursorWorldOffset = screenToWorldCoordinates(
+					cursorScreenPos,
+					viewport,
+					glm::vec2(cam.viewWidth, cam.viewHeight));
+				glm::vec2 cursorWorldPos = cam.position + cursorWorldOffset;
+
+				float closestDistance = (std::numeric_limits<float>::max)();
+				size_t currentPlayerId = gameState->getCurrentPlayerId();
+				for (Entity e : registry->settlements.entities) {
+					if (!registry->positions.has(e) || !registry->settlements.has(e) || !registry->scales.has(e)) {
+						continue;
+					}
+					const Settlement& settlement = registry->settlements.get(e);
+					if (settlement.getPlayerId() != currentPlayerId) {
+						continue;
+					}
+
+					const glm::vec2& worldPos = registry->positions.get(e);
+					const glm::vec2& scale = registry->scales.get(e);
+					float hitRadius = std::max(scale.x, scale.y) * 0.6f;
+					float distance = glm::distance(cursorWorldPos, worldPos);
+					if (distance < closestDistance && distance <= hitRadius) {
+						closestDistance = distance;
+						hoveredSettlementId = settlement.getId();
+					}
+				}
+			}
+
+			if (render.renderSettlementMenuSystem.isActive() &&
+				button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS &&
+				hoveredSettlementId == SIZE_MAX &&
+				!render.renderSettlementMenuSystem.isPointInsideMenu(mouse)) {
+				render.renderSettlementMenuSystem.close();
+				selectedSettlementId = SIZE_MAX;
+				return;
+			}
 
 			// START Lock all following interactions with the game while the hero is still moving
 			if (!movementSystem.getMovementState()) {
@@ -646,6 +710,16 @@ namespace df {
 
 				if (render.renderHudSystem.onMouseButton(mouse, button, action))
 					return;
+
+				// Settlement management menu
+				if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS &&
+					!this->world.isSettlementPreviewActive && !this->world.isRoadPreviewActive) {
+					if (hoveredSettlementId != SIZE_MAX) {
+						selectedSettlementId = hoveredSettlementId;
+						render.renderSettlementMenuSystem.showMenu(hoveredSettlementId);
+						return;
+					}
+				}
 
 				// TODO: refactor...
 				// Handle building placement -> ONLY possible when preview is active

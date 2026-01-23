@@ -73,6 +73,7 @@ namespace df {
 		bool victoryScreenClosed = false;
 		bool victoryScreenShown = false;
 		bool awaitingTurnEnd = false;
+		size_t selectedSettlementId = SIZE_MAX;
 
 		// GameState
 		std::shared_ptr<GameState> gameState;

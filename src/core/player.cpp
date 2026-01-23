@@ -94,6 +94,14 @@ namespace df {
 		return roadIds.size();
 	}
 
+	void Player::addProductivityBuilding(size_t buildingId) {
+		productivityBuildingIds.push_back(buildingId);
+	}
+
+	const std::vector<size_t>& Player::getProductivityBuildingIds() const {
+		return productivityBuildingIds;
+	}
+
 	void Player::exploreTile(size_t tileId) {
 		if (!isTileExplored(tileId)) {
 			exploredTileIds.push_back(tileId);
@@ -118,6 +126,7 @@ namespace df {
 		resources.clear();
 		heroReference = nullptr;
 		roadIds.clear();
+		productivityBuildingIds.clear();
 		exploredTileIds.clear();
 	}
 
@@ -133,6 +142,7 @@ namespace df {
 
 		j["settlementIds"] = settlementIds;
 		j["roadIds"] = roadIds;
+	j["productivityBuildingIds"] = productivityBuildingIds;
 		j["exploredTileIds"] = exploredTileIds;
 
 		// Resources
@@ -161,6 +171,8 @@ namespace df {
 			settlementIds = j["settlementIds"].get<std::vector<size_t>>();
 		if (j.contains("roadIds"))
 			roadIds = j["roadIds"].get<std::vector<size_t>>();
+		if (j.contains("productivityBuildingIds"))
+			productivityBuildingIds = j["productivityBuildingIds"].get<std::vector<size_t>>();
 		if (j.contains("exploredTileIds"))
 			exploredTileIds = j["exploredTileIds"].get<std::vector<size_t>>();
 

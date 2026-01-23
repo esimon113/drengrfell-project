@@ -2,6 +2,7 @@
 
 #include "components.h"
 #include <common.h>
+#include <core/productivityBuilding.h>
 #include <core/road.h>
 #include <core/settlement.h>
 #include <tiny_ecs.hpp>
@@ -41,6 +42,7 @@ namespace df {
 		ComponentContainer<Road> roads;
 		ComponentContainer<int> roadEdgeIndices; // autoselect correct road-texture for edge angle
 		ComponentContainer<Settlement> settlements;
+		ComponentContainer<ProductivityBuilding> productivityBuildings;
 		ComponentContainer<BuildingPreviewComponent> buildingPreviews;
 
 		ComponentContainer<Camera> cameras;

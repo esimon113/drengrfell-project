@@ -50,6 +50,12 @@ namespace df {
 		bool canBuildRoad(size_t playerId, size_t edgeId) const;
 		bool buildRoad(size_t playerId, size_t edgeId, RoadLevel level, const std::vector<int>& buildingCost);
 
+		bool canBuildProductivityBuilding(size_t playerId, size_t tileId, types::TileType tileType) const;
+		bool buildProductivityBuilding(size_t playerId, size_t tileId, types::TileType tileType, const std::vector<int>& buildingCost);
+
+		bool canUpgradeSettlement(size_t playerId, size_t settlementId, types::SettlementType targetType) const;
+		bool upgradeSettlement(size_t playerId, size_t settlementId, types::SettlementType targetType, const std::vector<int>& buildingCost);
+
 		QuestsSystem* getQuestsSystem() const { return m_questsSystem.get(); }
 		void claimQuestReward(int questId);
 
@@ -76,6 +82,8 @@ namespace df {
 
 		const Road* findRoadById(size_t roadId) const;
 		const Settlement* findSettlementById(size_t settlementId) const;
+		const ProductivityBuilding* findProductivityBuildingById(size_t buildingId) const;
+		const ProductivityBuilding* findProductivityBuildingByTileId(size_t tileId) const;
 	};
 
 } // namespace df

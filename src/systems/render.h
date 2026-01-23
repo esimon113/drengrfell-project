@@ -16,6 +16,7 @@
 #include "renderText.h"
 #include "renderTiles.h"
 #include "renderNotification.h"
+#include "renderSettlementMenu.h"
 
 namespace df {
 	class GameController;
@@ -43,6 +44,7 @@ namespace df {
 			RenderHudSystem renderHudSystem;
 			RenderWeatherSystem renderWeatherSystem;
 			RenderNotificationSystem renderNotificationSystem;
+			RenderSettlementMenuSystem renderSettlementMenuSystem;
 
 			RenderTextSystem& getRenderTextSystem() noexcept {
 				return renderTextSystem;
