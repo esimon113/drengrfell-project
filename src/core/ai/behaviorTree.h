@@ -2,6 +2,7 @@
 #include "tiny_ecs.hpp"
 #include <utility>
 #include <nlohmann/json.hpp>
+#include <string>
 
 #include "assets.h"
 #include "resultError.h"
@@ -21,6 +22,20 @@ namespace df {
 		Success,
 		Failed,
 	};
+
+	inline std::string_view to_string(const BTState state) {
+		switch(state){
+			case BTState::Invalid:
+				return "INVALID";
+			case BTState::Running:
+				return "RUNNING";
+			case BTState::Success:
+				return "SUCCESS";
+			case BTState::Failed:
+				return "FAILED";
+		}
+		return "UNKNOWN";
+	}
 
 
 	class BTNode {
