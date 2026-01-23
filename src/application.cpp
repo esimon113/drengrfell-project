@@ -114,8 +114,8 @@ namespace df {
 		registry->addSystem<RenderTextSystem>(&render.getRenderTextSystem());
 		// Store RenderNofificationSystem in registry to use it in any other System.
 		registry->addSystem<RenderNotificationSystem>(&render.getRenderNotificationSystem());
-		// Store RenderSnowSystem in registry to use it in any other System.
-		registry->addSystem<RenderSnowSystem>(&render.getRenderSnowSystem());
+		// Store RenderWeatherSystem in registry to use it in any other System.
+		registry->addSystem<RenderWeatherSystem>(&render.getRenderWeatherSystem());
 
 		registry->addSystem<RenderTilesSystem>(&render.getRenderTilesSystem());
 

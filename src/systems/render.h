@@ -12,7 +12,7 @@
 #include "renderBuildings.h"
 #include "renderHero.h"
 #include "renderHud.h"
-#include "renderSnow.h"
+#include "renderWeather.h"
 #include "renderText.h"
 #include "renderTiles.h"
 #include "renderNotification.h"
@@ -42,7 +42,7 @@ namespace df {
 			RenderBuildingPreviewsSystem renderBuildingPreviewsSystem;
 			RenderTextSystem renderTextSystem;
 			RenderHudSystem renderHudSystem;
-			RenderSnowSystem renderSnowSystem;
+			RenderWeatherSystem renderWeatherSystem;
 			RenderNotificationSystem renderNotificationSystem;
 			RenderSettlementMenuSystem renderSettlementMenuSystem;
 
@@ -52,8 +52,8 @@ namespace df {
 			RenderNotificationSystem& getRenderNotificationSystem() noexcept {
 				return renderNotificationSystem;
 			}
-			RenderSnowSystem& getRenderSnowSystem() noexcept {
-				return renderSnowSystem;
+			RenderWeatherSystem& getRenderWeatherSystem() noexcept {
+				return renderWeatherSystem;
 			}
 			RenderTilesSystem& getRenderTilesSystem() noexcept {
 				return renderTilesSystem;
