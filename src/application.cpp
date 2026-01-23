@@ -73,6 +73,7 @@ namespace df {
 
 		self.eventBus = std::make_shared<EventBus>();
 		self.audioEngine = std::make_unique<AudioSystem>(self.eventBus);
+		self.aiSystem = std::make_unique<AiSystem>();
 		self.registry = Registry::init();
 		self.gameState = std::make_shared<GameState>(self.registry);
 		self.gameController = std::make_shared<GameController>(*self.gameState, self.registry);
@@ -94,6 +95,7 @@ namespace df {
 
 	void Application::deinit() noexcept {
 		audioEngine.reset();
+		aiSystem.reset();
 		render.deinit();
 		delete registry;
 		// Poll events one last time to allow GLFW to process any pending cleanup
@@ -507,6 +509,9 @@ namespace df {
 	}
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
+		// For testing purposes
+		aiSystem->onKeyCallback(windowParam, key, scancode, action, mods);
+
 		types::GamePhase gamePhase = gameState->getPhase();
 		switch (gamePhase) {
 		case types::GamePhase::START:
