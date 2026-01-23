@@ -1,5 +1,6 @@
 #include "fmt/base.h"
 #include <utility>
+#include <fstream>
 
 #include "behaviorTree.h"
 #include "commandRegistry.h"
@@ -7,31 +8,47 @@
 using json = nlohmann::json;
 
 namespace df {
-	std::shared_ptr<BTNode> BTNode::deserialize(const json &j) {
+	std::shared_ptr<BTNode> BTNode::deserialize(const json &j, const CommandRegistry& c) {
 		std::string kind = j.value("kind", "");
 		if (kind == "sequence") {
 			auto ptr = std::make_shared<BTSequence>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "selector") {
 			auto ptr = std::make_shared<BTSelector>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "inverter") {
 			auto ptr = std::make_shared<BTInverter>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "succeeder") {
 			auto ptr = std::make_shared<BTSucceeder>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "untilFailureRepeater") {
 			auto ptr = std::make_shared<BTUntilFailureRepeater>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "repeater") {
 			auto ptr = std::make_shared<BTRepeater>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "function") {
 			auto ptr = std::make_shared<BTFunction>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		}
 		return nullptr;
+	}
+
+	Result<std::shared_ptr<BTNode>, ResultError> BTNode::deserialize(const CommandRegistry& cr, assets::JsonFile asset) {
+		auto path = assets::getAssetPath(asset);
+		std::ifstream file(path);
+		if (!file) {
+			return Err(ResultError(ResultError::Kind::IOError, "BTNode::deserialize(): Could not open file: " + path));
+		}
+
+		try {
+			json j;
+			file >> j;
+			return Ok(deserialize(j, cr));
+		} catch (const json::parse_error& e) {
+			return Err(ResultError(ResultError::Kind::JsonParseError, "BTNode::deserialize(): Could not parse file: " + path + ". Reason: " + std::string(e.what())));
+		}
 	}
 
 
@@ -71,11 +88,11 @@ namespace df {
 		};
 	}
 
-	bool BTSequence::deserializeInplace(const nlohmann::json& j) {
+	bool BTSequence::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json a = j.value("children", nlohmann::json::array());
 		if (!a.is_array()) return false; // TODO: Add proper error handling
 		for (auto& element : a) {
-			auto c = deserialize(element);
+			auto c = deserialize(element, cr);
 			if (c == nullptr) return false;
 			this->children.push_back(c);
 		}
@@ -119,11 +136,11 @@ namespace df {
 		};
 	}
 
-	bool BTSelector::deserializeInplace(const nlohmann::json& j) {
+	bool BTSelector::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json a = j.value("children", nlohmann::json::array());
 		if (!a.is_array()) return false; // TODO: Add proper error handling
 		for (auto& element : a) {
-			auto c = deserialize(element);
+			auto c = deserialize(element, cr);
 			if (c == nullptr) return false;
 			this->children.push_back(c);
 		}
@@ -155,10 +172,10 @@ namespace df {
 		};
 	}
 
-	bool BTInverter::deserializeInplace(const nlohmann::json& j) {
+	bool BTInverter::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
 		if (!o.is_object()) return false; // TODO: Add proper error handling
-		auto c = deserialize(o);
+		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
 		return true;
@@ -181,10 +198,10 @@ namespace df {
 		};
 	}
 
-	bool BTSucceeder::deserializeInplace(const nlohmann::json& j) {
+	bool BTSucceeder::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
 		if (!o.is_object()) return false; // TODO: Add proper error handling
-		auto c = deserialize(o);
+		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
 		return true;
@@ -215,10 +232,10 @@ namespace df {
 		};
 	}
 
-	bool BTUntilFailureRepeater::deserializeInplace(const nlohmann::json& j) {
+	bool BTUntilFailureRepeater::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
 		if (!o.is_object()) return false; // TODO: Add proper error handling
-		auto c = deserialize(o);
+		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
 		return true;
@@ -252,10 +269,10 @@ namespace df {
 		};
 	}
 
-	bool BTRepeater::deserializeInplace(const nlohmann::json& j) {
+	bool BTRepeater::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
 		if (!o.is_object()) return false; // TODO: Add proper error handling
-		auto c = deserialize(o);
+		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
 		this->times = j.value("times", 1);
@@ -263,12 +280,11 @@ namespace df {
 	}
 
 
-	BTFunction::BTFunction(std::string name) : name(std::move(name)) {
-		const auto& comReg = CommandRegistry::getInstance();
-		if (!comReg.hasCommand(this->name)) {
+	BTFunction::BTFunction(std::string name, const CommandRegistry& commandRegistry) : name(std::move(name)) {
+		if (!commandRegistry.hasCommand(this->name)) {
 			fmt::println(stderr, "[AI Error]: Unknown command '{}'", this->name);
 		}
-		this->fn = comReg.getCommand(this->name);
+		this->fn = commandRegistry.getCommand(this->name);
 	}
 
 	void BTFunction::init(const Agent) {}
@@ -284,11 +300,10 @@ namespace df {
 		};
 	}
 
-	bool BTFunction::deserializeInplace(const nlohmann::json& j) {
+	bool BTFunction::deserializeInplace(const nlohmann::json& j, const CommandRegistry& commandRegistry) {
 		this->name = j.value("name", "");
-		const auto& comReg = CommandRegistry::getInstance();
-		if (!comReg.hasCommand(this->name)) return false;
-		this->fn = comReg.getCommand(this->name);
+		if (!commandRegistry.hasCommand(this->name)) return false;
+		this->fn = commandRegistry.getCommand(this->name);
 		return true;
 	}
 }
