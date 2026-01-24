@@ -71,10 +71,10 @@ namespace df {
 		}
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+		self.registry = Registry::init();
 		self.eventBus = std::make_shared<EventBus>();
 		self.audioEngine = std::make_unique<AudioSystem>(self.eventBus);
-		self.aiSystem = std::make_unique<AiSystem>();
-		self.registry = Registry::init();
+		self.aiSystem = std::make_unique<AiSystem>(self.registry);
 		self.gameState = std::make_shared<GameState>(self.registry);
 		self.gameController = std::make_shared<GameController>(*self.gameState, self.registry);
 		self.world = WorldSystem::init(self.window.get(), self.registry, self.audioEngine.get(), *self.gameState);
@@ -84,7 +84,7 @@ namespace df {
 		self.mainMenu.init(self.window.get());
 		// for testing
 		// movement until we have a triggerpoint
-		self.movementSystem = EntityMovementSystem::init(self.registry, *self.gameState);
+		self.movementSystem = std::make_unique<EntityMovementSystem>(self.registry, *self.gameState, *self.aiSystem);
 		// building preview system
 		self.buildingPreviewSystem = BuildingPreviewSystem::init(self.window.get(), self.registry, *self.gameState);
 		// Create config menu
@@ -96,6 +96,7 @@ namespace df {
 	void Application::deinit() noexcept {
 		audioEngine.reset();
 		aiSystem.reset();
+		movementSystem.reset();
 		render.deinit();
 		delete registry;
 		// Poll events one last time to allow GLFW to process any pending cleanup
@@ -195,7 +196,7 @@ namespace df {
 				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
 				// Prepare the camera so it can be centered
 				world.step(0.0f);
-				world.centerCameraOnPoint(movementSystem.getTargetPosition());
+				world.centerCameraOnPoint(movementSystem->getTargetPosition());
 			}
 
 			switch (gamePhase) {
@@ -247,11 +248,11 @@ namespace df {
 
 				render.step(delta_time);
 				// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
-				if (movementSystem.getMovementState()) {
+				if (movementSystem->getMovementState()) {
 					if (!registry->animations.entities.empty()) {
 						Entity hero = registry->animations.entities.front();
-						movementSystem.moveEntityTo(hero, movementSystem.getTargetPosition(), delta_time);
-						if (!movementSystem.getMovementState()) {
+						movementSystem->moveEntityTo(hero, movementSystem->getTargetPosition(), delta_time);
+						if (!movementSystem->getMovementState()) {
 							render.renderTilesSystem.selectedTile = -1; // remove tile highlighting after hero arrived
 						}
 					} else {
@@ -261,10 +262,10 @@ namespace df {
 				// ------------------------------------------------------------
 
 				// Only truly end the turn and start a new one when the hero finished walking
-				if (awaitingTurnEnd && !movementSystem.getMovementState()) {
+				if (awaitingTurnEnd && !movementSystem->getMovementState()) {
 					Entity hero = registry->animations.entities.front();
 					gameController->endTurn();
-					gameController->applyHazard(hero, movementSystem.getTargetPosition());
+					gameController->applyHazard(hero, movementSystem->getTargetPosition());
 					gameController->startTurn(); // Start turn for the next player
 					awaitingTurnEnd = false;
 				}
@@ -562,7 +563,7 @@ namespace df {
 			randomTileID = dist(rng);
 		} while (map.getTile(randomTileID)->getType() == types::TileType::WATER);
 
-		glm::vec2 startPosition = movementSystem.getTileWorldPosition(randomTileID);
+		glm::vec2 startPosition = movementSystem->getTileWorldPosition(randomTileID);
 		fmt::println("Hero spawned at TileID: {} with coords: X: {}, Y: {}", randomTileID, startPosition.x, startPosition.y);
 
 		if (registry->positions.has(hero)) {
@@ -576,7 +577,7 @@ namespace df {
 		} else {
 			registry->tileID.emplace(hero, randomTileID);
 		}
-		movementSystem.setTarget(randomTileID, hero);
+		movementSystem->setTarget(randomTileID, hero);
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
@@ -692,7 +693,7 @@ namespace df {
 			}
 
 			// START Lock all following interactions with the game while the hero is still moving
-			if (!movementSystem.getMovementState()) {
+			if (!movementSystem->getMovementState()) {
 				// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
 					if (!gameState->isGameOver()) {
@@ -705,8 +706,8 @@ namespace df {
 						Entity hero = registry->animations.entities.front();
 						// TODO: For multiplayer check only for active player for hazards
 						if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
-							movementSystem.toggleMovementState();
-							fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
+							movementSystem->toggleMovementState();
+							fmt::println("Hero destination: {},{}", movementSystem->getTargetPosition().x, movementSystem->getTargetPosition().y);
 						}
 						awaitingTurnEnd = true;
 						return;
@@ -812,10 +813,10 @@ namespace df {
 					auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
 					fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
-					if (mapId >= 0 && !movementSystem.isEntityMoving()) {
+					if (mapId >= 0 && !movementSystem->isEntityMoving()) {
 						//  TODO: For multiplayer use hero of active player
 						Entity hero = registry->animations.entities.front();
-						movementSystem.setTarget(mapId, hero);
+						movementSystem->setTarget(mapId, hero);
 					}
 				}
 

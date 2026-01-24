@@ -6,9 +6,11 @@
 
 
 namespace df {
+	class AiSystem;
 	class EntityMovementSystem {
 	  public:
-		static EntityMovementSystem init(Registry* registry, GameState& gameState) noexcept;
+		explicit EntityMovementSystem(Registry* registry, GameState& gameState, AiSystem& aiSystem);
+		~EntityMovementSystem() = default;
 
 		void moveEntityTo(Entity entity, const glm::vec2& targetPosition, float deltaTime) noexcept;
 
@@ -32,6 +34,6 @@ namespace df {
 		bool moving = false;
 		bool targetSet = false;
 		glm::vec2 targetPosition = glm::vec2(0.0f);
-		size_t targetPositionTileID;
+		size_t targetPositionTileID{};
 	};
 } // namespace df
