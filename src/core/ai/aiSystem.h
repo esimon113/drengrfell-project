@@ -1,11 +1,12 @@
 #pragma once
 #include <window.h>
 #include "commandRegistry.h"
+#include "registry.h"
 
 namespace df {
 	class AiSystem {
 	public:
-		AiSystem(/*Registry* registry,*/ /*std::shared_ptr<GameState> gameState,*/ /*GameController* gameController*/);
+		AiSystem(Registry* registry/*,std::shared_ptr<GameState> gameState,*/ /*GameController* gameController*/);
 		~AiSystem() = default;
 
 		/*void step(float dt) noexcept;*/
@@ -18,6 +19,7 @@ namespace df {
 		CommandRegistry& getCommandRegistry() { return commands; };
 
 	private:
+		Registry* registry;
 		CommandRegistry commands{};
 		bool commandsLoaded{false};
 

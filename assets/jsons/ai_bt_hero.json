@@ -3,9 +3,9 @@
 	"children": [
 		{
 			"kind": "function",
-			"name": "error",
+			"name": "setMoveTarget",
 			"args": {
-				"text": "Hello, Germany!"
+				"id": 10
 			}
 		},
 		{

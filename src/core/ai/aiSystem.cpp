@@ -3,9 +3,7 @@
 #include "fmt/color.h"
 
 namespace df {
-	AiSystem::AiSystem() {
-		loadBehaviorTrees();
-	}
+	AiSystem::AiSystem(Registry* registry) : registry(registry) {}
 
 	void AiSystem::loadCommands() {
 		this->commands.registerCommand(
@@ -41,10 +39,15 @@ namespace df {
 	void AiSystem::onKeyCallback(GLFWwindow* /*window*/, const int key, int /*scancode*/, const int action, int /*mods*/) {
 		if (action == GLFW_PRESS) {
 			if (key == GLFW_KEY_L) {
-				fmt::println("{}", this->btRoot->serialize().dump());
+				loadBehaviorTrees();
+				fmt::println("Loaded BT: {}", this->btRoot->serialize().dump());
 			}
 			if (key == GLFW_KEY_P) {
-				fmt::println("{}", to_string(this->btRoot->process(Agent())));
+				if (registry) {
+					Agent p = registry->animations.entities.front();
+					fmt::println("Agent P is {}", int(p));
+					fmt::println("{}", to_string(this->btRoot->process(p)));
+				}
 			}
 		}
 	}

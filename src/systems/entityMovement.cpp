@@ -2,12 +2,21 @@
 #include "application.h"
 
 namespace df {
-	EntityMovementSystem EntityMovementSystem::init(Registry* registry, GameState& gameState) noexcept {
-		EntityMovementSystem self;
-		self.registry = registry;
-		self.gameState = &gameState;
-
-		return self;
+	EntityMovementSystem::EntityMovementSystem(
+		Registry* registry,
+		GameState& gameState,
+		AiSystem& aiSystem
+	) : registry(registry), gameState(&gameState) {
+		// The capturing of the this-pointer renders the former init-method invalid
+		aiSystem.getCommandRegistry().registerCommand(
+		"setMoveTarget",
+		[this](Agent entity, const CommandRegistry::Args& a) {
+			int target = glm::iround(CommandRegistry::getArg<double>(a, "id", 0.0));
+			this->setTarget(target, entity);
+			fmt::println("Set move target of entity: {} to {}", static_cast<int>(entity), target);
+			return BTState::Success;
+		}
+	);
 	}
 
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& targetPos, float deltaTime) noexcept {

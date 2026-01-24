@@ -51,7 +51,7 @@ namespace df {
 
 		RenderSystem render;
 
-		EntityMovementSystem movementSystem;
+		std::unique_ptr<EntityMovementSystem> movementSystem;
 		BuildingPreviewSystem buildingPreviewSystem;
 		TradingSystem tradingSystem;
 		EventPresentationSystem eventPresentationSystem;
