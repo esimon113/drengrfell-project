@@ -19,6 +19,7 @@
 #include "types.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
+#include "eventPresentation.h"
 
 
 
@@ -171,6 +172,7 @@ namespace df {
 			auto& hazard = this->registry->hazards.get(e);
 			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
 			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
+			EventPresentationSystem* event = this->registry->getSystem<EventPresentationSystem>();
 
 			if (hazard.turnsLeft <= 0) {
 				fmt::println("[Hazard] {} encounter ended", hazardDefinition.name);
@@ -182,16 +184,20 @@ namespace df {
 				this->registry->hazards.remove(e);
 			} else if (hazard.turnsLeft == hazardDefinition.defaultRoundDuration) {
 				fmt::println("[Hazard] {} encountered. It is active for {} turns", hazardDefinition.name, hazard.turnsLeft);
-				notification->showNotification("You encountered a hazard",
-											   fmt::format(
-												   "A {} is preventing you from moving for {} turns\n"
-												   "Would you like to overcome the encounter by paying {} {} or wait?",
-												   hazardDefinition.name,
-												   hazard.turnsLeft,
-												   hazardDefinition.skipCost * hazard.turnsLeft,
-												   hazardDefinition.skipRessourceStr),
-											   {"Pay ressources",
-												"Wait"});
+				event->presentEvent("You encountered a hazard",
+									fmt::format(
+										"A {} is preventing you\n"
+										"from moving for {} turns.\n"
+										"Would you like to overcome the\n"
+										"encounter by paying {} {} or wait?",
+										hazardDefinition.name,
+										hazard.turnsLeft,
+										hazardDefinition.skipCost * hazard.turnsLeft,
+										hazardDefinition.skipRessourceStr),
+										{"Pay ressources","Wait"},
+									HazardDB::getEvent(hazardDefinition.hazardType),
+									"",
+									false);
 			} else {
 				fmt::println("[Hazard] {} encounter ongoing. It is still active for {} turns", hazardDefinition.name, hazard.turnsLeft);
 				notification->showNotification("Ongoing hazard",

@@ -52,6 +52,7 @@ namespace df {
 		EntityMovementSystem movementSystem;
 		BuildingPreviewSystem buildingPreviewSystem;
 		TradingSystem tradingSystem;
+		EventPresentationSystem eventPresentationSystem;
 
 		void reset() noexcept;
 

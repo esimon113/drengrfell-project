@@ -33,6 +33,11 @@ namespace df {
 
 		// In-game Events {
 		// RegisterSignal(tilePicked, int);
+		RegisterSignal(eventPoppedUp);
+		RegisterSignal(hazardBearEncountered);
+		RegisterSignal(hazardRockslideEncountered);
+		RegisterSignal(hazardBlizzardEncountered);
+		RegisterSignal(hazardMudEncountered);
 		// }
 
 		// Technical Events {
@@ -61,6 +66,11 @@ namespace df {
 
 		void initializeSignalDecoration() {
 			attachSound(this->applicationRunStarted, assets::Sound::BACKGROUND_MUSIC_1, true);
+			attachSound(this->eventPoppedUp, assets::Sound::EVENT_POPUP, false);
+			attachSound(this->hazardBearEncountered, assets::Sound::EVENT_BEAR, false);
+			attachSound(this->hazardRockslideEncountered, assets::Sound::EVENT_ROCKSLIDE, false);
+			attachSound(this->hazardBlizzardEncountered, assets::Sound::EVENT_BLIZZARD, false);
+			attachSound(this->hazardMudEncountered, assets::Sound::EVENT_MUD, false);
 		}
 
 		// }

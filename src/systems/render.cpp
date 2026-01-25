@@ -5,7 +5,7 @@
 
 namespace df {
 
-	RenderSystem RenderSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState, GameController* gameController) noexcept {
+	RenderSystem RenderSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState, GameController* gameController, EventBus* eventBus) noexcept {
 		RenderSystem self;
 
 		self.window = window;
@@ -25,7 +25,8 @@ namespace df {
 		self.renderTextSystem = RenderTextSystem::init(window, registry);
 		self.renderWeatherSystem = RenderWeatherSystem::init(window, registry, gameState);
 		self.renderNotificationSystem = RenderNotificationSystem::init(window, registry);
-	self.renderSettlementMenuSystem = RenderSettlementMenuSystem::init(window, registry, gameState, gameController);
+		self.renderSettlementMenuSystem = RenderSettlementMenuSystem::init(window, registry, gameState, gameController);
+		self.eventPresentationSystem = EventPresentationSystem::init(window, registry, eventBus);
 		return self;
 	}
 
@@ -39,7 +40,8 @@ namespace df {
 		this->renderTextSystem.deinit();
 		this->renderWeatherSystem.deinit();
 		this->renderNotificationSystem.deinit();
-	this->renderSettlementMenuSystem.deinit();
+		this->renderSettlementMenuSystem.deinit();
+		this->eventPresentationSystem.deinit();
 		this->intermediateFramebuffer.deinit();
 	}
 
@@ -48,10 +50,11 @@ namespace df {
 		this->renderBuildingsSystem.step(dt);
 		this->renderBuildingPreviewsSystem.step(dt);
 		this->renderHeroSystem.step(dt);
+		this->eventPresentationSystem.step(dt);	// everything rendered before this will be dimmed by events
 		this->renderTextSystem.step(dt);
 		this->renderWeatherSystem.step(dt);
 		this->renderNotificationSystem.step(dt);
-	this->renderSettlementMenuSystem.step(dt);
+		this->renderSettlementMenuSystem.step(dt);
 		this->renderHudSystem.step(dt); // always rendered last
 	}
 
@@ -64,6 +67,7 @@ namespace df {
 		this->renderHudSystem.reset();
 		this->renderTextSystem.reset();
 		this->renderNotificationSystem.reset();
+		this->eventPresentationSystem.reset();
 		this->renderWeatherSystem.reset();
 	}
 

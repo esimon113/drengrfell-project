@@ -11,6 +11,11 @@ namespace df {
 			BACKGROUND_MUSIC_2,
 			BACKGROUND_MUSIC_3,
 			BACKGROUND_MUSIC_4,
+			EVENT_POPUP,
+			EVENT_BEAR,
+			EVENT_BLIZZARD,
+			EVENT_MUD,
+			EVENT_ROCKSLIDE,
 			count
 		};
 
@@ -33,6 +38,7 @@ namespace df {
 			hud,
 			tilePicker,
 			locationHighlight,
+			dimScreen,
 			count
 		};
 
@@ -89,6 +95,11 @@ namespace df {
 			HERO_RUN_3,
 			HERO_RUN_4,
 			HERO_RUN_5,
+
+			HAZARD_BEAR,
+			HAZARD_BLIZZARD,
+			HAZARD_MUD,
+			HAZARD_ROCKSLIDE,
 			
 			CASTLE1,
 			CASTLE2,
@@ -105,6 +116,7 @@ namespace df {
 			MILL,
 			BRICK_KILN,
 			PRODUCTIVITY_PLACEHOLDER,
+
 			count
 		};
 

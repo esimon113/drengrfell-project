@@ -158,6 +158,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/renderText.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderNotification.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderSettlementMenu.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/eventPresentation.cpp
 
 	${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
