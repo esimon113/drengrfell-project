@@ -1,5 +1,9 @@
 #include "aiSystem.h"
 
+#include <iostream>
+
+#include "behaviorTree.h"
+#include "resultError.h"
 #include "fmt/color.h"
 
 namespace df {
@@ -8,14 +12,14 @@ namespace df {
 	void AiSystem::loadCommands() {
 		this->commands.registerCommand(
 			"print",
-			[](Agent, const CommandRegistry::Args &a) {
+			[](BTContext /*context*/, const BTF::Args &a) {
 				std::cout << CommandRegistry::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
 				return BTState::Success;
 			}
 		);
 		this->commands.registerCommand(
 			"error",
-			[](Agent, const CommandRegistry::Args &a) {
+			[](BTContext /*context*/, const BTF::Args &a) {
 				std::cerr << CommandRegistry::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
 				return BTState::Failed;
 			}
@@ -46,7 +50,7 @@ namespace df {
 				if (registry) {
 					Agent p = registry->animations.entities.front();
 					fmt::println("Agent P is {}", int(p));
-					fmt::println("{}", to_string(this->btRoot->process(p)));
+					fmt::println("{}", to_string(this->btRoot->process(BTContext(p))));
 				}
 			}
 		}

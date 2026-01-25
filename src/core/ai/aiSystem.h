@@ -1,12 +1,13 @@
 #pragma once
-#include <window.h>
 #include "commandRegistry.h"
 #include "registry.h"
+#include "resultError.h"
+#include "behaviorTree.h"
 
 namespace df {
 	class AiSystem {
 	public:
-		AiSystem(Registry* registry/*,std::shared_ptr<GameState> gameState,*/ /*GameController* gameController*/);
+		explicit AiSystem(Registry* registry/*,std::shared_ptr<GameState> gameState,*/ /*GameController* gameController*/);
 		~AiSystem() = default;
 
 		/*void step(float dt) noexcept;*/

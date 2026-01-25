@@ -1,7 +1,7 @@
 #include "commandRegistry.h"
 
 namespace df {
-	void CommandRegistry::registerCommand(const std::string &name, const Command& command) {
+	void CommandRegistry::registerCommand(const std::string &name, const BTF::Command& command) {
 		this->commands[name] = command;
 	}
 
@@ -13,7 +13,7 @@ namespace df {
 		return this->commands.contains(name);
 	}
 
-	CommandRegistry::Command CommandRegistry::getCommand(const std::string &name) const {
+	BTF::Command CommandRegistry::getCommand(const std::string &name) const {
 		return this->commands.at(name);
 	}
 } // df
