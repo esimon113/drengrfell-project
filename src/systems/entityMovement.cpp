@@ -13,12 +13,12 @@ namespace df {
 		}
 		aiSystem->getCommandRegistry().registerCommand(
 		"setMoveTarget",
-		[this](Agent entity, const CommandRegistry::Args& a) {
+		[this](BTContext context, const BTF::Args& a) {
 			int target = glm::iround(CommandRegistry::getArg<double>(a, "id", 0.0));
-			this->setTarget(target, entity);
+			this->setTarget(target, context.entity);
 			movementState = true;
 			targetSet = true;
-			fmt::println("Set move target of entity: {} to {}", static_cast<int>(entity), target);
+			fmt::println("Set move target of entity: {} to {}", static_cast<int>(context.entity), target);
 			return BTState::Success;
 		}
 	);
