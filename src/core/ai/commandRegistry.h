@@ -15,6 +15,9 @@ namespace df {
 		~CommandRegistry() = default;
 
 		void registerCommand(const std::string& name, const Command& command);
+		// Like disconnect in events/signal.h
+		// Needed when capturing a this-pointer
+		void unregisterCommand(const std::string& name);
 		bool hasCommand(const std::string& name) const;
 		Command getCommand(const std::string& name) const;
 

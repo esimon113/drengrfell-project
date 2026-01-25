@@ -5,6 +5,10 @@ namespace df {
 		this->commands[name] = command;
 	}
 
+	void CommandRegistry::unregisterCommand(const std::string &name) {
+		this->commands.erase(name);
+	}
+
 	bool CommandRegistry::hasCommand(const std::string &name) const {
 		return this->commands.contains(name);
 	}
