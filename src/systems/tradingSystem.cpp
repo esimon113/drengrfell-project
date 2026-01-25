@@ -75,7 +75,7 @@ namespace df {
 				currentPlayer->removeResources(types::TileType::CLAY, payAmount);
 				success = true;
 			}
-		} else if (payResource == "Grass") {
+		} else if (payResource == "Wool") {
 			if (currentPlayer->getResources(types::TileType::GRASS) >= payAmount) {
 				currentPlayer->removeResources(types::TileType::GRASS, payAmount);
 				success = true;
@@ -100,7 +100,7 @@ namespace df {
 			currentPlayer->addResources(types::TileType::MOUNTAIN, gainAmount);
 		else if (selectedResource == "Clay")
 			currentPlayer->addResources(types::TileType::CLAY, gainAmount);
-		else if (selectedResource == "Grass")
+		else if (selectedResource == "Wool")
 			currentPlayer->addResources(types::TileType::GRASS, gainAmount);
 		else if (selectedResource == "Grain")
 			currentPlayer->addResources(types::TileType::FIELD, gainAmount);

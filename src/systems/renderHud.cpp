@@ -100,7 +100,7 @@ namespace df {
 			std::string hudTextToPrint = "Wood: " + std::to_string(resources[types::TileType::FOREST]) +
 										 "; Stone: " + std::to_string(resources[types::TileType::MOUNTAIN]) +
 										 "; Clay: " + std::to_string(resources[types::TileType::CLAY]) +
-										 "; Grass: " + std::to_string(resources[types::TileType::GRASS]) +
+										 "; Wool: " + std::to_string(resources[types::TileType::GRASS]) +
 										 "; Grain: " + std::to_string(resources[types::TileType::FIELD]) +
 										 "; Round: " + std::to_string(gameState->getRoundNumber());
 

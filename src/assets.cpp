@@ -64,6 +64,12 @@ namespace df {
 		"settlements/viking-wood/viking-wood-settlement3.png",
 		"settlements/viking-wood/viking-wood-settlement4.png",
 		"settlements/viking-wood/viking-wood-settlement5.png",
+		"settlements/stone-settlement/stone-settlement1.png",
+		"settlements/stone-settlement/stone-settlement2.png",
+		"settlements/stone-settlement/stone-settlement3.png",
+		"settlements/stone-settlement/stone-settlement4.png",
+		"settlements/stone-settlement/stone-settlement5.png",
+		"settlements/stone-settlement/stone-settlement6.png",
 		"roads/dirtRoad/dirt_road_diagonal_up.png",
 		"roads/dirtRoad/dirt_road_diagonal_down.png",
 		"roads/dirtRoad/dirt_road_vertical.png",
@@ -100,10 +106,25 @@ namespace df {
 		"hero/run/run_4.png",
 		"hero/run/run_5.png",
 
-		"events/bear.png",		// AI generated
-		"events/blizzard.png",	// AI generated
-		"events/mud.png",		// AI generated
-		"events/rockslide.png"	// AI generated
+		"events/bear.png",	   // AI generated
+		"events/blizzard.png", // AI generated
+		"events/mud.png",	   // AI generated
+		"events/rockslide.png", // AI generated
+
+		"settlements/castle/castle-sprites1.png",
+		"settlements/castle/castle-sprites2.png",
+		"settlements/castle/castle-sprites3.png",
+		"settlements/castle/castle-sprites4.png",
+		"settlements/castle/castle-sprites5.png",
+		"settlements/castle/castle-sprites6.png",
+		"settlements/castle/castle-sprites7.png",
+		"settlements/castle/castle-sprites8.png",
+
+		"settlements/productivity-boost/lumber-camp.png",
+		"settlements/productivity-boost/stone-quarry.png",
+		"settlements/productivity-boost/stable.png",
+		"settlements/productivity-boost/mill.png",
+		"settlements/productivity-boost/brick-kiln.png",
 	};
 
 

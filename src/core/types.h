@@ -154,4 +154,11 @@ namespace df::types {
 	};
 
 	
+
+	enum class SettlementType {
+		WOOD,
+		STONE,
+		CASTLE
+	};
+	
 } // namespace df::types

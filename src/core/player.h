@@ -27,6 +27,7 @@ namespace df {
 		std::map<types::TileType, int> resources;
 		std::shared_ptr<Hero> heroReference;
 		std::vector<size_t> roadIds;
+		std::vector<size_t> productivityBuildingIds;
 		std::vector<size_t> exploredTileIds;
 
 
@@ -56,6 +57,9 @@ namespace df {
 		void addRoad(size_t roadId);
 		const std::vector<size_t>& getRoadIds() const;
 		int getRoadCount() const;
+
+		void addProductivityBuilding(size_t buildingId);
+		const std::vector<size_t>& getProductivityBuildingIds() const;
 
 		void exploreTile(size_t tileId);
 		bool isTileExplored(size_t tileId) const;
