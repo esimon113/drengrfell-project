@@ -291,7 +291,13 @@ namespace df {
 	void BTFunction::init(const Agent) {}
 
 	BTState BTFunction::process(BTContext& context) {
-		return this->fn(context, this->args);
+		BTF::Args evaluatedArgs = this->args;
+		for (auto const& [key, value] : evaluatedArgs) {
+			if (std::holds_alternative<std::string>(value)) {
+				evaluatedArgs[key] = BTF::evaluateString(context, std::get<std::string>(value));
+			}
+		}
+		return this->fn(context, evaluatedArgs);
 	}
 
 	nlohmann::json BTFunction::serialize() const {
