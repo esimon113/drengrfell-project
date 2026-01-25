@@ -13,6 +13,8 @@ namespace df {
 		[this](Agent entity, const CommandRegistry::Args& a) {
 			int target = glm::iround(CommandRegistry::getArg<double>(a, "id", 0.0));
 			this->setTarget(target, entity);
+			movementState = true;
+			targetSet = true;
 			fmt::println("Set move target of entity: {} to {}", static_cast<int>(entity), target);
 			return BTState::Success;
 		}
@@ -20,8 +22,10 @@ namespace df {
 	}
 
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& targetPos, float deltaTime) noexcept {
-		if (!registry)
+		if (!registry) {
+			fmt::println("EntityMovementSystem::moveEntityTo: registry is null");
 			return;
+		}
 
 		auto& animComp = registry->animations.get(entity);
 		glm::vec2& currentPos = registry->positions.get(entity);
