@@ -44,7 +44,7 @@ namespace df {
 
 		std::shared_ptr<EventBus> eventBus;
 		std::unique_ptr<AudioSystem> audioEngine;
-		std::unique_ptr<AiSystem> aiSystem;
+		std::shared_ptr<AiSystem> aiSystem;
 
 		WorldSystem world;
 		// PhysicsSystem physics;

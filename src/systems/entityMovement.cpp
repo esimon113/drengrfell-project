@@ -4,11 +4,14 @@
 namespace df {
 	EntityMovementSystem::EntityMovementSystem(
 		Registry* registry,
-		GameState& gameState,
-		AiSystem& aiSystem
-	) : registry(registry), gameState(&gameState) {
+		const std::shared_ptr<GameState>& gameState,
+		const std::shared_ptr<AiSystem>& aiSystem
+	) : registry(registry), gameState(gameState), aiSystem(aiSystem) {
 		// The capturing of the this-pointer renders the former init-method invalid
-		aiSystem.getCommandRegistry().registerCommand(
+		if (!aiSystem) {
+			fmt::print("EntityMovementSystem::EntityMovementSystem: aiSystem is null");
+		}
+		aiSystem->getCommandRegistry().registerCommand(
 		"setMoveTarget",
 		[this](Agent entity, const CommandRegistry::Args& a) {
 			int target = glm::iround(CommandRegistry::getArg<double>(a, "id", 0.0));
@@ -20,6 +23,11 @@ namespace df {
 		}
 	);
 	}
+
+	EntityMovementSystem::~EntityMovementSystem() {
+		aiSystem->getCommandRegistry().unregisterCommand("setMoveTarget");
+	}
+
 
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& targetPos, float deltaTime) noexcept {
 		if (!registry) {

@@ -84,7 +84,7 @@ namespace df {
 		self.mainMenu.init(self.window.get());
 		// for testing
 		// movement until we have a triggerpoint
-		self.movementSystem = std::make_unique<EntityMovementSystem>(self.registry, *self.gameState, *self.aiSystem);
+		self.movementSystem = std::make_unique<EntityMovementSystem>(self.registry, self.gameState, self.aiSystem);
 		// building preview system
 		self.buildingPreviewSystem = BuildingPreviewSystem::init(self.window.get(), self.registry, *self.gameState);
 		// Create config menu
@@ -95,8 +95,8 @@ namespace df {
 
 	void Application::deinit() noexcept {
 		audioEngine.reset();
-		aiSystem.reset();
 		movementSystem.reset();
+		aiSystem.reset();
 		render.deinit();
 		delete registry;
 		// Poll events one last time to allow GLFW to process any pending cleanup
