@@ -60,7 +60,7 @@ namespace df {
 		}
 	}
 
-	BTState BTSequence::process(const BTContext context) {
+	BTState BTSequence::process(BTContext& context) {
 		for (unsigned i = this->currentChildIndex[context.entity]; i < children.size(); i++) {
 			std::shared_ptr<BTNode>& child = children[i];
 			switch (child->process(context)) {
@@ -108,7 +108,7 @@ namespace df {
 		}
 	}
 
-	BTState BTSelector::process(const BTContext context) {
+	BTState BTSelector::process(BTContext& context) {
 		for (unsigned i = this->currentChildIndex[context.entity]; i < children.size(); i++) {
 			std::shared_ptr<BTNode>& child = children[i];
 			switch (child->process(context)) {
@@ -153,7 +153,7 @@ namespace df {
 		child->init(a);
 	}
 
-	BTState BTInverter::process(const BTContext context) {
+	BTState BTInverter::process(BTContext& context) {
 		switch (child->process(context)) {
 			case BTState::Running:
 				return BTState::Running;
@@ -187,7 +187,7 @@ namespace df {
 		child->init(a);
 	}
 
-	BTState BTSucceeder::process(const BTContext context) {
+	BTState BTSucceeder::process(BTContext& context) {
 		child->process(context);
 		return BTState::Success;
 	}
@@ -213,7 +213,7 @@ namespace df {
 		child->init(a);
 	}
 
-	BTState BTUntilFailureRepeater::process(const BTContext context) {
+	BTState BTUntilFailureRepeater::process(BTContext& context) {
 		switch (child->process(context)) {
 			case BTState::Running:
 				return BTState::Running;
@@ -248,7 +248,7 @@ namespace df {
 		child->init(a);
 	}
 
-	BTState BTRepeater::process(const BTContext context) {
+	BTState BTRepeater::process(BTContext& context) {
 		switch (child->process(context)) {
 			case BTState::Running:
 				return BTState::Running;
@@ -290,7 +290,7 @@ namespace df {
 
 	void BTFunction::init(const Agent) {}
 
-	BTState BTFunction::process(const BTContext context) {
+	BTState BTFunction::process(BTContext& context) {
 		return this->fn(context, this->args);
 	}
 

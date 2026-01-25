@@ -13,8 +13,8 @@ namespace df {
 		}
 		aiSystem->getCommandRegistry().registerCommand(
 		"setMoveTarget",
-		[this](BTContext context, const BTF::Args& a) {
-			int target = glm::iround(CommandRegistry::getArg<double>(a, "id", 0.0));
+		[this](const BTContext& context, const BTF::Args& a) {
+			int target = glm::iround(BTF::getArg<double>(a, "id", 0.0));
 			this->setTarget(target, context.entity);
 			movementState = true;
 			targetSet = true;
