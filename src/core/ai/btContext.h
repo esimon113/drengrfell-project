@@ -45,7 +45,7 @@ namespace df {
 
 		// Function for safe keyword argument lookup
 		template<typename T>
-		static T getArg(const Args& args, const std::string& key, T defaultValue) {
+		T getArg(const Args& args, const std::string& key, T defaultValue) {
 			if (auto iterator = args.find(key); iterator != args.end()) {
 				if (std::holds_alternative<T>(iterator->second)) {
 					return std::get<T>(iterator->second);
@@ -55,11 +55,24 @@ namespace df {
 		}
 
 		template<typename T>
-		static bool isArg(const Args& args, const std::string& key) {
+		bool isArg(const Args& args, const std::string& key) {
 			if (auto iterator = args.find(key); iterator != args.end()) {
 				return std::holds_alternative<T>(iterator->second);
 			}
 			return false;
+		}
+
+		inline BTValueType evaluateString(const BTContext& context, const std::string& input) {
+			if (input.starts_with("$")) {
+				auto actual = input.substr(1);
+				if (context.storage.data.contains(actual)) {
+					return context.storage.data.at(actual);
+				} else {
+					return {};
+				}
+			} else {
+				return input;
+			}
 		}
 	}
 }

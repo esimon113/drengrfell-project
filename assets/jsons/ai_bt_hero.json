@@ -12,14 +12,14 @@
 			"kind": "function",
 			"name": "store",
 			"args": {
-				"val": 3.14
+				"val": "Pi = 3.14"
 			}
 		},
 		{
 			"kind": "function",
 			"name": "print",
 			"args": {
-				"text": "BT was processed!"
+				"text": "$ans"
 			}
 		}
 	]
