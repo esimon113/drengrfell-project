@@ -2,17 +2,38 @@
 #include "application.h"
 
 namespace df {
-	EntityMovementSystem EntityMovementSystem::init(Registry* registry, GameState& gameState) noexcept {
-		EntityMovementSystem self;
-		self.registry = registry;
-		self.gameState = &gameState;
-
-		return self;
+	EntityMovementSystem::EntityMovementSystem(
+		Registry* registry,
+		const std::shared_ptr<GameState>& gameState,
+		const std::shared_ptr<AiSystem>& aiSystem
+	) : registry(registry), gameState(gameState), aiSystem(aiSystem) {
+		// The capturing of the this-pointer renders the former init-method invalid
+		if (!aiSystem) {
+			fmt::print("EntityMovementSystem::EntityMovementSystem: aiSystem is null");
+		}
+		aiSystem->getCommandRegistry().registerCommand(
+		"setMoveTarget",
+		[this](const BTContext& context, const BTF::Args& a) {
+			int target = glm::iround(BTF::getArg<double>(a, "id", 0.0));
+			this->setTarget(target, context.entity);
+			movementState = true;
+			targetSet = true;
+			fmt::println("Set move target of entity: {} to {}", static_cast<int>(context.entity), target);
+			return BTState::Success;
+		}
+	);
 	}
 
+	EntityMovementSystem::~EntityMovementSystem() {
+		aiSystem->getCommandRegistry().unregisterCommand("setMoveTarget");
+	}
+
+
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& targetPos, float deltaTime) noexcept {
-		if (!registry)
+		if (!registry) {
+			fmt::println("EntityMovementSystem::moveEntityTo: registry is null");
 			return;
+		}
 
 		auto& animComp = registry->animations.get(entity);
 		glm::vec2& currentPos = registry->positions.get(entity);

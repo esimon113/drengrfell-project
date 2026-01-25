@@ -136,6 +136,7 @@ namespace df {
 
 	static constexpr std::array<const char*, static_cast<size_t>(assets::JsonFile::COUNT)> JSON_FILES = {
 		"world_generation.json",
+		"ai_bt_hero.json"
 	};
 
 

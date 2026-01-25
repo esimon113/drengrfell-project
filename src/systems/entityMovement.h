@@ -6,9 +6,11 @@
 
 
 namespace df {
+	class AiSystem;
 	class EntityMovementSystem {
 	  public:
-		static EntityMovementSystem init(Registry* registry, GameState& gameState) noexcept;
+		explicit EntityMovementSystem(Registry* registry, const std::shared_ptr<GameState> &gameState, const std::shared_ptr<AiSystem>& aiSystem);
+		~EntityMovementSystem();
 
 		void moveEntityTo(Entity entity, const glm::vec2& targetPosition, float deltaTime) noexcept;
 
@@ -27,11 +29,13 @@ namespace df {
 
 	  private:
 		Registry* registry;
-		GameState* gameState;
+		std::shared_ptr<GameState> gameState;
+		std::shared_ptr<AiSystem> aiSystem;
+
 		bool movementState = false;
 		bool moving = false;
 		bool targetSet = false;
 		glm::vec2 targetPosition = glm::vec2(0.0f);
-		size_t targetPositionTileID;
+		size_t targetPositionTileID{};
 	};
 } // namespace df

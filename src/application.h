@@ -19,6 +19,7 @@
 
 #include <systems/buildingPreview.h>
 #include <systems/systems.h>
+#include "ai/aiSystem.h"
 
 #include <registry.h>
 #include <window.h>
@@ -43,13 +44,14 @@ namespace df {
 
 		std::shared_ptr<EventBus> eventBus;
 		std::unique_ptr<AudioSystem> audioEngine;
+		std::shared_ptr<AiSystem> aiSystem;
 
 		WorldSystem world;
 		// PhysicsSystem physics;
 
 		RenderSystem render;
 
-		EntityMovementSystem movementSystem;
+		std::unique_ptr<EntityMovementSystem> movementSystem;
 		BuildingPreviewSystem buildingPreviewSystem;
 		TradingSystem tradingSystem;
 		EventPresentationSystem eventPresentationSystem;

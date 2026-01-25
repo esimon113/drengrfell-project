@@ -1,37 +1,55 @@
 #include "fmt/base.h"
 #include <utility>
+#include <fstream>
 
 #include "behaviorTree.h"
 #include "commandRegistry.h"
+#include "jsonUtils.h"
 
 using json = nlohmann::json;
 
 namespace df {
-	std::shared_ptr<BTNode> BTNode::deserialize(const json &j) {
+	std::shared_ptr<BTNode> BTNode::deserialize(const json &j, const CommandRegistry& c) {
 		std::string kind = j.value("kind", "");
-		if (kind == "sequence") {
+		if (kind == "sequence" || kind == "and") {
 			auto ptr = std::make_shared<BTSequence>();
-			if (ptr->deserializeInplace(j)) return ptr;
-		} else if (kind == "selector") {
+			if (ptr->deserializeInplace(j, c)) return ptr;
+		} else if (kind == "selector" || kind == "or") {
 			auto ptr = std::make_shared<BTSelector>();
-			if (ptr->deserializeInplace(j)) return ptr;
-		} else if (kind == "inverter") {
+			if (ptr->deserializeInplace(j, c)) return ptr;
+		} else if (kind == "inverter" || kind == "not") {
 			auto ptr = std::make_shared<BTInverter>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "succeeder") {
 			auto ptr = std::make_shared<BTSucceeder>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "untilFailureRepeater") {
 			auto ptr = std::make_shared<BTUntilFailureRepeater>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "repeater") {
 			auto ptr = std::make_shared<BTRepeater>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "function") {
 			auto ptr = std::make_shared<BTFunction>();
-			if (ptr->deserializeInplace(j)) return ptr;
+			if (ptr->deserializeInplace(j, c)) return ptr;
 		}
 		return nullptr;
+	}
+
+	Result<std::shared_ptr<BTNode>, ResultError> BTNode::deserialize(const CommandRegistry& cr, assets::JsonFile asset) {
+		auto path = assets::getAssetPath(asset);
+		std::ifstream file(path);
+		if (!file) {
+			return Err(ResultError(ResultError::Kind::IOError, "BTNode::deserialize(): Could not open file: " + path));
+		}
+
+		try {
+			json j;
+			file >> j;
+			return Ok(deserialize(j, cr));
+		} catch (const json::parse_error& e) {
+			return Err(ResultError(ResultError::Kind::JsonParseError, "BTNode::deserialize(): Could not parse file: " + path + ". Reason: " + std::string(e.what())));
+		}
 	}
 
 
@@ -42,12 +60,12 @@ namespace df {
 		}
 	}
 
-	BTState BTSequence::process(const Agent a) {
-		for (unsigned i = this->currentChildIndex[a]; i < children.size(); i++) {
+	BTState BTSequence::process(BTContext& context) {
+		for (unsigned i = this->currentChildIndex[context.entity]; i < children.size(); i++) {
 			std::shared_ptr<BTNode>& child = children[i];
-			switch (child->process(a)) {
+			switch (child->process(context)) {
 				case BTState::Running:
-					this->currentChildIndex[a] = i;
+					this->currentChildIndex[context.entity] = i;
 					return BTState::Running;
 				case BTState::Success:
 					continue;
@@ -71,11 +89,11 @@ namespace df {
 		};
 	}
 
-	bool BTSequence::deserializeInplace(const nlohmann::json& j) {
+	bool BTSequence::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json a = j.value("children", nlohmann::json::array());
 		if (!a.is_array()) return false; // TODO: Add proper error handling
 		for (auto& element : a) {
-			auto c = deserialize(element);
+			auto c = deserialize(element, cr);
 			if (c == nullptr) return false;
 			this->children.push_back(c);
 		}
@@ -90,12 +108,12 @@ namespace df {
 		}
 	}
 
-	BTState BTSelector::process(const Agent a) {
-		for (unsigned i = this->currentChildIndex[a]; i < children.size(); i++) {
+	BTState BTSelector::process(BTContext& context) {
+		for (unsigned i = this->currentChildIndex[context.entity]; i < children.size(); i++) {
 			std::shared_ptr<BTNode>& child = children[i];
-			switch (child->process(a)) {
+			switch (child->process(context)) {
 				case BTState::Running:
-					this->currentChildIndex[a] = i;
+					this->currentChildIndex[context.entity] = i;
 					return BTState::Running;
 				case BTState::Success:
 					return BTState::Success;
@@ -119,11 +137,11 @@ namespace df {
 		};
 	}
 
-	bool BTSelector::deserializeInplace(const nlohmann::json& j) {
+	bool BTSelector::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json a = j.value("children", nlohmann::json::array());
 		if (!a.is_array()) return false; // TODO: Add proper error handling
 		for (auto& element : a) {
-			auto c = deserialize(element);
+			auto c = deserialize(element, cr);
 			if (c == nullptr) return false;
 			this->children.push_back(c);
 		}
@@ -135,8 +153,8 @@ namespace df {
 		child->init(a);
 	}
 
-	BTState BTInverter::process(const Agent a) {
-		switch (child->process(a)) {
+	BTState BTInverter::process(BTContext& context) {
+		switch (child->process(context)) {
 			case BTState::Running:
 				return BTState::Running;
 			case BTState::Success:
@@ -155,10 +173,10 @@ namespace df {
 		};
 	}
 
-	bool BTInverter::deserializeInplace(const nlohmann::json& j) {
+	bool BTInverter::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
 		if (!o.is_object()) return false; // TODO: Add proper error handling
-		auto c = deserialize(o);
+		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
 		return true;
@@ -169,8 +187,8 @@ namespace df {
 		child->init(a);
 	}
 
-	BTState BTSucceeder::process(const Agent a) {
-		child->process(a);
+	BTState BTSucceeder::process(BTContext& context) {
+		child->process(context);
 		return BTState::Success;
 	}
 
@@ -181,10 +199,10 @@ namespace df {
 		};
 	}
 
-	bool BTSucceeder::deserializeInplace(const nlohmann::json& j) {
+	bool BTSucceeder::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
 		if (!o.is_object()) return false; // TODO: Add proper error handling
-		auto c = deserialize(o);
+		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
 		return true;
@@ -195,8 +213,8 @@ namespace df {
 		child->init(a);
 	}
 
-	BTState BTUntilFailureRepeater::process(const Agent a) {
-		switch (child->process(a)) {
+	BTState BTUntilFailureRepeater::process(BTContext& context) {
+		switch (child->process(context)) {
 			case BTState::Running:
 				return BTState::Running;
 			case BTState::Success:
@@ -215,10 +233,10 @@ namespace df {
 		};
 	}
 
-	bool BTUntilFailureRepeater::deserializeInplace(const nlohmann::json& j) {
+	bool BTUntilFailureRepeater::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
 		if (!o.is_object()) return false; // TODO: Add proper error handling
-		auto c = deserialize(o);
+		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
 		return true;
@@ -230,13 +248,13 @@ namespace df {
 		child->init(a);
 	}
 
-	BTState BTRepeater::process(const Agent a) {
-		switch (child->process(a)) {
+	BTState BTRepeater::process(BTContext& context) {
+		switch (child->process(context)) {
 			case BTState::Running:
 				return BTState::Running;
 			case BTState::Success:
-				counter[a]++;
-				return counter[a] >= times ? BTState::Success : BTState::Running;
+				counter[context.entity]++;
+				return counter[context.entity] >= times ? BTState::Success : BTState::Running;
 			case BTState::Failed:
 				return BTState::Failed;
 			default:
@@ -252,10 +270,10 @@ namespace df {
 		};
 	}
 
-	bool BTRepeater::deserializeInplace(const nlohmann::json& j) {
+	bool BTRepeater::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
 		if (!o.is_object()) return false; // TODO: Add proper error handling
-		auto c = deserialize(o);
+		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
 		this->times = j.value("times", 1);
@@ -263,32 +281,38 @@ namespace df {
 	}
 
 
-	BTFunction::BTFunction(std::string name) : name(std::move(name)) {
-		const auto& comReg = CommandRegistry::getInstance();
-		if (!comReg.hasCommand(this->name)) {
+	BTFunction::BTFunction(std::string name, const CommandRegistry& commandRegistry) : name(std::move(name)) {
+		if (!commandRegistry.hasCommand(this->name)) {
 			fmt::println(stderr, "[AI Error]: Unknown command '{}'", this->name);
 		}
-		this->fn = comReg.getCommand(this->name);
+		this->fn = commandRegistry.getCommand(this->name);
 	}
 
 	void BTFunction::init(const Agent) {}
 
-	BTState BTFunction::process(const Agent a) {
-		return fn(a);
+	BTState BTFunction::process(BTContext& context) {
+		BTF::Args evaluatedArgs = this->args;
+		for (auto const& [key, value] : evaluatedArgs) {
+			if (std::holds_alternative<std::string>(value)) {
+				evaluatedArgs[key] = BTF::evaluateString(context, std::get<std::string>(value));
+			}
+		}
+		return this->fn(context, evaluatedArgs);
 	}
 
 	nlohmann::json BTFunction::serialize() const {
 		return {
 				{"kind", "function"},
-				{"name", name}
+				{"name", this->name},
+				{"args", args}
 		};
 	}
 
-	bool BTFunction::deserializeInplace(const nlohmann::json& j) {
+	bool BTFunction::deserializeInplace(const nlohmann::json& j, const CommandRegistry& commandRegistry) {
 		this->name = j.value("name", "");
-		const auto& comReg = CommandRegistry::getInstance();
-		if (!comReg.hasCommand(this->name)) return false;
-		this->fn = comReg.getCommand(this->name);
+		if (!commandRegistry.hasCommand(this->name)) return false;
+		this->fn = commandRegistry.getCommand(this->name);
+		this->args = j.value("args", this->args);
 		return true;
 	}
 }
