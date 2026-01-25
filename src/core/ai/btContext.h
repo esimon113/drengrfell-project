@@ -28,18 +28,38 @@ namespace df {
 		return "UNKNOWN";
 	}
 
-	struct BTMemory {
-		std::unordered_map<std::string, std::any> data{};
+	using BTValueType = std::variant<std::string, double, bool>;
+
+	struct BTStorage {
+		std::unordered_map<std::string, BTValueType> data{};
 	};
 
 	struct BTContext {
 		Agent entity{};
-		BTMemory memory{};
+		BTStorage storage{};
 	};
 
 	namespace BTF {
-		using JsonType = std::variant<std::string, double, bool>;
-		using Args = std::unordered_map<std::string, JsonType>;
-		using Command = std::function<BTState(BTContext, Args)>;
+		using Args = std::unordered_map<std::string, BTValueType>;
+		using Command = std::function<BTState(BTContext&, Args)>;
+
+		// Function for safe keyword argument lookup
+		template<typename T>
+		static T getArg(const Args& args, const std::string& key, T defaultValue) {
+			if (auto iterator = args.find(key); iterator != args.end()) {
+				if (std::holds_alternative<T>(iterator->second)) {
+					return std::get<T>(iterator->second);
+				}
+			}
+			return defaultValue;
+		}
+
+		template<typename T>
+		static bool isArg(const Args& args, const std::string& key) {
+			if (auto iterator = args.find(key); iterator != args.end()) {
+				return std::holds_alternative<T>(iterator->second);
+			}
+			return false;
+		}
 	}
 }

@@ -12,16 +12,35 @@ namespace df {
 	void AiSystem::loadCommands() {
 		this->commands.registerCommand(
 			"print",
-			[](BTContext /*context*/, const BTF::Args &a) {
-				std::cout << CommandRegistry::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
+			[](BTContext& /*context*/, const BTF::Args &a) {
+				std::cout << BTF::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
 				return BTState::Success;
 			}
 		);
 		this->commands.registerCommand(
 			"error",
-			[](BTContext /*context*/, const BTF::Args &a) {
-				std::cerr << CommandRegistry::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
+			[](BTContext& /*context*/, const BTF::Args &a) {
+				std::cerr << BTF::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
 				return BTState::Failed;
+			}
+		);
+		this->commands.registerCommand(
+			"store",
+			[](BTContext& context, const BTF::Args &a) {
+				auto varname = BTF::getArg<std::string>(a, "var", "ans");
+				BTValueType varvalue;
+				if (BTF::isArg<std::string>(a, "val")) {
+					varvalue = BTF::getArg<std::string>(a, "val", "");
+					fmt::println("[AI]: Stored {} into {}", std::get<std::string>(varvalue), varname);
+				} else if (BTF::isArg<double>(a, "val")) {
+					varvalue = BTF::getArg<double>(a, "val", 0.0);
+					fmt::println("[AI]: Stored {} into {}", std::get<double>(varvalue), varname);
+				} else if (BTF::isArg<bool>(a, "val")) {
+					varvalue = BTF::getArg<bool>(a, "val", false);
+					fmt::println("[AI]: Stored {} into {}", std::get<bool>(varvalue), varname);
+				}
+				context.storage.data[varname] = varvalue;
+				return BTState::Success;
 			}
 		);
 		this->commandsLoaded = true;
@@ -48,9 +67,10 @@ namespace df {
 			}
 			if (key == GLFW_KEY_P) {
 				if (registry) {
-					Agent p = registry->animations.entities.front();
-					fmt::println("Agent P is {}", int(p));
-					fmt::println("{}", to_string(this->btRoot->process(BTContext(p))));
+					const Agent p = registry->animations.entities.front();
+					fmt::println("Agent P is {}", static_cast<int>(p));
+					BTContext context {p};
+					fmt::println("{}", to_string(this->btRoot->process(context)));
 				}
 			}
 		}

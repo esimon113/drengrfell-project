@@ -20,7 +20,7 @@ namespace df {
 	public:
 		virtual ~BTNode() = default;
 		virtual void init(Agent) {};
-		virtual BTState process(BTContext) = 0;
+		virtual BTState process(BTContext&) = 0;
 		virtual nlohmann::json serialize() const = 0;
 		static std::shared_ptr<BTNode> deserialize(const nlohmann::json&, const CommandRegistry&);
 		virtual bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) = 0;
@@ -33,7 +33,7 @@ namespace df {
 		BTSequence() = default;
 		explicit BTSequence(const std::vector<std::shared_ptr<BTNode>> &children) : children(children) {}
 		void init(Agent) override;
-		BTState process(BTContext) override;
+		BTState process(BTContext&) override;
 		nlohmann::json serialize() const override;
 		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
@@ -47,7 +47,7 @@ namespace df {
 		BTSelector() = default;
 		explicit BTSelector(const std::vector<std::shared_ptr<BTNode>> &children) : children(children) {}
 		void init(Agent) override;
-		BTState process(BTContext) override;
+		BTState process(BTContext&) override;
 		nlohmann::json serialize() const override;
 		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
@@ -61,7 +61,7 @@ namespace df {
 		BTInverter() = default;
 		explicit BTInverter(const std::shared_ptr<BTNode> &child) : child(child) {}
 		void init(Agent) override;
-		BTState process(BTContext) override;
+		BTState process(BTContext&) override;
 		nlohmann::json serialize() const override;
 		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
@@ -74,7 +74,7 @@ namespace df {
 		BTSucceeder() = default;
 		explicit BTSucceeder(const std::shared_ptr<BTNode> &child) : child(child) {}
 		void init(Agent) override;
-		BTState process(BTContext) override;
+		BTState process(BTContext&) override;
 		nlohmann::json serialize() const override;
 		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
@@ -87,7 +87,7 @@ namespace df {
 		BTUntilFailureRepeater() = default;
 		explicit BTUntilFailureRepeater(const std::shared_ptr<BTNode> &child) : child(child) {}
 		void init(Agent) override;
-		BTState process(BTContext) override;
+		BTState process(BTContext&) override;
 		nlohmann::json serialize() const override;
 		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
@@ -100,7 +100,7 @@ namespace df {
 		BTRepeater() = default;
 		explicit BTRepeater(const std::shared_ptr<BTNode> &child, const unsigned times = 1) : child(child), times(times) {}
 		void init(Agent) override;
-		BTState process(BTContext) override;
+		BTState process(BTContext&) override;
 		nlohmann::json serialize() const override;
 		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
@@ -119,12 +119,12 @@ namespace df {
 		BTFunction() = default;
 		explicit BTFunction(std::string name, const CommandRegistry& commandRegistry);
 		void init(Agent) override;
-		BTState process(BTContext) override;
+		BTState process(BTContext&) override;
 		nlohmann::json serialize() const override;
 		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
 	private:
 		std::string name = "success";
 		BTF::Args args{};
-		BTF::Command fn = [](BTContext, const BTF::Args&){ return BTState::Success; };
+		BTF::Command fn = [](BTContext&, const BTF::Args&){ return BTState::Success; };
 	};
 }
