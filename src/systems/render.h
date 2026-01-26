@@ -12,10 +12,12 @@
 #include "renderBuildings.h"
 #include "renderHero.h"
 #include "renderHud.h"
-#include "renderSnow.h"
+#include "renderWeather.h"
 #include "renderText.h"
 #include "renderTiles.h"
 #include "renderNotification.h"
+#include "eventPresentation.h"
+#include "events/eventBus.h"
 #include "renderSettlementMenu.h"
 
 namespace df {
@@ -26,7 +28,7 @@ namespace df {
 		RenderSystem() = default;
 		~RenderSystem() = default;
 
-		static RenderSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState, GameController* gameController) noexcept;
+		static RenderSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState, GameController* gameController, EventBus* eventBus) noexcept;
 		void deinit() noexcept;
 
 		void step(float dt) noexcept;
@@ -42,8 +44,9 @@ namespace df {
 			RenderBuildingPreviewsSystem renderBuildingPreviewsSystem;
 			RenderTextSystem renderTextSystem;
 			RenderHudSystem renderHudSystem;
-			RenderSnowSystem renderSnowSystem;
+			RenderWeatherSystem renderWeatherSystem;
 			RenderNotificationSystem renderNotificationSystem;
+			EventPresentationSystem eventPresentationSystem;
 			RenderSettlementMenuSystem renderSettlementMenuSystem;
 
 			RenderTextSystem& getRenderTextSystem() noexcept {
@@ -52,11 +55,14 @@ namespace df {
 			RenderNotificationSystem& getRenderNotificationSystem() noexcept {
 				return renderNotificationSystem;
 			}
-			RenderSnowSystem& getRenderSnowSystem() noexcept {
-				return renderSnowSystem;
+			RenderWeatherSystem& getRenderWeatherSystem() noexcept {
+				return renderWeatherSystem;
 			}
 			RenderTilesSystem& getRenderTilesSystem() noexcept {
 				return renderTilesSystem;
+			}
+			EventPresentationSystem& getEventPresentationSystem() noexcept {
+				return eventPresentationSystem;
 			}
 
 	  private:

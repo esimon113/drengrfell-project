@@ -145,9 +145,7 @@ add_executable(${PROJECT_NAME}
 
 	${PROJECT_SOURCE_DIR}/src/core/ai/behaviorTree.cpp
 	${PROJECT_SOURCE_DIR}/src/core/ai/commandRegistry.cpp
-
-	${PROJECT_SOURCE_DIR}/src/core/ai/behaviorTree.cpp
-	${PROJECT_SOURCE_DIR}/src/core/ai/commandRegistry.cpp
+	${PROJECT_SOURCE_DIR}/src/core/ai/aiSystem.cpp
 
 	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
@@ -158,6 +156,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/renderText.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderNotification.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderSettlementMenu.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/eventPresentation.cpp
 
 	${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp
@@ -177,7 +176,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/renderTiles.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderCommon.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderHud.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderSnow.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/renderWeather.cpp
 	${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
 	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp

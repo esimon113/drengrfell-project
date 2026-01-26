@@ -145,6 +145,15 @@ namespace df::types {
 		BLIZZARD
 	};
 
+	// Expandable for other events like GAME_OVER, GAME_WON etc.
+	enum class EventType {
+		HAZARD_BEAR,
+		HAZARD_MUD,
+		HAZARD_BLIZZARD,
+		HAZARD_ROCKSLIDE
+	};
+
+	
 
 	enum class SettlementType {
 		WOOD,

@@ -8,6 +8,11 @@ namespace df {
 		"background/Foundations of Stone.mp3",
 		"background/Rest of the Hearthlands.mp3",
 		"background/The Weaver's Hope.mp3",
+		"event/popup.mp3",					// downloaded from https://pixabay.com/sound-effects/musical-tada-military-2-183973/
+		"event/bear.wav",					// AI generated
+		"event/blizzard.wav",				// AI generated
+		"event/mud.wav",					// AI generated
+		"event/rockslide.wav",				// AI generated
 	};
 
 
@@ -40,7 +45,8 @@ namespace df {
 		"text",
 		"hud",
 		"tilepick",
-		"location-highlight"};
+		"location-highlight",
+		"dim-screen"};
 
 
 	template <>
@@ -106,6 +112,11 @@ namespace df {
 		"ressources/wool.png",
 		"ressources/grain.png",
 
+		"events/bear.png",	   // AI generated
+		"events/blizzard.png", // AI generated
+		"events/mud.png",	   // AI generated
+		"events/rockslide.png", // AI generated
+
 		"settlements/castle/castle-sprites1.png",
 		"settlements/castle/castle-sprites2.png",
 		"settlements/castle/castle-sprites3.png",
@@ -131,6 +142,7 @@ namespace df {
 
 	static constexpr std::array<const char*, static_cast<size_t>(assets::JsonFile::COUNT)> JSON_FILES = {
 		"world_generation.json",
+		"ai_bt_hero.json"
 	};
 
 
