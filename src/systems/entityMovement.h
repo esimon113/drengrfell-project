@@ -27,6 +27,9 @@ namespace df {
 		glm::vec2 getTargetPosition() const noexcept { return targetPosition; }
 		void setTarget(const size_t id, Entity entity) noexcept;
 
+		unsigned getTileIDFromWorldPosition(const glm::vec2& worldPos) const noexcept;
+    	void updateTileAndDiscover(Entity entity, unsigned tileID) noexcept;
+
 	  private:
 		Registry* registry;
 		std::shared_ptr<GameState> gameState;
