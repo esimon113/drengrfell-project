@@ -54,12 +54,18 @@ namespace df {
 			return ::std::nullopt;
 		}
 
-		auto win = Window::init(600, 600, PROJECT_NAME);
+		auto win = Window::init(1280, 720, PROJECT_NAME);
 		if (!win) {
 			glfwTerminate();
 			return ::std::nullopt;
 		}
 		self.window = ::std::move(win);
+
+		glfwSetWindowSizeLimits(
+			self.window->getHandle(),
+			1280, 720,
+			GLFW_DONT_CARE, GLFW_DONT_CARE 
+		);
 
 		self.window->makeContextCurrent();
 
@@ -179,8 +185,6 @@ namespace df {
 		int fbWidth, fbHeight;
 		glfwGetFramebufferSize(window->getHandle(), &fbWidth, &fbHeight);
 		onResizeCallback(window->getHandle(), fbWidth, fbHeight);
-
-
 
 		while (!window->shouldClose()) {
 			glfwPollEvents();

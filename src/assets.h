@@ -96,6 +96,14 @@ namespace df {
 			HERO_RUN_4,
 			HERO_RUN_5,
 
+			// Hud ressources
+			RESSOURCE_WOOD,
+			RESSOURCE_STONE,
+			RESSOURCE_CLAY,
+			RESSOURCE_WOOL,
+			RESSOURCE_GRAIN,
+			
+
 			HAZARD_BEAR,
 			HAZARD_BLIZZARD,
 			HAZARD_MUD,

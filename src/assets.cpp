@@ -106,6 +106,12 @@ namespace df {
 		"hero/run/run_4.png",
 		"hero/run/run_5.png",
 
+		"ressources/wood.png",
+		"ressources/stone.png",
+		"ressources/clay.png",
+		"ressources/wool.png",
+		"ressources/grain.png",
+
 		"events/bear.png",	   // AI generated
 		"events/blizzard.png", // AI generated
 		"events/mud.png",	   // AI generated

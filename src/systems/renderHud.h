@@ -4,6 +4,7 @@
 #include "window.h"
 #include <renderText.h>
 #include <utils/shader.h>
+#include "utils/texture.h"
 
 namespace df {
 	class RenderHudSystem {
@@ -17,6 +18,7 @@ namespace df {
 		void reset() noexcept;
 
 		void renderRectBox(glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept;
+		void drawSprite(Texture& tex, glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept;
 		bool isMouseOverEndTurn(glm::vec2 mouse) const noexcept;
 		bool onMouseButton(glm::vec2 mouse, int button, int action) noexcept;
 		bool wasEndTurnClicked(glm::vec2 mouse, int button, int action) const noexcept;
@@ -32,11 +34,24 @@ namespace df {
 		std::shared_ptr<GameState> gameState;
 		Viewport viewport;
 
+		// ressources textures
+		Texture woodTexture;
+		Texture stoneTexture;
+		Texture clayTexture;
+		Texture woolTexture;
+		Texture grainTexture;
+		std::vector<std::pair<Texture, int>> resourceIconsWithAmount;
+
+		// shader
 		Shader rectShader;
+		Shader textureShader;
 		GLuint quadVao = 0;
 		GLuint vbo = 0;
 		glm::vec2 hudSize;
 		glm::vec2 hudPos;
+		glm::vec2 iconPos;
+		float iconSize;
+		float iconPadding;
 
 		struct Button {
 			// rectangle in pixels; origin is bottom-left
