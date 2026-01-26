@@ -12,10 +12,14 @@ namespace df {
 
 	class RenderWeatherSystem {
 	  public:
+	  	enum class WeatherType { SUNNY, RAIN, SNOW };
+
 		static RenderWeatherSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept;
 		void increaseIntensity() { weatherIntensity += 0.20f; }
 		void decreaseIntensity() { weatherIntensity -= 0.20f; }
 		float getIntensity() { return weatherIntensity;}
+
+		void randomizeWeather() noexcept;
 
 
 		void step(float deltaTime) noexcept;

@@ -38,7 +38,7 @@ namespace df {
 		this->particlesCount = 0;
 		this->weatherIntensity = 0.0f; 
 	}
-
+	
 	RenderWeatherSystem RenderWeatherSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept {
 		RenderWeatherSystem self;
 
@@ -98,6 +98,28 @@ namespace df {
 		particleShader.deinit();
 	}
 
+	void RenderWeatherSystem::randomizeWeather() noexcept {
+		static std::random_device rd;
+		static std::mt19937 rng(rd());
+		std::uniform_int_distribution<int> rollDist(0, 100);
+
+		int roll = rollDist(rng);
+
+		if (roll < 30) { 
+			//currentType = WeatherType::RAIN;
+			weatherIntensity = std::uniform_real_distribution<float>(-0.8f, -0.4f)(rng);
+		} 
+		else if (roll > 70) { 
+			//currentType = WeatherType::SNOW;
+			weatherIntensity = std::uniform_real_distribution<float>(0.4f, 0.8f)(rng);
+		} 
+		else {
+			//currentType = WeatherType::CLEAR;
+			weatherIntensity = 0.0f;
+		}
+	}
+
+
 	int RenderWeatherSystem::findUnusedParticle() noexcept {
 		static int lastUsedParticle = 0;
 		for (int i = lastUsedParticle; i < maxParticles; i++) {
@@ -119,40 +141,39 @@ namespace df {
 
 	void RenderWeatherSystem::step(float deltaTime) noexcept {
 	
-    static std::random_device rd;
-    static std::mt19937 gen(rd()); 
-    static std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+		static std::random_device rd;
+		static std::mt19937 gen(rd()); 
+		static std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 
-    const float screenWidth = 100.0f;
-    const float screenHeight = 100.0f;
-    static float spawnAccumulator = 0.0f; 
+		const float screenWidth = 100.0f;
+		const float screenHeight = 100.0f;
+		static float spawnAccumulator = 0.0f; 
 
-    if (std::abs(weatherIntensity) < 0.01f) {
-        spawnAccumulator = 0.0f;
-    } 
-    else if (weatherIntensity > 0) {
-        float particlesToSpawnFloat = screenWidth * deltaTime * 2.0f * weatherIntensity;
-        spawnAccumulator += particlesToSpawnFloat;
-        int newparticles = static_cast<int>(spawnAccumulator);
-        spawnAccumulator -= newparticles;
+		if (std::abs(weatherIntensity) < 0.01f) {
+			spawnAccumulator = 0.0f;
+		} else if (weatherIntensity > 0) {
+			float particlesToSpawnFloat = screenWidth * deltaTime * 2.0f * weatherIntensity;
+			spawnAccumulator += particlesToSpawnFloat;
+			int newparticles = static_cast<int>(spawnAccumulator);
+			spawnAccumulator -= newparticles;
 
-        for (int i = 0; i < newparticles; i++) {
-            int unParticles = findUnusedParticle();
-            Particle& p = particlesContainer[unParticles];
-            float rx = dis(gen);
-            float rz = dis(gen);
-            p.depth = rz * rz;
-            p.pos = glm::vec3(rx * screenWidth, screenHeight + 5.0f, 0.0f);
-            float baseFall = -3.0f; 
-            float depthFall = -3.0f;
-            p.speed.y = baseFall + p.depth * depthFall;
-            p.speed.x = ((rand() % 60 - 30) / 10.0f);
-            p.life = 15.0f + (rand() % 5); 
-            p.size = 0.5f + p.depth * 0.4f;
-            p.r = 235; p.g = 238; p.b = 242;
-            p.a = 50 + p.depth * 150;
-        }
-	}	else if (weatherIntensity < 0) {
+			for (int i = 0; i < newparticles; i++) {
+				int unParticles = findUnusedParticle();
+				Particle& p = particlesContainer[unParticles];
+				float rx = dis(gen);
+				float rz = dis(gen);
+				p.depth = rz * rz;
+				p.pos = glm::vec3(rx * screenWidth, screenHeight + 5.0f, 0.0f);
+				float baseFall = -3.0f; 
+				float depthFall = -3.0f;
+				p.speed.y = baseFall + p.depth * depthFall;
+				p.speed.x = ((rand() % 60 - 30) / 10.0f);
+				p.life = 15.0f + (rand() % 5); 
+				p.size = 0.5f + p.depth * 0.4f;
+				p.r = 235; p.g = 238; p.b = 242;
+				p.a = 50 + p.depth * 150;
+			}
+		}else if (weatherIntensity < 0) {
 			float intensityAbs = std::abs(weatherIntensity);
 			float particlesToSpawnFloat = screenWidth * deltaTime * 10.0f * intensityAbs ;
 			spawnAccumulator += particlesToSpawnFloat;
