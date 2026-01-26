@@ -235,7 +235,7 @@ namespace df {
 					"  - 5 wood\n"
 					"  - 5 clay\n"
 					"  - 3 grain\n"
-					"  - 3 grass\n"
+					"  - 3 wool\n"
 					"ROAD\n"
 					"  - 1 wood\n"
 					"  - 1 clay";

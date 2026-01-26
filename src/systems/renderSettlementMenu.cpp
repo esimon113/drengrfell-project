@@ -556,7 +556,7 @@ namespace df {
 		addCost(types::TileType::MOUNTAIN, "Stone");
 		addCost(types::TileType::CLAY, "Clay");
 		addCost(types::TileType::FIELD, "Grain");
-		addCost(types::TileType::GRASS, "Grass");
+		addCost(types::TileType::GRASS, "Wool");
 
 		return line;
 	}
