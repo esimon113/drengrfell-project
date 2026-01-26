@@ -28,6 +28,46 @@ namespace df {
 		aiSystem->getCommandRegistry().unregisterCommand("setMoveTarget");
 	}
 
+	unsigned EntityMovementSystem::getTileIDFromWorldPosition(const glm::vec2& worldPos) const noexcept{
+		const Graph& map = this->gameState->getMap();
+		const unsigned columns = map.getMapWidth();
+
+		const glm::ivec2 rowCol = RenderCommon::worldToRowColCoordinates(worldPos);
+		int col = rowCol.x;
+		int row = rowCol.y;
+
+		if(col<0 || row<0 || col>= static_cast<int>(columns)){
+			return 0;
+		}
+
+		return row*columns +col;
+
+	}
+
+    
+	void EntityMovementSystem::updateTileAndDiscover(Entity entity, unsigned tileID) noexcept{
+		if (registry->tileID.has(entity)) {
+			registry->tileID.get(entity) = targetPositionTileID;
+		} else {
+			registry->tileID.emplace(entity, targetPositionTileID);
+		}
+
+		if (gameState) {
+			Player* playerPtr = gameState->getPlayer(0);
+			if (playerPtr) {
+				Player& player = *playerPtr;
+				player.exploreTile(tileID);
+				gameState->getMap().setRenderUpdateRequested(true);
+				fmt::println("Tile {} discovered!", tileID);
+			}
+		}
+
+		fmt::println("Hero destination: {},{} | Stored TileID: {}",
+						getTileWorldPosition(tileID).x,
+						getTileWorldPosition(tileID).y,
+						registry->tileID.get(entity));
+	}
+
 
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& targetPos, float deltaTime) noexcept {
 		if (!registry) {
@@ -41,34 +81,17 @@ namespace df {
 
 		glm::vec2 direction = targetPos - currentPos;
 		float distance = glm::length(direction);
+
+		unsigned previousTileID = registry->tileID.has(entity) ? registry->tileID.get(entity) : 0;
+
 		// if we are already there
 		if (distance == 0.0f) {
 			moving = false;
 			movementState = false;
 			targetSet = false;
 			scale.x = 1.0f;
-
-			if (registry->tileID.has(entity)) {
-				registry->tileID.get(entity) = targetPositionTileID;
-			} else {
-				registry->tileID.emplace(entity, targetPositionTileID);
-			}
-
-			if (gameState) {
-				Player* playerPtr = gameState->getPlayer(0);
-				if (playerPtr) {
-					Player& player = *playerPtr;
-					player.exploreTile(targetPositionTileID);
-					gameState->getMap().setRenderUpdateRequested(true);
-					fmt::println("Tile {} discovered!", targetPositionTileID);
-				}
-			}
-
-			fmt::println("Hero destination: {},{} | Stored TileID: {}",
-						 getTileWorldPosition(targetPositionTileID).x,
-						 getTileWorldPosition(targetPositionTileID).y,
-						 registry->tileID.get(entity));
-			return;
+			updateTileAndDiscover(entity, targetPositionTileID);
+        	return;	
 		}
 
 
@@ -120,6 +143,11 @@ namespace df {
 				animComp.anim.setCurrentFrameIndex(0);
 			}
 			currentPos += movement;
+
+			unsigned currentTileID = getTileIDFromWorldPosition(currentPos);
+			if (currentTileID != previousTileID && currentTileID != 0) {
+				updateTileAndDiscover(entity, currentTileID);
+			}
 		}
 	}
 
