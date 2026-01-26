@@ -21,10 +21,10 @@ namespace df {
 
 		// texture init	// TODO: update to right ressources
 		self.woodTexture = Texture::init(assets::Texture::RESSOURCE_WOOD);
-		self.stoneTexture = Texture::init(assets::Texture::RESSOURCE_WOOD);
-		self.clayTexture = Texture::init(assets::Texture::RESSOURCE_WOOD);
-		self.woolTexture = Texture::init(assets::Texture::RESSOURCE_WOOD);
-		self.grainTexture = Texture::init(assets::Texture::RESSOURCE_WOOD);
+		self.stoneTexture = Texture::init(assets::Texture::RESSOURCE_STONE);
+		self.clayTexture = Texture::init(assets::Texture::RESSOURCE_CLAY);
+		self.woolTexture = Texture::init(assets::Texture::RESSOURCE_WOOL);
+		self.grainTexture = Texture::init(assets::Texture::RESSOURCE_GRAIN);
 
 		// Viewport
 		glViewport(0, 0, extent.x, extent.y);

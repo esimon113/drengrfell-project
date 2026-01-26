@@ -92,6 +92,10 @@ namespace df {
 
 			// Hud ressources
 			RESSOURCE_WOOD,
+			RESSOURCE_STONE,
+			RESSOURCE_CLAY,
+			RESSOURCE_WOOL,
+			RESSOURCE_GRAIN,
 			
 			CASTLE1,
 			CASTLE2,
