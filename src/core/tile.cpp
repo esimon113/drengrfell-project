@@ -1,5 +1,6 @@
 #include "tile.h"
 #include "fmt/base.h"
+#include "types.h"
 
 #include <random>
 
@@ -92,5 +93,43 @@ namespace df {
 
 	void Tile::initializeHazardProfile() {
 		hazardProfile = HazardDB::getTileHazardProfile(type);
+	}
+
+	void Tile::updateEffect(types::WeatherType weather) noexcept {
+		switch (this->type) {
+			case types::TileType::FIELD:
+				if (weather == types::WeatherType::RAIN)       potency = types::TilePotency::HIGH;
+				else if (weather == types::WeatherType::SNOW)  potency = types::TilePotency::LOW;
+				else                                    potency = types::TilePotency::MEDIUM; // SUNNY
+				break;
+
+			case types::TileType::CLAY:
+				if (weather == types::WeatherType::SUNNY)      potency = types::TilePotency::MEDIUM;
+				else if (weather == types::WeatherType::RAIN)  potency = types::TilePotency::LOW;
+				else                                    potency = types::TilePotency::LOW;    // SNOW
+				break;
+
+			case types::TileType::FOREST:
+				if (weather == types::WeatherType::SUNNY)      potency = types::TilePotency::MEDIUM;
+				else if (weather == types::WeatherType::RAIN)  potency = types::TilePotency::MEDIUM;
+				else                                    potency = types::TilePotency::LOW;    // SNOW
+				break;
+
+			case types::TileType::MOUNTAIN:
+				if (weather == types::WeatherType::SUNNY)      potency = types::TilePotency::MEDIUM;
+				else if (weather == types::WeatherType::RAIN)  potency = types::TilePotency::LOW;
+				else                                    potency = types::TilePotency::LOW;    // SNOW
+				break;
+
+			case types::TileType::GRASS:
+				if (weather == types::WeatherType::RAIN)       potency = types::TilePotency::HIGH;
+				else if (weather == types::WeatherType::SNOW)  potency = types::TilePotency::LOW;
+				else                                    potency = types::TilePotency::MEDIUM; // SUNNY
+				break; 
+
+			default:
+				potency = types::TilePotency::MEDIUM;
+				break;
+		}
 	}
 } // namespace df

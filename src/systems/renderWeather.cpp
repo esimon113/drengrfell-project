@@ -1,10 +1,13 @@
 #include "renderWeather.h"
 #include "../core/camera.h"
+#include "renderTiles.h"
+#include "../core/tile.h"
+#include "../core/graph.h"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
-#include <random> // Para std::mt19937 (El nuevo generador)
-#include <cmath>  // Para funciones matemáticas si fueran necesarias
+#include <random> 
+#include <cmath> 
 
 /*
  *   Used the OPENGL particle system tutorial :
@@ -38,7 +41,7 @@ namespace df {
 		this->particlesCount = 0;
 		this->weatherIntensity = 0.0f; 
 	}
-
+	
 	RenderWeatherSystem RenderWeatherSystem::init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept {
 		RenderWeatherSystem self;
 
@@ -98,6 +101,92 @@ namespace df {
 		particleShader.deinit();
 	}
 
+	void RenderWeatherSystem::randomizeWeather() noexcept {
+		auto tileSystem = registry->getSystem<RenderTilesSystem>();
+		static std::random_device rd;
+    	static std::mt19937 gen(rd());
+		std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+		df::types::WeatherType previous = currentType;
+		auto& map = gameState->getMap();
+		auto& tiles = map.getTiles();		
+
+		// MARKOV CHAIN to have individual probabilities
+		float transitionMatrix[3][3] = {
+		//	 SUNNY  RAIN   SNOW
+			{0.70f, 0.20f, 0.10f}, // From Sunny
+			{0.25f, 0.60, 0.15f}, // From Rain
+			{0.20f, 0.20f, 0.60f}  // From Snow
+		};
+
+		int currentRow = static_cast<int>(currentType);
+		float roll = dis(gen);
+		float cumulativeProbability = 0.0f;
+
+
+		for (int nextCol = 0; nextCol < 3; nextCol++) {
+			cumulativeProbability += transitionMatrix[currentRow][nextCol];
+			if (roll <= cumulativeProbability) {
+				currentType = static_cast<df::types::WeatherType>(nextCol);
+				break;
+			}
+		}
+
+		if (currentType == df::types::WeatherType::SUNNY) {
+
+			// If the weather starts to be sunny
+			if ( previous != df::types::WeatherType::SUNNY){
+				for (auto& tilePtr : tiles) {
+					tilePtr->updateEffect(currentType);
+				}
+			}
+
+			if(previous != df::types::WeatherType::SNOW){
+				tileSystem->updateTileAtlas(1);
+			}
+			reset();
+			weatherIntensity = 0.0f;
+		}
+		else if (currentType == df::types::WeatherType::RAIN){ 
+
+			if ( previous != df::types::WeatherType::RAIN){
+				for (auto& tilePtr : tiles) {
+					tilePtr->updateEffect(currentType);
+				}
+			}
+
+			if(previous == df::types::WeatherType::SNOW){
+				reset();
+				weatherIntensity = -0.6f;
+			} else if (previous == df::types::WeatherType::RAIN){
+				weatherIntensity -= 0.2f;
+				tileSystem->updateTileAtlas(static_cast<int>(currentType));
+			} else {
+				tileSystem->updateTileAtlas(static_cast<int>(currentType));
+				weatherIntensity = -0.6f;
+			}
+			
+		}
+		else if (currentType == df::types::WeatherType::SNOW) {
+
+			if ( previous != df::types::WeatherType::SNOW){
+				for (auto& tilePtr : tiles) {
+					tilePtr->updateEffect(currentType);
+				}
+			}
+
+			if(previous == df::types::WeatherType::RAIN){
+				reset();
+				weatherIntensity = 0.6f;
+			} else if ( previous == df::types::WeatherType::SNOW) {
+				tileSystem->updateTileAtlas(static_cast<int>(currentType));
+				weatherIntensity += 0.2f;
+			} else {
+				weatherIntensity = 0.6f;
+			}
+		}
+	}
+
+
 	int RenderWeatherSystem::findUnusedParticle() noexcept {
 		static int lastUsedParticle = 0;
 		for (int i = lastUsedParticle; i < maxParticles; i++) {
@@ -119,40 +208,39 @@ namespace df {
 
 	void RenderWeatherSystem::step(float deltaTime) noexcept {
 	
-    static std::random_device rd;
-    static std::mt19937 gen(rd()); 
-    static std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+		static std::random_device rd;
+		static std::mt19937 gen(rd()); 
+		static std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 
-    const float screenWidth = 100.0f;
-    const float screenHeight = 100.0f;
-    static float spawnAccumulator = 0.0f; 
+		const float screenWidth = 100.0f;
+		const float screenHeight = 100.0f;
+		static float spawnAccumulator = 0.0f; 
 
-    if (std::abs(weatherIntensity) < 0.01f) {
-        spawnAccumulator = 0.0f;
-    } 
-    else if (weatherIntensity > 0) {
-        float particlesToSpawnFloat = screenWidth * deltaTime * 2.0f * weatherIntensity;
-        spawnAccumulator += particlesToSpawnFloat;
-        int newparticles = static_cast<int>(spawnAccumulator);
-        spawnAccumulator -= newparticles;
+		if (currentType == df::types::WeatherType::SNOW) {
+			maxParticles = 30000;
+			float particlesToSpawnFloat = screenWidth * deltaTime * 2.0f * weatherIntensity;
+			spawnAccumulator += particlesToSpawnFloat;
+			int newparticles = static_cast<int>(spawnAccumulator);
+			spawnAccumulator -= newparticles;
 
-        for (int i = 0; i < newparticles; i++) {
-            int unParticles = findUnusedParticle();
-            Particle& p = particlesContainer[unParticles];
-            float rx = dis(gen);
-            float rz = dis(gen);
-            p.depth = rz * rz;
-            p.pos = glm::vec3(rx * screenWidth, screenHeight + 5.0f, 0.0f);
-            float baseFall = -3.0f; 
-            float depthFall = -3.0f;
-            p.speed.y = baseFall + p.depth * depthFall;
-            p.speed.x = ((rand() % 60 - 30) / 10.0f);
-            p.life = 15.0f + (rand() % 5); 
-            p.size = 0.5f + p.depth * 0.4f;
-            p.r = 235; p.g = 238; p.b = 242;
-            p.a = 50 + p.depth * 150;
-        }
-	}	else if (weatherIntensity < 0) {
+			for (int i = 0; i < newparticles; i++) {
+				int unParticles = findUnusedParticle();
+				Particle& p = particlesContainer[unParticles];
+				float rx = dis(gen);
+				float rz = dis(gen);
+				p.depth = rz * rz;
+				p.pos = glm::vec3(rx * screenWidth, screenHeight + 5.0f, 0.0f);
+				float baseFall = -3.0f; 
+				float depthFall = -3.0f;
+				p.speed.y = baseFall + p.depth * depthFall;
+				p.speed.x = ((rand() % 60 - 30) / 10.0f);
+				p.life = 15.0f + (rand() % 5); 
+				p.size = 0.5f + p.depth * 0.4f;
+				p.r = 235; p.g = 238; p.b = 242;
+				p.a = 50 + p.depth * 150;
+			}
+		} else if (currentType == df::types::WeatherType::RAIN) {
+			maxParticles = 30000;
 			float intensityAbs = std::abs(weatherIntensity);
 			float particlesToSpawnFloat = screenWidth * deltaTime * 10.0f * intensityAbs ;
 			spawnAccumulator += particlesToSpawnFloat;
@@ -177,7 +265,9 @@ namespace df {
 				p.b = 255;
 				p.a = 140;
 			}
-		} 
+		} else if (currentType == df::types::WeatherType::SUNNY){
+			maxParticles = 0;	
+		}
 
 		particlesCount = 0;
 		for (int i = 0; i < maxParticles; i++) {
