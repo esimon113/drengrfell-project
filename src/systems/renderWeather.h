@@ -12,7 +12,7 @@ namespace df {
 
 	class RenderWeatherSystem {
 	  public:
-	  	enum class WeatherType { SUNNY, RAIN, SNOW };
+	  	enum class WeatherType { SUNNY = 0, RAIN = 1, SNOW = 2 };
 
 		static RenderWeatherSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gamestate) noexcept;
 		void increaseIntensity() { weatherIntensity += 0.20f; }

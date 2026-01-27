@@ -1,5 +1,6 @@
 #include "renderWeather.h"
 #include "../core/camera.h"
+#include "renderTiles.h"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -99,31 +100,63 @@ namespace df {
 	}
 
 	void RenderWeatherSystem::randomizeWeather() noexcept {
+		auto tileSystem = registry->getSystem<RenderTilesSystem>();
 		static std::random_device rd;
-		static std::mt19937 rng(rd());
-		std::uniform_int_distribution<int> rollDist(0, 100);
+    	static std::mt19937 gen(rd());
+		std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 		WeatherType previous = currentType;
 
-		int roll = rollDist(rng);
+		// MARKOV CHAIN to have individual probabilities
+		float transitionMatrix[3][3] = {
+		//	 SUNNY  RAIN   SNOW
+			{0.70f, 0.20f, 0.10f}, // From Sunny
+			{0.25f, 0.60, 0.15f}, // From Rain
+			{0.20f, 0.20f, 0.60f}  // From Snow
+		};
 
-		if (roll < 30) { 
-			currentType = WeatherType::RAIN;
-			if(previous!=currentType){
-				reset();
+		int currentRow = static_cast<int>(currentType);
+		float roll = dis(gen);
+		float cumulativeProbability = 0.0f;
+
+
+		for (int nextCol = 0; nextCol < 3; nextCol++) {
+			cumulativeProbability += transitionMatrix[currentRow][nextCol];
+			if (roll <= cumulativeProbability) {
+				currentType = static_cast<WeatherType>(nextCol);
+				break;
 			}
-			weatherIntensity = std::uniform_real_distribution<float>(-0.8f, -0.4f)(rng);
-		} 
-		else if (roll > 70) { 
-			currentType = WeatherType::SNOW;
-			if(previous!=currentType){
-				reset();
+		}
+
+		if (currentType == WeatherType::SUNNY) {
+			if(previous != WeatherType::SNOW){
+				tileSystem->updateTileAtlas(1);
 			}
-			weatherIntensity = std::uniform_real_distribution<float>(0.4f, 0.8f)(rng);
-		} 
-		else {
 			reset();
-			currentType = WeatherType::SUNNY;
 			weatherIntensity = 0.0f;
+		}
+		else if (currentType == WeatherType::RAIN){ 
+			if(previous == WeatherType::SNOW){
+				reset();
+				weatherIntensity = -0.6f;
+			} else if (previous == WeatherType::RAIN){
+				weatherIntensity -= 0.2f;
+				tileSystem->updateTileAtlas(static_cast<int>(currentType));
+			} else {
+				tileSystem->updateTileAtlas(static_cast<int>(currentType));
+				weatherIntensity = -0.6f;
+			}
+			
+		}
+		else if (currentType == WeatherType::SNOW) {
+			if(previous == WeatherType::RAIN){
+				reset();
+				weatherIntensity = 0.6f;
+			} else if ( previous == WeatherType::SNOW) {
+				tileSystem->updateTileAtlas(static_cast<int>(currentType));
+				weatherIntensity += 0.2f;
+			} else {
+				weatherIntensity = 0.6f;
+			}
 		}
 	}
 
