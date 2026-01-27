@@ -60,6 +60,8 @@ namespace df {
 		// Set meta-info by deserializing from provided json
 		void deserialize(const json& j);
 
+		void updateEffect(df::types::WeatherType weather) noexcept;
+
 
 		private:
 			size_t id;

@@ -46,9 +46,9 @@ namespace df::types {
 
 	// maybe like 10/25/50% chance to get resource per round?!
 	enum class TilePotency {
-		LOW,
-		MEDIUM,
-		HIGH
+		LOW = 1,
+		MEDIUM = 2,
+		HIGH = 3
 	};
 
 
@@ -75,6 +75,11 @@ namespace df::types {
 		NORTH_EAST
 	};
 
+	enum class WeatherType { 
+		SUNNY = 0, 
+		RAIN = 1, 
+		SNOW = 2 
+	};
 
 	inline std::tuple<size_t, size_t> getTileDirectionCoordinates(TileDirection direction) {
 		switch (direction) {

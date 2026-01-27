@@ -1,11 +1,13 @@
 #include "renderWeather.h"
 #include "../core/camera.h"
 #include "renderTiles.h"
+#include "../core/tile.h"
+#include "../core/graph.h"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
-#include <random> // Para std::mt19937 (El nuevo generador)
-#include <cmath>  // Para funciones matemáticas si fueran necesarias
+#include <random> 
+#include <cmath> 
 
 /*
  *   Used the OPENGL particle system tutorial :
@@ -104,7 +106,9 @@ namespace df {
 		static std::random_device rd;
     	static std::mt19937 gen(rd());
 		std::uniform_real_distribution<float> dis(0.0f, 1.0f);
-		WeatherType previous = currentType;
+		df::types::WeatherType previous = currentType;
+		auto& map = gameState->getMap();
+		auto& tiles = map.getTiles();		
 
 		// MARKOV CHAIN to have individual probabilities
 		float transitionMatrix[3][3] = {
@@ -122,23 +126,38 @@ namespace df {
 		for (int nextCol = 0; nextCol < 3; nextCol++) {
 			cumulativeProbability += transitionMatrix[currentRow][nextCol];
 			if (roll <= cumulativeProbability) {
-				currentType = static_cast<WeatherType>(nextCol);
+				currentType = static_cast<df::types::WeatherType>(nextCol);
 				break;
 			}
 		}
 
-		if (currentType == WeatherType::SUNNY) {
-			if(previous != WeatherType::SNOW){
+		if (currentType == df::types::WeatherType::SUNNY) {
+
+			// If the weather starts to be sunny
+			if ( previous != df::types::WeatherType::SUNNY){
+				for (auto& tilePtr : tiles) {
+					tilePtr->updateEffect(currentType);
+				}
+			}
+
+			if(previous != df::types::WeatherType::SNOW){
 				tileSystem->updateTileAtlas(1);
 			}
 			reset();
 			weatherIntensity = 0.0f;
 		}
-		else if (currentType == WeatherType::RAIN){ 
-			if(previous == WeatherType::SNOW){
+		else if (currentType == df::types::WeatherType::RAIN){ 
+
+			if ( previous != df::types::WeatherType::RAIN){
+				for (auto& tilePtr : tiles) {
+					tilePtr->updateEffect(currentType);
+				}
+			}
+
+			if(previous == df::types::WeatherType::SNOW){
 				reset();
 				weatherIntensity = -0.6f;
-			} else if (previous == WeatherType::RAIN){
+			} else if (previous == df::types::WeatherType::RAIN){
 				weatherIntensity -= 0.2f;
 				tileSystem->updateTileAtlas(static_cast<int>(currentType));
 			} else {
@@ -147,11 +166,18 @@ namespace df {
 			}
 			
 		}
-		else if (currentType == WeatherType::SNOW) {
-			if(previous == WeatherType::RAIN){
+		else if (currentType == df::types::WeatherType::SNOW) {
+
+			if ( previous != df::types::WeatherType::SNOW){
+				for (auto& tilePtr : tiles) {
+					tilePtr->updateEffect(currentType);
+				}
+			}
+
+			if(previous == df::types::WeatherType::RAIN){
 				reset();
 				weatherIntensity = 0.6f;
-			} else if ( previous == WeatherType::SNOW) {
+			} else if ( previous == df::types::WeatherType::SNOW) {
 				tileSystem->updateTileAtlas(static_cast<int>(currentType));
 				weatherIntensity += 0.2f;
 			} else {
@@ -190,7 +216,7 @@ namespace df {
 		const float screenHeight = 100.0f;
 		static float spawnAccumulator = 0.0f; 
 
-		if (currentType == WeatherType::SNOW) {
+		if (currentType == df::types::WeatherType::SNOW) {
 			maxParticles = 30000;
 			float particlesToSpawnFloat = screenWidth * deltaTime * 2.0f * weatherIntensity;
 			spawnAccumulator += particlesToSpawnFloat;
@@ -213,7 +239,7 @@ namespace df {
 				p.r = 235; p.g = 238; p.b = 242;
 				p.a = 50 + p.depth * 150;
 			}
-		} else if (currentType == WeatherType::RAIN) {
+		} else if (currentType == df::types::WeatherType::RAIN) {
 			maxParticles = 30000;
 			float intensityAbs = std::abs(weatherIntensity);
 			float particlesToSpawnFloat = screenWidth * deltaTime * 10.0f * intensityAbs ;
@@ -239,7 +265,7 @@ namespace df {
 				p.b = 255;
 				p.a = 140;
 			}
-		} else if (currentType == WeatherType::SUNNY){
+		} else if (currentType == df::types::WeatherType::SUNNY){
 			maxParticles = 0;	
 		}
 
