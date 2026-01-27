@@ -102,19 +102,27 @@ namespace df {
 		static std::random_device rd;
 		static std::mt19937 rng(rd());
 		std::uniform_int_distribution<int> rollDist(0, 100);
+		WeatherType previous = currentType;
 
 		int roll = rollDist(rng);
 
 		if (roll < 30) { 
-			//currentType = WeatherType::RAIN;
+			currentType = WeatherType::RAIN;
+			if(previous!=currentType){
+				reset();
+			}
 			weatherIntensity = std::uniform_real_distribution<float>(-0.8f, -0.4f)(rng);
 		} 
 		else if (roll > 70) { 
-			//currentType = WeatherType::SNOW;
+			currentType = WeatherType::SNOW;
+			if(previous!=currentType){
+				reset();
+			}
 			weatherIntensity = std::uniform_real_distribution<float>(0.4f, 0.8f)(rng);
 		} 
 		else {
-			//currentType = WeatherType::CLEAR;
+			reset();
+			currentType = WeatherType::SUNNY;
 			weatherIntensity = 0.0f;
 		}
 	}
@@ -149,9 +157,8 @@ namespace df {
 		const float screenHeight = 100.0f;
 		static float spawnAccumulator = 0.0f; 
 
-		if (std::abs(weatherIntensity) < 0.01f) {
-			spawnAccumulator = 0.0f;
-		} else if (weatherIntensity > 0) {
+		if (currentType == WeatherType::SNOW) {
+			maxParticles = 30000;
 			float particlesToSpawnFloat = screenWidth * deltaTime * 2.0f * weatherIntensity;
 			spawnAccumulator += particlesToSpawnFloat;
 			int newparticles = static_cast<int>(spawnAccumulator);
@@ -173,7 +180,8 @@ namespace df {
 				p.r = 235; p.g = 238; p.b = 242;
 				p.a = 50 + p.depth * 150;
 			}
-		}else if (weatherIntensity < 0) {
+		} else if (currentType == WeatherType::RAIN) {
+			maxParticles = 30000;
 			float intensityAbs = std::abs(weatherIntensity);
 			float particlesToSpawnFloat = screenWidth * deltaTime * 10.0f * intensityAbs ;
 			spawnAccumulator += particlesToSpawnFloat;
@@ -198,7 +206,9 @@ namespace df {
 				p.b = 255;
 				p.a = 140;
 			}
-		} 
+		} else if (currentType == WeatherType::SUNNY){
+			maxParticles = 0;	
+		}
 
 		particlesCount = 0;
 		for (int i = 0; i < maxParticles; i++) {

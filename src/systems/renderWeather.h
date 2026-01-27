@@ -41,6 +41,7 @@ namespace df {
 
 		int maxParticles;
 		int particlesCount;
+		WeatherType currentType;
 
 		float weatherIntensity = 0.0f;
 
