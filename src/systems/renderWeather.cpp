@@ -131,6 +131,8 @@ namespace df {
 			}
 		}
 
+
+
 		if (currentType == df::types::WeatherType::SUNNY) {
 
 			// If the weather starts to be sunny
@@ -152,36 +154,27 @@ namespace df {
 				for (auto& tilePtr : tiles) {
 					tilePtr->updateEffect(currentType);
 				}
-			}
-
-			if(previous == df::types::WeatherType::SNOW){
 				reset();
 				weatherIntensity = -0.6f;
 			} else if (previous == df::types::WeatherType::RAIN){
 				weatherIntensity -= 0.2f;
-				tileSystem->updateTileAtlas(static_cast<int>(currentType));
-			} else {
-				tileSystem->updateTileAtlas(static_cast<int>(currentType));
-				weatherIntensity = -0.6f;
-			}
-			
-		}
-		else if (currentType == df::types::WeatherType::SNOW) {
+			} 
 
+			tileSystem->updateTileAtlas(static_cast<int>(currentType));
+
+			
+		} else if (currentType == df::types::WeatherType::SNOW) {
+
+			
 			if ( previous != df::types::WeatherType::SNOW){
 				for (auto& tilePtr : tiles) {
 					tilePtr->updateEffect(currentType);
 				}
-			}
-
-			if(previous == df::types::WeatherType::RAIN){
 				reset();
 				weatherIntensity = 0.6f;
-			} else if ( previous == df::types::WeatherType::SNOW) {
+			} else if( previous == df::types::WeatherType::SNOW) {
 				tileSystem->updateTileAtlas(static_cast<int>(currentType));
 				weatherIntensity += 0.2f;
-			} else {
-				weatherIntensity = 0.6f;
 			}
 		}
 	}
@@ -218,51 +211,65 @@ namespace df {
 
 		if (currentType == df::types::WeatherType::SNOW) {
 			maxParticles = 30000;
-			float particlesToSpawnFloat = screenWidth * deltaTime * 2.0f * weatherIntensity;
-			spawnAccumulator += particlesToSpawnFloat;
+
+			float particlesToSpawn = deltaTime * 150.0f * weatherIntensity;
+			spawnAccumulator += particlesToSpawn;
+
 			int newparticles = static_cast<int>(spawnAccumulator);
 			spawnAccumulator -= newparticles;
 
 			for (int i = 0; i < newparticles; i++) {
 				int unParticles = findUnusedParticle();
 				Particle& p = particlesContainer[unParticles];
+
 				float rx = dis(gen);
 				float rz = dis(gen);
+
 				p.depth = rz * rz;
-				p.pos = glm::vec3(rx * screenWidth, screenHeight + 5.0f, 0.0f);
+				p.pos = glm::vec3(rx * 100.0f, 105.0f, 0.0f);
+
 				float baseFall = -3.0f; 
 				float depthFall = -3.0f;
+
 				p.speed.y = baseFall + p.depth * depthFall;
 				p.speed.x = ((rand() % 60 - 30) / 10.0f);
+
 				p.life = 15.0f + (rand() % 5); 
 				p.size = 0.5f + p.depth * 0.4f;
+
 				p.r = 235; p.g = 238; p.b = 242;
 				p.a = 50 + p.depth * 150;
 			}
 		} else if (currentType == df::types::WeatherType::RAIN) {
 			maxParticles = 30000;
 			float intensityAbs = std::abs(weatherIntensity);
-			float particlesToSpawnFloat = screenWidth * deltaTime * 10.0f * intensityAbs ;
+
+			float particlesToSpawnFloat = deltaTime * 1000.0f * intensityAbs ;
 			spawnAccumulator += particlesToSpawnFloat;
+
 			int newparticles = static_cast<int>(spawnAccumulator);
 			spawnAccumulator -= newparticles;
 
 			for (int i = 0; i < newparticles; i++) {
 				int unParticles = findUnusedParticle();
 				Particle& p = particlesContainer[unParticles];
+
 				float rx = dis(gen);
 				float rz = dis(gen);
+
 				p.depth = rz * rz;
-				p.pos = glm::vec3(rx * screenWidth, screenHeight + 5.0f, 0.0f);
+				p.pos = glm::vec3(rx * 100.0f, 105.0f, 0.0f);
+
 				float baseFall = -40.0f; 
 				float depthFall = -20.0f; 
+
 				p.speed.y = (baseFall + p.depth * depthFall) * (1.0f + intensityAbs * 0.2f);
 				p.speed.x = 0.0f;
+
 				p.life = 4.0f + (dis(gen) * 2.0f); 
 				p.size = 0.4f + p.depth * 0.15f;
-				p.r = 160;
-				p.g = 210;
-				p.b = 255;
+
+				p.r = 160; p.g = 210; p.b = 255;
 				p.a = 140;
 			}
 		} else if (currentType == df::types::WeatherType::SUNNY){
