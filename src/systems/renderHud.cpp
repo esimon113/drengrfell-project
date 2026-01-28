@@ -228,10 +228,7 @@ namespace df {
 				for (SideHudButton& btn : sideButtons) {
 					// render icons
 					if (btn.icon) {
-						glm::vec2 sideHudIconPos = {
-							btn.x + 10.f * scale,
-							btn.y + (btn.h - iconSize) / 2.0f};
-						drawSprite(btn.icon, sideHudIconPos, {btn.h, btn.h}, {1.f, 1.f, 1.f});
+						drawSprite(btn.icon, {btn.x, btn.y}, {btn.h, btn.h}, {1.f, 1.f, 1.f});
 					}
 				}
 			}
