@@ -109,19 +109,20 @@ namespace df {
 		df::types::WeatherType previous = currentType;
 		auto& map = gameState->getMap();
 		auto& tiles = map.getTiles();		
-
+		fmt::println("In randomizeWeather ");
 		// MARKOV CHAIN to have individual probabilities
 		float transitionMatrix[3][3] = {
 		//	 SUNNY  RAIN   SNOW
 			{0.70f, 0.20f, 0.10f}, // From Sunny
-			{0.25f, 0.60, 0.15f}, // From Rain
+			{0.25f, 0.60f, 0.15f}, // From Rain
 			{0.20f, 0.20f, 0.60f}  // From Snow
 		};
 
 		int currentRow = static_cast<int>(currentType);
+		fmt::println("In randomizeWeather currentRow: {}", currentRow);
 		float roll = dis(gen);
 		float cumulativeProbability = 0.0f;
-
+		fmt::println("In randomizeWeather 1");
 
 		for (int nextCol = 0; nextCol < 3; nextCol++) {
 			cumulativeProbability += transitionMatrix[currentRow][nextCol];
@@ -131,7 +132,7 @@ namespace df {
 			}
 		}
 
-
+		fmt::println("In randomizeWeather 2");
 
 		if (currentType == df::types::WeatherType::SUNNY) {
 

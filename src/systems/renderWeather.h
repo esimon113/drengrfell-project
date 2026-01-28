@@ -40,7 +40,7 @@ namespace df {
 
 		int maxParticles;
 		int particlesCount;
-		df::types::WeatherType currentType;
+		df::types::WeatherType currentType = df::types::WeatherType::SUNNY;
 
 		float weatherIntensity = 0.0f;
 
