@@ -3,6 +3,7 @@
 #include "renderCommon.h"
 #include "window.h"
 #include <renderText.h>
+#include <eventPresentation.h>
 #include <utils/shader.h>
 #include "utils/texture.h"
 
@@ -12,9 +13,17 @@ namespace df {
 		RenderHudSystem() = default;
 		~RenderHudSystem() = default;
 
+		struct SideHudButton {
+			float x, y, w, h;
+			std::string label;
+		};
+
 		static RenderHudSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;
+		void scaleHud() noexcept;
 		void deinit() noexcept;
 		void step(float dt) noexcept;
+		bool isMouseOverSideHudButton(const SideHudButton& btn, glm::vec2 mouse) const noexcept;
+		std::optional<std::string> getSideHudButtonClicked(glm::vec2 mouse, int button, int action) const noexcept;
 		void reset() noexcept;
 
 		void renderRectBox(glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept;
@@ -59,6 +68,18 @@ namespace df {
 		};
 
 		Button endTurnButton{};
+
+		// Side hud for ui interactions with trade, quest, ...
+		glm::vec2 sideHudPos;
+		glm::vec2 sideHudSize;
+
+		std::vector<SideHudButton> sideButtons;
+
+		Texture tradeTexture;
+		Texture questTexture;
+		Texture keybindingsTexture;
+
+
 
 		float DEFAULT_WIDTH = 1920.0f;
 		float DEFAULT_HEIGHT = 1080.0f;

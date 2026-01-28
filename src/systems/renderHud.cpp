@@ -54,35 +54,67 @@ namespace df {
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
 		glBindVertexArray(0);
+		self.scaleHud();
 
-		// Initial Hud Settings
-		self.hudPos = {window->getWindowExtent().x * 0.02f, window->getWindowExtent().y * 0.02f}; // hud starts 2% right and 2% of the bottom
-		self.hudSize = {
+		return self;
+	}
+
+	/*
+	* scale the hud and the side hud after initialisation/resize call
+	*/
+	void RenderHudSystem::scaleHud() noexcept {
+		// INITIAL BOTTOM HUD SETTINGS
+		hudPos = {window->getWindowExtent().x * 0.02f, window->getWindowExtent().y * 0.02f}; // hud starts 2% right and 2% of the bottom
+		hudSize = {
 			window->getWindowExtent().x * 0.96f, // 2% space to the right corner
 			window->getWindowExtent().y * 0.08f	 // 6% in height starting from 2% window height
 		};
 		// End Turn Button
-		float paddingX = self.hudSize.x * 0.02f; // ensure black hud layout below endTurn button
-		self.endTurnButton.w = self.hudSize.x * 0.20f;
-		self.endTurnButton.h = self.hudSize.y * 0.7f;
-		self.endTurnButton.x = self.hudPos.x + self.hudSize.x - self.endTurnButton.w - paddingX;
-		self.endTurnButton.y = self.hudPos.y + (self.hudSize.y - self.endTurnButton.h) / 2.0f;
+		float paddingX = hudSize.x * 0.02f; // ensure black hud layout below endTurn button
+		endTurnButton.w = hudSize.x * 0.20f;
+		endTurnButton.h = hudSize.y * 0.7f;
+		endTurnButton.x = hudPos.x + hudSize.x - endTurnButton.w - paddingX;
+		endTurnButton.y = hudPos.y + (hudSize.y - endTurnButton.h) / 2.0f;
 
 		// Icon Size init
-		float scaleX = self.viewport.size.x / self.DEFAULT_WIDTH;
-		float scaleY = self.viewport.size.y / self.DEFAULT_HEIGHT;
+		float scaleX = viewport.size.x / DEFAULT_WIDTH;
+		float scaleY = viewport.size.y / DEFAULT_HEIGHT;
 		float scale = std::min(scaleX, scaleY);
 
 		// icons relative to hud size
-		self.iconSize = self.hudSize.y * 0.8f;
-		self.iconPadding = self.iconSize + 8.0f * scale;
+		iconSize = hudSize.y * 0.8f;
+		iconPadding = iconSize + 8.0f * scale;
 
 		// icons left centered in hud
-		self.iconPos = {
-			self.hudPos.x + 20.0f * scale,
-			self.hudPos.y + (self.hudSize.y - self.iconSize) / 2.0f};
+		iconPos = {
+			hudPos.x + 20.0f * scale,
+			hudPos.y + (hudSize.y - iconSize) / 2.0f};
 
-		return self;
+		// SIDE HUD FOR UI INTERACTIONS
+		// side hud size
+		sideHudSize = {
+			viewport.size.x * 0.14f, // 14% width
+			viewport.size.y * 0.75f  // 75% height
+		};
+
+		// size hud pos
+		sideHudPos = {
+			viewport.size.x - sideHudSize.x - 10.f * scale, // right side with little padding
+			viewport.size.y - sideHudSize.y - 10.f * scale  // right upper corner with little padding
+		};
+
+		// Buttons
+		float buttonHeight = sideHudSize.y * 0.15f;
+		float buttonPadding = sideHudSize.y * 0.02f;
+
+		float buttonYPos = sideHudPos.y + sideHudSize.y - buttonHeight - buttonPadding;
+
+		// define buttons position and size
+		sideButtons = {
+			{sideHudPos.x + 10.f * scale, buttonYPos, sideHudSize.x - 20.f * scale, buttonHeight, "Trade"},
+			{sideHudPos.x + 10.f * scale, buttonYPos - (buttonHeight + buttonPadding), sideHudSize.x - 20.f * scale, buttonHeight, "Quest"},
+			{sideHudPos.x + 10.f * scale, buttonYPos - 2 * (buttonHeight + buttonPadding), sideHudSize.x - 20.f * scale, buttonHeight, "Keybindings"},
+		};
 	}
 
 	void RenderHudSystem::deinit() noexcept {
@@ -178,7 +210,45 @@ namespace df {
 				endTurnButton.y + (endTurnButton.h - textSizeEndTurn.y) / 2.0f + textSizeEndTurn.y * 0.15 // shift slightly up
 			};
 			textSystem->renderText("End Turn", buttonTextPos, scale * 0.9f, {1.f, 1.f, 1.f});
+
+			// SIDE HUD FOR UI INTERACTIONS
+			EventPresentationSystem* eventSystem = registry->getSystem<EventPresentationSystem>();
+			// check if any event active, if not display ui controlls
+			if (!eventSystem->currentEvent) {
+				// side hud background box
+				renderRectBox(sideHudPos, sideHudSize, {0.0f, 0.0f, 0.0f});
+
+				// side hud buttons including background
+				for (SideHudButton& btn : sideButtons) {
+					// Button box
+					renderRectBox({btn.x, btn.y}, {btn.w, btn.h}, {0.0f, 0.0f, 1.0f});
+
+					// Button text
+					glm::vec2 SideHudButtonTextSize = textSystem->measureText(btn.label, scale * 0.9f);
+					glm::vec2 SideHudButtonTextPos = {
+						btn.x + (btn.w - SideHudButtonTextSize.x) / 2.0f,
+						btn.y + (btn.h - SideHudButtonTextSize.y) / 2.0f + SideHudButtonTextSize.y * 0.15f}; // shift slightly up
+					textSystem->renderText(btn.label, SideHudButtonTextPos, scale * 0.9f, {1.f, 1.f, 1.f});
+				}
+			}
+
 		}
+	}
+
+	bool RenderHudSystem::isMouseOverSideHudButton(const SideHudButton& btn, glm::vec2 mouse) const noexcept {
+			return mouse.x >= btn.x && mouse.x <= btn.x + btn.w &&
+				   mouse.y >= btn.y && mouse.y <= btn.y + btn.h;
+		}
+
+	std::optional<std::string> RenderHudSystem::getSideHudButtonClicked(glm::vec2 mouse, int button, int action) const noexcept {
+		if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS)
+			return std::nullopt;
+
+		for (const SideHudButton& btn : sideButtons) {
+			if (isMouseOverSideHudButton(btn, mouse))
+				return btn.label;
+		}
+		return std::nullopt;
 	}
 
 	void RenderHudSystem::reset() noexcept {
@@ -248,34 +318,29 @@ namespace df {
 
 
 	bool RenderHudSystem::onMouseButton(glm::vec2 mouse, int button, int action) noexcept {
-		return wasEndTurnClicked(mouse, button, action) ? true : false; // endTurn() will be called by Application
+		// bottom hud check
+		if (wasEndTurnClicked(mouse, button, action))
+			return true; // endTurn() will be called by Application
+
+		// Side Hud Checks
+		std::optional<std::string> sideBottonClick = getSideHudButtonClicked(mouse, button, action);
+		if (sideBottonClick) {
+			if (sideBottonClick == "Trade") {
+				// TODO: open trade
+			} else if (sideBottonClick == "Quest") {
+				// TODO: open quest
+			} else if (sideBottonClick == "Keybindings") {
+				// TODO: open keybinds
+			}
+			return true;
+		}
+		return false;
 	}
 
 	void RenderHudSystem::onResizeCallback(GLFWwindow* /*window*/, int width, int height) noexcept {
 
 		this->viewport.size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
-		hudSize = {
-			window->getWindowExtent().x * 0.96f, // 2% space to the right corner
-			window->getWindowExtent().y * 0.08f	 // 6% in height starting from 2% window height
-		};
-		hudPos = {window->getWindowExtent().x * 0.02f, window->getWindowExtent().y * 0.02f}; // hud starts 2% right and 2% of the bottom
-		float paddingX = hudSize.x * 0.02f;													 // ensure black hud layout below endTurn button
-		endTurnButton.w = hudSize.x * 0.20f;
-		endTurnButton.h = hudSize.y * 0.7f;
-		endTurnButton.x = hudPos.x + hudSize.x - endTurnButton.w - paddingX;
-		endTurnButton.y = hudPos.y + (hudSize.y - endTurnButton.h) / 2.0f;
-
-		// Icons
-		float scaleX = viewport.size.x / DEFAULT_WIDTH;
-		float scaleY = viewport.size.y / DEFAULT_HEIGHT;
-		float scale = std::min(scaleX, scaleY);
-
-		iconSize = hudSize.y * 0.8f;
-		iconPadding = iconSize + 8.0f * scale;
-		iconPos = {
-			hudPos.x + 20.0f * scale,
-			hudPos.y + (hudSize.y - iconSize) / 2.0f};
-
+		scaleHud();
 	}
 
 } // namespace df
