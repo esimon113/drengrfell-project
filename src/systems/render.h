@@ -64,6 +64,9 @@ namespace df {
 			EventPresentationSystem& getEventPresentationSystem() noexcept {
 				return eventPresentationSystem;
 			}
+			RenderSettlementMenuSystem& getRenderSettlementMenuSystem() noexcept {
+				return renderSettlementMenuSystem;
+			}
 
 	  private:
 		Registry* registry;

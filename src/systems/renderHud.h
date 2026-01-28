@@ -4,6 +4,7 @@
 #include "window.h"
 #include <renderText.h>
 #include <eventPresentation.h>
+#include <renderSettlementMenu.h>
 #include <utils/shader.h>
 #include "utils/texture.h"
 
@@ -16,6 +17,7 @@ namespace df {
 		struct SideHudButton {
 			float x, y, w, h;
 			std::string label;
+			Texture icon;
 		};
 
 		static RenderHudSystem init(Window* window, Registry* registry, std::shared_ptr<GameState> gameState) noexcept;

@@ -19,12 +19,17 @@ namespace df {
 		self.rectShader = Shader::init(assets::Shader::hud).value();
 		self.textureShader = Shader::init(assets::Shader::menu).value();
 
-		// texture init	// TODO: update to right ressources
+		// texture init	buttom hud ressources
 		self.woodTexture = Texture::init(assets::Texture::RESSOURCE_WOOD);
 		self.stoneTexture = Texture::init(assets::Texture::RESSOURCE_STONE);
 		self.clayTexture = Texture::init(assets::Texture::RESSOURCE_CLAY);
 		self.woolTexture = Texture::init(assets::Texture::RESSOURCE_WOOL);
 		self.grainTexture = Texture::init(assets::Texture::RESSOURCE_GRAIN);
+
+		// texture init	side hud buttons
+		self.tradeTexture = Texture::init(assets::Texture::SIDE_HUD_TRADE_BUTTON);
+		self.questTexture = Texture::init(assets::Texture::SIDE_HUD_QUEST_BUTTON);
+		self.keybindingsTexture = Texture::init(assets::Texture::SIDE_HUD_KEYBINDINGS_BUTTON);
 
 		// Viewport
 		glViewport(0, 0, extent.x, extent.y);
@@ -91,29 +96,29 @@ namespace df {
 			hudPos.y + (hudSize.y - iconSize) / 2.0f};
 
 		// SIDE HUD FOR UI INTERACTIONS
-		// side hud size
+		// side hud size (invisible just for orientation)
 		sideHudSize = {
-			viewport.size.x * 0.14f, // 14% width
-			viewport.size.y * 0.75f  // 75% height
+			viewport.size.x * 0.08f, // 8% width
+			viewport.size.y * 0.80f  // 80% height
 		};
 
-		// size hud pos
+		// size hud pos (invisible just for orientation)
 		sideHudPos = {
 			viewport.size.x - sideHudSize.x - 10.f * scale, // right side with little padding
-			viewport.size.y - sideHudSize.y - 10.f * scale  // right upper corner with little padding
+			viewport.size.y - sideHudSize.y - 40.f * scale  // right upper corner with little padding
 		};
 
 		// Buttons
-		float buttonHeight = sideHudSize.y * 0.15f;
-		float buttonPadding = sideHudSize.y * 0.02f;
+		float buttonHeight = sideHudSize.y * 0.1f;
+		float buttonPadding = buttonHeight * 0.2f;
 
 		float buttonYPos = sideHudPos.y + sideHudSize.y - buttonHeight - buttonPadding;
 
 		// define buttons position and size
 		sideButtons = {
-			{sideHudPos.x + 10.f * scale, buttonYPos, sideHudSize.x - 20.f * scale, buttonHeight, "Trade"},
-			{sideHudPos.x + 10.f * scale, buttonYPos - (buttonHeight + buttonPadding), sideHudSize.x - 20.f * scale, buttonHeight, "Quest"},
-			{sideHudPos.x + 10.f * scale, buttonYPos - 2 * (buttonHeight + buttonPadding), sideHudSize.x - 20.f * scale, buttonHeight, "Keybindings"},
+			{sideHudPos.x + 10.f * scale, buttonYPos, sideHudSize.x - 20.f * scale, buttonHeight, "Trade", tradeTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos - (buttonHeight + buttonPadding), sideHudSize.x - 20.f * scale, buttonHeight, "Quest", questTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos - 2 * (buttonHeight + buttonPadding), sideHudSize.x - 20.f * scale, buttonHeight, "Keybindings", keybindingsTexture},
 		};
 	}
 
@@ -213,22 +218,21 @@ namespace df {
 
 			// SIDE HUD FOR UI INTERACTIONS
 			EventPresentationSystem* eventSystem = registry->getSystem<EventPresentationSystem>();
-			// check if any event active, if not display ui controlls
-			if (!eventSystem->currentEvent) {
+			RenderSettlementMenuSystem* settlementSystem = registry->getSystem<RenderSettlementMenuSystem>();
+			// check if any event or settlement menu active, if not display ui controlls
+			if (!eventSystem->currentEvent && !settlementSystem->isActive()) {
 				// side hud background box
-				renderRectBox(sideHudPos, sideHudSize, {0.0f, 0.0f, 0.0f});
+				//renderRectBox(sideHudPos, sideHudSize, {0.0f, 0.0f, 0.0f});
 
-				// side hud buttons including background
+				// side hud buttons
 				for (SideHudButton& btn : sideButtons) {
-					// Button box
-					renderRectBox({btn.x, btn.y}, {btn.w, btn.h}, {0.0f, 0.0f, 1.0f});
-
-					// Button text
-					glm::vec2 SideHudButtonTextSize = textSystem->measureText(btn.label, scale * 0.9f);
-					glm::vec2 SideHudButtonTextPos = {
-						btn.x + (btn.w - SideHudButtonTextSize.x) / 2.0f,
-						btn.y + (btn.h - SideHudButtonTextSize.y) / 2.0f + SideHudButtonTextSize.y * 0.15f}; // shift slightly up
-					textSystem->renderText(btn.label, SideHudButtonTextPos, scale * 0.9f, {1.f, 1.f, 1.f});
+					// render icons
+					if (btn.icon) {
+						glm::vec2 sideHudIconPos = {
+							btn.x + 10.f * scale,
+							btn.y + (btn.h - iconSize) / 2.0f};
+						drawSprite(btn.icon, sideHudIconPos, {btn.h, btn.h}, {1.f, 1.f, 1.f});
+					}
 				}
 			}
 

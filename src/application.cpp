@@ -128,6 +128,7 @@ namespace df {
 
 		registry->addSystem<RenderTilesSystem>(&render.getRenderTilesSystem());
 		registry->addSystem<EventPresentationSystem>(&render.getEventPresentationSystem());
+		registry->addSystem<RenderSettlementMenuSystem>(&render.getRenderSettlementMenuSystem());
 
 		auto* qSys = gameController->getQuestsSystem();
 		if (qSys) {
