@@ -106,11 +106,17 @@ namespace df {
 		"hero/run/run_4.png",
 		"hero/run/run_5.png",
 
+		// hud ressources
 		"ressources/wood.png",
 		"ressources/stone.png",
 		"ressources/clay.png",
 		"ressources/wool.png",
 		"ressources/grain.png",
+
+		// side hud buttons
+		"buttons/red.png",	//trade
+		"buttons/blue.png",	//quest
+		"buttons/black.png",//keybinds
 
 		"events/bear.png",	   // AI generated
 		"events/blizzard.png", // AI generated
