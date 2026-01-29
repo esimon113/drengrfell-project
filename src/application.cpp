@@ -740,8 +740,10 @@ namespace df {
 							onKeyCallback(windowParam, GLFW_KEY_T, 0, GLFW_PRESS, 0);
 						} else if (SideHudButton == "Quest") {
 							onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
-						} else if (SideHudButton == "Keybindings") {
+						} else if (SideHudButton == "Cost") {
 							onKeyCallback(windowParam, GLFW_KEY_C, 0, GLFW_PRESS, 0);
+						} else if (SideHudButton == "Keybindings") {
+							onKeyCallback(windowParam, GLFW_KEY_K, 0, GLFW_PRESS, 0);
 						}
 					}
 					return;

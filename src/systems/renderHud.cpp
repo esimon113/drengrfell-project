@@ -30,6 +30,7 @@ namespace df {
 		self.tradeTexture = Texture::init(assets::Texture::SIDE_HUD_TRADE_BUTTON);
 		self.questTexture = Texture::init(assets::Texture::SIDE_HUD_QUEST_BUTTON);
 		self.keybindingsTexture = Texture::init(assets::Texture::SIDE_HUD_KEYBINDINGS_BUTTON);
+		self.costTexture = Texture::init(assets::Texture::SIDE_HUD_COST_BUTTON);
 
 		// Viewport
 		glViewport(0, 0, extent.x, extent.y);
@@ -116,9 +117,10 @@ namespace df {
 
 		// define buttons position and size
 		sideButtons = {
-			{sideHudPos.x + 10.f * scale, buttonYPos, buttonHeight, buttonHeight, "Trade", tradeTexture},
-			{sideHudPos.x + 10.f * scale, buttonYPos - (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Quest", questTexture},
-			{sideHudPos.x + 10.f * scale, buttonYPos - 2 * (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Keybindings", keybindingsTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos, buttonHeight, buttonHeight, "Quest", questTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos - (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Trade", tradeTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos - 2 * (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Cost", costTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos - 3 * (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Keybindings", keybindingsTexture},
 		};
 	}
 
