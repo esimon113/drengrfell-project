@@ -536,14 +536,13 @@ namespace df {
 			currentQuestId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
 			gameController->claimQuestReward(currentQuestId);
 
+			if (render.renderSettlementMenuSystem.isActive()) {
+				render.renderSettlementMenuSystem.close();
+				selectedSettlementId = SIZE_MAX;
+			}
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				if (render.renderNotificationSystem.isActive()) {
 					render.renderNotificationSystem.close();
-					selectedSettlementId = SIZE_MAX;
-					return;
-				}
-				if (render.renderSettlementMenuSystem.isActive()) {
-					render.renderSettlementMenuSystem.close();
 					selectedSettlementId = SIZE_MAX;
 					return;
 				}
