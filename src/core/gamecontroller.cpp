@@ -74,6 +74,8 @@ namespace df {
 
 		WeatherSystem->randomizeWeather();
 
+		this->m_questsSystem->updateProgress(df::types::QuestGoalType::ROUNDS, 1);
+
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
 		}
