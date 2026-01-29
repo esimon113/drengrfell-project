@@ -241,15 +241,15 @@ namespace df {
 				   mouse.y >= btn.y && mouse.y <= btn.y + btn.h;
 		}
 
-	std::optional<std::string> RenderHudSystem::getSideHudButtonClicked(glm::vec2 mouse, int button, int action) const noexcept {
+	std::string RenderHudSystem::getSideHudButtonClicked(glm::vec2 mouse, int button, int action) const noexcept {
 		if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS)
-			return std::nullopt;
+			return "";
 
 		for (const SideHudButton& btn : sideButtons) {
 			if (isMouseOverSideHudButton(btn, mouse))
 				return btn.label;
 		}
-		return std::nullopt;
+		return "";
 	}
 
 	void RenderHudSystem::reset() noexcept {
@@ -324,15 +324,9 @@ namespace df {
 			return true; // endTurn() will be called by Application
 
 		// Side Hud Checks
-		std::optional<std::string> sideBottonClick = getSideHudButtonClicked(mouse, button, action);
-		if (sideBottonClick) {
-			if (sideBottonClick == "Trade") {
-				// TODO: open trade
-			} else if (sideBottonClick == "Quest") {
-				// TODO: open quest
-			} else if (sideBottonClick == "Keybindings") {
-				// TODO: open keybinds
-			}
+		std::string sideButtonClick = getSideHudButtonClicked(mouse, button, action);
+		if (!sideButtonClick.empty()) {
+			lastSideHudButtonPressed = sideButtonClick;
 			return true;
 		}
 		return false;

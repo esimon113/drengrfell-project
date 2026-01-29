@@ -518,7 +518,7 @@ namespace df {
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
 		// For testing purposes
 		aiSystem->onKeyCallback(windowParam, key, scancode, action, mods);
-
+		int currentQuestId;
 		types::GamePhase gamePhase = gameState->getPhase();
 		switch (gamePhase) {
 		case types::GamePhase::START:
@@ -528,6 +528,11 @@ namespace df {
 			configMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::PLAY:
+
+			// finish quest once requirements met
+			currentQuestId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
+			gameController->claimQuestReward(currentQuestId);
+
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				if (render.renderNotificationSystem.isActive()) {
 					render.renderNotificationSystem.close();
@@ -623,6 +628,11 @@ namespace df {
 			// If any button was pressed continue
 			if (!pressedButton.empty()) {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
+
+				// finish quest once requirements met
+				int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
+				gameController->claimQuestReward(currentId);
+
 				// TODO: add actions for button pressed in notifications
 				if (pressedButton == "Wood" || pressedButton == "Stone" ||
 					pressedButton == "Clay" || pressedButton == "Wool" || pressedButton == "Grain") {
@@ -638,11 +648,6 @@ namespace df {
 				// Quests
 				if (pressedButton == "Next Quest") {
 					this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
-				}
-
-				if (pressedButton.find("Claim") == 0) {
-					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
-					gameController->claimQuestReward(currentId);
 				}
 
 				if (pressedButton == "Back to Menu") {
@@ -724,8 +729,21 @@ namespace df {
 					}
 				}
 
-				if (render.renderHudSystem.onMouseButton(mouse, button, action))
+				if (render.renderHudSystem.onMouseButton(mouse, button, action)) {
+					// Check if any buttons on the side hud were pressed
+					if (!render.renderHudSystem.getLastSideHudButtonPressed().empty()) {
+						std::string SideHudButton = render.renderHudSystem.getLastSideHudButtonPressed();
+
+						if (SideHudButton == "Trade") {
+							onKeyCallback(windowParam, GLFW_KEY_T, 0, GLFW_PRESS, 0);
+						} else if (SideHudButton == "Quest") {
+							onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
+						} else if (SideHudButton == "Keybindings") {
+							onKeyCallback(windowParam, GLFW_KEY_C, 0, GLFW_PRESS, 0);
+						}
+					}
 					return;
+				}
 
 				// Settlement management menu
 				if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS &&
