@@ -527,6 +527,9 @@ namespace df {
 			configMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::PLAY:
+			if (render.eventPresentationSystem.currentEvent) {
+				return;
+			}
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				if (render.renderNotificationSystem.isActive()) {
 					render.renderNotificationSystem.close();
