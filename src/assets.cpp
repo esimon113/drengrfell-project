@@ -115,13 +115,14 @@ namespace df {
 		"ressources/grain.png",
 
 		// side hud buttons
-		"buttons/red.png",	//trade
-		"buttons/blue.png",	//quest
-		"buttons/black.png",//keybinds
+		"buttons/trade.png",			//trade
+		"buttons/quest.png",			//quest
+		"buttons/cost.png",				//keybinds
+		"buttons/keybindings.png",		//costs
 
-		"events/bear.png",	   // AI generated
-		"events/blizzard.png", // AI generated
-		"events/mud.png",	   // AI generated
+		"events/bear.png",		// AI generated
+		"events/blizzard.png",	// AI generated
+		"events/mud.png",		// AI generated
 		"events/rockslide.png", // AI generated
 
 		"settlements/castle/castle-sprites1.png",
