@@ -31,10 +31,26 @@ namespace df {
 				this->onPlaySoundRequested(path, loop);
 			},
 			"AudioSystem::onPlaySoundRequested");
+
+		eventBus->stopSoundRequested.connect(
+			[this](const std::string& path, const bool rewind) {
+				this->onStopSoundRequested(path, rewind);
+			},
+			"AudioSystem::onStopSoundRequested");
+
+		eventBus->stopBackgroundMusicRequested.connect(
+			[this](const bool rewind) {
+				if (!currentMusicPath.empty()) {
+					this->onStopSoundRequested(currentMusicPath, rewind);
+				}
+			},
+			"AudioSystem::onStopBackgroundMusicRequested");
 	}
 
 	AudioSystem::~AudioSystem() noexcept {
 		eventBus->playSoundRequested.disconnect("AudioSystem::onPlaySoundRequested");
+		eventBus->stopSoundRequested.disconnect("AudioSystem::onStopSoundRequested");
+		eventBus->stopSoundRequested.disconnect("AudioSystem::onStopBackgroundMusicRequested");
 	}
 
 
@@ -60,10 +76,38 @@ namespace df {
 				return;
 			}
 		}
+
 		ma_sound* music = sounds.at(path)->get();
 		if (!music)
 			return;
 		ma_sound_set_looping(music, loop ? MA_TRUE : MA_FALSE);
 		ma_sound_start(music);
+
+		// new background music started, stop if one is already playing
+		if (loop) {
+			if (!currentMusicPath.empty()) {
+				onStopSoundRequested(currentMusicPath);
+			}
+			currentMusicPath = path;
+		}
+	}
+
+	void AudioSystem::onStopSoundRequested(const std::string& path, const bool rewind) {
+		fmt::println("Stopping sound requested: {}\n", path);
+
+		if (!isSoundLoaded(path)) {
+			return;
+		}
+		ma_sound* music = sounds.at(path)->get();
+		if (!music)
+			return;
+		ma_sound_stop(music);
+		if (rewind)
+			ma_sound_seek_to_pcm_frame(music, 0);
+
+		// background music is stopped
+		if (path == currentMusicPath) {
+			currentMusicPath.clear();
+		}
 	}
 } // namespace df

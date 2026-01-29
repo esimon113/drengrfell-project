@@ -158,9 +158,7 @@ namespace df {
 										hazardDefinition.skipCost * hazard.turnsLeft,
 										hazardDefinition.skipRessourceStr),
 										{"Pay ressources","Wait"},
-									HazardDB::getEvent(hazardDefinition.hazardType),
-									"",
-									false);
+									HazardDB::getEvent(hazardDefinition.hazardType));
 			} else {
 				fmt::println("[Hazard] {} encounter ongoing. It is still active for {} turns", hazardDefinition.name, hazard.turnsLeft);
 				notification->showNotification("Ongoing hazard",
