@@ -121,11 +121,12 @@ namespace df {
                 
                 
                 if (q.state == QuestState::Completed) {
-                    std::string btnLabel = fmt::format("Claim {} {}", q.reward_amount, rewardName);
-                    buttons.push_back(btnLabel);
                     buttons.push_back("Next Quest");
                 } else {
-                    buttons = {"Close", "Next Quest"};
+					buttons = {
+						"Next Quest",
+						"Close"
+					};
                 }
 
                 m_notificationSystem->showNotification(q.name, dynamicDesc, buttons);
