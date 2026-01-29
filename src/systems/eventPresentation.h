@@ -17,7 +17,8 @@ namespace df {
 		types::EventType eventType;	// for choosing the image and sound
 		float timer = 0.0f;			// for timing the different event stages
 		int stage = 0;				// for counting the different event stages
-		bool locking = false;		// for setting whether to lock inputs during the event
+		bool showingImage = false;	// if the event image is on screen
+		bool dimScreen = false;		// if the screen gets dimmed
 	};
 
 	class EventPresentationSystem {
@@ -34,11 +35,12 @@ namespace df {
 
 		void presentEventStages() noexcept;
 
-		void presentEvent(const std::string& title, const std::string& message, const std::vector<std::string>& buttonTexts, types::EventType eventType, std::string image, bool locking) noexcept;
+		void presentEvent(const std::string& title, const std::string& message, const std::vector<std::string>& buttonTexts, types::EventType eventType) noexcept;
 		void endEvent() noexcept;
 
 		void emitSoundSignal(types::EventType event) noexcept;
 		void loadImageTexture(types::EventType event) noexcept;
+		void startEventMusic(types::EventType event) noexcept;
 		void dimScreenStep(float dt) noexcept;
 		void renderImage() noexcept;
 		std::optional<ActiveEvent> currentEvent;

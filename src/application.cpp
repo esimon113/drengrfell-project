@@ -528,6 +528,9 @@ namespace df {
 			configMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::PLAY:
+			if (render.eventPresentationSystem.currentEvent) {
+				return;
+			}
 
 			// finish quest once requirements met
 			currentQuestId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
@@ -655,7 +658,7 @@ namespace df {
 				}
 				return; // notification clicked -> no further actions (including movement) for now
 			}
-			if (render.renderNotificationSystem.isActive()) {
+			if (render.renderNotificationSystem.isActive() || render.eventPresentationSystem.currentEvent) {
 				return;
 			}
 			if (render.renderSettlementMenuSystem.isActive()) {

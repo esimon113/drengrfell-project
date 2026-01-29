@@ -58,8 +58,10 @@ namespace df {
 
 		auto& event = *currentEvent;
 		event.timer += dt;
-		dimScreenStep(dt);
-		if (event.stage > 0) {	// the image is first rendered in stage 1 of the event, but should stay during the whole rest of the event
+		if (event.dimScreen) {
+			dimScreenStep(dt);
+		}
+		if (event.showingImage) {
 			renderImage();
 		}
 
@@ -71,45 +73,79 @@ namespace df {
 
 		auto& event = *currentEvent;
 		switch (event.stage) {
-		case 0: // darken the screen
+		case 0:	// start an event by stopping the background music
+			eventBus->stopBackgroundMusicRequested.emit(false);
+			event.stage = 1;
+			event.timer = 0.0f;
+			break;
+		case 1:	// wait a bit before playing the event sound
+			if (event.timer >= 0.25f) {
+				event.stage = 2;
+				event.timer = 0.0f;
+			}
+			break;
+		case 2:	// play the event sound
+			eventBus->eventPoppedUp.emit();
+			event.stage = 3;
+			event.timer = 0.0f;
+			break;
+		case 3: // darken the screen
+			event.dimScreen = true;
 			if (event.timer >= dimTime) {
-				event.stage = 1;
+				event.stage = 4;
 				event.timer = 0.0f;
-				fmt::println("Switching to event stage 1");
 			}
 			break;
-		case 1: // event sound is played and image rendered
+		case 4: // event sound is played and image rendered
+			event.showingImage = true;
 			emitSoundSignal(event.eventType);
-			event.stage = 2;
-			fmt::println("Switching to event stage 2");
+			event.stage = 5;
 			break;
-		case 2: // waiting a bit before showing the notification
+		case 5: // waiting a bit before showing the notification
 			if (event.timer >= 1.0f) {
-				event.stage = 3;
-				fmt::println("Switching to event stage 3");
+				event.stage = 6;
 				event.timer = 0.0f;
 			}
 			break;
-		case 3: // notification is shown
+		case 6: // notification is shown and event-specific music started
+			startEventMusic(event.eventType);
 			notification->showNotification(event.title, event.message, event.buttonTexts);
-			event.stage = 4;
-			fmt::println("Switching to event stage 4");
+			event.stage = 7;
 			break;
-		case 4: // notification stays on screen until event ends
+		case 7: // notification stays on screen until event ends
+			break;
+		case 8:	// starting event end by stopping event music, resetting screen dimming and stopping event image rendering
+			eventBus->stopBackgroundMusicRequested.emit(true);
+			event.showingImage = false;
+			event.dimScreen = false;
+			dimProgress = 0.0f;
+			event.stage = 9;
+			break;
+		case 9:	// wait a bit before starting the background music again
+			if (event.timer >= 0.25f) {
+				event.stage = 10;
+				event.timer = 0.0f;
+			}
+			break;
+		case 10:
+			eventBus->eventEnded.emit();
+			currentEvent.reset();
 			break;
 		}
 	}
 
 	// Shows a notification together with sound and picture, depending on the eventType
-	void EventPresentationSystem::presentEvent(const std::string& title, const std::string& message, const std::vector<std::string>& buttonTexts, types::EventType eventType, std::string /* image */, bool locking) noexcept {
-		currentEvent = ActiveEvent{title, message, buttonTexts, eventType, 0.0f, 0, locking};
-		eventBus->eventPoppedUp.emit();
+	void EventPresentationSystem::presentEvent(const std::string& title, const std::string& message, const std::vector<std::string>& buttonTexts, types::EventType eventType) noexcept {
+		currentEvent = ActiveEvent{title, message, buttonTexts, eventType, 0.0f, false, false};
 		loadImageTexture(eventType);
 	}
 
 	void EventPresentationSystem::endEvent() noexcept {
-		currentEvent.reset();
-		dimProgress = 0.0f;
+		if (currentEvent) {
+			auto& event = *currentEvent;
+			event.stage = 8;
+			event.timer = 0.0f;
+		}
 	}
 
 	void EventPresentationSystem::emitSoundSignal(types::EventType event) noexcept {
@@ -142,6 +178,23 @@ namespace df {
 			break;
 		case types::EventType::HAZARD_ROCKSLIDE:
 			imgTexture = Texture::init(assets::Texture::HAZARD_ROCKSLIDE);
+			break;
+		}
+	}
+
+	void EventPresentationSystem::startEventMusic(types::EventType event) noexcept {
+		switch (event) {
+		case types::EventType::HAZARD_BEAR:
+			eventBus->hazardEncountered.emit();
+			break;
+		case types::EventType::HAZARD_BLIZZARD:
+			eventBus->hazardEncountered.emit();
+			break;
+		case types::EventType::HAZARD_MUD:
+			eventBus->hazardEncountered.emit();
+			break;
+		case types::EventType::HAZARD_ROCKSLIDE:
+			eventBus->hazardEncountered.emit();
 			break;
 		}
 	}

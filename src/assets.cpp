@@ -13,6 +13,7 @@ namespace df {
 		"event/blizzard.wav",				// AI generated
 		"event/mud.wav",					// AI generated
 		"event/rockslide.wav",				// AI generated
+		"background/Shadows at the Gate.mp3"		// AI generated
 	};
 
 

@@ -16,6 +16,7 @@ namespace df {
 			EVENT_BLIZZARD,
 			EVENT_MUD,
 			EVENT_ROCKSLIDE,
+			EVENT_HAZARD_MUSIC,
 			count
 		};
 
