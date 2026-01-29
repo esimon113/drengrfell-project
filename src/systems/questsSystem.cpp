@@ -21,9 +21,9 @@ namespace df {
 
         // 1st line of quests 
         m_quests.push_back({1, "New Frontiers", "Establish 3 settlements", types::QuestGoalType::SETTLEMENT, 3, -1, {2}, types::TileType::CLAY, 10, QuestState::Locked});
-        m_quests.push_back({2, "Royal Arteries", "Construct 2 paved roads", types::QuestGoalType::ROAD, 2 , 0, {6}, types::TileType::MOUNTAIN, 5, QuestState::Locked});
+        m_quests.push_back({2, "Royal Arteries", "Construct 2 new paved roads", types::QuestGoalType::ROAD, 2 , 0, {6}, types::TileType::MOUNTAIN, 5, QuestState::Locked});
         m_quests.push_back({6, "Imperial Reach", "Expand to 10 settlements", types::QuestGoalType::SETTLEMENT, 10, -1, {7}, types::TileType::MOUNTAIN, 5, QuestState::Locked});
-        m_quests.push_back({7, "The Grand Network", "Get 20 paved roads", types::QuestGoalType::ROAD, 20, 0, {-1}, types::TileType::FOREST, 30, QuestState::Locked});
+        m_quests.push_back({7, "The Grand Network", "Get 20 paved roads", types::QuestGoalType::ROAD, 20, -1, {-1}, types::TileType::FOREST, 30, QuestState::Locked});
         // 2nd line of quests 
         m_quests.push_back({3, "Woodland Harvest", "Collect 7 bundles of timber", types::QuestGoalType::FOREST, 7, 0, {4}, types::TileType::FIELD, 10, QuestState::Locked});
         m_quests.push_back({4, "Seasoned Veteran", "Endure the trials of 20 rounds", types::QuestGoalType::ROUNDS, 20, -1, {5}, types::TileType::GRASS, 5, QuestState::Locked});
@@ -88,10 +88,15 @@ namespace df {
     }
 
     void QuestsSystem::notifyPlayer(int questId) {
+        std::vector<std::string> buttons;
+        if(questId == 10){
+            m_notificationSystem->showNotification("CONGRATULATIONS", "No more quests", {"Close"});
+        }
+
         for (auto& q : m_quests) {
             if (q.id == questId) {
                 m_currentShowingQuestId = questId;
-                std::vector<std::string> buttons;
+                
 
                 int remaining = q.goal_amount - q.progress;
                 if (remaining < 0) remaining = 0; 
@@ -226,6 +231,8 @@ namespace df {
                 return;
             }
         }
+
+        notifyPlayer(10);
     }
 
     void QuestsSystem::reset(){
