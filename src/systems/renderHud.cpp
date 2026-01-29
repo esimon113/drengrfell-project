@@ -116,9 +116,9 @@ namespace df {
 
 		// define buttons position and size
 		sideButtons = {
-			{sideHudPos.x + 10.f * scale, buttonYPos, sideHudSize.x - 20.f * scale, buttonHeight, "Trade", tradeTexture},
-			{sideHudPos.x + 10.f * scale, buttonYPos - (buttonHeight + buttonPadding), sideHudSize.x - 20.f * scale, buttonHeight, "Quest", questTexture},
-			{sideHudPos.x + 10.f * scale, buttonYPos - 2 * (buttonHeight + buttonPadding), sideHudSize.x - 20.f * scale, buttonHeight, "Keybindings", keybindingsTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos, buttonHeight, buttonHeight, "Trade", tradeTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos - (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Quest", questTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos - 2 * (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Keybindings", keybindingsTexture},
 		};
 	}
 
@@ -228,7 +228,7 @@ namespace df {
 				for (SideHudButton& btn : sideButtons) {
 					// render icons
 					if (btn.icon) {
-						drawSprite(btn.icon, {btn.x, btn.y}, {btn.h, btn.h}, {1.f, 1.f, 1.f});
+						drawSprite(btn.icon, {btn.x, btn.y}, {btn.w, btn.h}, {1.f, 1.f, 1.f});
 					}
 				}
 			}
