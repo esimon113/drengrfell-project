@@ -124,6 +124,7 @@ namespace df {
 		TutorialStep* getCurrentTutorialStep();
 		void completeCurrentTutorialStep();
 		bool isTutorialActive() const;
+		std::vector<glm::vec3> computeHudResourceColor(std::string mode);
 		bool isGameOver() const;
 
 	  private:

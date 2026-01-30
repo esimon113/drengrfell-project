@@ -42,6 +42,10 @@ namespace df {
 			return lastSideHudButtonPressed;
 		}
 
+		void setHudColors(std::vector<glm::vec3> colors) {
+			hudResourceColors = colors;
+		}
+
 	  private:
 		Registry* registry = nullptr;
 		Window* window = nullptr;
@@ -54,7 +58,7 @@ namespace df {
 		Texture clayTexture;
 		Texture woolTexture;
 		Texture grainTexture;
-		std::vector<std::pair<Texture, int>> resourceIconsWithAmount;
+		std::vector<std::tuple<Texture, int, glm::vec3>> resourceIconsWithAmount;
 
 		// shader
 		Shader rectShader;
@@ -87,6 +91,7 @@ namespace df {
 
 		// last button pressed on the side hud for ui interactions
 		std::string lastSideHudButtonPressed = "";
+		std::vector<glm::vec3> hudResourceColors = {{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}};
 
 		float DEFAULT_WIDTH = 1920.0f;
 		float DEFAULT_HEIGHT = 1080.0f;

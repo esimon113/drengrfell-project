@@ -216,6 +216,19 @@ namespace df {
 				break;
 			case types::GamePhase::PLAY: {
 				world.step(delta_time);
+
+				// compute if the user got enough resources and color the corresponding resource green/red if used
+				if (world.isSettlementPreviewActive) {
+					std::vector<glm::vec3> hudColors = gameState->computeHudResourceColor("settlement");
+					render.renderHudSystem.setHudColors(hudColors);
+				} else if (world.isRoadPreviewActive) {
+					std::vector<glm::vec3> hudColors = gameState->computeHudResourceColor("road");
+					render.renderHudSystem.setHudColors(hudColors);
+				} else {
+					// restore default white
+					render.renderHudSystem.setHudColors({{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}});
+				}
+
 				// physics.step(delta_time);
 				// physics.handleCollisions(delta_time);
 				if (gameState->isGameOver()) {
