@@ -104,6 +104,8 @@ namespace df {
 			RESSOURCE_WOOL,
 			RESSOURCE_GRAIN,
 
+			HUD_BACKGROUND,	// Hud background
+
 			// Side hud interaction buttons
 			SIDE_HUD_TRADE_BUTTON,
 			SIDE_HUD_QUEST_BUTTON,

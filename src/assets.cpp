@@ -114,11 +114,13 @@ namespace df {
 		"ressources/wool.png",
 		"ressources/grain.png",
 
+		"hud/hudBackgroundTexture.png",	// hud background
+
 		// side hud buttons
-		"buttons/trade.png",			//trade
-		"buttons/quest.png",			//quest
-		"buttons/cost.png",				//keybinds
-		"buttons/keybindings.png",		//costs
+		"hud/buttons/trade.png",			//trade
+		"hud/buttons/quest.png",			//quest
+		"hud/buttons/cost.png",				//keybinds
+		"hud/buttons/keybindings.png",		//costs
 
 		"events/bear.png",		// AI generated
 		"events/blizzard.png",	// AI generated
