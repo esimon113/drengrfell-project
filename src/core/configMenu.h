@@ -66,6 +66,8 @@ namespace df {
 		std::string warningMessage = "";
 		glm::vec2 infoPos;
 		glm::vec2 warningPos;
+		glm::vec3 perlinButtonColor = glm::vec3(1.0f);
+		glm::vec3 insularButtonColor = glm::vec3(1.0f);
 
 		Shader rectShader; // box behind text
 		GLuint rectVao = 0;
