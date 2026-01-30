@@ -212,11 +212,11 @@ namespace df {
 		drawSprite(insularBtnTexture,
 				   glm::vec2(insularButton.x, insularButton.y),
 				   glm::vec2(insularButton.w, insularButton.h),
-				   insularButton.hovered ? glm::vec3(hoverIntensity) : glm::vec3(1.0f));
+				   insularButton.hovered ? hoverIntensity * insularButtonColor : insularButtonColor);
 		drawSprite(perlinBtnTexture,
 				   glm::vec2(perlinButton.x, perlinButton.y),
 				   glm::vec2(perlinButton.w, perlinButton.h),
-				   perlinButton.hovered ? glm::vec3(hoverIntensity) : glm::vec3(1.0f));
+				   perlinButton.hovered ? hoverIntensity * perlinButtonColor : perlinButtonColor);
 		drawSprite(seedBtnTexture,
 				   glm::vec2(seedButton.x, seedButton.y),
 				   glm::vec2(seedButton.w, seedButton.h),
@@ -244,7 +244,7 @@ namespace df {
 			glm::vec2 textSize{};
 			glm::vec2 boxSize{};
 			glm::vec2 boxPos{};
-			if (!inputString.empty()) {
+			if (activeInput == InputField::SEED || activeInput == InputField::WIDTH || activeInput == InputField::HEIGHT) {
 				std::string text;
 				if (activeInput == InputField::SEED)
 					text = "Seed: ";
@@ -388,10 +388,14 @@ namespace df {
 		if (isCursorOnButton(mouseX, mouseY, insularButton)) {
 			fmt::println("Insular generation chosen");
 			worldGenerationMode = 0;
+			insularButtonColor = {0.0f, 1.0f, 0.0f};
+			perlinButtonColor = {1.0f, 1.0f, 1.0f};
 		}
 		if (isCursorOnButton(mouseX, mouseY, perlinButton)) {
 			fmt::println("Perlin generation chosen");
 			worldGenerationMode = 1;
+			perlinButtonColor = {0.0f, 1.0f, 0.0f};
+			insularButtonColor = {1.0f, 1.0f, 1.0f};
 		}
 		if (isCursorOnButton(mouseX, mouseY, seedButton)) {
 			fmt::println("Enter seed");
