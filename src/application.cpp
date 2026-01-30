@@ -545,6 +545,22 @@ namespace df {
 				return;
 			}
 
+			if(action == GLFW_PRESS && key == GLFW_KEY_ENTER){
+				if (!gameState->isGameOver() && !movementSystem->getMovementState()) {
+            
+					auto* step = this->gameState->getCurrentTutorialStep();
+					if (step && step->id == TutorialStepId::MOVE_HERO) {
+						this->gameState->completeCurrentTutorialStep();
+					}
+
+					Entity hero = registry->animations.entities.front();
+					if (!registry->hazards.has(hero)) {
+						movementSystem->toggleMovementState();
+						awaitingTurnEnd = true; 
+					}
+				}
+			}
+
 			// finish quest once requirements met
 			currentQuestId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
 			gameController->claimQuestReward(currentQuestId);
