@@ -52,6 +52,8 @@ namespace df {
 		std::shared_ptr<GameState> gameState;
 		Viewport viewport;
 
+		// bottom hud background
+		Texture hudBackgroundTexture;
 		// ressources textures
 		Texture woodTexture;
 		Texture stoneTexture;
@@ -88,6 +90,7 @@ namespace df {
 		Texture questTexture;
 		Texture keybindingsTexture;
 		Texture costTexture;
+
 
 		// last button pressed on the side hud for ui interactions
 		std::string lastSideHudButtonPressed = "";

@@ -19,7 +19,9 @@ namespace df {
 		self.rectShader = Shader::init(assets::Shader::hud).value();
 		self.textureShader = Shader::init(assets::Shader::menu).value();
 
-		// texture init	buttom hud ressources
+		// texture init
+		self.hudBackgroundTexture = Texture::init(assets::Texture::HUD_BACKGROUND);
+		// buttom hud ressources
 		self.woodTexture = Texture::init(assets::Texture::RESSOURCE_WOOD);
 		self.stoneTexture = Texture::init(assets::Texture::RESSOURCE_STONE);
 		self.clayTexture = Texture::init(assets::Texture::RESSOURCE_CLAY);
@@ -163,8 +165,11 @@ namespace df {
 				// Tutorial-Text
 				textSystem->renderText(step->text, textPos, scale, {1.f, 1.f, 1.f});
 			}
-			// Render Box for HUD
-			renderRectBox(hudPos, hudSize, {0.0f, 0.0f, 0.0f});
+			// Render Box for HUD (old version)
+			//renderRectBox(hudPos, hudSize, {0.0f, 0.0f, 0.0f});
+
+			// render hud background texture
+			drawSprite(hudBackgroundTexture, hudPos, hudSize, {1.f, 1.f, 1.f});
 
 			// Render icons and mount in HUD
 			// get current player and ressources
