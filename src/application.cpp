@@ -546,7 +546,7 @@ namespace df {
 			}
 
 			if(action == GLFW_PRESS && key == GLFW_KEY_ENTER){
-				if (!gameState->isGameOver() && !movementSystem->getMovementState()) {
+				if (!gameState->isGameOver() && !movementSystem->getMovementState() && !render.renderNotificationSystem.isActive()) {
             
 					auto* step = this->gameState->getCurrentTutorialStep();
 					if (step && step->id == TutorialStepId::MOVE_HERO) {
@@ -556,8 +556,8 @@ namespace df {
 					Entity hero = registry->animations.entities.front();
 					if (!registry->hazards.has(hero)) {
 						movementSystem->toggleMovementState();
-						awaitingTurnEnd = true; 
 					}
+					awaitingTurnEnd = true; 
 				}
 			}
 
