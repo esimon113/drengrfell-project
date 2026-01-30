@@ -171,11 +171,11 @@ namespace df {
 			Player& player = *gameState->getPlayer(gameState->getCurrentPlayerId());
 			std::map<types::TileType, int> resources = player.getResources();
 			resourceIconsWithAmount = {
-				{woodTexture, resources[types::TileType::FOREST]},
-				{stoneTexture, resources[types::TileType::MOUNTAIN]},
-				{clayTexture, resources[types::TileType::CLAY]},
-				{woolTexture, resources[types::TileType::GRASS]},
-				{grainTexture, resources[types::TileType::FIELD]},
+				{woodTexture, resources[types::TileType::FOREST], hudResourceColors[0]},
+				{stoneTexture, resources[types::TileType::MOUNTAIN], hudResourceColors[1]},
+				{clayTexture, resources[types::TileType::CLAY], hudResourceColors[2]},
+				{woolTexture, resources[types::TileType::GRASS], hudResourceColors[3]},
+				{grainTexture, resources[types::TileType::FIELD], hudResourceColors[4]},
 			};
 
 			// start at the left side of the hud with an offset defined in init/onResizeCallback
@@ -184,9 +184,9 @@ namespace df {
 			float hudTextOffset = 8.f * scale;
 
 			// render ressource icons + amount
-			for (std::pair<Texture, int>& pair : resourceIconsWithAmount) {
-				Texture& tex = pair.first;
-				int& amount = pair.second;
+			for (std::tuple<Texture, int, glm::vec3>& triple : resourceIconsWithAmount) {
+				Texture& tex = get<0>(triple);
+				int& amount = get<1>(triple);
 				// display icons (y centered on hud)
 				drawSprite(tex, {x, hudCenterY - iconSize / 2.0f}, {iconSize, iconSize}, {1.f, 1.f, 1.f});
 
@@ -196,7 +196,8 @@ namespace df {
 				glm::vec2 textPos = {
 					x + iconPadding,
 					hudCenterY - textSize.y / 2.0f + hudTextOffset};
-				textSystem->renderText(amountStr, textPos, scale * 1.2f, {1.f, 1.f, 1.f});
+
+				textSystem->renderText(amountStr, textPos, scale * 1.2f, get<2>(triple));
 
 				// prepare next writing position
 				x += iconPadding * 1.3f + textSize.x;
