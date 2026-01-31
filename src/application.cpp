@@ -572,7 +572,7 @@ namespace df {
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				if (render.renderNotificationSystem.isActive()) {
 					if(world.getShowTrade()){
-						world.setShowTrade();
+						world.setShowTrade(false);
 					}
 					render.renderNotificationSystem.close();
 					selectedSettlementId = SIZE_MAX;
@@ -671,6 +671,9 @@ namespace df {
 				if (pressedButton == "Wood" || pressedButton == "Stone" ||
 					pressedButton == "Clay" || pressedButton == "Wool" || pressedButton == "Grain") {
 					tradingSystem.handleOptionClicked(pressedButton);
+					if(world.getShowTrade()){
+						world.setShowTrade(false);
+					} 
 				}
 				if (pressedButton == "Pay ressources") {
 					gameController->payForHazard();
@@ -682,6 +685,10 @@ namespace df {
 				// Quests
 				if (pressedButton == "Next Quest") {
 					this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
+				}
+
+				if(pressedButton == "Cancel"){
+					world.setShowTrade(false);
 				}
 
 				if (pressedButton == "Back to Menu") {

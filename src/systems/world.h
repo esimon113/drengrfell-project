@@ -26,7 +26,7 @@ namespace df {
 		void calcNewCameraZoom(double yoffset) noexcept;
 
 		bool getShowTrade() noexcept { return showTrade;};
-		void setShowTrade () noexcept { showTrade = !showTrade;};
+		void setShowTrade ( bool newShowTrade) noexcept { showTrade = newShowTrade;};
 
 		double getMouseX();
 		double getMouseY();
