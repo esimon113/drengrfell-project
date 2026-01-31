@@ -571,6 +571,7 @@ namespace df {
 			}
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				if (render.renderNotificationSystem.isActive()) {
+					gameController->getQuestsSystem()->setCurrentQuest();
 					if(world.getShowTrade()){
 						world.setShowTrade(false);
 					}
@@ -685,6 +686,10 @@ namespace df {
 				// Quests
 				if (pressedButton == "Next Quest") {
 					this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
+				}
+
+				if(pressedButton == "Close"){
+					gameController->getQuestsSystem()->setCurrentQuest();
 				}
 
 				if(pressedButton == "Cancel"){

@@ -97,6 +97,13 @@ namespace df {
             if (q.id == questId) {
                 m_currentShowingQuestId = questId;
                 
+                buttons = { "Close" };
+
+                if (currentQuest < activeQuests) {
+                    if (q.state == QuestState::Completed) {
+                        buttons.insert(buttons.begin(), "Next Quest");
+                    }
+                }
 
                 int remaining = q.goal_amount - q.progress;
                 if (remaining < 0) remaining = 0; 
@@ -106,33 +113,37 @@ namespace df {
                 std::string dynamicDesc = fmt::format(
                     "\n{}\n\n"
                     "Remaining: {}\n"
-                    "Reward: {} units of {}", 
+                    "Reward: {} units of {}\n\n"
+                    "--- Quest {} of {} ---\n", 
                     q.desc, 
                     remaining, 
-                    q.reward_amount, 
-                    rewardName
+                    q.reward_amount,
+                    rewardName,
+                    currentQuest,
+                    activeQuests
                 );
 
 
                 if(q.goal_type==types::QuestGoalType::TUTORIAL){
                     dynamicDesc = fmt::format(
                         "\n{}\n\n"
-                        "Reward: {} units of {}", 
-                        q.desc, 
-                        q.reward_amount, 
-                        rewardName
+                        "Reward: {} units of {}\n\n"
+                        "--- Quest {} of {} ---\n", 
+                        q.desc,
+                        q.reward_amount,
+                        rewardName,
+                        currentQuest,
+                        activeQuests    
                     );
-                }
-                
-                
-                if (q.state == QuestState::Completed) {
-                    buttons.push_back("Next Quest");
-                } else {
-					buttons = {
-						"Next Quest",
+                    buttons = {
 						"Close"
 					};
                 }
+                
+                
+                if (q.state == QuestState::Completed || q.goal_type!=types::QuestGoalType::TUTORIAL) {
+                    buttons.insert(buttons.begin(), "Next Quest");
+                } 
 
                 m_notificationSystem->showNotification(q.name, dynamicDesc, buttons);
                 
@@ -145,6 +156,7 @@ namespace df {
     void QuestsSystem::claimQuest(int questId, Player* player,GameState* gameState) {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Completed) {
+                activeQuests--;
                 q.state = QuestState::Claimed;
 
                 for (int nextId : q.unlocksIds) {
@@ -160,6 +172,7 @@ namespace df {
     void QuestsSystem::activateQuest(int questId, Player* player, GameState* gameState) {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Locked) {
+                activeQuests++;
                 q.state = QuestState::Active;
                 if (q.progress == -1){
                     switch (q.goal_type) {
@@ -214,6 +227,11 @@ namespace df {
     void QuestsSystem::notifyNextActiveQuest() {
         if (m_quests.empty()) return;
 
+        if(activeQuests == 0){
+            notifyPlayer(10);
+            return;
+        }
+
         int currentIdx = -1;
         for (int i = 0; i < (int)m_quests.size(); ++i) {
             if (m_quests[i].id == m_currentShowingQuestId) {
@@ -222,17 +240,19 @@ namespace df {
             }
         }
 
-        for (int i = 1; i <= (int)m_quests.size(); ++i) {
-            int nextIdx = (currentIdx + i) % m_quests.size();
-            auto& q = m_quests[nextIdx];
+        for (int i = currentIdx+1; i <= (int)m_quests.size(); ++i) {
+            auto& q = m_quests[i];
 
             if (q.state == QuestState::Active || q.state == QuestState::Completed) {
                 notifyPlayer(q.id);
+                currentQuest++;
                 return;
             }
         }
+        currentQuest = 1;
+        m_notificationSystem->close();
+        m_currentShowingQuestId = -1;
 
-        notifyPlayer(10);
     }
 
     void QuestsSystem::reset(){

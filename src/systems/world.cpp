@@ -113,6 +113,7 @@ namespace df {
 		Entity hero = registry->animations.entities.front();
 		auto& animComp = registry->animations.get(hero);
 		auto* step = this->gameState->getCurrentTutorialStep();
+		auto* quests = registry->getSystem<QuestsSystem>();
 
 		if (this->gameState->isGameOver()) {
 			return; 
@@ -190,7 +191,6 @@ namespace df {
 				break;
 			case GLFW_KEY_Q: {
 				showTrade = false;
-				auto* quests = registry->getSystem<QuestsSystem>();
 				if (quests) {
 					quests->notifyNextActiveQuest(); 
 				}
@@ -200,6 +200,7 @@ namespace df {
 			} 
 				break;
 			case GLFW_KEY_T: {
+				quests->setCurrentQuest();
 				auto* notifications = registry->getSystem<RenderNotificationSystem>();
 				if(showTrade){
 					showTrade = false;
@@ -218,6 +219,7 @@ namespace df {
 				
 			} break;
 			case GLFW_KEY_K:{
+				quests->setCurrentQuest();
 				showTrade = false;
 				auto* notifications = registry->getSystem<RenderNotificationSystem>();
 				std::vector<std::string> buttons;
@@ -239,6 +241,7 @@ namespace df {
 				break;
 			
 			case GLFW_KEY_C:{
+				quests->setCurrentQuest();
 				showTrade = false;
 				auto* notifications = registry->getSystem<RenderNotificationSystem>();
 				std::vector<std::string> buttons;
