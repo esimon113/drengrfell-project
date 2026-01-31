@@ -25,6 +25,9 @@ namespace df {
 		void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 		void calcNewCameraZoom(double yoffset) noexcept;
 
+		bool getShowTrade() noexcept { return showTrade;};
+		void setShowTrade () noexcept { showTrade = !showTrade;};
+
 		double getMouseX();
 		double getMouseY();
 		std::pair<double, double> calculateScaledMousePosition();
@@ -47,6 +50,8 @@ namespace df {
 		static constexpr size_t MAX_BUGS = 5;
 		double mouseX = -1;
 		double mouseY = -1;
+
+		bool showTrade = false;
 
 		Window* window;
 		Registry* registry;

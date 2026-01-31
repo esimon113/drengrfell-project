@@ -571,6 +571,9 @@ namespace df {
 			}
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				if (render.renderNotificationSystem.isActive()) {
+					if(world.getShowTrade()){
+						world.setShowTrade();
+					}
 					render.renderNotificationSystem.close();
 					selectedSettlementId = SIZE_MAX;
 					return;

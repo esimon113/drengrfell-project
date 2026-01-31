@@ -189,6 +189,7 @@ namespace df {
 				}
 				break;
 			case GLFW_KEY_Q: {
+				showTrade = false;
 				auto* quests = registry->getSystem<QuestsSystem>();
 				if (quests) {
 					quests->notifyNextActiveQuest(); 
@@ -199,15 +200,25 @@ namespace df {
 			} 
 				break;
 			case GLFW_KEY_T: {
-
-				if (tradeCallback) {
-					tradeCallback();
+				auto* notifications = registry->getSystem<RenderNotificationSystem>();
+				if(showTrade){
+					showTrade = false;
+					notifications->close();
+				} else {
+					showTrade = true;
+					if (tradeCallback) {
+						tradeCallback();
+					}
+					if (step && step->id == TutorialStepId::OPEN_TRADE_MENU) {
+						this->gameState->completeCurrentTutorialStep();
+					}
+				
 				}
-				if (step && step->id == TutorialStepId::OPEN_TRADE_MENU) {
-					this->gameState->completeCurrentTutorialStep();
-				}
+				
+				
 			} break;
 			case GLFW_KEY_K:{
+				showTrade = false;
 				auto* notifications = registry->getSystem<RenderNotificationSystem>();
 				std::vector<std::string> buttons;
 				std::string keybindsList = 
@@ -228,6 +239,7 @@ namespace df {
 				break;
 			
 			case GLFW_KEY_C:{
+				showTrade = false;
 				auto* notifications = registry->getSystem<RenderNotificationSystem>();
 				std::vector<std::string> buttons;
 				std::string costsList = 
