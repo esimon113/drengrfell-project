@@ -119,8 +119,8 @@ namespace df {
 		// side hud buttons
 		"hud/buttons/trade.png",			//trade
 		"hud/buttons/quest.png",			//quest
-		"hud/buttons/cost.png",				//keybinds
-		"hud/buttons/keybindings.png",		//costs
+		"hud/buttons/keybindings.png",		//keybinds
+		"hud/buttons/cost.png",		        //costs
 
 		"events/bear.png",		// AI generated
 		"events/blizzard.png",	// AI generated
