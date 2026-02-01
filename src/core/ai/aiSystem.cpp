@@ -41,10 +41,10 @@ namespace df {
 						fmt::println("[AI]: Stored {} into {}", std::get<bool>(varvalue), varname);
 					} else if (BTF::isArg<BTArray>(a, "val")) {
 						varvalue = BTF::getArg<BTArray>(a, "val", BTArray{});
-						//fmt::println("[AI]: Stored {} into {}", std::get<BTArray>(varvalue), varname);
+						fmt::println("[AI]: Stored {} into {}", to_string(varvalue.serialize()), varname);
 					} else if (BTF::isArg<BTObject>(a, "val")) {
 						varvalue = BTF::getArg<BTObject>(a, "val", BTObject{});
-						//fmt::println("[AI]: Stored {} into {}", std::get<BTObject>(varvalue), varname);
+						fmt::println("[AI]: Stored {} into {}", to_string(varvalue.serialize()), varname);
 					}
 				} else if (context.storage.data.contains("ans")) {
 					varvalue = context.storage.data["ans"];
@@ -65,6 +65,40 @@ namespace df {
 				std::uniform_int_distribution<int> distrib(start, end);
 				auto res = distrib(this->mersenne_twister_engine);
 				context.storage.data["ans"] = static_cast<BTNumber>(res);
+				return BTState::Success;
+			}
+		);
+		this->commands.registerCommand(
+			"get",
+			[](BTContext& context, const BTF::Args &a) {
+				if (a.contains("array")) {
+					const auto arr = BTF::getArg<BTArray>(a, "array", BTArray{});
+					const auto idx = static_cast<int>(BTF::getArg<BTNumber>(a, "index", 0));
+					context.storage.data["ans"] = *arr[idx];
+				} else if (a.contains("object")) {
+					const auto obj = BTF::getArg<BTObject>(a, "object", BTObject{});
+					const auto key = BTF::getArg<BTString>(a, "key", BTString{});
+					context.storage.data["ans"] = *obj.at(key);
+				} else {
+					std::cerr << "[AI Error]: Invalid get node args. Does not contain an indexable 'array' or 'object'." << std::endl;
+					return BTState::Invalid;
+				}
+				return BTState::Success;
+			}
+		);
+		this->commands.registerCommand(
+			"size",
+			[](BTContext& context, const BTF::Args &a) {
+				if (a.contains("array")) {
+					const auto arr = BTF::getArg<BTArray>(a, "array", BTArray{});
+					context.storage.data["ans"] = static_cast<BTNumber>(arr.size());
+				} else if (a.contains("object")) {
+					const auto obj = BTF::getArg<BTObject>(a, "object", BTObject{});
+					context.storage.data["ans"] = static_cast<BTNumber>(obj.size());
+				} else {
+					std::cerr << "[AI Error]: Invalid size node args. Does not contain an 'array' or 'object'." << std::endl;
+					return BTState::Invalid;
+				}
 				return BTState::Success;
 			}
 		);
