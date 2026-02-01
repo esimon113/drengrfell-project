@@ -30,6 +30,7 @@ namespace df {
 		aiSystem->getCommandRegistry().registerCommand(
 		"getExploredTiles",
 		[this](BTContext& context, const BTF::Args& /*a*/) {
+			// TODO: Get correct player id
 			Player* p = this->gameState->getPlayer(0);
 			if (p) {
 				const auto vec = p->getExploredTileIds();
@@ -38,6 +39,34 @@ namespace df {
 				for (const auto& id : vec) {
 					BTValueType num = static_cast<BTNumber>(id);
 					arr.emplace_back(std::make_shared<BTValueType>(num));
+				}
+				context.storage.data["ans"] = arr;
+				return BTState::Success;
+			} else {
+				std::cerr << "Failed to get player" << std::endl;
+				return BTState::Failed;
+			}
+		});
+		aiSystem->getCommandRegistry().registerCommand(
+		"getUnexploredTiles",
+		[this](BTContext& context, const BTF::Args& /*a*/) {
+			// TODO: Get correct player id
+			Player* p = this->gameState->getPlayer(0);
+			if (p) {
+				auto tileCount = this->gameState->getMap().getTileCount();
+
+				std::vector<bool> explored(tileCount, false);
+				for (size_t id : p->getExploredTileIds()) {
+					explored[id] = true;
+				}
+
+				auto arr = BTArray{};
+				arr.reserve(tileCount);
+				for (size_t id = 0; id < tileCount; id++) {
+					if (!explored[id]) {
+						BTValueType num = static_cast<BTNumber>(id);
+						arr.emplace_back(std::make_shared<BTValueType>(num));
+					}
 				}
 				context.storage.data["ans"] = arr;
 				return BTState::Success;

@@ -3,20 +3,20 @@
 	"children": [
 		{
 			"kind": "function",
-			"name": "getExploredTiles"
+			"name": "getUnexploredTiles"
 		},
 		{
 			"kind": "function",
 			"name": "store",
 			"args": {
-				"var": "explored_tiles"
+				"var": "unexplored_tiles"
 			}
 		},
 		{
 			"kind": "function",
 			"name": "size",
 			"args": {
-				"array": "$explored_tiles"
+				"array": "$unexplored_tiles"
 			}
 		},
 		{
@@ -31,7 +31,7 @@
 			"kind": "function",
 			"name": "get",
 			"args": {
-				"array": "$explored_tiles",
+				"array": "$unexplored_tiles",
 				"index": "$ans"
 			}
 		},
