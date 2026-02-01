@@ -240,7 +240,7 @@ namespace df {
             }
         }
 
-        for (int i = currentIdx+1; i <= (int)m_quests.size(); ++i) {
+        for (int i = currentIdx+1; i < (int)m_quests.size(); ++i) {
             auto& q = m_quests[i];
 
             if (q.state == QuestState::Active || q.state == QuestState::Completed) {
