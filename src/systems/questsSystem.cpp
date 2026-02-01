@@ -111,7 +111,7 @@ namespace df {
                 std::vector<std::string> buttons;
                 
                 if (q.state == QuestState::Completed) {
-                    dynamicDesc = "Quest Completed!";
+                    dynamicDesc = fmt::format("Quest Completed! \nYou'll be rewarded with {} {}",q.reward_amount,resourceName(q.reward_resource));
                     buttons = { "Claim" };
                     
                 } 
