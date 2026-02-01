@@ -25,5 +25,6 @@ namespace df {
 		bool commandsLoaded{false};
 
 		std::shared_ptr<BTNode> btRoot{};
+		std::mt19937 mersenne_twister_engine{std::random_device()()};
 	};
 }

@@ -46,7 +46,7 @@ namespace df {
 		// Function for safe keyword argument lookup
 		template<typename T>
 		T getArg(const Args& args, const std::string& key, T defaultValue) {
-			if (auto iterator = args.find(key); iterator != args.end()) {
+			if (const auto iterator = args.find(key); iterator != args.end()) {
 				if (std::holds_alternative<T>(iterator->second)) {
 					return std::get<T>(iterator->second);
 				}
@@ -56,8 +56,15 @@ namespace df {
 
 		template<typename T>
 		bool isArg(const Args& args, const std::string& key) {
-			if (auto iterator = args.find(key); iterator != args.end()) {
+			if (const auto iterator = args.find(key); iterator != args.end()) {
 				return std::holds_alternative<T>(iterator->second);
+			}
+			return false;
+		}
+
+		inline bool hasArg(const Args& args, const std::string& key) {
+			if (const auto iterator = args.find(key); iterator != args.end()) {
+				return true;
 			}
 			return false;
 		}

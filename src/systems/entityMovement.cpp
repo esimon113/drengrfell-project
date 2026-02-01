@@ -20,12 +20,18 @@ namespace df {
 			targetSet = true;
 			fmt::println("Set move target of entity: {} to {}", static_cast<int>(context.entity), target);
 			return BTState::Success;
-		}
-	);
+		});
+		aiSystem->getCommandRegistry().registerCommand(
+		"getMapSize",
+		[this](BTContext& context, const BTF::Args& /*a*/) {
+			context.storage.data["ans"] = static_cast<double>(this->gameState->getMap().getTileCount());
+			return BTState::Success;
+		});
 	}
 
 	EntityMovementSystem::~EntityMovementSystem() {
 		aiSystem->getCommandRegistry().unregisterCommand("setMoveTarget");
+		aiSystem->getCommandRegistry().unregisterCommand("getMapSize");
 	}
 
 	unsigned EntityMovementSystem::getTileIDFromWorldPosition(const glm::vec2& worldPos) const noexcept{
@@ -44,7 +50,7 @@ namespace df {
 
 	}
 
-    
+
 	void EntityMovementSystem::updateTileAndDiscover(Entity entity, unsigned tileID) noexcept{
 		if (registry->tileID.has(entity)) {
 			registry->tileID.get(entity) = targetPositionTileID;
@@ -91,7 +97,7 @@ namespace df {
 			targetSet = false;
 			scale.x = 1.0f;
 			updateTileAndDiscover(entity, targetPositionTileID);
-        	return;	
+        	return;
 		}
 
 
