@@ -27,11 +27,31 @@ namespace df {
 			context.storage.data["ans"] = static_cast<double>(this->gameState->getMap().getTileCount());
 			return BTState::Success;
 		});
+		aiSystem->getCommandRegistry().registerCommand(
+		"getExploredTiles",
+		[this](BTContext& context, const BTF::Args& /*a*/) {
+			Player* p = this->gameState->getPlayer(0);
+			if (p) {
+				const auto vec = p->getExploredTileIds();
+				auto arr = BTArray{};
+				arr.reserve(vec.size());
+				for (const auto& id : vec) {
+					BTValueType num = static_cast<BTNumber>(id);
+					arr.emplace_back(std::make_shared<BTValueType>(num));
+				}
+				context.storage.data["ans"] = arr;
+				return BTState::Success;
+			} else {
+				std::cerr << "Failed to get player" << std::endl;
+				return BTState::Failed;
+			}
+		});
 	}
 
 	EntityMovementSystem::~EntityMovementSystem() {
 		aiSystem->getCommandRegistry().unregisterCommand("setMoveTarget");
 		aiSystem->getCommandRegistry().unregisterCommand("getMapSize");
+		aiSystem->getCommandRegistry().unregisterCommand("getExploredTiles");
 	}
 
 	unsigned EntityMovementSystem::getTileIDFromWorldPosition(const glm::vec2& worldPos) const noexcept{

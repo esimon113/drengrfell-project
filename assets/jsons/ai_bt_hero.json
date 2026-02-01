@@ -3,8 +3,21 @@
 	"children": [
 		{
 			"kind": "function",
-			"name": "getMapSize",
-			"args": {}
+			"name": "getExploredTiles"
+		},
+		{
+			"kind": "function",
+			"name": "store",
+			"args": {
+				"var": "explored_tiles"
+			}
+		},
+		{
+			"kind": "function",
+			"name": "size",
+			"args": {
+				"array": "$explored_tiles"
+			}
 		},
 		{
 			"kind": "function",
@@ -12,6 +25,14 @@
 			"args": {
 				"start": 0,
 				"end": "$ans"
+			}
+		},
+		{
+			"kind": "function",
+			"name": "get",
+			"args": {
+				"array": "$explored_tiles",
+				"index": "$ans"
 			}
 		},
 		{
