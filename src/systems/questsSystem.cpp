@@ -91,59 +91,74 @@ namespace df {
         std::vector<std::string> buttons;
         if(questId == 10){
             m_notificationSystem->showNotification("CONGRATULATIONS", "No more quests", {"Close"});
+            return;
         }
 
         for (auto& q : m_quests) {
             if (q.id == questId) {
                 m_currentShowingQuestId = questId;
-                
-                buttons = { "Close" };
 
-                if (currentQuest < activeQuests) {
-                    if (q.state == QuestState::Completed) {
-                        buttons.insert(buttons.begin(), "Next Quest");
+                int visualIndex = 1;
+                for(const auto& checkQ : m_quests) {
+                    if (checkQ.id == q.id) break; 
+                    if (checkQ.state == QuestState::Active || checkQ.state == QuestState::Completed) {
+                        visualIndex++;
                     }
                 }
+                currentQuest = visualIndex;
 
-                int remaining = q.goal_amount - q.progress;
-                if (remaining < 0) remaining = 0; 
+                std::string title = q.name;
+                std::string dynamicDesc;
+                std::vector<std::string> buttons;
+                
+                if (q.state == QuestState::Completed) {
+                    dynamicDesc = "Quest Completed!";
+                    buttons = { "Claim" };
+                    
+                } 
+                else {
+                    buttons = { "Close" };
+                    
+                    int remaining = q.goal_amount - q.progress;
+                    if (remaining < 0) remaining = 0; 
 
-                std::string rewardName = resourceName(q.reward_resource);
+                    std::string rewardName = resourceName(q.reward_resource);
 
-                std::string dynamicDesc = fmt::format(
-                    "\n{}\n\n"
-                    "Remaining: {}\n"
-                    "Reward: {} units of {}\n\n"
-                    "--- Quest {} of {} ---\n", 
-                    q.desc, 
-                    remaining, 
-                    q.reward_amount,
-                    rewardName,
-                    currentQuest,
-                    activeQuests
-                );
-
-
-                if(q.goal_type==types::QuestGoalType::TUTORIAL){
                     dynamicDesc = fmt::format(
                         "\n{}\n\n"
+                        "Remaining: {}\n"
                         "Reward: {} units of {}\n\n"
                         "--- Quest {} of {} ---\n", 
-                        q.desc,
+                        q.desc, 
+                        remaining, 
                         q.reward_amount,
                         rewardName,
                         currentQuest,
-                        activeQuests    
+                        activeQuests
                     );
-                    buttons = {
-						"Close"
-					};
+
+
+                    if(q.goal_type==types::QuestGoalType::TUTORIAL){
+                        dynamicDesc = fmt::format(
+                            "\n{}\n\n"
+                            "Reward: {} units of {}\n\n"
+                            "--- Quest {} of {} ---\n", 
+                            q.desc,
+                            q.reward_amount,
+                            rewardName,
+                            currentQuest,
+                            activeQuests    
+                        );
+                        buttons = {
+                            "Close"
+                        };
+                    }
+                    
+                
+                    if (currentQuest < activeQuests) {
+                        buttons.insert(buttons.begin(), "Next Quest");
+                    } 
                 }
-                
-                
-                if (q.state == QuestState::Completed || q.goal_type!=types::QuestGoalType::TUTORIAL) {
-                    buttons.insert(buttons.begin(), "Next Quest");
-                } 
 
                 m_notificationSystem->showNotification(q.name, dynamicDesc, buttons);
                 
@@ -158,12 +173,12 @@ namespace df {
             if (q.id == questId && q.state == QuestState::Completed) {
                 activeQuests--;
                 q.state = QuestState::Claimed;
-
+                m_currentShowingQuestId = -1; 
                 for (int nextId : q.unlocksIds) {
                     activateQuest(nextId, player, gameState);
                 }
                 
-                m_currentShowingQuestId = -1; 
+                
                 break;
             }
         }
