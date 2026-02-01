@@ -88,7 +88,6 @@ namespace df {
     }
 
     void QuestsSystem::notifyPlayer(int questId) {
-        std::vector<std::string> buttons;
         if(questId == 10){
             m_notificationSystem->showNotification("CONGRATULATIONS", "No more quests", {"Close"});
             return;
