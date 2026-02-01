@@ -27,18 +27,24 @@ namespace df {
 		this->commands.registerCommand(
 			"store",
 			[](BTContext& context, const BTF::Args &a) {
-				auto varname = BTF::getArg<std::string>(a, "var", "ans");
+				auto varname = BTF::getArg<BTString>(a, "var", "ans");
 				BTValueType varvalue;
 				if (BTF::hasArg(a, "val")) {
-					if (BTF::isArg<std::string>(a, "val")) {
-						varvalue = BTF::getArg<std::string>(a, "val", "");
+					if (BTF::isArg<BTString>(a, "val")) {
+						varvalue = BTF::getArg<BTString>(a, "val", "");
 						fmt::println("[AI]: Stored {} into {}", std::get<std::string>(varvalue), varname);
-					} else if (BTF::isArg<double>(a, "val")) {
-						varvalue = BTF::getArg<double>(a, "val", 0.0);
+					} else if (BTF::isArg<BTNumber>(a, "val")) {
+						varvalue = BTF::getArg<BTNumber>(a, "val", 0.0);
 						fmt::println("[AI]: Stored {} into {}", std::get<double>(varvalue), varname);
-					} else if (BTF::isArg<bool>(a, "val")) {
-						varvalue = BTF::getArg<bool>(a, "val", false);
+					} else if (BTF::isArg<BTBoolean>(a, "val")) {
+						varvalue = BTF::getArg<BTBoolean>(a, "val", false);
 						fmt::println("[AI]: Stored {} into {}", std::get<bool>(varvalue), varname);
+					} else if (BTF::isArg<BTArray>(a, "val")) {
+						varvalue = BTF::getArg<BTArray>(a, "val", BTArray{});
+						//fmt::println("[AI]: Stored {} into {}", std::get<BTArray>(varvalue), varname);
+					} else if (BTF::isArg<BTObject>(a, "val")) {
+						varvalue = BTF::getArg<BTObject>(a, "val", BTObject{});
+						//fmt::println("[AI]: Stored {} into {}", std::get<BTObject>(varvalue), varname);
 					}
 				} else if (context.storage.data.contains("ans")) {
 					varvalue = context.storage.data["ans"];
@@ -53,12 +59,12 @@ namespace df {
 		this->commands.registerCommand(
 			"getUniformInt",
 			[this](BTContext& context, const BTF::Args &a) {
-				const int start = static_cast<int>(BTF::getArg<double>(a, "start", 0.0));
-				const int end = static_cast<int>(BTF::getArg<double>(a, "end", 1.0));
+				const int start = static_cast<int>(BTF::getArg<BTNumber>(a, "start", 0));
+				const int end = static_cast<int>(BTF::getArg<BTNumber>(a, "end", 1));
 
 				std::uniform_int_distribution<int> distrib(start, end);
 				auto res = distrib(this->mersenne_twister_engine);
-				context.storage.data["ans"] = static_cast<double>(res);
+				context.storage.data["ans"] = static_cast<BTNumber>(res);
 				return BTState::Success;
 			}
 		);
