@@ -22,6 +22,7 @@ namespace df {
 					}
 				}
 			}
+			std::cerr << "[AI Error]: Missing kind. Maybe shorthand without ! before command name? In: " << to_string(j) << std::endl;
 			return nullptr;
 		} else if (kind == "sequence" || kind == "and") {
 			auto ptr = std::make_shared<BTSequence>();
@@ -44,6 +45,8 @@ namespace df {
 		} else if (kind == "function") {
 			auto ptr = std::make_shared<BTFunction>();
 			if (ptr->deserializeInplace(j, c)) return ptr;
+		} else {
+			std::cerr << "[AI Error]: Unknown kind. In: " << to_string(j) << std::endl;
 		}
 		return nullptr;
 	}
@@ -103,7 +106,10 @@ namespace df {
 
 	bool BTSequence::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json a = j.value("children", nlohmann::json::array());
-		if (!a.is_array()) return false; // TODO: Add proper error handling
+		if (!a.is_array()) {
+			std::cerr << "[AI Error]: children is not an array. In: " << to_string(j) << std::endl;
+			return false;
+		}
 		for (auto& element : a) {
 			auto c = deserialize(element, cr);
 			if (c == nullptr) return false;
@@ -151,7 +157,10 @@ namespace df {
 
 	bool BTSelector::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json a = j.value("children", nlohmann::json::array());
-		if (!a.is_array()) return false; // TODO: Add proper error handling
+		if (!a.is_array()) {
+			std::cerr << "[AI Error]: children is not an array. In: " << to_string(j) << std::endl;
+			return false;
+		}
 		for (auto& element : a) {
 			auto c = deserialize(element, cr);
 			if (c == nullptr) return false;
@@ -187,7 +196,10 @@ namespace df {
 
 	bool BTInverter::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
-		if (!o.is_object()) return false; // TODO: Add proper error handling
+		if (!o.is_object()) {
+			std::cerr << "[AI Error]: child is not an object. In: " << to_string(j) << std::endl;
+			return false;
+		}
 		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
@@ -213,7 +225,10 @@ namespace df {
 
 	bool BTSucceeder::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
-		if (!o.is_object()) return false; // TODO: Add proper error handling
+		if (!o.is_object()) {
+			std::cerr << "[AI Error]: child is not an object. In: " << to_string(j) << std::endl;
+			return false;
+		}
 		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
@@ -247,7 +262,10 @@ namespace df {
 
 	bool BTUntilFailureRepeater::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
-		if (!o.is_object()) return false; // TODO: Add proper error handling
+		if (!o.is_object()) {
+			std::cerr << "[AI Error]: child is not an object. In: " << to_string(j) << std::endl;
+			return false;
+		}
 		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
@@ -284,7 +302,10 @@ namespace df {
 
 	bool BTRepeater::deserializeInplace(const nlohmann::json& j, const CommandRegistry& cr) {
 		nlohmann::json o = j.value("child", nlohmann::json::object());
-		if (!o.is_object()) return false; // TODO: Add proper error handling
+		if (!o.is_object()) {
+			std::cerr << "[AI Error]: child is not an object. In: " << to_string(j) << std::endl;
+			return false;
+		}
 		auto c = deserialize(o, cr);
 		if (c == nullptr) return false;
 		this->child = c;
@@ -322,7 +343,10 @@ namespace df {
 
 	bool BTFunction::deserializeInplace(const nlohmann::json& j, const CommandRegistry& commandRegistry) {
 		this->name = j.value("name", "");
-		if (!commandRegistry.hasCommand(this->name)) return false;
+		if (!commandRegistry.hasCommand(this->name)) {
+			std::cerr << "[AI Error]: Unknown command " << this->name << ". In: " << j << std::endl;
+			return false;
+		}
 		this->fn = commandRegistry.getCommand(this->name);
 		this->args = std::get<BTF::Args>(BTValueType::deserialize(j.value("args", nlohmann::json::object())));
 		return true;
@@ -330,7 +354,10 @@ namespace df {
 
 	bool BTFunction::deserializeInplaceCompact(const nlohmann::json& j, const CommandRegistry& commandRegistry, std::string pName) {
 		this->name = std::move(pName);
-		if (!commandRegistry.hasCommand(this->name)) return false;
+		if (!commandRegistry.hasCommand(this->name)) {
+			std::cerr << "[AI Error]: Unknown command " << this->name << ". In shorthand: " << j << std::endl;
+			return false;
+		}
 		this->fn = commandRegistry.getCommand(this->name);
 		this->args = std::get<BTF::Args>(BTValueType::deserialize(j));
 		return true;
