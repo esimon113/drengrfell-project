@@ -833,7 +833,7 @@ namespace df {
 		}
 		if (!this->hasEnoughResources(*player, buildingCost)) {
 			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
-			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to upgrade this settlement.\n", {"Okay"});
 			return false;
 		}
 
