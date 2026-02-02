@@ -51,8 +51,8 @@ namespace df {
 		return nullptr;
 	}
 
-	Result<std::shared_ptr<BTNode>, ResultError> BTNode::deserialize(const CommandRegistry& cr, assets::JsonFile asset) {
-		auto path = assets::getAssetPath(asset);
+	Result<std::shared_ptr<BTNode>, ResultError> BTNode::deserialize(const CommandRegistry& cr, const std::string& filename) {
+		auto path = getBasePath() + "/assets/jsons/" + filename + ".json";
 		std::ifstream file(path);
 		if (!file) {
 			return Err(ResultError(ResultError::Kind::IOError, "BTNode::deserialize(): Could not open file: " + path));

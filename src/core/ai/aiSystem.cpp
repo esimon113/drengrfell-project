@@ -5,23 +5,47 @@
 #include "behaviorTree.h"
 #include "resultError.h"
 #include "fmt/color.h"
+#include "fmt/os.h"
 
 namespace df {
 	AiSystem::AiSystem(Registry* registry) : registry(registry) {}
 
+	AiSystem::~AiSystem() {
+		this->commands.unregisterCommand("run");
+		this->commands.unregisterCommand("getUniformInt");
+	}
+
 	void AiSystem::loadCommands() {
+		this->commands.registerCommand(
+			"run",
+			[this](BTContext& context, const BTF::Args &args) {
+				auto filename = BTF::getArg<BTString>(args, "file", "");
+				if (filename.empty()) {
+					std::cerr << "[AI Error]: Missing 'filename'" << std::endl;
+					return BTState::Invalid;
+				}
+				auto result = this->loadBehaviorTree(filename);
+				if (result.isOk()) {
+					std::cout << "[AI]: Run '" << filename << "'" << std::endl;
+					return loadedRoots[filename]->process(context);
+				} else {
+					std::cerr << "[AI Error]: Could not load tree " << filename << std::endl;
+					return BTState::Invalid;
+				}
+			}
+		);
 		this->commands.registerCommand(
 			"print",
 			[](BTContext& /*context*/, const BTF::Args &a) {
-				std::cout << BTF::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
+				std::cout << "[AI]: " << BTF::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
 				return BTState::Success;
 			}
 		);
 		this->commands.registerCommand(
 			"error",
 			[](BTContext& /*context*/, const BTF::Args &args) {
-				std::cerr << BTF::getArg<std::string>(args, "text", "Missing 'text'") << std::endl;
-				return BTState::Failed;
+				std::cerr << "[AI Error]: " << BTF::getArg<std::string>(args, "text", "Missing 'text'") << std::endl;
+				return BTState::Invalid;
 			}
 		);
 		this->commands.registerCommand(
@@ -115,27 +139,36 @@ namespace df {
 		if (!this->commandsLoaded) {
 			loadCommands();
 		}
-		auto result = BTNode::deserialize(this->commands, assets::JsonFile::AI_BEHAVIOR_TREE_HERO);
-		if (result.isErr()) {
-			return Err(result.unwrapErr());
-		} else {
-			this->btRoot = result.unwrap<>();
+		return loadBehaviorTree("ai_bt_hero", false);
+	}
+
+	Result<void, ResultError> AiSystem::loadBehaviorTree(const std::string& filename, bool skipIfLoaded) {
+		if (skipIfLoaded && this->loadedRoots.contains(filename)) {
 			return Ok();
+		} else {
+			auto result = BTNode::deserialize(this->commands, filename);
+			if (result.isErr()) {
+				return Err(result.unwrapErr());
+			} else {
+				this->loadedRoots[filename] = result.unwrap();
+				return Ok();
+			}
 		}
+
 	}
 
 	void AiSystem::onKeyCallback(GLFWwindow* /*window*/, const int key, int /*scancode*/, const int action, int /*mods*/) {
 		if (action == GLFW_PRESS) {
 			if (key == GLFW_KEY_L) {
 				loadBehaviorTrees();
-				fmt::println("Loaded BT: {}", this->btRoot->serialize().dump());
+				fmt::println("Loaded BT: {}", this->loadedRoots["ai_bt_hero"]->serialize().dump());
 			}
 			if (key == GLFW_KEY_P) {
 				if (registry) {
 					const Agent p = registry->animations.entities.front();
 					fmt::println("Agent P is {}", static_cast<int>(p));
 					BTContext context {p};
-					fmt::println("{}", to_string(this->btRoot->process(context)));
+					fmt::println("{}", to_string(this->loadedRoots["ai_bt_hero"]->process(context)));
 				}
 			}
 		}
