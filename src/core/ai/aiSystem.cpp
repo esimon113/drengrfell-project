@@ -19,27 +19,92 @@ namespace df {
 		);
 		this->commands.registerCommand(
 			"error",
-			[](BTContext& /*context*/, const BTF::Args &a) {
-				std::cerr << BTF::getArg<std::string>(a, "text", "Missing 'text'") << std::endl;
+			[](BTContext& /*context*/, const BTF::Args &args) {
+				std::cerr << BTF::getArg<std::string>(args, "text", "Missing 'text'") << std::endl;
 				return BTState::Failed;
 			}
 		);
 		this->commands.registerCommand(
 			"store",
-			[](BTContext& context, const BTF::Args &a) {
-				auto varname = BTF::getArg<std::string>(a, "var", "ans");
+			[](BTContext& context, const BTF::Args &args) {
+				auto varname = BTF::getArg<BTString>(args, "var", "ans");
 				BTValueType varvalue;
-				if (BTF::isArg<std::string>(a, "val")) {
-					varvalue = BTF::getArg<std::string>(a, "val", "");
-					fmt::println("[AI]: Stored {} into {}", std::get<std::string>(varvalue), varname);
-				} else if (BTF::isArg<double>(a, "val")) {
-					varvalue = BTF::getArg<double>(a, "val", 0.0);
-					fmt::println("[AI]: Stored {} into {}", std::get<double>(varvalue), varname);
-				} else if (BTF::isArg<bool>(a, "val")) {
-					varvalue = BTF::getArg<bool>(a, "val", false);
-					fmt::println("[AI]: Stored {} into {}", std::get<bool>(varvalue), varname);
+				if (BTF::hasArg(args, "val")) {
+					if (BTF::isArg<BTString>(args, "val")) {
+						varvalue = BTF::getArg<BTString>(args, "val", "");
+						fmt::println("[AI]: Stored {} into {}", std::get<std::string>(varvalue), varname);
+					} else if (BTF::isArg<BTNumber>(args, "val")) {
+						varvalue = BTF::getArg<BTNumber>(args, "val", 0.0);
+						fmt::println("[AI]: Stored {} into {}", std::get<double>(varvalue), varname);
+					} else if (BTF::isArg<BTBoolean>(args, "val")) {
+						varvalue = BTF::getArg<BTBoolean>(args, "val", false);
+						fmt::println("[AI]: Stored {} into {}", std::get<bool>(varvalue), varname);
+					} else if (BTF::isArg<BTArray>(args, "val")) {
+						varvalue = BTF::getArg<BTArray>(args, "val", BTArray{});
+						fmt::println("[AI]: Stored {} into {}", to_string(varvalue.serialize()), varname);
+					} else if (BTF::isArg<BTObject>(args, "val")) {
+						varvalue = BTF::getArg<BTObject>(args, "val", BTObject{});
+						fmt::println("[AI]: Stored {} into {}", to_string(varvalue.serialize()), varname);
+					}
+				} else if (context.storage.data.contains("ans")) {
+					varvalue = context.storage.data["ans"];
+				} else {
+					std::cerr << "[AI Error]: Invalid store node args. 'ans' is not set." << std::endl;
+					return BTState::Invalid;
 				}
 				context.storage.data[varname] = varvalue;
+				return BTState::Success;
+			}
+		);
+		this->commands.registerCommand(
+			"getUniformInt",
+			[this](BTContext& context, const BTF::Args &args) {
+				const int start = static_cast<int>(BTF::getArg<BTNumber>(args, "start", 0));
+				const int end = static_cast<int>(BTF::getArg<BTNumber>(args, "end", 1));
+
+				std::uniform_int_distribution<int> distrib(start, end);
+				const auto res = distrib(this->mersenne_twister_engine);
+				return BTF::store<BTNumber>(context, args, res);
+			}
+		);
+		this->commands.registerCommand(
+			"get",
+			[](BTContext& context, const BTF::Args &args) {
+				if (args.contains("array")) {
+					const auto arr = BTF::getArg<BTArray>(args, "array", BTArray{});
+					const auto idx = static_cast<int>(BTF::getArg<BTNumber>(args, "index", 0));
+					if (arr.empty()) {
+						return BTState::Failed;
+					} else {
+						return BTF::store<BTValueType>(context, args, *arr[idx % arr.size()]);
+					}
+				} else if (args.contains("object")) {
+					const auto obj = BTF::getArg<BTObject>(args, "object", BTObject{});
+					const auto key = BTF::getArg<BTString>(args, "key", BTString{});
+					if (obj.contains(key)) {
+						return BTF::store<BTValueType>(context, args, *obj.at(key));
+					} else {
+						return BTState::Failed;
+					}
+				} else {
+					std::cerr << "[AI Error]: Invalid get node args. Does not contain an indexable 'array' or 'object'." << std::endl;
+					return BTState::Invalid;
+				}
+			}
+		);
+		this->commands.registerCommand(
+			"size",
+			[](BTContext& context, const BTF::Args &args) {
+				if (args.contains("array")) {
+					const auto arr = BTF::getArg<BTArray>(args, "array", BTArray{});
+					BTF::store<BTNumber>(context, args, arr.size());
+				} else if (args.contains("object")) {
+					const auto obj = BTF::getArg<BTObject>(args, "object", BTObject{});
+					BTF::store<BTNumber>(context, args, obj.size());
+				} else {
+					std::cerr << "[AI Error]: Invalid size node args. Does not contain an 'array' or 'object'." << std::endl;
+					return BTState::Invalid;
+				}
 				return BTState::Success;
 			}
 		);

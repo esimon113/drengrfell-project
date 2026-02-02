@@ -20,12 +20,64 @@ namespace df {
 			targetSet = true;
 			fmt::println("Set move target of entity: {} to {}", static_cast<int>(context.entity), target);
 			return BTState::Success;
-		}
-	);
+		});
+		aiSystem->getCommandRegistry().registerCommand(
+		"getMapSize",
+		[this](BTContext& context, const BTF::Args& args) {
+			return BTF::store<BTNumber>(context, args, this->gameState->getMap().getTileCount());
+		});
+		aiSystem->getCommandRegistry().registerCommand(
+		"getExploredTiles",
+		[this](BTContext& context, const BTF::Args& args) {
+			// TODO: Get correct player id
+			Player* p = this->gameState->getPlayer(0);
+			if (p) {
+				const auto vec = p->getExploredTileIds();
+				auto arr = BTArray{};
+				arr.reserve(vec.size());
+				for (const auto& id : vec) {
+					BTValueType num = static_cast<BTNumber>(id);
+					arr.emplace_back(std::make_shared<BTValueType>(num));
+				}
+				return BTF::store<BTArray>(context, args, arr);
+			} else {
+				std::cerr << "Failed to get player" << std::endl;
+				return BTState::Failed;
+			}
+		});
+		aiSystem->getCommandRegistry().registerCommand(
+		"getUnexploredTiles",
+		[this](BTContext& context, const BTF::Args& args) {
+			// TODO: Get correct player id
+			Player* p = this->gameState->getPlayer(0);
+			if (p) {
+				auto tileCount = this->gameState->getMap().getTileCount();
+
+				std::vector<bool> explored(tileCount, false);
+				for (size_t id : p->getExploredTileIds()) {
+					explored[id] = true;
+				}
+
+				auto arr = BTArray{};
+				arr.reserve(tileCount);
+				for (size_t id = 0; id < tileCount; id++) {
+					if (!explored[id]) {
+						BTValueType num = static_cast<BTNumber>(id);
+						arr.emplace_back(std::make_shared<BTValueType>(num));
+					}
+				}
+				return BTF::store<BTArray>(context, args, arr);
+			} else {
+				std::cerr << "Failed to get player" << std::endl;
+				return BTState::Failed;
+			}
+		});
 	}
 
 	EntityMovementSystem::~EntityMovementSystem() {
 		aiSystem->getCommandRegistry().unregisterCommand("setMoveTarget");
+		aiSystem->getCommandRegistry().unregisterCommand("getMapSize");
+		aiSystem->getCommandRegistry().unregisterCommand("getExploredTiles");
 	}
 
 	unsigned EntityMovementSystem::getTileIDFromWorldPosition(const glm::vec2& worldPos) const noexcept{
@@ -44,7 +96,7 @@ namespace df {
 
 	}
 
-    
+
 	void EntityMovementSystem::updateTileAndDiscover(Entity entity, unsigned tileID) noexcept{
 		if (registry->tileID.has(entity)) {
 			registry->tileID.get(entity) = targetPositionTileID;
@@ -91,7 +143,7 @@ namespace df {
 			targetSet = false;
 			scale.x = 1.0f;
 			updateTileAndDiscover(entity, targetPositionTileID);
-        	return;	
+        	return;
 		}
 
 

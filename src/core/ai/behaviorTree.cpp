@@ -293,8 +293,8 @@ namespace df {
 	BTState BTFunction::process(BTContext& context) {
 		BTF::Args evaluatedArgs = this->args;
 		for (auto const& [key, value] : evaluatedArgs) {
-			if (std::holds_alternative<std::string>(value)) {
-				evaluatedArgs[key] = BTF::evaluateString(context, std::get<std::string>(value));
+			if (std::holds_alternative<std::string>(*value)) {
+				evaluatedArgs[key] = std::make_shared<BTValueType>(BTF::evaluateString(context, std::get<std::string>(*value)));
 			}
 		}
 		return this->fn(context, evaluatedArgs);
@@ -304,7 +304,7 @@ namespace df {
 		return {
 				{"kind", "function"},
 				{"name", this->name},
-				{"args", args}
+				{"args", BTValueType{args}.serialize()}
 		};
 	}
 
@@ -312,7 +312,7 @@ namespace df {
 		this->name = j.value("name", "");
 		if (!commandRegistry.hasCommand(this->name)) return false;
 		this->fn = commandRegistry.getCommand(this->name);
-		this->args = j.value("args", this->args);
+		this->args = std::get<BTF::Args>(BTValueType::deserialize(j.value("args", nlohmann::json::object())));
 		return true;
 	}
 }

@@ -112,10 +112,6 @@ namespace df {
 
 	class BTFunction final : public BTNode {
 	public:
-		//using JsonType = std::variant<std::string, double, bool>;
-		//using Args = std::unordered_map<std::string, JsonType>;
-		//using Function = std::function<BTState(Agent, Args)>;
-
 		BTFunction() = default;
 		explicit BTFunction(std::string name, const CommandRegistry& commandRegistry);
 		void init(Agent) override;

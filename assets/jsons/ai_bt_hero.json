@@ -3,23 +3,39 @@
 	"children": [
 		{
 			"kind": "function",
+			"name": "getUnexploredTiles",
+			"args": {
+				"store": "unexplored_tiles"
+			}
+		},
+		{
+			"kind": "function",
+			"name": "size",
+			"args": {
+				"array": "*unexplored_tiles"
+			}
+		},
+		{
+			"kind": "function",
+			"name": "getUniformInt",
+			"args": {
+				"start": 0,
+				"end": "*ans"
+			}
+		},
+		{
+			"kind": "function",
+			"name": "get",
+			"args": {
+				"array": "*unexplored_tiles",
+				"index": "*ans"
+			}
+		},
+		{
+			"kind": "function",
 			"name": "setMoveTarget",
 			"args": {
-				"id": 12
-			}
-		},
-		{
-			"kind": "function",
-			"name": "store",
-			"args": {
-				"val": "Pi = 3.14"
-			}
-		},
-		{
-			"kind": "function",
-			"name": "print",
-			"args": {
-				"text": "$ans"
+				"id": "*ans"
 			}
 		}
 	]
