@@ -53,8 +53,8 @@ namespace df {
 		this->renderWeatherSystem.step(dt);
 		this->eventPresentationSystem.step(dt);	// everything rendered before this will be dimmed by events
 		this->renderTextSystem.step(dt);
-		this->renderNotificationSystem.step(dt);
 		this->renderSettlementMenuSystem.step(dt);
+		this->renderNotificationSystem.step(dt);
 		this->renderHudSystem.step(dt); // always rendered last
 	}
 
