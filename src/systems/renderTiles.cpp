@@ -115,12 +115,9 @@ namespace df {
 
 		const size_t newTileInstancesBufferSize = this->tileInstances.size() * sizeof(TileInstance);
 		glBindBuffer(GL_ARRAY_BUFFER, this->tileInstanceVbo);
-		if (newTileInstancesBufferSize > this->tileInstancesBufferSize) {
-			glBufferData(GL_ARRAY_BUFFER, newTileInstancesBufferSize, this->tileInstances.data(), GL_DYNAMIC_DRAW);
-			this->tileInstancesBufferSize = newTileInstancesBufferSize;
-		} else {
-			glBufferSubData(GL_ARRAY_BUFFER, 0, newTileInstancesBufferSize, this->tileInstances.data());
-		}
+		glBufferData(GL_ARRAY_BUFFER, newTileInstancesBufferSize, this->tileInstances.data(), GL_DYNAMIC_DRAW);
+		this->tileInstancesBufferSize = newTileInstancesBufferSize;
+
 
 
 		return Ok();
