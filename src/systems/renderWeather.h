@@ -18,6 +18,8 @@ namespace df {
 		void decreaseIntensity() { weatherIntensity -= 0.20f; }
 		float getIntensity() { return weatherIntensity;}
 
+		df::types::WeatherType getCurrentType() const noexcept { return currentType; }
+
 		void randomizeWeather() noexcept;
 
 
