@@ -577,6 +577,7 @@ namespace df {
 					}
 					render.renderNotificationSystem.close();
 					selectedSettlementId = SIZE_MAX;
+					world.escPressed();
 					return;
 				}
 			}
@@ -690,6 +691,7 @@ namespace df {
 
 				if(pressedButton == "Close"){
 					gameController->getQuestsSystem()->setCurrentQuest();
+					world.escPressed();
 				}
 
 				if(pressedButton == "Cancel"){

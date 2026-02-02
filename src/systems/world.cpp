@@ -114,6 +114,7 @@ namespace df {
 		auto& animComp = registry->animations.get(hero);
 		auto* step = this->gameState->getCurrentTutorialStep();
 		auto* quests = registry->getSystem<QuestsSystem>();
+		auto* notifications = registry->getSystem<RenderNotificationSystem>();
 
 		if (this->gameState->isGameOver()) {
 			return; 
@@ -190,6 +191,8 @@ namespace df {
 				}
 				break;
 			case GLFW_KEY_Q: {
+				showKeybinds = false;
+				showCosts	= false;
 				showTrade = false;
 				if (quests) {
 					quests->notifyNextActiveQuest(); 
@@ -201,7 +204,8 @@ namespace df {
 				break;
 			case GLFW_KEY_T: {
 				quests->setCurrentQuest();
-				auto* notifications = registry->getSystem<RenderNotificationSystem>();
+				showKeybinds = false;
+				showCosts	= false;
 				if(showTrade){
 					showTrade = false;
 					notifications->close();
@@ -220,22 +224,28 @@ namespace df {
 			} break;
 			case GLFW_KEY_K:{
 				quests->setCurrentQuest();
+				showCosts = false;
 				showTrade = false;
-				auto* notifications = registry->getSystem<RenderNotificationSystem>();
-				std::vector<std::string> buttons;
-				std::string keybindsList = 
-					"WASD: Move map\n"
-					"Q: Active quests\n"
-					"N: Build settlement\n"
-					"B: Build road\n"
-					"T: Open trade menu\n"
-					"C: See costs\n"
-					"+/-: Zoom\n"
-					"Space: Center camera to hero";
-				buttons = {"Close"};
-				notifications->showNotification("Keybinds", keybindsList, buttons);
-				if (step && step->id == TutorialStepId::OPEN_KEYBINDS_MENU) {
-					this->gameState->completeCurrentTutorialStep();
+				if (showKeybinds) {
+					notifications->close();
+					showKeybinds = false;
+				} else {
+					showKeybinds = true;
+					std::vector<std::string> buttons;
+					std::string keybindsList = 
+						"WASD: Move map\n"
+						"Q: Active quests\n"
+						"N: Build settlement\n"
+						"B: Build road\n"
+						"T: Open trade menu\n"
+						"C: See costs\n"
+						"+/-: Zoom\n"
+						"Space: Center camera to hero";
+					buttons = {"Close"};
+					notifications->showNotification("Keybinds", keybindsList, buttons);
+					if (step && step->id == TutorialStepId::OPEN_KEYBINDS_MENU) {
+						this->gameState->completeCurrentTutorialStep();
+					}
 				}
 			}
 				break;
@@ -243,19 +253,25 @@ namespace df {
 			case GLFW_KEY_C:{
 				quests->setCurrentQuest();
 				showTrade = false;
-				auto* notifications = registry->getSystem<RenderNotificationSystem>();
-				std::vector<std::string> buttons;
-				std::string costsList = 
-					"SETTLEMENT\n"
-					"  - 5 wood\n"
-					"  - 5 clay\n"
-					"  - 3 grain\n"
-					"  - 3 wool\n"
-					"ROAD\n"
-					"  - 1 wood\n"
-					"  - 1 clay";
-				buttons = {"Close"};
-				notifications->showNotification("COSTS", costsList, buttons);
+				showKeybinds = false;
+				if (showCosts) {
+					notifications->close();
+					showCosts = false;
+				} else {
+					showCosts = true;
+					std::vector<std::string> buttons;
+					std::string costsList = 
+						"SETTLEMENT\n"
+						"  - 5 wood\n"
+						"  - 5 clay\n"
+						"  - 3 grain\n"
+						"  - 3 wool\n"
+						"ROAD\n"
+						"  - 1 wood\n"
+						"  - 1 clay";
+					buttons = {"Close"};
+					notifications->showNotification("COSTS", costsList, buttons);
+				}
 			}
 				break;
 			case GLFW_KEY_G: {
