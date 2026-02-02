@@ -137,7 +137,7 @@ namespace df {
 						continue;
 					}
 
-					const int percent = getPotencyPercent(tile->getPotency());
+					const int percent = getPotencyPercent(tile->getEffectivePotency());
 					textLines.emplace_back(std::string(types::tileTypeToString(type)) + " " + std::to_string(percent) + "%" + tile->getPotencyModifierLabel(currentWeather));
 					
 				}
@@ -569,8 +569,12 @@ namespace df {
 		switch (potency) {
 		case types::TilePotency::LOW:
 			return 20;
+		case types::TilePotency::MEDIUMLOW:
+			return 35;
 		case types::TilePotency::MEDIUM:
 			return 50;
+		case types::TilePotency::MEDIUMHIGH:
+			return 70;
 		case types::TilePotency::HIGH:
 			return 90;
 		default:

@@ -11,7 +11,7 @@ namespace df {
 		j["id"] = id;
 		// static_cast turns the enums into ints so they are json-compatible
 		j["type"] = static_cast<int>(type);
-		j["potency"] = static_cast<int>(potency);
+		j["basePotency"] = static_cast<int>(basePotency);
 		j["rangeFactor"] = rangeFactor;
 
 		if (buildingId.has_value())
@@ -33,7 +33,7 @@ namespace df {
 		types::TileType newType = static_cast<types::TileType>(typeInt);
 		this->setType(newType);
 
-		int potencyInt = j["potency"].get<int>();
+		int potencyInt = j["basePotency"].get<int>();
 		types::TilePotency newPotency = static_cast<types::TilePotency>(potencyInt);
 		this->setPotency(newPotency);
 
@@ -55,9 +55,13 @@ namespace df {
 	float Tile::getPotencyProbability(types::TilePotency currPotency) const {
 		switch (currPotency) { // TODO: make probabilities configurable
 		case types::TilePotency::LOW:
-			return 0.3f;
+			return 0.2f;
+		case types::TilePotency::MEDIUMLOW:
+			return 0.35f;
 		case types::TilePotency::MEDIUM:
 			return 0.5f;
+		case types::TilePotency::MEDIUMHIGH:
+			return 0.7f;
 		case types::TilePotency::HIGH:
 			return 0.9f;
 		default:
@@ -86,7 +90,8 @@ namespace df {
 
 		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 		auto dist = distribution(rng);
-		auto prob = this->getPotencyProbability(this->potency);
+		auto currentPotency = this->getEffectivePotency(); 
+		auto prob = this->getPotencyProbability(currentPotency);
 		fmt::println("Dice Result: {}, resource probability: {}", dist, prob);
 		return dist <= prob;
 	}
@@ -95,59 +100,46 @@ namespace df {
 		hazardProfile = HazardDB::getTileHazardProfile(type);
 	}
 
+	types::TilePotency Tile::getEffectivePotency() const {
+		int effective = static_cast<int>(basePotency) + weatherModifier;
+		
+		if (effective < 1) effective = 1;
+		if (effective > 5) effective = 5;
+		
+		return static_cast<types::TilePotency>(effective);
+	}
+
 	void Tile::updateEffect(types::WeatherType weather) noexcept {
-		switch (this->type) {
-			case types::TileType::FIELD:
-				if (weather == types::WeatherType::RAIN)       potency = types::TilePotency::HIGH;
-				else if (weather == types::WeatherType::SNOW)  potency = types::TilePotency::LOW;
-				else                                    potency = types::TilePotency::MEDIUM; // SUNNY
-				break;
+		weatherModifier = 0; 
 
-			case types::TileType::CLAY:
-				if (weather == types::WeatherType::SUNNY)      potency = types::TilePotency::MEDIUM;
-				else if (weather == types::WeatherType::RAIN)  potency = types::TilePotency::LOW;
-				else                                    potency = types::TilePotency::LOW;    // SNOW
-				break;
-
-			case types::TileType::FOREST:
-				if (weather == types::WeatherType::SUNNY)      potency = types::TilePotency::MEDIUM;
-				else if (weather == types::WeatherType::RAIN)  potency = types::TilePotency::HIGH;
-				else                                    potency = types::TilePotency::LOW;    // SNOW
-				break;
-
-			case types::TileType::MOUNTAIN:
-				if (weather == types::WeatherType::SUNNY)      potency = types::TilePotency::HIGH;
-				else if (weather == types::WeatherType::RAIN)  potency = types::TilePotency::LOW;
-				else                                    potency = types::TilePotency::LOW;    // SNOW
-				break;
-
-			case types::TileType::GRASS:
-				if (weather == types::WeatherType::RAIN)       potency = types::TilePotency::HIGH;
-				else if (weather == types::WeatherType::SNOW)  potency = types::TilePotency::LOW;
-				else                                    potency = types::TilePotency::MEDIUM; // SUNNY
-				break; 
-
-			default:
-				potency = types::TilePotency::MEDIUM;
-				break;
+		if (weather == types::WeatherType::SNOW) {
+			weatherModifier = -1; 
+		} 
+		else if (weather == types::WeatherType::RAIN) {
+			if (type == types::TileType::FIELD || type == types::TileType::GRASS || type == types::TileType::FOREST)
+				weatherModifier = 1;
+			else if (type == types::TileType::CLAY || type == types::TileType::MOUNTAIN)
+				weatherModifier = -1;
+		}
+		else if (weather == types::WeatherType::SUNNY) {
+			if (type == types::TileType::MOUNTAIN || type == types::TileType::CLAY)
+				weatherModifier = 1;
 		}
 	}
 
 	std::string Tile::getPotencyModifierLabel(types::WeatherType weather) const {
 		if (weather == types::WeatherType::SUNNY) {
-			if( type == types::TileType::MOUNTAIN){
-				return "[BOOSTED by SUN]";
-			}
+			if (weatherModifier > 0) return " [BOOSTED by SUN]";
 		}
 
 		if (weather == types::WeatherType::RAIN) {
-			if (type == types::TileType::FIELD || type == types::TileType::GRASS) 
-				return "[BOOSTED by RAIN]";
-			if (type == types::TileType::CLAY || type == types::TileType::MOUNTAIN) 
-				return "[DAMPENED by RAIN]";
+			if (weatherModifier > 0) return " [BOOSTED by RAIN]";
+			if (weatherModifier < 0) return " [DAMPENED by RAIN]";
 		}
 		
-		if (weather == types::WeatherType::SNOW) return "[DAMPENED BY SNOW]";
+		if (weather == types::WeatherType::SNOW) {
+			if (weatherModifier < 0) return " [DAMPENED by SNOW]";
+		}
 
 		return "";
 	}
