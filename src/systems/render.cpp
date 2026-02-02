@@ -46,6 +46,9 @@ namespace df {
 	}
 
 	void RenderSystem::step(const float dt) noexcept {
+		glClearColor(0.24f, 0.299f, 0.475f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		this->renderTilesSystem.step(dt);
 		this->renderBuildingsSystem.step(dt);
 		this->renderBuildingPreviewsSystem.step(dt);

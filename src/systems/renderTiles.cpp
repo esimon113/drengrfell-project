@@ -319,13 +319,16 @@ namespace df {
 
 		renderPickerMap(false);
 
-		glFlush();
-		glFinish();
+		//glFlush();
+		//glFinish();
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		unsigned char data[4];
 		glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 		this->intermediateFramebuffer.unbind();
+
+		glm::uvec2 newExtent = this->window->getWindowExtent();
+		glViewport(0, 0, newExtent.x, newExtent.y);
 
 		return data[0] +
 			   data[1] * 256 +
