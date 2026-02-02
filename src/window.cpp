@@ -47,6 +47,8 @@ namespace df {
 
 		self->makeContextCurrent();
 
+		glfwSwapInterval(1);
+
 		int fbWidth, fbHeight;
 		glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
 		self->windowExtent = glm::uvec2(fbWidth, fbHeight);
