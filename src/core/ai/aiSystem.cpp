@@ -73,16 +73,23 @@ namespace df {
 				if (args.contains("array")) {
 					const auto arr = BTF::getArg<BTArray>(args, "array", BTArray{});
 					const auto idx = static_cast<int>(BTF::getArg<BTNumber>(args, "index", 0));
-					BTF::store<BTValueType>(context, args, *arr[idx]);
+					if (arr.empty()) {
+						return BTState::Failed;
+					} else {
+						return BTF::store<BTValueType>(context, args, *arr[idx % arr.size()]);
+					}
 				} else if (args.contains("object")) {
 					const auto obj = BTF::getArg<BTObject>(args, "object", BTObject{});
 					const auto key = BTF::getArg<BTString>(args, "key", BTString{});
-					BTF::store<BTValueType>(context, args, *obj.at(key));
+					if (obj.contains(key)) {
+						return BTF::store<BTValueType>(context, args, *obj.at(key));
+					} else {
+						return BTState::Failed;
+					}
 				} else {
 					std::cerr << "[AI Error]: Invalid get node args. Does not contain an indexable 'array' or 'object'." << std::endl;
 					return BTState::Invalid;
 				}
-				return BTState::Success;
 			}
 		);
 		this->commands.registerCommand(
