@@ -23,13 +23,12 @@ namespace df {
 		});
 		aiSystem->getCommandRegistry().registerCommand(
 		"getMapSize",
-		[this](BTContext& context, const BTF::Args& /*a*/) {
-			context.storage.data["ans"] = static_cast<double>(this->gameState->getMap().getTileCount());
-			return BTState::Success;
+		[this](BTContext& context, const BTF::Args& args) {
+			return BTF::store<BTNumber>(context, args, this->gameState->getMap().getTileCount());
 		});
 		aiSystem->getCommandRegistry().registerCommand(
 		"getExploredTiles",
-		[this](BTContext& context, const BTF::Args& /*a*/) {
+		[this](BTContext& context, const BTF::Args& args) {
 			// TODO: Get correct player id
 			Player* p = this->gameState->getPlayer(0);
 			if (p) {
@@ -40,8 +39,7 @@ namespace df {
 					BTValueType num = static_cast<BTNumber>(id);
 					arr.emplace_back(std::make_shared<BTValueType>(num));
 				}
-				context.storage.data["ans"] = arr;
-				return BTState::Success;
+				return BTF::store<BTArray>(context, args, arr);
 			} else {
 				std::cerr << "Failed to get player" << std::endl;
 				return BTState::Failed;
@@ -49,7 +47,7 @@ namespace df {
 		});
 		aiSystem->getCommandRegistry().registerCommand(
 		"getUnexploredTiles",
-		[this](BTContext& context, const BTF::Args& /*a*/) {
+		[this](BTContext& context, const BTF::Args& args) {
 			// TODO: Get correct player id
 			Player* p = this->gameState->getPlayer(0);
 			if (p) {
@@ -68,8 +66,7 @@ namespace df {
 						arr.emplace_back(std::make_shared<BTValueType>(num));
 					}
 				}
-				context.storage.data["ans"] = arr;
-				return BTState::Success;
+				return BTF::store<BTArray>(context, args, arr);
 			} else {
 				std::cerr << "Failed to get player" << std::endl;
 				return BTState::Failed;

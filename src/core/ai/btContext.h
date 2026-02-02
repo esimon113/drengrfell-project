@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <any>
+#include <utility>
 #include "tiny_ecs.hpp"
 #include "jsonUtils.h"
 
@@ -132,7 +133,7 @@ namespace df {
 		}
 
 		inline BTValueType evaluateString(const BTContext& context, const std::string& input) {
-			if (input.starts_with("$")) {
+			if (input.starts_with("*")) {
 				auto actual = input.substr(1);
 				if (context.storage.data.contains(actual)) {
 					return context.storage.data.at(actual);
@@ -142,6 +143,13 @@ namespace df {
 			} else {
 				return input;
 			}
+		}
+
+		template <typename T>
+		BTState store(BTContext& context, const Args& args, const T& value) {
+			const auto storage = BTF::getArg<std::string>(args, "store", "ans");
+			context.storage.data[storage] = static_cast<T>(value);
+			return BTState::Success;
 		}
 	}
 }
