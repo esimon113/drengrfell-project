@@ -8,12 +8,13 @@ namespace df {
 	class AiSystem {
 	public:
 		explicit AiSystem(Registry* registry/*,std::shared_ptr<GameState> gameState,*/ /*GameController* gameController*/);
-		~AiSystem() = default;
+		~AiSystem();
 
 		/*void step(float dt) noexcept;*/
 
 		void loadCommands();
 		Result<void, ResultError> loadBehaviorTrees();
+		Result<void, ResultError> loadBehaviorTree(const std::string& filename, bool skipIfLoaded = true);
 
 		void onKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
@@ -24,7 +25,7 @@ namespace df {
 		CommandRegistry commands{};
 		bool commandsLoaded{false};
 
-		std::shared_ptr<BTNode> btRoot{};
+		std::unordered_map<std::string, std::shared_ptr<BTNode>> loadedRoots{};
 		std::mt19937 mersenne_twister_engine{std::random_device()()};
 	};
 }

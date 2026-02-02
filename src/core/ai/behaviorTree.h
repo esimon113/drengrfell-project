@@ -24,7 +24,7 @@ namespace df {
 		virtual nlohmann::json serialize() const = 0;
 		static std::shared_ptr<BTNode> deserialize(const nlohmann::json&, const CommandRegistry&);
 		virtual bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) = 0;
-		static Result<std::shared_ptr<BTNode>, ResultError> deserialize(const CommandRegistry&, assets::JsonFile asset = assets::JsonFile::WORLD_GENERATION_CONFIGURATION);
+		static Result<std::shared_ptr<BTNode>, ResultError> deserialize(const CommandRegistry&, const std::string& filename);
 	};
 
 
