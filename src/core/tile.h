@@ -43,6 +43,8 @@ namespace df {
 		float getRangeFactor() const { return this->rangeFactor; }
 		void setRangeFactor(float range) { this->rangeFactor = range; }
 
+		std::string getPotencyModifierLabel(types::WeatherType weather) const;
+
 		// Determines if this tile gives a resource this turn, based on the tile's type and potency.
 		bool givesResourceThisTurn(std::mt19937& rng) const;
 

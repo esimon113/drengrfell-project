@@ -111,12 +111,12 @@ namespace df {
 
 			case types::TileType::FOREST:
 				if (weather == types::WeatherType::SUNNY)      potency = types::TilePotency::MEDIUM;
-				else if (weather == types::WeatherType::RAIN)  potency = types::TilePotency::MEDIUM;
+				else if (weather == types::WeatherType::RAIN)  potency = types::TilePotency::HIGH;
 				else                                    potency = types::TilePotency::LOW;    // SNOW
 				break;
 
 			case types::TileType::MOUNTAIN:
-				if (weather == types::WeatherType::SUNNY)      potency = types::TilePotency::MEDIUM;
+				if (weather == types::WeatherType::SUNNY)      potency = types::TilePotency::HIGH;
 				else if (weather == types::WeatherType::RAIN)  potency = types::TilePotency::LOW;
 				else                                    potency = types::TilePotency::LOW;    // SNOW
 				break;
@@ -132,4 +132,24 @@ namespace df {
 				break;
 		}
 	}
+
+	std::string Tile::getPotencyModifierLabel(types::WeatherType weather) const {
+		if (weather == types::WeatherType::SUNNY) {
+			if( type == types::TileType::MOUNTAIN){
+				return "[BOOSTED by SUN]";
+			}
+		}
+
+		if (weather == types::WeatherType::RAIN) {
+			if (type == types::TileType::FIELD || type == types::TileType::GRASS) 
+				return "[BOOSTED by RAIN]";
+			if (type == types::TileType::CLAY || type == types::TileType::MOUNTAIN) 
+				return "[DAMPENED by RAIN]";
+		}
+		
+		if (weather == types::WeatherType::SNOW) return "[DAMPENED BY SNOW]";
+
+		return "";
+	}
+
 } // namespace df
