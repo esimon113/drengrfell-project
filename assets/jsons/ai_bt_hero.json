@@ -2,39 +2,29 @@
 	"kind": "and",
 	"children": [
 		{
-			"kind": "function",
-			"name": "getUnexploredTiles",
-			"args": {
+			"!getUnexploredTiles": {
 				"store": "unexplored_tiles"
 			}
 		},
 		{
-			"kind": "function",
-			"name": "size",
-			"args": {
+			"!size": {
 				"array": "*unexplored_tiles"
 			}
 		},
 		{
-			"kind": "function",
-			"name": "getUniformInt",
-			"args": {
+			"!getUniformInt": {
 				"start": 0,
 				"end": "*ans"
 			}
 		},
 		{
-			"kind": "function",
-			"name": "get",
-			"args": {
+			"!get": {
 				"array": "*unexplored_tiles",
 				"index": "*ans"
 			}
 		},
 		{
-			"kind": "function",
-			"name": "setMoveTarget",
-			"args": {
+			"!setMoveTarget": {
 				"id": "*ans"
 			}
 		}

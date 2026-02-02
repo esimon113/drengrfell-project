@@ -64,6 +64,35 @@ Processes a command of the games command registry.
     Each `*VAR` is evaluated to the stored value of `VAR`, allowing easy retrieval of stored values.
   - `store`: The variable a command result is stored into. Defaults to `ans`.
 
+### Shorthand notation
+
+Usually, describing the full function node object in the JSON is redundant.
+Therefore, a shorthand notation exists.
+
+```json
+{
+	"!getUniformInt": {
+		"start": 0,
+		"end": "*ans"
+	}
+}
+```
+
+is interpreted as
+
+```json
+{
+	"kind": "function",
+	"name": "getUniformInt",
+	"args": {
+		"start": 0,
+		"end": "*ans"
+	}
+}
+```
+
+To use this notation, the object must not have a `kind` key and the command name has to be prefixed with `!`.
+
 ## Command Registry
 
 Register commands on the games startup (any constructor or init-method) like so

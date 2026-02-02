@@ -10,8 +10,20 @@ using json = nlohmann::json;
 
 namespace df {
 	std::shared_ptr<BTNode> BTNode::deserialize(const json &j, const CommandRegistry& c) {
-		std::string kind = j.value("kind", "");
-		if (kind == "sequence" || kind == "and") {
+		std::string kind = j.value("kind", "none");
+		if (kind == "none") {
+			for (auto& [key, val] : j.items()) {
+				if (key.starts_with("!")) {
+					auto ptr = std::make_shared<BTFunction>();
+					if (ptr->deserializeInplaceCompact(j.value(key, json::object()), c, key.substr(1))) {
+						return ptr;
+					} else {
+						return nullptr;
+					}
+				}
+			}
+			return nullptr;
+		} else if (kind == "sequence" || kind == "and") {
 			auto ptr = std::make_shared<BTSequence>();
 			if (ptr->deserializeInplace(j, c)) return ptr;
 		} else if (kind == "selector" || kind == "or") {
@@ -313,6 +325,14 @@ namespace df {
 		if (!commandRegistry.hasCommand(this->name)) return false;
 		this->fn = commandRegistry.getCommand(this->name);
 		this->args = std::get<BTF::Args>(BTValueType::deserialize(j.value("args", nlohmann::json::object())));
+		return true;
+	}
+
+	bool BTFunction::deserializeInplaceCompact(const nlohmann::json& j, const CommandRegistry& commandRegistry, std::string pName) {
+		this->name = std::move(pName);
+		if (!commandRegistry.hasCommand(this->name)) return false;
+		this->fn = commandRegistry.getCommand(this->name);
+		this->args = std::get<BTF::Args>(BTValueType::deserialize(j));
 		return true;
 	}
 }

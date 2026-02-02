@@ -118,6 +118,7 @@ namespace df {
 		BTState process(BTContext&) override;
 		nlohmann::json serialize() const override;
 		bool deserializeInplace(const nlohmann::json&, const CommandRegistry&) override;
+		bool deserializeInplaceCompact(const nlohmann::json&, const CommandRegistry&, std::string pName);
 	private:
 		std::string name = "success";
 		BTF::Args args{};
