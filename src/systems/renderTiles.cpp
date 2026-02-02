@@ -310,8 +310,8 @@ namespace df {
 			return 0;
 		}
 		glViewport(0, 0, extent.x, extent.y);
-		glClearColor(0.0, 0.0, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glClearColor(0.0, 0.0, 0.0f, 1.0f);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_PROGRAM_POINT_SIZE);
 		// glEnable(GL_BLEND);
 		// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
