@@ -106,15 +106,12 @@ namespace df {
 
 		if (gameState) {
 			Player* playerPtr = gameState->getPlayer(0);
-			if (playerPtr) {
+			auto* quests = registry->getSystem<QuestsSystem>();
+			if (playerPtr && quests) {
 				if (playerPtr->exploreTile(tileID)) { 
 					gameState->getMap().setRenderUpdateRequested(true);
 					fmt::println("New Tile {} discovered!", tileID);
-					
-					auto* quests = registry->getSystem<QuestsSystem>();
-					if (quests) {
-						quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
-					}
+					quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
 				}
 			}
 		}
@@ -181,14 +178,21 @@ namespace df {
 
 			if (gameState) {
 				Player* playerPtr = gameState->getPlayer(0);
-				if (playerPtr) {
+				auto* quests = registry->getSystem<QuestsSystem>();
+				if (playerPtr && quests) {
 					if (playerPtr->exploreTile(targetPositionTileID)) { 
 						gameState->getMap().setRenderUpdateRequested(true);
 						fmt::println("New Tile {} discovered!", targetPositionTileID);
+						quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+					}
+
+					auto tile = gameState->getMap().getTile(targetPositionTileID);
+					if (tile) {
+						types::TileType currentType = tile->getType();
 						
-						auto* quests = registry->getSystem<QuestsSystem>();
-						if (quests) {
-							quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+						if (currentType == types::TileType::ICE) {
+							fmt::println("Player is standing on ICE! Updating quest...");
+							quests->updateProgress(types::QuestGoalType::ICE, 1);
 						}
 					}
 				}

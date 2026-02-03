@@ -154,6 +154,7 @@ namespace df::types {
 		if (str == "MOUNTAIN")   return types::QuestGoalType::MOUNTAIN;
 		if (str == "ROUNDS")     return types::QuestGoalType::ROUNDS;
 		if (str == "DISCOVER")	 return types::QuestGoalType::DISCOVER;
+		if (str == "ICE")	 return types::QuestGoalType::ICE;
 		return QuestGoalType::NONE;
 	}
 

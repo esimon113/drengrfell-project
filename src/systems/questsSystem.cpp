@@ -74,7 +74,7 @@ namespace df {
     }
 
     void QuestsSystem::notifyPlayer(int questId) {
-        if(questId == 10){
+        if(questId == 100){
             m_notificationSystem->showNotification("CONGRATULATIONS", "No more quests", {"Close"});
             return;
         }
@@ -232,7 +232,7 @@ namespace df {
         if (m_quests.empty()) return;
 
         if(activeQuests == 0){
-            notifyPlayer(10);
+            notifyPlayer(100);
             return;
         }
 
