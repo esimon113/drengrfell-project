@@ -17,7 +17,6 @@ void main()
     
     vec3 offset = squareVertices;
 
-    // LÓGICA DE TRANSFORMACIÓN
     if (weatherIntensity < 0.0) {
         // Rain mode
         offset.y *= (2.0 * 1.5); 

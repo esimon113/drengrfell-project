@@ -53,7 +53,6 @@ namespace df {
 			float size;
 			float life;
 			float depth;
-			float cameradistance;
 		};
 
 		std::vector<Particle> particlesContainer;
