@@ -183,8 +183,9 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/utils/worldNodeMapper.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
 
-	${PROJECT_SOURCE_DIR}/src/multiplayer/tcpClient.cpp
-	${PROJECT_SOURCE_DIR}/src/multiplayer/tcpServer.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/socketPlatform.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/tcpClient.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/tcpServer.cpp
 	${PROJECT_SOURCE_DIR}/src/multiplayer/bifrost.cpp
 	${PROJECT_SOURCE_DIR}/src/multiplayer/sessionManager.cpp
 	${PROJECT_SOURCE_DIR}/src/multiplayer/midgard.cpp
@@ -220,3 +221,27 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	nlohmann_json::nlohmann_json
 	freetype
 )
+
+if (WIN32)
+	target_link_libraries(${PROJECT_NAME} PUBLIC ws2_32)
+endif()
+
+add_executable(network_tests
+	${PROJECT_SOURCE_DIR}/test/network/network_tests.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/socketPlatform.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/tcpClient.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/tcpServer.cpp
+)
+
+target_include_directories(network_tests PRIVATE
+	${PROJECT_SOURCE_DIR}/src
+)
+
+target_link_libraries(network_tests PRIVATE
+	compiler_flags
+	fmt
+)
+
+if (WIN32)
+	target_link_libraries(network_tests PRIVATE ws2_32)
+endif()
