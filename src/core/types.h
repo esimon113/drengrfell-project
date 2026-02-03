@@ -134,6 +134,36 @@ namespace df::types {
         }
     }
 
+	inline std::string resourceName(df::types::TileType type) {
+        switch (type) {
+            case df::types::TileType::FOREST:   return "Wood";
+            case df::types::TileType::MOUNTAIN: return "Stone";
+            case df::types::TileType::CLAY:     return "Clay";
+            case df::types::TileType::FIELD:    return "Grain";
+            case df::types::TileType::GRASS:    return "Wool";
+            default:                            return "Resources";
+        }
+    }
+
+	inline QuestGoalType stringToGoalType(const std::string& str) {
+		if (str == "TUTORIAL")   return types::QuestGoalType::TUTORIAL;
+		if (str == "SETTLEMENT") return types::QuestGoalType::SETTLEMENT;
+		if (str == "ROAD")       return types::QuestGoalType::ROAD;
+		if (str == "FOREST")     return types::QuestGoalType::FOREST;
+		if (str == "MOUNTAIN")   return types::QuestGoalType::MOUNTAIN;
+		if (str == "ROUNDS")     return types::QuestGoalType::ROUNDS;
+		return QuestGoalType::NONE;
+	}
+
+	inline TileType stringToTileType(const std::string& str) {
+		if (str == "FOREST")   return types::TileType::FOREST;
+		if (str == "CLAY")     return types::TileType::CLAY;
+		if (str == "MOUNTAIN") return types::TileType::MOUNTAIN;
+		if (str == "FIELD")    return types::TileType::FIELD;
+		if (str == "GRASS")    return types::TileType::GRASS;
+		return TileType::EMPTY;
+	}
+
 	enum class EdgeDirection {
 		VERTICAL = 0,
 		DIAGONAL_DOWN, // NORTH - NORTH_EAST or SOUTH_WEST - SOUTH

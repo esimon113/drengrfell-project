@@ -1,89 +1,41 @@
 #pragma once
 
+#include "../core/quest.h"
 #include "renderNotification.h"
 #include <string>
-#include <vector>
-#include <map>
 
 namespace df {
 
-    enum class QuestState {
-        Locked,
-        Available,
-        Active,
-        Completed,
-        Claimed
-    };
-
-    struct Quest {
-        int id;
-        std::string name;
-        std::string desc;
-        types::QuestGoalType goal_type;
-        int goal_amount; 
-        int progress; 
-        std::vector<int> unlocksIds;
-        types::TileType reward_resource; 
-        int reward_amount;
-        QuestState state ;
-        
-        
-        Quest(int _id, std::string _name, std::string _desc,types::QuestGoalType _goalType, int _amount, int _prog, std::vector<int> _unlock, types::TileType _res, int _reward, QuestState _state)
-            : id(_id), 
-            name(_name), 
-            desc(_desc),
-            goal_type(_goalType), 
-            goal_amount(_amount), 
-            progress(_prog), 
-            unlocksIds(_unlock), 
-            reward_resource(_res), 
-            reward_amount(_reward),
-            state(_state) 
-            {}
-    };
-
     class QuestsSystem {
-        std::string resourceName(df::types::TileType type) {
-            switch (type) {
-                case df::types::TileType::FOREST:   return "Wood";
-                case df::types::TileType::MOUNTAIN: return "Stone";
-                case df::types::TileType::CLAY:     return "Clay";
-                case df::types::TileType::FIELD:    return "Grain";
-                case df::types::TileType::GRASS:    return "Wool";
-                default:                            return "Resources";
-            }
-        }
+    public:
+        QuestsSystem() = default;
+        ~QuestsSystem() = default;
+
+        void init(RenderNotificationSystem* notificationSys);
+        void reset();
+        void updateProgress(types::QuestGoalType type, int amount);
+        void activateQuest(int questId, Player* player, GameState* gameState);
+        void claimQuest(int questId, Player* player, GameState* gameState);
+
+        void notifyPlayer(int questId);
+        void notifyNextActiveQuest();
+
+        const Quest* getQuestById(int id) const;
+        const std::vector<Quest>& getQuests() const { return m_quests; }
+        int getCurrentShowingQuestId() const { return m_currentShowingQuestId; }
         
-        public:
-            QuestsSystem() : m_notificationSystem(nullptr) {}
-            ~QuestsSystem() = default;
+        void setCurrentQuest() { m_currentShowingQuestId = -1; currentQuest = 1; }
 
-            void init(RenderNotificationSystem* notificationSys);
+        void loadQuests(const std::string& path);
 
-            void updateProgress(types::QuestGoalType , int amount);
-            void notifyPlayer(int questId);
-            void addQuest(const Quest& newQuest);
-            void claimQuest(int questId, Player* player, GameState* gameState);
-            void activateQuest(int, Player* , GameState* gameState);
 
-            void reset();
-
-            void notifyNextActiveQuest();
-            const Quest* getQuestById(int id) const;
-            int getCurrentShowingQuestId() const { return m_currentShowingQuestId; }
-            void setCurrentQuest(){ m_currentShowingQuestId = -1; currentQuest = 1;}
-
-            const std::vector<Quest> getQuests () const { return m_quests;}
-
-            //void loadQuests(const std::string& path);
-            
-
-        private:
-            std::vector<Quest> m_quests;
-            RenderNotificationSystem* m_notificationSystem = nullptr;
-            int m_currentShowingQuestId = -1;
-            int activeQuests=1;
-            int currentQuest = 1;
+    private:
+        std::vector<Quest> m_quests;
+        RenderNotificationSystem* m_notificationSystem = nullptr;
+        
+        int m_currentShowingQuestId = -1;
+        int activeQuests = 1;
+        int currentQuest = 1;
     };
 
 }
