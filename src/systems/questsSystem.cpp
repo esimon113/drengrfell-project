@@ -207,6 +207,10 @@ namespace df {
                         case types::QuestGoalType::ROUNDS:
                             q.progress = gameState->getTurnCount();
                             break;
+                        case types::QuestGoalType::DISCOVER:
+                            player = gameState->getPlayer(0); 
+                            q.progress =  static_cast<int>(player->getExploredTileIds().size());                           
+                            break;
 
                         case types::QuestGoalType::TUTORIAL:
                         case types::QuestGoalType::NONE:

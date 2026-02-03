@@ -77,7 +77,7 @@ namespace df {
 	EntityMovementSystem::~EntityMovementSystem() {
 		aiSystem->getCommandRegistry().unregisterCommand("setMoveTarget");
 		aiSystem->getCommandRegistry().unregisterCommand("getMapSize");
-		aiSystem->getCommandRegistry().unregisterCommand("getExploredTiles");
+		aiSystem->getCommandRegistry().unregisterCommand("questsgetExploredTiles");
 	}
 
 	unsigned EntityMovementSystem::getTileIDFromWorldPosition(const glm::vec2& worldPos) const noexcept{
@@ -107,10 +107,15 @@ namespace df {
 		if (gameState) {
 			Player* playerPtr = gameState->getPlayer(0);
 			if (playerPtr) {
-				Player& player = *playerPtr;
-				player.exploreTile(tileID);
-				gameState->getMap().setRenderUpdateRequested(true);
-				fmt::println("Tile {} discovered!", tileID);
+				if (playerPtr->exploreTile(tileID)) { 
+					gameState->getMap().setRenderUpdateRequested(true);
+					fmt::println("New Tile {} discovered!", tileID);
+					
+					auto* quests = registry->getSystem<QuestsSystem>();
+					if (quests) {
+						quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+					}
+				}
 			}
 		}
 
@@ -177,10 +182,15 @@ namespace df {
 			if (gameState) {
 				Player* playerPtr = gameState->getPlayer(0);
 				if (playerPtr) {
-					Player& player = *playerPtr;
-					player.exploreTile(targetPositionTileID);
-					gameState->getMap().setRenderUpdateRequested(true);
-					fmt::println("Tile {} discovered!", targetPositionTileID);
+					if (playerPtr->exploreTile(targetPositionTileID)) { 
+						gameState->getMap().setRenderUpdateRequested(true);
+						fmt::println("New Tile {} discovered!", targetPositionTileID);
+						
+						auto* quests = registry->getSystem<QuestsSystem>();
+						if (quests) {
+							quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+						}
+					}
 				}
 			}
 

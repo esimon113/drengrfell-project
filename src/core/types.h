@@ -118,6 +118,7 @@ namespace df::types {
 		CLAY,
 		ICE,
 		ROUNDS,
+		DISCOVER,
 		NONE
 	};
 
@@ -152,6 +153,7 @@ namespace df::types {
 		if (str == "FOREST")     return types::QuestGoalType::FOREST;
 		if (str == "MOUNTAIN")   return types::QuestGoalType::MOUNTAIN;
 		if (str == "ROUNDS")     return types::QuestGoalType::ROUNDS;
+		if (str == "DISCOVER")	 return types::QuestGoalType::DISCOVER;
 		return QuestGoalType::NONE;
 	}
 

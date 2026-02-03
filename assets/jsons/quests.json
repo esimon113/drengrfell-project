@@ -6,7 +6,7 @@
     "goal_type": "TUTORIAL",
     "goal_amount": 1,
     "progress": 0,
-    "unlocks_ids": [1, 3],
+    "unlocks_ids": [1, 3, 8],
     "reward_resource": "FOREST",
     "reward_amount": 5,
     "initial_state": "Active"
@@ -94,5 +94,29 @@
     "reward_resource": "CLAY",
     "reward_amount": 20,
     "initial_state": "Locked"
+  },
+  {
+    "id": 8,
+    "name": "Pathfinder",
+    "desc": "Map the surrounding wilderness by \ndiscovering 10 new tiles.",
+    "goal_type": "DISCOVER",
+    "goal_amount": 20,
+    "progress": 0,
+    "unlocks_ids": [9],
+    "reward_resource": "MOUNTAIN",
+    "reward_amount": 20,
+    "initial_state": "Locked"
+  },
+  {
+    "id": 9,
+    "name": "World Mapper",
+    "desc": "Push the fog of war further and \nunveil in total 40 hidden territories.",
+    "goal_type": "DISCOVER",
+    "goal_amount": 40,
+    "progress": -1,
+    "unlocks_ids": [-1],
+    "reward_resource": "FOREST",
+    "reward_amount": 25,
+    "initial_state": "Active"
   }
 ]

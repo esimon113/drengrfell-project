@@ -102,10 +102,12 @@ namespace df {
 		return productivityBuildingIds;
 	}
 
-	void Player::exploreTile(size_t tileId) {
+	bool Player::exploreTile(size_t tileId) {
 		if (!isTileExplored(tileId)) {
 			exploredTileIds.push_back(tileId);
+			return true;
 		}
+		return false;
 	}
 
 	bool Player::isTileExplored(size_t tileId) const {

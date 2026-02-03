@@ -61,7 +61,7 @@ namespace df {
 		void addProductivityBuilding(size_t buildingId);
 		const std::vector<size_t>& getProductivityBuildingIds() const;
 
-		void exploreTile(size_t tileId);
+		bool exploreTile(size_t tileId);
 		bool isTileExplored(size_t tileId) const;
 		const std::vector<size_t>& getExploredTileIds() const;
 		void forgetExploredTiles();
