@@ -388,13 +388,13 @@ namespace df {
 		if (isCursorOnButton(mouseX, mouseY, insularButton)) {
 			fmt::println("Insular generation chosen");
 			worldGenerationMode = 0;
-			insularButtonColor = {0.0f, 1.0f, 0.0f};
+			insularButtonColor = {0.5f, 0.5f, 0.5f};
 			perlinButtonColor = {1.0f, 1.0f, 1.0f};
 		}
 		if (isCursorOnButton(mouseX, mouseY, perlinButton)) {
 			fmt::println("Perlin generation chosen");
 			worldGenerationMode = 1;
-			perlinButtonColor = {0.0f, 1.0f, 0.0f};
+			perlinButtonColor = {0.5f, 0.5f, 0.5f};
 			insularButtonColor = {1.0f, 1.0f, 1.0f};
 		}
 		if (isCursorOnButton(mouseX, mouseY, seedButton)) {
