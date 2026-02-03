@@ -424,10 +424,13 @@ namespace df {
 		// lets the hero spawn with on a random Tile (water excluded)
 		spawnHero();
 
+
+		/*
+		debugging code for dijkstra
+
 		const Graph& map = gameState->getMap();
 		size_t testId = registry->tileID.get(registry->animations.entities.front());
 		auto heroTile = map.getTile(testId);
-
 		auto reachable = map.dijkstra<Tile>(*heroTile);
 
 		fmt::println(
@@ -451,7 +454,7 @@ namespace df {
 		for (auto id : pathTo81) {
 			fmt::print("{} ", id);
 		}
-		fmt::println(""); 
+		fmt::println(""); */
 		
 
 		// 		// This is only for DEBUGGING purposes:
