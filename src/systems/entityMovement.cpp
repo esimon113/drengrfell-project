@@ -128,6 +128,19 @@ namespace df {
 		}
 	}
 
+	glm::vec2 EntityMovementSystem::quadraticBezier(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2, float t) const noexcept {
+		// formula for bezier: B(t) = (1-t)^2 * P0 + 2*(1-t)*t*P1 + t^2*P2
+		float u = 1.0f - t;
+		return u * u * p0 + 2.0f * u * t * p1 + t * t * p2;
+	}
+
+	glm::vec2 EntityMovementSystem::computeControlPoint(const glm::vec2& start, const glm::vec2& end) const noexcept {
+		glm::vec2 dir = end - start;
+		glm::vec2 normal(-dir.y, dir.x);
+		normal = glm::normalize(normal) * 0.3f; 
+
+		return start + dir * 0.5f + normal; 
+	}
 
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& /*notUsed*/, float deltaTime) noexcept {
 	if (!registry || currentPath.empty()) {
@@ -161,6 +174,7 @@ namespace df {
 		updateTileAndDiscover(entity, nextTileID);
 
 		currentPathIndex++;
+		pathT = 0.0f;
 
 		if (currentPathIndex >= currentPath.size()) {
 			moving = false;
@@ -193,37 +207,35 @@ namespace df {
 					}
 				}
 			}
-			fmt::println(
-				"[PATH] Entity {} reached final target tile {}",
-				static_cast<int>(entity),
-				nextTileID
-			);
 			return;
 		}
 		return;
 	}
 
-	direction = glm::normalize(direction);
-	float speed = 1.5f; // speed in tiles per second
-	glm::vec2 movement = direction * speed * deltaTime;
+	if (pathT == 0.0f) {
+		bezierP0 = currentPos;
+		bezierP2 = nextTilePos;
+		bezierP1 = computeControlPoint(bezierP0, bezierP2);
+	}
+
+	pathT += deltaTime * speed;
+	if (pathT > 1.0f)
+		pathT = 1.0f;
+	glm::vec2 nextPos = quadraticBezier(bezierP0, bezierP1, bezierP2, pathT);
+	glm::vec2 movement = nextPos - currentPos;
+	currentPos = nextPos;
 
 	moving = true;
 
-	if (direction.x > 0.0f)
+	if (movement.x > 0.0f)
 		scale.x = 1.0f;
-	else if (direction.x < 0.0f)
+	else if (movement.x < 0.0f)
 		scale.x = -1.0f;
 
 	if (animComp.currentType == Hero::AnimationType::Idle) {
 		animComp.currentType = Hero::AnimationType::Run;
 		animComp.anim.setCurrentFrameIndex(0);
 	}
-
-	if (glm::length(movement) >= distance) {
-		currentPos = nextTilePos;
-	} else {
-		currentPos += movement;
-		}
 
 	unsigned currentTileID = getTileIDFromWorldPosition(currentPos);
 	if (currentTileID != previousTileID && currentTileID != 0) {

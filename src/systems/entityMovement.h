@@ -14,6 +14,8 @@ namespace df {
 
 		void moveEntityTo(Entity entity, const glm::vec2& targetPosition, float deltaTime) noexcept;
 
+		glm::vec2 computeControlPoint(const glm::vec2& start, const glm::vec2& end) const noexcept;
+		glm::vec2 quadraticBezier(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2, float t) const noexcept;
 		glm::vec2 getTileWorldPosition(size_t tileIndex) const noexcept;
 		size_t getTileIndexFromPosition(const glm::vec2& worldPosition) const noexcept;
 
@@ -35,12 +37,19 @@ namespace df {
 		std::shared_ptr<GameState> gameState;
 		std::shared_ptr<AiSystem> aiSystem;
 
+		float speed = 1.5f; // speed in tiles per second
 		bool movementState = false;
 		bool moving = false;
 		bool targetSet = false;
 		glm::vec2 targetPosition = glm::vec2(0.0f);
 		size_t targetPositionTileID{};
+
 		std::vector<size_t> currentPath;
 		size_t currentPathIndex = 0;
+
+		float pathT = 0.0f; // bezier progress
+		glm::vec2 bezierP0; // startpoint
+		glm::vec2 bezierP1; // controllpoint
+		glm::vec2 bezierP2; // endpoint
 	};
 } // namespace df
