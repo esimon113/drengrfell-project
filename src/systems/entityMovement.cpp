@@ -143,7 +143,7 @@ namespace df {
 	}
 
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& /*notUsed*/, float deltaTime) noexcept {
-	if (!registry || currentPath.empty()) {
+	if (!registry) {
 		return;
 	}
 

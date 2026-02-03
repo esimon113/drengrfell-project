@@ -810,7 +810,7 @@ namespace df {
 				if (!neighborNode)
 					continue;
 
-				double alt = dist + 1.0; // Gewicht auf 1, kann später variabel gemacht werden
+				double alt = dist + 1.0; 
 				if (alt < distance[neighborId]) {
 					distance[neighborId] = alt;
 					previous[neighborId] = currentId;
@@ -827,8 +827,6 @@ namespace df {
 
 		return reachableNodes;
 	}
-
-	// explizite Instanziierung für Tile
 	template std::vector<const Tile*> Graph::dijkstra<Tile>(const Tile&) const;
 
 	// Dijkstra but gives the Path from tile x to tile y in tileIDs
@@ -839,7 +837,6 @@ namespace df {
 		std::unordered_map<size_t, double> distance;
 		std::unordered_map<size_t, size_t> previous;
 
-		// Alle Tile IDs sammeln
 		std::vector<size_t> nodes;
 		for (const auto& t : tiles) {
 			nodes.push_back(t->getId());
@@ -863,14 +860,14 @@ namespace df {
 			q.pop();
 
 			if (currentId == goalId)
-				break; // Ziel erreicht
+				break; 
 
 			if (dist > distance[currentId])
 				continue;
 
 			auto neighborIds = getTileNeighbors(currentId);
 			for (size_t neighborId : neighborIds) {
-				double alt = dist + 1.0; // Gewicht = 1, kann angepasst werden
+				double alt = dist + 1.0; 
 				if (alt < distance[neighborId]) {
 					distance[neighborId] = alt;
 					previous[neighborId] = currentId;
@@ -879,7 +876,6 @@ namespace df {
 			}
 		}
 
-		// Pfad rekonstruieren
 		std::vector<size_t> path;
 		size_t current = goalId;
 		while (current != SIZE_MAX) {
@@ -890,8 +886,6 @@ namespace df {
 		}
 
 		std::reverse(path.begin(), path.end());
-
-		// Prüfen, ob ein Pfad existiert
 		if (path.front() != startId)
 			path.clear(); // kein Pfad gefunden
 
