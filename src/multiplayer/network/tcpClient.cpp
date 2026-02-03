@@ -22,13 +22,13 @@ namespace df::mp {
 	}
 
 
-	void TcpClient::tryConnect(const std::string& serverAddress, uint16_t serverPort) {
+	void TcpClient::tryConnect(const std::string& serverAddressInput, uint16_t serverPortInput) {
 		if (this->connected) {
 			throw std::runtime_error("[TcpClient] Already connected. Call disconnect() first.");
 		}
 
-		this->serverAddress = serverAddress;
-		this->serverPort = serverPort;
+		this->serverAddress = serverAddressInput;
+		this->serverPort = serverPortInput;
 
 		// create a new socket for this connection
 		this->tcpSocket = net::createTcpSocket();

@@ -23,8 +23,8 @@ namespace df::mp {
 		// use singleton pattern -> there should only be one server at a time
 		static TcpServer& instance();
 
-		void configure(uint16_t port, const std::string& bindTo = "0.0.0.0");
-		void setMaxConnections(size_t maxConnections);
+		void configure(uint16_t portValue, const std::string& bindTo = "0.0.0.0");
+		void setMaxConnections(size_t maxConnectionsValue);
 		void setRateLimit(size_t maxConnectionsPerWindow, std::chrono::seconds windowDuration);
 		void start();
 		void run();

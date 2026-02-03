@@ -8,7 +8,7 @@ set BUILD_DIR=%SCRIPT_DIR%\build
 
 cmake -S "%ROOT_DIR%" -B "%BUILD_DIR%"
 if errorlevel 1 exit /b 1
-cmake --build "%BUILD_DIR%" --target network_tests
+cmake --build "%BUILD_DIR%" --target network_tests --config Debug
 if errorlevel 1 exit /b 1
-"%BUILD_DIR%\network_tests.exe"
+"%BUILD_DIR%\Debug\network_tests.exe"
 

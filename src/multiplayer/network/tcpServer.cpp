@@ -30,21 +30,21 @@ namespace df::mp {
 	}
 
 
-	void TcpServer::configure(uint16_t port, const std::string& bindTo) {
+	void TcpServer::configure(uint16_t portValue, const std::string& bindTo) {
 		if (this->isRunning.load()) {
 			throw std::runtime_error("[TcpServer] Cannot configure the server while running!");
 		}
-		this->port = port;
+		this->port = portValue;
 
 		this->serverAddress = net::makeIpv4Address(bindTo, this->port);
 	}
 
 
-	void TcpServer::setMaxConnections(size_t maxConnections) {
+	void TcpServer::setMaxConnections(size_t maxConnectionsValue) {
 		if (this->isRunning.load()) {
 			throw std::runtime_error("[TcpServer] Cannot configure while running!");
 		}
-		this->maxConnections = maxConnections;
+		this->maxConnections = maxConnectionsValue;
 	}
 
 

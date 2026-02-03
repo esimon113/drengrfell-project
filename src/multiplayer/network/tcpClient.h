@@ -16,7 +16,7 @@ namespace df::mp {
 		TcpClient();
 		~TcpClient();
 
-		void tryConnect(const std::string& serverAddress, uint16_t serverPort);
+		void tryConnect(const std::string& serverAddressInput, uint16_t serverPortInput);
 		void disconnect() noexcept;
 		[[nodiscard]] bool isConnected() const noexcept;
 
