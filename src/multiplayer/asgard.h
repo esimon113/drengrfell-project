@@ -18,7 +18,7 @@
 
 #include "bifrost.h"
 #include "sessionManager.h"
-#include "tcpServer.h"
+#include "multiplayer/network/tcpServer.h"
 
 
 namespace df::bifrost {

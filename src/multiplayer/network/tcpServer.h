@@ -7,19 +7,18 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <netinet/in.h>
 #include <stop_token>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 
-
+#include "multiplayer/network/socketPlatform.h"
 namespace df::mp {
 	class TcpServer {
 	  public:
 		// handler receives socket and stop_token for cooperative cancellation
-		using ClientHandler = std::function<void(int, std::stop_token)>;
+		using ClientHandler = std::function<void(net::SocketHandle, std::stop_token)>;
 
 		// use singleton pattern -> there should only be one server at a time
 		static TcpServer& instance();
@@ -45,7 +44,7 @@ namespace df::mp {
 		TcpServer();
 		~TcpServer();
 
-		void handleClient(int clientSocket, std::stop_token stopToken);
+		void handleClient(net::SocketHandle clientSocket, std::stop_token stopToken);
 		void cleanupFinishedConnections();
 		void cleanupStaleRateLimitEntries();
 		size_t getActiveConnectionCount();
@@ -57,8 +56,9 @@ namespace df::mp {
 		};
 
 		uint16_t port{0};
-		int serverSocket{-1};
-		sockaddr_in serverAddress{};
+		net::SocketPlatform socketPlatform;
+		net::SocketHandle serverSocket{net::INVALID_SOCKET_HANDLE};
+		net::SocketAddress serverAddress{};
 
 		ClientHandler clientHandler;
 

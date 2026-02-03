@@ -84,7 +84,7 @@ namespace df::bifrost {
 		auto& server = mp::TcpServer::instance();
 		server.configure(port_, bindAddress_);
 		server.setMaxConnections(maxConnections_);
-		server.onClientCallback([this](int socket, std::stop_token stopToken) {
+		server.onClientCallback([this](mp::net::SocketHandle socket, std::stop_token stopToken) {
 			handleClient(socket, stopToken);
 		});
 
@@ -121,7 +121,7 @@ namespace df::bifrost {
 		auto& server = mp::TcpServer::instance();
 		server.configure(port_, bindAddress_);
 		server.setMaxConnections(maxConnections_);
-		server.onClientCallback([this](int socket, std::stop_token stopToken) {
+		server.onClientCallback([this](mp::net::SocketHandle socket, std::stop_token stopToken) {
 			handleClient(socket, stopToken);
 		});
 

@@ -1,7 +1,6 @@
 #include "tcpServer.h"
 
 #include <algorithm>
-#include <arpa/inet.h>
 #include <cerrno>
 #include <chrono>
 #include <cstdint>
@@ -11,11 +10,8 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
-#include <netinet/in.h>
 #include <stdexcept>
 #include <stop_token>
-#include <sys/socket.h>
-#include <unistd.h>
 
 
 
@@ -40,13 +36,7 @@ namespace df::mp {
 		}
 		this->port = port;
 
-		this->serverAddress = {};
-		this->serverAddress.sin_family = AF_INET;
-		this->serverAddress.sin_port = htons(this->port);
-
-		if (inet_pton(AF_INET, bindTo.c_str(), &this->serverAddress.sin_addr) <= 0) {
-			throw std::runtime_error("[TcpServer] Invalid bind address");
-		}
+		this->serverAddress = net::makeIpv4Address(bindTo, this->port);
 	}
 
 
@@ -84,27 +74,26 @@ namespace df::mp {
 			throw std::runtime_error("[TcpServer] Port is not configured!");
 		}
 
-		this->serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-		if (this->serverSocket < 0) {
+		this->serverSocket = net::createTcpSocket();
+		if (!net::isValid(this->serverSocket)) {
 			throw std::runtime_error("[TcpServer] Creating a socket failed!");
 		}
 
-		int opt = 1;
-		if (setsockopt(this->serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-			close(this->serverSocket);
-			this->serverSocket = -1;
+		if (!net::setReuseAddr(this->serverSocket, true)) {
+			net::close(this->serverSocket);
+			this->serverSocket = net::INVALID_SOCKET_HANDLE;
 			throw std::runtime_error("[TcpServer] setsockopt(SO_REUSEADDR) failed");
 		}
 
-		if (bind(this->serverSocket, reinterpret_cast<sockaddr*>(&this->serverAddress), sizeof(this->serverAddress)) < 0) {
-			close(this->serverSocket);
-			this->serverSocket = -1;
+		if (!net::bind(this->serverSocket, this->serverAddress)) {
+			net::close(this->serverSocket);
+			this->serverSocket = net::INVALID_SOCKET_HANDLE;
 			throw std::runtime_error("[TcpServer] bind() failed");
 		}
 
-		if (listen(this->serverSocket, SOMAXCONN) < 0) {
-			close(this->serverSocket);
-			this->serverSocket = -1;
+		if (!net::listen(this->serverSocket, SOMAXCONN)) {
+			net::close(this->serverSocket);
+			this->serverSocket = net::INVALID_SOCKET_HANDLE;
 			throw std::runtime_error("[TcpServer] listen() failed");
 		}
 
@@ -119,21 +108,20 @@ namespace df::mp {
 		}
 
 		while (this->isRunning.load()) {
-			sockaddr_in clientAddress{};
-			socklen_t clientLength = sizeof(clientAddress);
-
-			int clientSocket = accept(this->serverSocket, reinterpret_cast<sockaddr*>(&clientAddress), &clientLength);
-			if (clientSocket < 0) {
+			net::SocketAddress clientAddress{};
+			net::SocketHandle clientSocket = net::accept(this->serverSocket, clientAddress);
+			if (!net::isValid(clientSocket)) {
 				if (this->isRunning.load()) {
-					if (errno == EINTR) {
+					const int err = net::lastError();
+					if (net::isInterruptedError(err)) {
 						continue;
 					}
-					perror("[TcpServer] accept");
+					fmt::println("[TcpServer] accept failed: {}", net::errorMessage(err));
 				}
 				continue;
 			}
 
-			uint32_t clientIp = clientAddress.sin_addr.s_addr;
+			uint32_t clientIp = net::getIpv4Address(clientAddress);
 
 			// cleanup finished connections and rate limit
 			this->cleanupFinishedConnections();
@@ -142,16 +130,14 @@ namespace df::mp {
 			// check connection limit
 			if (this->getActiveConnectionCount() >= this->maxConnections) {
 				fmt::println("[TcpServer] Connection limit reached, rejecting client");
-				close(clientSocket);
+				net::close(clientSocket);
 				continue;
 			}
 
 			// check rate limit
 			if (this->isRateLimited(clientIp)) {
-				char ipStr[INET_ADDRSTRLEN];
-				inet_ntop(AF_INET, &clientIp, ipStr, sizeof(ipStr));
-				fmt::println("[TcpServer] Rate limit exceeded for {}, rejecting", ipStr);
-				close(clientSocket);
+				fmt::println("[TcpServer] Rate limit exceeded for {}, rejecting", net::ipv4ToString(clientIp));
+				net::close(clientSocket);
 				continue;
 			}
 
@@ -160,7 +146,7 @@ namespace df::mp {
 
 			conn->thread = std::jthread([this, clientSocket, connPtr](std::stop_token stopToken) {
 				this->handleClient(clientSocket, stopToken);
-				close(clientSocket);
+				net::close(clientSocket);
 				connPtr->finished.store(true);
 			});
 
@@ -237,11 +223,11 @@ namespace df::mp {
 			return;
 		}
 
-		if (this->serverSocket >= 0) {
+		if (net::isValid(this->serverSocket)) {
 			// unblock threads that wait in accept
-			shutdown(this->serverSocket, SHUT_RDWR);
-			close(this->serverSocket);
-			this->serverSocket = -1;
+			net::shutdownBoth(this->serverSocket);
+			net::close(this->serverSocket);
+			this->serverSocket = net::INVALID_SOCKET_HANDLE;
 		}
 
 		// wait for all client threads to finish
@@ -250,7 +236,7 @@ namespace df::mp {
 	}
 
 
-	void TcpServer::handleClient(int clientSocket, std::stop_token stopToken) {
+	void TcpServer::handleClient(net::SocketHandle clientSocket, std::stop_token stopToken) {
 		if (this->clientHandler) {
 			this->clientHandler(clientSocket, stopToken);
 			return;
@@ -260,15 +246,15 @@ namespace df::mp {
 		char buffer[1024];
 
 		while (!stopToken.stop_requested()) {
-			ssize_t numBytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+			int numBytesReceived = net::recv(clientSocket, buffer, sizeof(buffer));
 			if (numBytesReceived <= 0) {
 				break;
 			}
 
 			// send all received bytes:
-			ssize_t totalBytesSent = 0;
+			int totalBytesSent = 0;
 			while (totalBytesSent < numBytesReceived && !stopToken.stop_requested()) {
-				ssize_t sent = send(clientSocket, buffer + totalBytesSent, numBytesReceived - totalBytesSent, 0);
+				int sent = net::send(clientSocket, buffer + totalBytesSent, static_cast<size_t>(numBytesReceived - totalBytesSent));
 				if (sent <= 0) {
 					return;
 				}

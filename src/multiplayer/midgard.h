@@ -21,7 +21,7 @@
 #include <thread>
 
 #include "bifrost.h"
-#include "tcpClient.h"
+#include "multiplayer/network/tcpClient.h"
 
 
 namespace df::bifrost {

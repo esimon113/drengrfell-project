@@ -1,18 +1,12 @@
 #pragma once
 
-#include <arpa/inet.h>
 #include <cstddef>
 #include <cstdint>
-#include <netinet/in.h>
 #include <span>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <string>
 #include <vector>
 
-inline constexpr int INVALID_SOCKET = -1;
-inline constexpr int SOCKET_ERROR = -1;
+#include "multiplayer/network/socketPlatform.h"
 
 
 
@@ -36,7 +30,8 @@ namespace df::mp {
 	  private:
 		void sendAll(std::span<const std::byte> data);
 
-		int tcpSocket{INVALID_SOCKET};
+		net::SocketPlatform socketPlatform;
+		net::SocketHandle tcpSocket{net::INVALID_SOCKET_HANDLE};
 		bool connected{false};
 		std::string serverAddress;
 		uint16_t serverPort{0};

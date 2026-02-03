@@ -1,15 +1,11 @@
 #include "tcpClient.h"
 
-#include <arpa/inet.h>
 #include <cstddef>
 #include <cstring>
 #include <fmt/base.h>
-#include <netinet/in.h>
 #include <stdexcept>
 #include <span>
 #include <string>
-#include <sys/socket.h>
-#include <sys/types.h>
 
 
 
@@ -35,25 +31,15 @@ namespace df::mp {
 		this->serverPort = serverPort;
 
 		// create a new socket for this connection
-		this->tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
-		if (this->tcpSocket == INVALID_SOCKET) {
+		this->tcpSocket = net::createTcpSocket();
+		if (!net::isValid(this->tcpSocket)) {
 			throw std::runtime_error("[TcpClient] Failed to create socket.");
 		}
 
-		struct sockaddr_in server;
-		std::memset(&server, 0, sizeof(server));
-		server.sin_family = AF_INET;
-		server.sin_port = htons(this->serverPort);
-
-		if (inet_pton(AF_INET, this->serverAddress.c_str(), &server.sin_addr) <= 0) {
-			close(this->tcpSocket);
-			this->tcpSocket = INVALID_SOCKET;
-			throw std::runtime_error("[TcpClient] Invalid IP address: " + this->serverAddress);
-		}
-
-		if (connect(this->tcpSocket, reinterpret_cast<sockaddr*>(&server), sizeof(server)) == SOCKET_ERROR) {
-			close(this->tcpSocket);
-			this->tcpSocket = INVALID_SOCKET;
+		const auto serverEndpoint = net::makeIpv4Address(this->serverAddress, this->serverPort);
+		if (!net::connect(this->tcpSocket, serverEndpoint)) {
+			net::close(this->tcpSocket);
+			this->tcpSocket = net::INVALID_SOCKET_HANDLE;
 			throw std::runtime_error("[TcpClient] Failed to connect to " + this->serverAddress + ":" + std::to_string(this->serverPort));
 		}
 
@@ -66,15 +52,15 @@ namespace df::mp {
 
 		// make sure all data is sent
 		while (totalBytesSent < data.size()) {
-			ssize_t numBytesSent = send(this->tcpSocket, data.data() + totalBytesSent, data.size() - totalBytesSent, 0);
+			int numBytesSent = net::send(this->tcpSocket, data.data() + totalBytesSent, data.size() - totalBytesSent);
 
-			if (numBytesSent == SOCKET_ERROR) {
+			if (numBytesSent == net::SOCKET_ERROR_CODE) {
 				throw std::runtime_error("[TcpClient] Failed to send data");
 			}
 			if (numBytesSent == 0) {
 				throw std::runtime_error("[TcpClient] Connection closed by peer");
 			}
-			totalBytesSent += numBytesSent;
+			totalBytesSent += static_cast<size_t>(numBytesSent);
 		}
 	}
 
@@ -95,46 +81,43 @@ namespace df::mp {
 		}
 
 		std::vector<char> buffer(bufferSize);
-		ssize_t numBytesRead = recv(this->tcpSocket, buffer.data(), bufferSize - 1, 0);
+		int numBytesRead = net::recv(this->tcpSocket, buffer.data(), bufferSize - 1);
 
-		if (numBytesRead == SOCKET_ERROR) {
+		if (numBytesRead == net::SOCKET_ERROR_CODE) {
 			throw std::runtime_error("[TcpClient] Failed to receive data");
 		}
 		if (numBytesRead == 0) {
 			throw std::runtime_error("[TcpClient] Connection closed by peer");
 		}
 
-		buffer[numBytesRead] = '\0';
+		buffer[static_cast<size_t>(numBytesRead)] = '\0';
 		return std::string(buffer.data());
 	}
 
 
 	std::vector<uint8_t> TcpClient::tryReceiveBinary(size_t bufferSize) {
 		std::vector<uint8_t> buffer(bufferSize);
-		ssize_t numBytesRead = recv(this->tcpSocket, buffer.data(), bufferSize, 0);
+		int numBytesRead = net::recv(this->tcpSocket, buffer.data(), bufferSize);
 
-		if (numBytesRead == SOCKET_ERROR) {
+		if (numBytesRead == net::SOCKET_ERROR_CODE) {
 			throw std::runtime_error("[TcpClient] Failed to receive binary data");
 		}
 		if (numBytesRead == 0) {
 			throw std::runtime_error("[TcpClient] Connection closed by peer");
 		}
 
-		buffer.resize(numBytesRead);
+		buffer.resize(static_cast<size_t>(numBytesRead));
 		return buffer;
 	}
 
 
 	void TcpClient::disconnect() noexcept {
-		if (this->tcpSocket == INVALID_SOCKET) {
+		if (!net::isValid(this->tcpSocket)) {
 			return;
 		}
 
-		if (close(this->tcpSocket) == SOCKET_ERROR) {
-			fmt::println("[TcpClient] Warning: failed to close socket");
-		}
-
-		this->tcpSocket = INVALID_SOCKET;
+		net::close(this->tcpSocket);
+		this->tcpSocket = net::INVALID_SOCKET_HANDLE;
 		this->connected = false;
 	}
 
