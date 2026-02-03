@@ -628,6 +628,41 @@ namespace df {
 		return neighbors;
 	}
 
+	// gives TileIDs of neighbors
+	std::vector<size_t> Graph::getTileNeighbors(size_t tileId) const {
+		std::vector<size_t> neighbors;
+		auto edgesOpt = getTileEdges(findTileById(tileId));
+		if (!edgesOpt)
+			return neighbors;
+
+		for (auto edge : *edgesOpt) {
+			if (!edge)
+				continue;
+			auto verticesOpt = getEdgeVertices(edge);
+			if (!verticesOpt)
+				continue;
+
+			for (auto v : *verticesOpt) {
+				if (!v)
+					continue;
+				auto tilesOpt = getVertexTiles(v);
+				if (!tilesOpt)
+					continue;
+
+				for (auto t : *tilesOpt) {
+					if (t && t->getId() != tileId)
+						neighbors.push_back(t->getId());
+				}
+			}
+		}
+
+		// Remove duplicates
+		std::sort(neighbors.begin(), neighbors.end());
+		neighbors.erase(std::unique(neighbors.begin(), neighbors.end()), neighbors.end());
+
+		return neighbors;
+	}
+
 
 	/**
 	 * BFS finds shortest number of hops between nodes.
@@ -698,66 +733,169 @@ namespace df {
 	// difficulties for travel. Also rule-based AI might use this for building roads and stuff...
 	// Algorithm calculates shortest paths to nodes *of same type*; TODO: need to think about this more
 	template <HasIdProperty T>
-	std::vector<T> Graph::dijkstra(const T& start) const {
+	std::vector<const T*> Graph::dijkstra(const T& start) const {
 		constexpr double INF = std::numeric_limits<double>::infinity();
 
-		// map nodeId -> current best distance
 		std::unordered_map<size_t, double> distance;
 		std::unordered_map<size_t, size_t> previous;
 
-		// regard only certain type of nodes -> decide what T actually is
-		const std::vector<T>& nodes = [this]() -> const std::vector<T>& {
-			if constexpr (std::is_same_v<T, Tile>) {
-				return this->tiles;
-			} else if constexpr (std::is_same_v<T, Edge>) {
-				return this->edges;
-			} else {
-				return this->vertices;
-			}
-		}(); // directly call lambda
-
-		for (const auto& node : nodes) {
-			distance[node.getId()] = INF; // make sure T has id
-			previous[node.getId()] = SIZE_MAX;
+		std::vector<const T*> nodes;
+		if constexpr (std::is_same_v<T, Tile>) {
+			for (const auto& nodePtr : tiles)
+				nodes.push_back(nodePtr.get());
+		} else if constexpr (std::is_same_v<T, Edge>) {
+			for (const auto& nodePtr : edges)
+				nodes.push_back(nodePtr.get());
+		} else {
+			for (const auto& nodePtr : vertices)
+				nodes.push_back(nodePtr.get());
 		}
 
-		distance[start.getId()] = 0.0; // distance with itfelf
+		for (const auto* node : nodes) {
+			distance[node->getId()] = INF;
+			previous[node->getId()] = SIZE_MAX;
+		}
+
+		distance[start.getId()] = 0.0;
 
 		auto cmp = [](const std::pair<double, size_t>& a, const std::pair<double, size_t>& b) {
 			return a.first > b.first;
 		};
 
-		std::priority_queue<std::pair<double, size_t>, std::vector<std::pair<double, size_t>>, decltype(cmp)> q(cmp);
+		std::priority_queue<std::pair<double, size_t>,
+							std::vector<std::pair<double, size_t>>,
+							decltype(cmp)>
+			q(cmp);
 		q.emplace(0.0, start.getId());
 
 		while (!q.empty()) {
 			auto [dist, currentId] = q.top();
 			q.pop();
 
-			if (dist > distance[currentId]) {
+			if (dist > distance[currentId])
+				continue;
+
+			const T* currentNode = nullptr;
+			for (const auto* n : nodes) {
+				if (n->getId() == currentId) {
+					currentNode = n;
+					break;
+				}
+			}
+			if (!currentNode) {
+				//fmt::println("[ERROR] Node with ID {} not found!", currentId);
 				continue;
 			}
+			//fmt::println("[DEBUG] Node ID {} neighbors:", currentId);
 
-			for (size_t neighbourId : this->getNeighborIds(currentId)) {
-				double alternative = dist + 1.0; // fixed weight
+			std::vector<size_t> neighborIds;
+			if constexpr (std::is_same_v<T, Tile>) {
+				neighborIds = getTileNeighbors(currentId);
+			} else {
+				neighborIds = getNeighborIds(currentId);
+			}
 
-				if (alternative < distance[neighbourId]) {
-					distance[neighbourId] = alternative;
-					previous[neighbourId] = currentId;
-					q.emplace(alternative, neighbourId);
+			for (size_t neighborId : neighborIds) {
+				//fmt::println("  Neighbor Tile/Edge/Vertex ID: {}", neighborId);
+				const T* neighborNode = nullptr;
+
+				if constexpr (std::is_same_v<T, Tile>) {
+					neighborNode = findTileById(neighborId);
+				} else if constexpr (std::is_same_v<T, Edge>) {
+					neighborNode = findEdgeById(neighborId);
+				} else {
+					neighborNode = findVertexById(neighborId);
+				}
+
+				if (!neighborNode)
+					continue;
+
+				double alt = dist + 1.0; // Gewicht auf 1, kann später variabel gemacht werden
+				if (alt < distance[neighborId]) {
+					distance[neighborId] = alt;
+					previous[neighborId] = currentId;
+					q.emplace(alt, neighborId);
 				}
 			}
 		}
 
-		std::vector<T> reachableNodes;
-
-		for (const auto& node : nodes) {
-			if (distance[node.getId()] < INF) {
+		std::vector<const T*> reachableNodes;
+		for (const auto* node : nodes) {
+			if (distance[node->getId()] < INF)
 				reachableNodes.push_back(node);
-			}
 		}
 
 		return reachableNodes;
+	}
+
+	// explizite Instanziierung für Tile
+	template std::vector<const Tile*> Graph::dijkstra<Tile>(const Tile&) const;
+
+	// Dijkstra but gives the Path from tile x to tile y in tileIDs
+
+	std::vector<size_t> Graph::dijkstraPath(size_t startId, size_t goalId) const {
+		constexpr double INF = std::numeric_limits<double>::infinity();
+
+		std::unordered_map<size_t, double> distance;
+		std::unordered_map<size_t, size_t> previous;
+
+		// Alle Tile IDs sammeln
+		std::vector<size_t> nodes;
+		for (const auto& t : tiles) {
+			nodes.push_back(t->getId());
+			distance[t->getId()] = INF;
+			previous[t->getId()] = SIZE_MAX;
+		}
+
+		distance[startId] = 0.0;
+
+		auto cmp = [](const std::pair<double, size_t>& a, const std::pair<double, size_t>& b) {
+			return a.first > b.first;
+		};
+		std::priority_queue<std::pair<double, size_t>,
+							std::vector<std::pair<double, size_t>>,
+							decltype(cmp)>
+			q(cmp);
+		q.emplace(0.0, startId);
+
+		while (!q.empty()) {
+			auto [dist, currentId] = q.top();
+			q.pop();
+
+			if (currentId == goalId)
+				break; // Ziel erreicht
+
+			if (dist > distance[currentId])
+				continue;
+
+			auto neighborIds = getTileNeighbors(currentId);
+			for (size_t neighborId : neighborIds) {
+				double alt = dist + 1.0; // Gewicht = 1, kann angepasst werden
+				if (alt < distance[neighborId]) {
+					distance[neighborId] = alt;
+					previous[neighborId] = currentId;
+					q.emplace(alt, neighborId);
+				}
+			}
+		}
+
+		// Pfad rekonstruieren
+		std::vector<size_t> path;
+		size_t current = goalId;
+		while (current != SIZE_MAX) {
+			path.push_back(current);
+			if (current == startId)
+				break;
+			current = previous[current];
+		}
+
+		std::reverse(path.begin(), path.end());
+
+		// Prüfen, ob ein Pfad existiert
+		if (path.front() != startId)
+			path.clear(); // kein Pfad gefunden
+
+		return path;
 	}
 
 

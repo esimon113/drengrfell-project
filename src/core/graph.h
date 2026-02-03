@@ -106,7 +106,8 @@ namespace df {
 		template <HasIdProperty T>
 		std::vector<T> depthFirstSearch(const T& start) const;
 		template <HasIdProperty T>
-		std::vector<T> dijkstra(const T& start) const;
+		std::vector<const T*> dijkstra(const T& start) const;
+		std::vector<size_t> dijkstraPath(size_t startId, size_t goalId) const;
 
 		template <HasIdProperty T>
 		size_t getDistanceBetween(const T& start, const T& end) const;
@@ -147,6 +148,7 @@ namespace df {
 		void populate();
 
 		std::vector<size_t> getNeighborIds(size_t id) const;
+		std::vector<size_t> getTileNeighbors(size_t tileId) const;
 
 		// Methods for using the graph as a rectangular map
 		unsigned mapWidth = 0;
