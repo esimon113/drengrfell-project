@@ -381,6 +381,73 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 		return currentTutorialStep < tutorialSteps.size();
 	}
 
+	// returns a vector<glm::vec3> with the corresponding colors the hud should use for the resources
+	std::vector<glm::vec3> GameState::computeHudResourceColor(std::string mode) {
+		// order: forest, mountain, clay, grass (wool), field
+		std::vector<glm::vec3> colors = {{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}};
+		std::map<types::TileType, int> playerResources = getPlayer(getCurrentPlayerId())->getResources();
+
+		if (mode == "settlement") {
+			// settlements
+			const auto settlementCost = getCurrentSettlementCost();
+			// wood
+			if (settlementCost[2] > 0 && playerResources[types::TileType::FOREST] >= settlementCost[2])
+				colors[0] = {0.f, 1.f, 0.f};
+			else if (settlementCost[2] > 0)
+				colors[0] = {1.f, 0.f, 0.f};
+			// grass
+			if (settlementCost[3] > 0 && playerResources[types::TileType::GRASS] >= settlementCost[3])
+				colors[3] = {0.f, 1.f, 0.f};
+			else if (settlementCost[3] > 0)
+				colors[3] = {1.f, 0.f, 0.f};
+			// stone
+			if (settlementCost[4] > 0 && playerResources[types::TileType::MOUNTAIN] >= settlementCost[4])
+				colors[1] = {0.f, 1.f, 0.f};
+			else if (settlementCost[4] > 0)
+				colors[1] = {1.f, 0.f, 0.f};
+			// grain
+			if (settlementCost[5] > 0 && playerResources[types::TileType::FIELD] >= settlementCost[5])
+				colors[4] = {0.f, 1.f, 0.f};
+			else if (settlementCost[5] > 0)
+				colors[4] = {1.f, 0.f, 0.f};
+			// clay
+			if (settlementCost[6] > 0 && playerResources[types::TileType::CLAY] >= settlementCost[6])
+				colors[2] = {0.f, 1.f, 0.f};
+			else if (settlementCost[6] > 0)
+				colors[2] = {1.f, 0.f, 0.f};
+		}
+		else {
+			// roads
+			const auto roadCost = getCurrentRoadCost();
+			// wood
+			if (roadCost[2] > 0 && playerResources[types::TileType::FOREST] >= roadCost[2])
+				colors[0] = {0.f, 1.f, 0.f};
+			else if (roadCost[2] > 0)
+				colors[0] = {1.f, 0.f, 0.f};
+			// grass
+			if (roadCost[3] > 0 && playerResources[types::TileType::GRASS] >= roadCost[3])
+				colors[3] = {0.f, 1.f, 0.f};
+			else if (roadCost[3] > 0)
+				colors[3] = {1.f, 0.f, 0.f};
+			// stone
+			if (roadCost[4] > 0 && playerResources[types::TileType::MOUNTAIN] >= roadCost[4])
+				colors[1] = {0.f, 1.f, 0.f};
+			else if (roadCost[4] > 0)
+				colors[1] = {1.f, 0.f, 0.f};
+			// grain
+			if (roadCost[5] > 0 && playerResources[types::TileType::FIELD] >= roadCost[5])
+				colors[4] = {0.f, 1.f, 0.f};
+			else if (roadCost[5] > 0)
+				colors[4] = {1.f, 0.f, 0.f};
+			// clay
+			if (roadCost[6] > 0 && playerResources[types::TileType::CLAY] >= roadCost[6])
+				colors[2] = {0.f, 1.f, 0.f};
+			else if (roadCost[6] > 0)
+				colors[2] = {1.f, 0.f, 0.f};
+			}
+		return colors;
+	}
+
 	bool GameState::isGameOver() const {
 		const size_t MAX_ROUNDS = 50; // Or whatever limit you want
 		return this->roundNumber >= MAX_ROUNDS;

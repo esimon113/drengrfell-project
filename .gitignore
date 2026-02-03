@@ -1,7 +1,7 @@
 build
 
 # config
-assets/jsons/*
+assets/jsons/world_generation.json
 test/asan_direct_leaks.txt
 test/bifrost/.*
 test/bifrost/build

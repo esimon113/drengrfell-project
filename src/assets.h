@@ -11,6 +11,12 @@ namespace df {
 			BACKGROUND_MUSIC_2,
 			BACKGROUND_MUSIC_3,
 			BACKGROUND_MUSIC_4,
+			EVENT_POPUP,
+			EVENT_BEAR,
+			EVENT_BLIZZARD,
+			EVENT_MUD,
+			EVENT_ROCKSLIDE,
+			EVENT_HAZARD_MUSIC,
 			count
 		};
 
@@ -33,6 +39,7 @@ namespace df {
 			hud,
 			tilePicker,
 			locationHighlight,
+			dimScreen,
 			count
 		};
 
@@ -89,6 +96,26 @@ namespace df {
 			HERO_RUN_3,
 			HERO_RUN_4,
 			HERO_RUN_5,
+
+			// Hud ressources
+			RESSOURCE_WOOD,
+			RESSOURCE_STONE,
+			RESSOURCE_CLAY,
+			RESSOURCE_WOOL,
+			RESSOURCE_GRAIN,
+
+			HUD_BACKGROUND,	// Hud background
+
+			// Side hud interaction buttons
+			SIDE_HUD_TRADE_BUTTON,
+			SIDE_HUD_QUEST_BUTTON,
+			SIDE_HUD_KEYBINDINGS_BUTTON,
+			SIDE_HUD_COST_BUTTON,
+
+			HAZARD_BEAR,
+			HAZARD_BLIZZARD,
+			HAZARD_MUD,
+			HAZARD_ROCKSLIDE,
 			
 			CASTLE1,
 			CASTLE2,
@@ -105,11 +132,13 @@ namespace df {
 			MILL,
 			BRICK_KILN,
 			PRODUCTIVITY_PLACEHOLDER,
+
 			count
 		};
 
 		enum struct JsonFile {
 			WORLD_GENERATION_CONFIGURATION,
+			AI_BEHAVIOR_TREE_HERO,
 			COUNT,
 		};
 

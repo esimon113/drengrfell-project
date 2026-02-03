@@ -42,9 +42,11 @@ namespace df {
 		std::shared_ptr<EventBus> eventBus;
 		std::unique_ptr<ma_engine, EngineDestructor> engine;
 		std::unordered_map<std::string, std::unique_ptr<Sound>> sounds;
+		std::string currentMusicPath{};
 
 		bool loadSound(const std::string& path);
 		bool isSoundLoaded(const std::string& path) const;
 		void onPlaySoundRequested(const std::string& path, bool loop = false);
+		void onStopSoundRequested(const std::string& path, bool rewind = false);
 	};
 } // namespace df

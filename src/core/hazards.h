@@ -30,10 +30,12 @@ namespace df {
 		static std::optional<TileHazardProfile> getTileHazardProfile(types::TileType tileType);
 
 		static const HazardDefinition& getDefinition(types::HazardType type);
+		static const types::EventType& getEvent(types::HazardType type);
 
 	  private:
 		static std::unordered_map<types::HazardType, HazardDefinition> hazardDefinitions;
 		static std::unordered_map<types::TileType, TileHazardProfile> tileHazardProfiles;
+		static std::unordered_map<types::HazardType, types::EventType> hazardEventMapping;
 	};
 
 } // namespace df

@@ -92,9 +92,9 @@ FetchContent_Declare(
 	EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(
-    freetype
-    GIT_REPOSITORY https://github.com/freetype/freetype.git
-    GIT_TAG VER-2-13-2
+				freetype
+				GIT_REPOSITORY https://github.com/freetype/freetype.git
+				GIT_TAG VER-2-13-2
 )
 FetchContent_MakeAvailable(
 	glfw
@@ -146,11 +146,10 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/mainMenu.cpp
 	${PROJECT_SOURCE_DIR}/src/core/configMenu.cpp
 	${PROJECT_SOURCE_DIR}/src/core/hazards.cpp
-	${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
-	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
 
 	${PROJECT_SOURCE_DIR}/src/core/ai/behaviorTree.cpp
 	${PROJECT_SOURCE_DIR}/src/core/ai/commandRegistry.cpp
+	${PROJECT_SOURCE_DIR}/src/core/ai/aiSystem.cpp
 
 	${PROJECT_SOURCE_DIR}/src/systems/world.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/physics.cpp
@@ -161,17 +160,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/systems/renderText.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderNotification.cpp
 	${PROJECT_SOURCE_DIR}/src/systems/renderSettlementMenu.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderHero.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderBuildings.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderBuildingPreviews.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/buildingPreview.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderTiles.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderCommon.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderHud.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/renderWeather.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/entityMovement.cpp
-	${PROJECT_SOURCE_DIR}/src/systems/tradingSystem.h
-	${PROJECT_SOURCE_DIR}/src/systems/tradingSystem.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/eventPresentation.cpp
 
 	${PROJECT_SOURCE_DIR}/src/utils/mesh.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/shader.cpp

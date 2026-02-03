@@ -33,6 +33,13 @@ namespace df {
 
 		// In-game Events {
 		// RegisterSignal(tilePicked, int);
+		RegisterSignal(eventPoppedUp);
+		RegisterSignal(hazardEncountered);
+		RegisterSignal(eventEnded);
+		RegisterSignal(hazardBearEncountered);
+		RegisterSignal(hazardRockslideEncountered);
+		RegisterSignal(hazardBlizzardEncountered);
+		RegisterSignal(hazardMudEncountered);
 		// }
 
 		// Technical Events {
@@ -41,6 +48,8 @@ namespace df {
 		// and add a new sound attachment to a signal
 		// from above in df::SignalDecoration::initializeSignalDecoration
 		RegisterSignal(playSoundRequested, const std::string&, const bool);
+		RegisterSignal(stopSoundRequested, const std::string&, const bool);
+		RegisterSignal(stopBackgroundMusicRequested, const bool);
 		// }
 
 	  private:
@@ -61,6 +70,13 @@ namespace df {
 
 		void initializeSignalDecoration() {
 			attachSound(this->applicationRunStarted, assets::Sound::BACKGROUND_MUSIC_1, true);
+			attachSound(this->hazardEncountered, assets::Sound::EVENT_HAZARD_MUSIC, true);
+			attachSound(this->eventEnded, assets::Sound::BACKGROUND_MUSIC_1, true);
+			attachSound(this->eventPoppedUp, assets::Sound::EVENT_POPUP, false);
+			attachSound(this->hazardBearEncountered, assets::Sound::EVENT_BEAR, false);
+			attachSound(this->hazardRockslideEncountered, assets::Sound::EVENT_ROCKSLIDE, false);
+			attachSound(this->hazardBlizzardEncountered, assets::Sound::EVENT_BLIZZARD, false);
+			attachSound(this->hazardMudEncountered, assets::Sound::EVENT_MUD, false);
 		}
 
 		// }

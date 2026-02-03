@@ -46,9 +46,11 @@ namespace df::types {
 
 	// maybe like 10/25/50% chance to get resource per round?!
 	enum class TilePotency {
-		LOW,
-		MEDIUM,
-		HIGH
+		LOW = 1,
+		MEDIUMLOW =2,
+		MEDIUM = 3,
+		MEDIUMHIGH = 4,
+		HIGH = 5
 	};
 
 
@@ -56,8 +58,12 @@ namespace df::types {
 		switch (p) {
 		case TilePotency::LOW:
 			return "LOW";
+		case TilePotency::MEDIUMLOW:
+			return "MEDIUM LOW";
 		case TilePotency::MEDIUM:
 			return "MEDIUM";
+		case TilePotency::MEDIUMHIGH:
+			return "MEDIUM HIGH";
 		case TilePotency::HIGH:
 			return "HIGH";
 		default:
@@ -75,6 +81,11 @@ namespace df::types {
 		NORTH_EAST
 	};
 
+	enum class WeatherType { 
+		SUNNY = 0, 
+		RAIN = 1, 
+		SNOW = 2 
+	};
 
 	inline std::tuple<size_t, size_t> getTileDirectionCoordinates(TileDirection direction) {
 		switch (direction) {
@@ -145,6 +156,15 @@ namespace df::types {
 		BLIZZARD
 	};
 
+	// Expandable for other events like GAME_OVER, GAME_WON etc.
+	enum class EventType {
+		HAZARD_BEAR,
+		HAZARD_MUD,
+		HAZARD_BLIZZARD,
+		HAZARD_ROCKSLIDE
+	};
+
+	
 
 	enum class SettlementType {
 		WOOD,

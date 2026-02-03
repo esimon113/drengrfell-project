@@ -1,0 +1,32 @@
+{
+	"kind": "and",
+	"children": [
+		{
+			"!getUnexploredTiles": {
+				"store": "unexplored_tiles"
+			}
+		},
+		{
+			"!size": {
+				"array": "*unexplored_tiles"
+			}
+		},
+		{
+			"!getUniformInt": {
+				"start": 0,
+				"end": "*ans"
+			}
+		},
+		{
+			"!get": {
+				"array": "*unexplored_tiles",
+				"index": "*ans"
+			}
+		},
+		{
+			"!setMoveTarget": {
+				"id": "*ans"
+			}
+		}
+	]
+}

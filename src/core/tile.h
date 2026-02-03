@@ -19,7 +19,7 @@ namespace df {
 	  public:
 		Tile() = default;
 		Tile(size_t id, types::TileType type, types::TilePotency potency)
-			: id(id), type(type), potency(potency) {};
+			: id(id), type(type), basePotency(potency) {};
 
 		~Tile() = default;
 
@@ -29,8 +29,8 @@ namespace df {
 		types::TileType getType() const { return this->type; }
 		void setType(types::TileType newType) { this->type = newType; }
 
-		types::TilePotency getPotency() const { return this->potency; }
-		void setPotency(types::TilePotency newPotency) { this->potency = newPotency; }
+		types::TilePotency getPotency() const { return this->basePotency; }
+		void setPotency(types::TilePotency newPotency) { this->basePotency = newPotency; }
 
 		bool hasBuilding() const { return this->buildingId.has_value(); }
 		std::optional<size_t> getBuildingId() const { return this->buildingId; }
@@ -42,6 +42,8 @@ namespace df {
 
 		float getRangeFactor() const { return this->rangeFactor; }
 		void setRangeFactor(float range) { this->rangeFactor = range; }
+
+		std::string getPotencyModifierLabel(types::WeatherType weather) const;
 
 		// Determines if this tile gives a resource this turn, based on the tile's type and potency.
 		bool givesResourceThisTurn(std::mt19937& rng) const;
@@ -60,15 +62,20 @@ namespace df {
 		// Set meta-info by deserializing from provided json
 		void deserialize(const json& j);
 
+		void updateEffect(df::types::WeatherType weather) noexcept;
+
+		types::TilePotency getEffectivePotency() const ;
 
 		private:
 			size_t id;
 			types::TileType type;	// Also acts as resource type (?)
-			types::TilePotency potency;
+			//types::TilePotency potency;
 			std::optional<size_t> buildingId;
 			std::vector<size_t> visibleForPlayers;
 			float rangeFactor = 1.0f;
 			std::optional<TileHazardProfile> hazardProfile;
+			types::TilePotency basePotency;
+			int weatherModifier = 0;
 
 			bool isResourceTile() const;
 			float getPotencyProbability(types::TilePotency potency) const;

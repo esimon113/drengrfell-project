@@ -2,6 +2,7 @@
 #include "core/camera.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "utils/worldNodeMapper.h"
+#include "renderWeather.h"
 
 #include <algorithm>
 #include <sstream>
@@ -84,7 +85,7 @@ namespace df {
 		selectedSettlementId = SIZE_MAX;
 		title.clear();
 		textLines.clear();
-	displayLines.clear();
+		displayLines.clear();
 		textPositions.clear();
 		buttons.clear();
 	}
@@ -93,7 +94,7 @@ namespace df {
 		if (!registry || !gameState || !gameController) {
 			return;
 		}
-
+		auto* WeatherSystem = this->registry->getSystem<df::RenderWeatherSystem>();
 		const Settlement* settlementPtr = nullptr;
 		for (const auto& settlement : gameState->getSettlements()) {
 			if (settlement && settlement->getId() == settlementId) {
@@ -111,11 +112,13 @@ namespace df {
 
 		title = "Settlement " + std::to_string(settlementId);
 		textLines.clear();
-	displayLines.clear();
+		displayLines.clear();
 		textPositions.clear();
 		buttons.clear();
 
 		textLines.emplace_back("Productivity");
+
+		types::WeatherType currentWeather = WeatherSystem->getCurrentType();
 
 		const Graph& map = gameState->getMap();
 		auto vertex = map.findVertexById(settlementPtr->getVertexId());
@@ -134,8 +137,9 @@ namespace df {
 						continue;
 					}
 
-					const int percent = getPotencyPercent(tile->getPotency());
-					textLines.emplace_back(std::string(types::tileTypeToString(type)) + " " + std::to_string(percent) + "%");
+					const int percent = getPotencyPercent(tile->getEffectivePotency());
+					textLines.emplace_back(std::string(types::tileTypeToString(type)) + " " + std::to_string(percent) + "%" + tile->getPotencyModifierLabel(currentWeather));
+					
 				}
 			}
 		}
@@ -556,7 +560,7 @@ namespace df {
 		addCost(types::TileType::MOUNTAIN, "Stone");
 		addCost(types::TileType::CLAY, "Clay");
 		addCost(types::TileType::FIELD, "Grain");
-		addCost(types::TileType::GRASS, "Grass");
+		addCost(types::TileType::GRASS, "Wool");
 
 		return line;
 	}
@@ -565,8 +569,12 @@ namespace df {
 		switch (potency) {
 		case types::TilePotency::LOW:
 			return 20;
+		case types::TilePotency::MEDIUMLOW:
+			return 35;
 		case types::TilePotency::MEDIUM:
 			return 50;
+		case types::TilePotency::MEDIUMHIGH:
+			return 70;
 		case types::TilePotency::HIGH:
 			return 90;
 		default:
