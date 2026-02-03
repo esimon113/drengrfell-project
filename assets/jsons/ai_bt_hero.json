@@ -1,0 +1,10 @@
+{
+	"kind": "and",
+	"children": [
+		{
+			"!run": {
+				"file": "ai_bt_hero_movement"
+			}
+		}
+	]
+}

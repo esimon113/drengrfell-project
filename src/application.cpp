@@ -54,12 +54,18 @@ namespace df {
 			return ::std::nullopt;
 		}
 
-		auto win = Window::init(600, 600, PROJECT_NAME);
+		auto win = Window::init(1280, 720, PROJECT_NAME);
 		if (!win) {
 			glfwTerminate();
 			return ::std::nullopt;
 		}
 		self.window = ::std::move(win);
+
+		glfwSetWindowSizeLimits(
+			self.window->getHandle(),
+			1280, 720,
+			GLFW_DONT_CARE, GLFW_DONT_CARE 
+		);
 
 		self.window->makeContextCurrent();
 
@@ -71,19 +77,20 @@ namespace df {
 		}
 		fmt::println("Loaded OpenGL {} & GLSL {}", (char*)glGetString(GL_VERSION), (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+		self.registry = Registry::init();
 		self.eventBus = std::make_shared<EventBus>();
 		self.audioEngine = std::make_unique<AudioSystem>(self.eventBus);
-		self.registry = Registry::init();
+		self.aiSystem = std::make_unique<AiSystem>(self.registry);
 		self.gameState = std::make_shared<GameState>(self.registry);
 		self.gameController = std::make_shared<GameController>(*self.gameState, self.registry);
 		self.world = WorldSystem::init(self.window.get(), self.registry, self.audioEngine.get(), *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
-		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get());
+		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get(), self.eventBus.get());
 		// Create main menu
 		self.mainMenu.init(self.window.get());
 		// for testing
 		// movement until we have a triggerpoint
-		self.movementSystem = EntityMovementSystem::init(self.registry, *self.gameState);
+		self.movementSystem = std::make_unique<EntityMovementSystem>(self.registry, self.gameState, self.aiSystem);
 		// building preview system
 		self.buildingPreviewSystem = BuildingPreviewSystem::init(self.window.get(), self.registry, *self.gameState);
 		// Create config menu
@@ -94,6 +101,8 @@ namespace df {
 
 	void Application::deinit() noexcept {
 		audioEngine.reset();
+		movementSystem.reset();
+		aiSystem.reset();
 		render.deinit();
 		delete registry;
 		// Poll events one last time to allow GLFW to process any pending cleanup
@@ -118,6 +127,8 @@ namespace df {
 		registry->addSystem<RenderWeatherSystem>(&render.getRenderWeatherSystem());
 
 		registry->addSystem<RenderTilesSystem>(&render.getRenderTilesSystem());
+		registry->addSystem<EventPresentationSystem>(&render.getEventPresentationSystem());
+		registry->addSystem<RenderSettlementMenuSystem>(&render.getRenderSettlementMenuSystem());
 
 		auto* qSys = gameController->getQuestsSystem();
 		if (qSys) {
@@ -176,8 +187,6 @@ namespace df {
 		glfwGetFramebufferSize(window->getHandle(), &fbWidth, &fbHeight);
 		onResizeCallback(window->getHandle(), fbWidth, fbHeight);
 
-
-
 		while (!window->shouldClose()) {
 			glfwPollEvents();
 
@@ -193,7 +202,7 @@ namespace df {
 				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
 				// Prepare the camera so it can be centered
 				world.step(0.0f);
-				world.centerCameraOnPoint(movementSystem.getTargetPosition());
+				world.centerCameraOnPoint(movementSystem->getTargetPosition());
 			}
 
 			switch (gamePhase) {
@@ -207,6 +216,19 @@ namespace df {
 				break;
 			case types::GamePhase::PLAY: {
 				world.step(delta_time);
+
+				// compute if the user got enough resources and color the corresponding resource green/red if used
+				if (world.isSettlementPreviewActive) {
+					std::vector<glm::vec3> hudColors = gameState->computeHudResourceColor("settlement");
+					render.renderHudSystem.setHudColors(hudColors);
+				} else if (world.isRoadPreviewActive) {
+					std::vector<glm::vec3> hudColors = gameState->computeHudResourceColor("road");
+					render.renderHudSystem.setHudColors(hudColors);
+				} else {
+					// restore default white
+					render.renderHudSystem.setHudColors({{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}});
+				}
+
 				// physics.step(delta_time);
 				// physics.handleCollisions(delta_time);
 				if (gameState->isGameOver()) {
@@ -245,11 +267,11 @@ namespace df {
 
 				render.step(delta_time);
 				// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
-				if (movementSystem.getMovementState()) {
+				if (movementSystem->getMovementState()) {
 					if (!registry->animations.entities.empty()) {
 						Entity hero = registry->animations.entities.front();
-						movementSystem.moveEntityTo(hero, movementSystem.getTargetPosition(), delta_time);
-						if (!movementSystem.getMovementState()) {
+						movementSystem->moveEntityTo(hero, movementSystem->getTargetPosition(), delta_time);
+						if (!movementSystem->getMovementState()) {
 							render.renderTilesSystem.selectedTile = -1; // remove tile highlighting after hero arrived
 						}
 					} else {
@@ -259,10 +281,10 @@ namespace df {
 				// ------------------------------------------------------------
 
 				// Only truly end the turn and start a new one when the hero finished walking
-				if (awaitingTurnEnd && !movementSystem.getMovementState()) {
+				if (awaitingTurnEnd && !movementSystem->getMovementState()) {
 					Entity hero = registry->animations.entities.front();
 					gameController->endTurn();
-					gameController->applyHazard(hero, movementSystem.getTargetPosition());
+					gameController->applyHazard(hero, movementSystem->getTargetPosition());
 					gameController->startTurn(); // Start turn for the next player
 					awaitingTurnEnd = false;
 				}
@@ -507,6 +529,9 @@ namespace df {
 	}
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
+		// For testing purposes
+		aiSystem->onKeyCallback(windowParam, key, scancode, action, mods);
+		int currentQuestId;
 		types::GamePhase gamePhase = gameState->getPhase();
 		switch (gamePhase) {
 		case types::GamePhase::START:
@@ -516,15 +541,43 @@ namespace df {
 			configMenu.onKeyCallback(windowParam, key, scancode, action, mods);
 			break;
 		case types::GamePhase::PLAY:
+			if (render.eventPresentationSystem.currentEvent) {
+				return;
+			}
+
+			if(action == GLFW_PRESS && key == GLFW_KEY_ENTER){
+				if (!gameState->isGameOver() && !movementSystem->getMovementState() && !render.renderNotificationSystem.isActive()) {
+            
+					auto* step = this->gameState->getCurrentTutorialStep();
+					if (step && step->id == TutorialStepId::MOVE_HERO) {
+						this->gameState->completeCurrentTutorialStep();
+					}
+
+					Entity hero = registry->animations.entities.front();
+					if (!registry->hazards.has(hero)) {
+						movementSystem->toggleMovementState();
+					}
+					awaitingTurnEnd = true; 
+				}
+			}
+
+			// finish quest once requirements met
+			currentQuestId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
+			gameController->claimQuestReward(currentQuestId);
+
+			if (render.renderSettlementMenuSystem.isActive()) {
+				render.renderSettlementMenuSystem.close();
+				selectedSettlementId = SIZE_MAX;
+			}
 			if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
 				if (render.renderNotificationSystem.isActive()) {
+					gameController->getQuestsSystem()->setCurrentQuest();
+					if(world.getShowTrade()){
+						world.setShowTrade(false);
+					}
 					render.renderNotificationSystem.close();
 					selectedSettlementId = SIZE_MAX;
-					return;
-				}
-				if (render.renderSettlementMenuSystem.isActive()) {
-					render.renderSettlementMenuSystem.close();
-					selectedSettlementId = SIZE_MAX;
+					world.escPressed();
 					return;
 				}
 			}
@@ -557,7 +610,7 @@ namespace df {
 			randomTileID = dist(rng);
 		} while (map.getTile(randomTileID)->getType() == types::TileType::WATER);
 
-		glm::vec2 startPosition = movementSystem.getTileWorldPosition(randomTileID);
+		glm::vec2 startPosition = movementSystem->getTileWorldPosition(randomTileID);
 		fmt::println("Hero spawned at TileID: {} with coords: X: {}, Y: {}", randomTileID, startPosition.x, startPosition.y);
 
 		if (registry->positions.has(hero)) {
@@ -571,7 +624,7 @@ namespace df {
 		} else {
 			registry->tileID.emplace(hero, randomTileID);
 		}
-		movementSystem.setTarget(randomTileID, hero);
+		movementSystem->setTarget(randomTileID, hero);
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
@@ -611,22 +664,38 @@ namespace df {
 			// If any button was pressed continue
 			if (!pressedButton.empty()) {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
+
+				// finish quest once requirements met
+				int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
+				gameController->claimQuestReward(currentId);
+
 				// TODO: add actions for button pressed in notifications
 				if (pressedButton == "Wood" || pressedButton == "Stone" ||
 					pressedButton == "Clay" || pressedButton == "Wool" || pressedButton == "Grain") {
 					tradingSystem.handleOptionClicked(pressedButton);
+					if(world.getShowTrade()){
+						world.setShowTrade(false);
+					} 
 				}
 				if (pressedButton == "Pay ressources") {
 					gameController->payForHazard();
+					render.eventPresentationSystem.endEvent();
+				}
+				if (pressedButton == "Wait") {
+					render.eventPresentationSystem.endEvent();
 				}
 				// Quests
 				if (pressedButton == "Next Quest") {
 					this->onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
 				}
 
-				if (pressedButton.find("Claim") == 0) {
-					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
-					gameController->claimQuestReward(currentId);
+				if(pressedButton == "Close"){
+					gameController->getQuestsSystem()->setCurrentQuest();
+					world.escPressed();
+				}
+
+				if(pressedButton == "Cancel"){
+					world.setShowTrade(false);
 				}
 
 				if (pressedButton == "Back to Menu") {
@@ -634,7 +703,7 @@ namespace df {
 				}
 				return; // notification clicked -> no further actions (including movement) for now
 			}
-			if (render.renderNotificationSystem.isActive()) {
+			if (render.renderNotificationSystem.isActive() || render.eventPresentationSystem.currentEvent) {
 				return;
 			}
 			if (render.renderSettlementMenuSystem.isActive()) {
@@ -687,7 +756,7 @@ namespace df {
 			}
 
 			// START Lock all following interactions with the game while the hero is still moving
-			if (!movementSystem.getMovementState()) {
+			if (!movementSystem->getMovementState()) {
 				// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
 					if (!gameState->isGameOver()) {
@@ -700,16 +769,31 @@ namespace df {
 						Entity hero = registry->animations.entities.front();
 						// TODO: For multiplayer check only for active player for hazards
 						if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
-							movementSystem.toggleMovementState();
-							fmt::println("Hero destination: {},{}", movementSystem.getTargetPosition().x, movementSystem.getTargetPosition().y);
+							movementSystem->toggleMovementState();
+							fmt::println("Hero destination: {},{}", movementSystem->getTargetPosition().x, movementSystem->getTargetPosition().y);
 						}
 						awaitingTurnEnd = true;
 						return;
 					}
 				}
 
-				if (render.renderHudSystem.onMouseButton(mouse, button, action))
+				if (render.renderHudSystem.onMouseButton(mouse, button, action)) {
+					// Check if any buttons on the side hud were pressed
+					if (!render.renderHudSystem.getLastSideHudButtonPressed().empty()) {
+						std::string SideHudButton = render.renderHudSystem.getLastSideHudButtonPressed();
+
+						if (SideHudButton == "Trade") {
+							onKeyCallback(windowParam, GLFW_KEY_T, 0, GLFW_PRESS, 0);
+						} else if (SideHudButton == "Quest") {
+							onKeyCallback(windowParam, GLFW_KEY_Q, 0, GLFW_PRESS, 0);
+						} else if (SideHudButton == "Cost") {
+							onKeyCallback(windowParam, GLFW_KEY_C, 0, GLFW_PRESS, 0);
+						} else if (SideHudButton == "Keybindings") {
+							onKeyCallback(windowParam, GLFW_KEY_K, 0, GLFW_PRESS, 0);
+						}
+					}
 					return;
+				}
 
 				// Settlement management menu
 				if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS &&
@@ -807,10 +891,10 @@ namespace df {
 					auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
 					fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
-					if (mapId >= 0 && !movementSystem.isEntityMoving()) {
+					if (mapId >= 0 && !movementSystem->isEntityMoving()) {
 						//  TODO: For multiplayer use hero of active player
 						Entity hero = registry->animations.entities.front();
-						movementSystem.setTarget(mapId, hero);
+						movementSystem->setTarget(mapId, hero);
 					}
 				}
 
@@ -847,5 +931,6 @@ namespace df {
 		render.renderHudSystem.onResizeCallback(windowParam, width, height);
 		configMenu.onResizeCallback(windowParam, width, height);
 		render.renderNotificationSystem.onResizeCallback(windowParam, width, height);
+		render.eventPresentationSystem.onResizeCallback(windowParam, width, height);
 	}
 } // namespace df

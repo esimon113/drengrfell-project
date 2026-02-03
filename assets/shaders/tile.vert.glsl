@@ -19,7 +19,7 @@ void main() {
     vertType = type;
     vertExplored = explored;
     indicatorColor = (tileIndex == uint(selectedTile))
-                   ? vec4(1.0, 0.0, 0.0, 1.0)
+                   ? vec4(0.25, 0.25, 1.0, 1.0)
                    : vec4(1.0, 1.0, 1.0, 1.0);
 
     vec2 worldPos = position + instancePosition;

@@ -19,12 +19,12 @@ namespace df {
         // Tutorial
         m_quests.push_back({0, "Foundation Stone", "Complete the tutorial", types::QuestGoalType::TUTORIAL, 1, 0, {1,3}, types::TileType::FOREST, 5, QuestState::Active});
 
-        // 1st line of quests (Expansión)
+        // 1st line of quests 
         m_quests.push_back({1, "New Frontiers", "Establish 3 settlements", types::QuestGoalType::SETTLEMENT, 3, -1, {2}, types::TileType::CLAY, 10, QuestState::Locked});
-        m_quests.push_back({2, "Royal Arteries", "Construct 2 paved roads", types::QuestGoalType::ROAD, 2 , 0, {6}, types::TileType::MOUNTAIN, 5, QuestState::Locked});
+        m_quests.push_back({2, "Royal Arteries", "Construct 2 new paved roads", types::QuestGoalType::ROAD, 2 , 0, {6}, types::TileType::MOUNTAIN, 5, QuestState::Locked});
         m_quests.push_back({6, "Imperial Reach", "Expand to 10 settlements", types::QuestGoalType::SETTLEMENT, 10, -1, {7}, types::TileType::MOUNTAIN, 5, QuestState::Locked});
-        m_quests.push_back({7, "The Grand Network", "Get 20 paved roads", types::QuestGoalType::ROAD, 20, 0, {-1}, types::TileType::FOREST, 30, QuestState::Locked});
-        // 2nd line of quests (Recursos y Supervivencia)
+        m_quests.push_back({7, "The Grand Network", "Get 20 paved roads", types::QuestGoalType::ROAD, 20, -1, {-1}, types::TileType::FOREST, 30, QuestState::Locked});
+        // 2nd line of quests 
         m_quests.push_back({3, "Woodland Harvest", "Collect 7 bundles of timber", types::QuestGoalType::FOREST, 7, 0, {4}, types::TileType::FIELD, 10, QuestState::Locked});
         m_quests.push_back({4, "Seasoned Veteran", "Endure the trials of 20 rounds", types::QuestGoalType::ROUNDS, 20, -1, {5}, types::TileType::GRASS, 5, QuestState::Locked});
         m_quests.push_back({5, "Stonemason's Pride", "Amass 30 slabs of stone", types::QuestGoalType::MOUNTAIN, 30, -1, {-1}, types::TileType::CLAY, 20, QuestState::Locked});
@@ -88,44 +88,75 @@ namespace df {
     }
 
     void QuestsSystem::notifyPlayer(int questId) {
+        if(questId == 10){
+            m_notificationSystem->showNotification("CONGRATULATIONS", "No more quests", {"Close"});
+            return;
+        }
+
         for (auto& q : m_quests) {
             if (q.id == questId) {
                 m_currentShowingQuestId = questId;
-                std::vector<std::string> buttons;
 
-                int remaining = q.goal_amount - q.progress;
-                if (remaining < 0) remaining = 0; 
-
-                std::string rewardName = resourceName(q.reward_resource);
-
-                std::string dynamicDesc = fmt::format(
-                    "\n{}\n\n"
-                    "Remaining: {}\n"
-                    "Reward: {} units of {}", 
-                    q.desc, 
-                    remaining, 
-                    q.reward_amount, 
-                    rewardName
-                );
-
-
-                if(q.goal_type==types::QuestGoalType::TUTORIAL){
-                    dynamicDesc = fmt::format(
-                        "\n{}\n\n"
-                        "Reward: {} units of {}", 
-                        q.desc, 
-                        q.reward_amount, 
-                        rewardName
-                    );
+                int visualIndex = 1;
+                for(const auto& checkQ : m_quests) {
+                    if (checkQ.id == q.id) break; 
+                    if (checkQ.state == QuestState::Active || checkQ.state == QuestState::Completed) {
+                        visualIndex++;
+                    }
                 }
-                
+                currentQuest = visualIndex;
+
+                std::string title = q.name;
+                std::string dynamicDesc;
+                std::vector<std::string> buttons;
                 
                 if (q.state == QuestState::Completed) {
-                    std::string btnLabel = fmt::format("Claim {} {}", q.reward_amount, rewardName);
-                    buttons.push_back(btnLabel);
-                    buttons.push_back("Next Quest");
-                } else {
-                    buttons = {"Close", "Next Quest"};
+                    dynamicDesc = fmt::format("Quest Completed! \nYou'll be rewarded with {} {}",q.reward_amount,resourceName(q.reward_resource));
+                    buttons = { "Claim" };
+                    
+                } 
+                else {
+                    buttons = { "Close" };
+                    
+                    int remaining = q.goal_amount - q.progress;
+                    if (remaining < 0) remaining = 0; 
+
+                    std::string rewardName = resourceName(q.reward_resource);
+
+                    dynamicDesc = fmt::format(
+                        "\n{}\n\n"
+                        "Remaining: {}\n"
+                        "Reward: {} units of {}\n\n"
+                        "--- Quest {} of {} ---\n", 
+                        q.desc, 
+                        remaining, 
+                        q.reward_amount,
+                        rewardName,
+                        currentQuest,
+                        activeQuests
+                    );
+
+
+                    if(q.goal_type==types::QuestGoalType::TUTORIAL){
+                        dynamicDesc = fmt::format(
+                            "\n{}\n\n"
+                            "Reward: {} units of {}\n\n"
+                            "--- Quest {} of {} ---\n", 
+                            q.desc,
+                            q.reward_amount,
+                            rewardName,
+                            currentQuest,
+                            activeQuests    
+                        );
+                        buttons = {
+                            "Close"
+                        };
+                    }
+                    
+                
+                    if (currentQuest < activeQuests) {
+                        buttons.insert(buttons.begin(), "Next Quest");
+                    } 
                 }
 
                 m_notificationSystem->showNotification(q.name, dynamicDesc, buttons);
@@ -139,13 +170,14 @@ namespace df {
     void QuestsSystem::claimQuest(int questId, Player* player,GameState* gameState) {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Completed) {
+                activeQuests--;
                 q.state = QuestState::Claimed;
-
+                m_currentShowingQuestId = -1; 
                 for (int nextId : q.unlocksIds) {
                     activateQuest(nextId, player, gameState);
                 }
                 
-                m_currentShowingQuestId = -1; 
+                
                 break;
             }
         }
@@ -154,6 +186,7 @@ namespace df {
     void QuestsSystem::activateQuest(int questId, Player* player, GameState* gameState) {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Locked) {
+                activeQuests++;
                 q.state = QuestState::Active;
                 if (q.progress == -1){
                     switch (q.goal_type) {
@@ -208,6 +241,11 @@ namespace df {
     void QuestsSystem::notifyNextActiveQuest() {
         if (m_quests.empty()) return;
 
+        if(activeQuests == 0){
+            notifyPlayer(10);
+            return;
+        }
+
         int currentIdx = -1;
         for (int i = 0; i < (int)m_quests.size(); ++i) {
             if (m_quests[i].id == m_currentShowingQuestId) {
@@ -216,15 +254,19 @@ namespace df {
             }
         }
 
-        for (int i = 1; i <= (int)m_quests.size(); ++i) {
-            int nextIdx = (currentIdx + i) % m_quests.size();
-            auto& q = m_quests[nextIdx];
+        for (int i = currentIdx+1; i < (int)m_quests.size(); ++i) {
+            auto& q = m_quests[i];
 
             if (q.state == QuestState::Active || q.state == QuestState::Completed) {
                 notifyPlayer(q.id);
+                currentQuest++;
                 return;
             }
         }
+        currentQuest = 1;
+        m_notificationSystem->close();
+        m_currentShowingQuestId = -1;
+
     }
 
     void QuestsSystem::reset(){

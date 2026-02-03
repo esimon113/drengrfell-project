@@ -20,8 +20,8 @@ namespace df {
 
 	void TradingSystem::showBuyResourcePopup() {
 		notificationSystem->showNotification(
-			"Which resource do you want to trade?",
-			"Select a resource:",
+			"Trade",
+			"Which resource do you want to buy? Select a resource:",
 			allResources);
 	}
 

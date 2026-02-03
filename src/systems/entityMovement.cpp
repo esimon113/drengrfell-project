@@ -2,17 +2,130 @@
 #include "application.h"
 
 namespace df {
-	EntityMovementSystem EntityMovementSystem::init(Registry* registry, GameState& gameState) noexcept {
-		EntityMovementSystem self;
-		self.registry = registry;
-		self.gameState = &gameState;
+	EntityMovementSystem::EntityMovementSystem(
+		Registry* registry,
+		const std::shared_ptr<GameState>& gameState,
+		const std::shared_ptr<AiSystem>& aiSystem
+	) : registry(registry), gameState(gameState), aiSystem(aiSystem) {
+		// The capturing of the this-pointer renders the former init-method invalid
+		if (!aiSystem) {
+			fmt::print("EntityMovementSystem::EntityMovementSystem: aiSystem is null");
+		}
+		aiSystem->getCommandRegistry().registerCommand(
+		"setMoveTarget",
+		[this](const BTContext& context, const BTF::Args& a) {
+			int target = glm::iround(BTF::getArg<double>(a, "id", 0.0));
+			this->setTarget(target, context.entity);
+			movementState = true;
+			targetSet = true;
+			fmt::println("Set move target of entity: {} to {}", static_cast<int>(context.entity), target);
+			return BTState::Success;
+		});
+		aiSystem->getCommandRegistry().registerCommand(
+		"getMapSize",
+		[this](BTContext& context, const BTF::Args& args) {
+			return BTF::store<BTNumber>(context, args, this->gameState->getMap().getTileCount());
+		});
+		aiSystem->getCommandRegistry().registerCommand(
+		"getExploredTiles",
+		[this](BTContext& context, const BTF::Args& args) {
+			// TODO: Get correct player id
+			Player* p = this->gameState->getPlayer(0);
+			if (p) {
+				const auto vec = p->getExploredTileIds();
+				auto arr = BTArray{};
+				arr.reserve(vec.size());
+				for (const auto& id : vec) {
+					BTValueType num = static_cast<BTNumber>(id);
+					arr.emplace_back(std::make_shared<BTValueType>(num));
+				}
+				return BTF::store<BTArray>(context, args, arr);
+			} else {
+				std::cerr << "Failed to get player" << std::endl;
+				return BTState::Failed;
+			}
+		});
+		aiSystem->getCommandRegistry().registerCommand(
+		"getUnexploredTiles",
+		[this](BTContext& context, const BTF::Args& args) {
+			// TODO: Get correct player id
+			Player* p = this->gameState->getPlayer(0);
+			if (p) {
+				auto tileCount = this->gameState->getMap().getTileCount();
 
-		return self;
+				std::vector<bool> explored(tileCount, false);
+				for (size_t id : p->getExploredTileIds()) {
+					explored[id] = true;
+				}
+
+				auto arr = BTArray{};
+				arr.reserve(tileCount);
+				for (size_t id = 0; id < tileCount; id++) {
+					if (!explored[id]) {
+						BTValueType num = static_cast<BTNumber>(id);
+						arr.emplace_back(std::make_shared<BTValueType>(num));
+					}
+				}
+				return BTF::store<BTArray>(context, args, arr);
+			} else {
+				std::cerr << "Failed to get player" << std::endl;
+				return BTState::Failed;
+			}
+		});
 	}
 
+	EntityMovementSystem::~EntityMovementSystem() {
+		aiSystem->getCommandRegistry().unregisterCommand("setMoveTarget");
+		aiSystem->getCommandRegistry().unregisterCommand("getMapSize");
+		aiSystem->getCommandRegistry().unregisterCommand("getExploredTiles");
+	}
+
+	unsigned EntityMovementSystem::getTileIDFromWorldPosition(const glm::vec2& worldPos) const noexcept{
+		const Graph& map = this->gameState->getMap();
+		const unsigned columns = map.getMapWidth();
+
+		const glm::ivec2 rowCol = RenderCommon::worldToRowColCoordinates(worldPos);
+		int col = rowCol.x;
+		int row = rowCol.y;
+
+		if(col<0 || row<0 || col>= static_cast<int>(columns)){
+			return 0;
+		}
+
+		return row*columns +col;
+
+	}
+
+
+	void EntityMovementSystem::updateTileAndDiscover(Entity entity, unsigned tileID) noexcept{
+		if (registry->tileID.has(entity)) {
+			registry->tileID.get(entity) = targetPositionTileID;
+		} else {
+			registry->tileID.emplace(entity, targetPositionTileID);
+		}
+
+		if (gameState) {
+			Player* playerPtr = gameState->getPlayer(0);
+			if (playerPtr) {
+				Player& player = *playerPtr;
+				player.exploreTile(tileID);
+				gameState->getMap().setRenderUpdateRequested(true);
+				fmt::println("Tile {} discovered!", tileID);
+			}
+		}
+
+		fmt::println("Hero destination: {},{} | Stored TileID: {}",
+						getTileWorldPosition(tileID).x,
+						getTileWorldPosition(tileID).y,
+						registry->tileID.get(entity));
+	}
+
+
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& targetPos, float deltaTime) noexcept {
-		if (!registry)
+		if (!registry) {
+			fmt::println("EntityMovementSystem::moveEntityTo: registry is null");
 			return;
+		}
 
 		auto& animComp = registry->animations.get(entity);
 		glm::vec2& currentPos = registry->positions.get(entity);
@@ -20,34 +133,17 @@ namespace df {
 
 		glm::vec2 direction = targetPos - currentPos;
 		float distance = glm::length(direction);
+
+		unsigned previousTileID = registry->tileID.has(entity) ? registry->tileID.get(entity) : 0;
+
 		// if we are already there
 		if (distance == 0.0f) {
 			moving = false;
 			movementState = false;
 			targetSet = false;
 			scale.x = 1.0f;
-
-			if (registry->tileID.has(entity)) {
-				registry->tileID.get(entity) = targetPositionTileID;
-			} else {
-				registry->tileID.emplace(entity, targetPositionTileID);
-			}
-
-			if (gameState) {
-				Player* playerPtr = gameState->getPlayer(0);
-				if (playerPtr) {
-					Player& player = *playerPtr;
-					player.exploreTile(targetPositionTileID);
-					gameState->getMap().setRenderUpdateRequested(true);
-					fmt::println("Tile {} discovered!", targetPositionTileID);
-				}
-			}
-
-			fmt::println("Hero destination: {},{} | Stored TileID: {}",
-						 getTileWorldPosition(targetPositionTileID).x,
-						 getTileWorldPosition(targetPositionTileID).y,
-						 registry->tileID.get(entity));
-			return;
+			updateTileAndDiscover(entity, targetPositionTileID);
+        	return;
 		}
 
 
@@ -99,6 +195,11 @@ namespace df {
 				animComp.anim.setCurrentFrameIndex(0);
 			}
 			currentPos += movement;
+
+			unsigned currentTileID = getTileIDFromWorldPosition(currentPos);
+			if (currentTileID != previousTileID && currentTileID != 0) {
+				updateTileAndDiscover(entity, currentTileID);
+			}
 		}
 	}
 

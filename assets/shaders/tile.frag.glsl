@@ -11,6 +11,9 @@ uniform int frames; // Number of animation frames (resp. sprites) per tile
 uniform sampler2DArray tileAtlas;
 
 void main() {
-    int sprite = (vertExplored * (vertType * frames)) + int(time * frames);
+	int frame = int(floor(time * frames)) % frames;
+	int sprite = vertExplored * vertType * frames + frame;
+
+    //int sprite = (vertExplored * (vertType * frames)) + int(time * frames);
     color = indicatorColor * texture(tileAtlas, vec3(uv.x, uv.y, sprite));
 }

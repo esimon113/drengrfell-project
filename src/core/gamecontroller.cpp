@@ -19,6 +19,7 @@
 #include "types.h"
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
+#include "eventPresentation.h"
 
 
 
@@ -69,46 +70,11 @@ namespace df {
 
 		// Changed in snow and rain
 		auto* WeatherSystem = this->registry->getSystem<df::RenderWeatherSystem>();
-		auto* tileSystem = this->registry->getSystem<RenderTilesSystem>();
+		//auto* tileSystem = this->registry->getSystem<RenderTilesSystem>();
 
-		if (WeatherSystem && tileSystem) {
-			std::uniform_int_distribution<int> weatherDist(0, 2); 
-			int change = weatherDist(this->rng);
+		WeatherSystem->randomizeWeather();
 
-			const float step = 0.2f;
-			const float maxIntensity = step * 3.0f; 
-			const float minIntensity = -step * 3.0f;
-
-			if (change == 1) {
-				if (WeatherSystem->getIntensity() >= maxIntensity) {
-
-				}
-				else{
-					WeatherSystem->increaseIntensity();
-				}
-				
-				fmt::println("[Weather] Intensity increased");
-			} else if (change == 0) {
-				if (WeatherSystem->getIntensity() <= minIntensity) {
-					
-				}
-				else{
-					WeatherSystem->decreaseIntensity();
-				}
-				fmt::println("[Weather] Intensity decreased");
-			}
-
-			float intensity = WeatherSystem->getIntensity();
-
-			const float snowThreshold = 0.4f; 
-			fmt::println("[Weather] Snow: {}", intensity);
-			if (intensity >= (snowThreshold - 0.1f)) {
-				tileSystem->updateTileAtlas(2); 
-			} else if ( intensity <= 0.1f) {
-				tileSystem->updateTileAtlas(1); 
-			}
-			
-		}
+		this->m_questsSystem->updateProgress(df::types::QuestGoalType::ROUNDS, 1);
 
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
@@ -171,6 +137,7 @@ namespace df {
 			auto& hazard = this->registry->hazards.get(e);
 			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
 			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
+			EventPresentationSystem* event = this->registry->getSystem<EventPresentationSystem>();
 
 			if (hazard.turnsLeft <= 0) {
 				fmt::println("[Hazard] {} encounter ended", hazardDefinition.name);
@@ -182,16 +149,18 @@ namespace df {
 				this->registry->hazards.remove(e);
 			} else if (hazard.turnsLeft == hazardDefinition.defaultRoundDuration) {
 				fmt::println("[Hazard] {} encountered. It is active for {} turns", hazardDefinition.name, hazard.turnsLeft);
-				notification->showNotification("You encountered a hazard",
-											   fmt::format(
-												   "A {} is preventing you from moving for {} turns\n"
-												   "Would you like to overcome the encounter by paying {} {} or wait?",
-												   hazardDefinition.name,
-												   hazard.turnsLeft,
-												   hazardDefinition.skipCost * hazard.turnsLeft,
-												   hazardDefinition.skipRessourceStr),
-											   {"Pay ressources",
-												"Wait"});
+				event->presentEvent("You encountered a hazard",
+									fmt::format(
+										"A {} is preventing you\n"
+										"from moving for {} turns.\n"
+										"Would you like to overcome the\n"
+										"encounter by paying {} {} or wait?",
+										hazardDefinition.name,
+										hazard.turnsLeft,
+										hazardDefinition.skipCost * hazard.turnsLeft,
+										hazardDefinition.skipRessourceStr),
+										{"Pay ressources","Wait"},
+									HazardDB::getEvent(hazardDefinition.hazardType));
 			} else {
 				fmt::println("[Hazard] {} encounter ongoing. It is still active for {} turns", hazardDefinition.name, hazard.turnsLeft);
 				notification->showNotification("Ongoing hazard",
@@ -864,7 +833,7 @@ namespace df {
 		}
 		if (!this->hasEnoughResources(*player, buildingCost)) {
 			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
-			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to upgrade this settlement.\n", {"Okay"});
 			return false;
 		}
 

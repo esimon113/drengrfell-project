@@ -71,6 +71,8 @@ namespace df {
             void notifyNextActiveQuest();
             const Quest* getQuestById(int id) const;
             int getCurrentShowingQuestId() const { return m_currentShowingQuestId; }
+            void setCurrentQuest(){ m_currentShowingQuestId = -1; currentQuest = 1;}
+
             const std::vector<Quest> getQuests () const { return m_quests;}
 
             //void loadQuests(const std::string& path);
@@ -80,6 +82,8 @@ namespace df {
             std::vector<Quest> m_quests;
             RenderNotificationSystem* m_notificationSystem = nullptr;
             int m_currentShowingQuestId = -1;
+            int activeQuests=1;
+            int currentQuest = 1;
     };
 
 }
