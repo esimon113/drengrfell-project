@@ -14,7 +14,8 @@ namespace df {
 
         m_quests.clear();
         // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress (-1 if must be updated during gameplay) | unblock id | Reward type | Reward | Initial state
-        loadQuests("../assets/jsons/quests.json");
+        auto path = assets::getAssetPath(assets::JsonFile::QUESTS);        
+        loadQuests(path);
     }
    
     void QuestsSystem::loadQuests(const std::string& path) {
