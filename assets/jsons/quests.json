@@ -100,7 +100,7 @@
     "name": "Pathfinder",
     "desc": "Map the surrounding wilderness by \ndiscovering 10 new tiles.",
     "goal_type": "DISCOVER",
-    "goal_amount": 20,
+    "goal_amount": 10,
     "progress": 0,
     "unlocks_ids": [9],
     "reward_resource": "MOUNTAIN",
@@ -110,13 +110,13 @@
   {
     "id": 9,
     "name": "World Mapper",
-    "desc": "Push the fog of war further and \nunveil in total 40 hidden territories.",
+    "desc": "Push the fog of war further and \nunveil in total 20 hidden territories.",
     "goal_type": "DISCOVER",
-    "goal_amount": 40,
+    "goal_amount": 20,
     "progress": -1,
     "unlocks_ids": [-1],
     "reward_resource": "FOREST",
     "reward_amount": 25,
-    "initial_state": "Active"
+    "initial_state": "Locked"
   }
 ]

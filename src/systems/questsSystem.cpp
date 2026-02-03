@@ -208,8 +208,8 @@ namespace df {
                             q.progress = gameState->getTurnCount();
                             break;
                         case types::QuestGoalType::DISCOVER:
-                            player = gameState->getPlayer(0); 
-                            q.progress =  static_cast<int>(player->getExploredTileIds().size());                           
+                            q.progress = player->retExploredCountNoWater(gameState->getMap());  
+                            fmt::println("Already diuscovered ", q.progress);
                             break;
 
                         case types::QuestGoalType::TUTORIAL:

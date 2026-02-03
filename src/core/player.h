@@ -8,6 +8,7 @@
 #include "settlement.h"
 #include "tile.h"
 #include "types.h"
+#include "graph.h"
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 #include "hero.h"
@@ -16,7 +17,7 @@ using json = nlohmann::json;
 
 
 namespace df {
-
+	class Graph;
 	class Player {
 	  private:
 		// We store IDs instead of references to respect ECS principles and serialize easily
@@ -65,6 +66,7 @@ namespace df {
 		bool isTileExplored(size_t tileId) const;
 		const std::vector<size_t>& getExploredTileIds() const;
 		void forgetExploredTiles();
+		int retExploredCountNoWater(const Graph& map) const;
 
 		size_t getPlayerId() const;
 		void setPlayerId(size_t newPlayerId);
