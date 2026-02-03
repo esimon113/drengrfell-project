@@ -13,57 +13,44 @@ namespace df {
         m_notificationSystem = notificationSys;
 
         m_quests.clear();
-
         // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress (-1 if must be updated during gameplay) | unblock id | Reward type | Reward | Initial state
-        
-        // Tutorial
-        m_quests.push_back({0, "Foundation Stone", "Complete the tutorial", types::QuestGoalType::TUTORIAL, 1, 0, {1,3}, types::TileType::FOREST, 5, QuestState::Active});
-
-        // 1st line of quests 
-        m_quests.push_back({1, "New Frontiers", "Establish 3 settlements", types::QuestGoalType::SETTLEMENT, 3, -1, {2}, types::TileType::CLAY, 10, QuestState::Locked});
-        m_quests.push_back({2, "Royal Arteries", "Construct 2 new paved roads", types::QuestGoalType::ROAD, 2 , 0, {6}, types::TileType::MOUNTAIN, 5, QuestState::Locked});
-        m_quests.push_back({6, "Imperial Reach", "Expand to 10 settlements", types::QuestGoalType::SETTLEMENT, 10, -1, {7}, types::TileType::MOUNTAIN, 5, QuestState::Locked});
-        m_quests.push_back({7, "The Grand Network", "Get 20 paved roads", types::QuestGoalType::ROAD, 20, -1, {-1}, types::TileType::FOREST, 30, QuestState::Locked});
-        // 2nd line of quests 
-        m_quests.push_back({3, "Woodland Harvest", "Collect 7 bundles of timber", types::QuestGoalType::FOREST, 7, 0, {4}, types::TileType::FIELD, 10, QuestState::Locked});
-        m_quests.push_back({4, "Seasoned Veteran", "Endure the trials of 20 rounds", types::QuestGoalType::ROUNDS, 20, -1, {5}, types::TileType::GRASS, 5, QuestState::Locked});
-        m_quests.push_back({5, "Stonemason's Pride", "Amass 30 slabs of stone", types::QuestGoalType::MOUNTAIN, 30, -1, {-1}, types::TileType::CLAY, 20, QuestState::Locked});
-
-
-        //loadQuests("../assets/jsons/quests.json");
-
-
+        auto path = assets::getAssetPath(assets::JsonFile::QUESTS);        
+        loadQuests(path);
     }
-
-
-    /*
-
-    JSON functions
-
-    
+   
     void QuestsSystem::loadQuests(const std::string& path) {
         std::ifstream file(path);
-        if (!file.is_open()) return;
+        if (!file.is_open()) {
+            fmt::println("Error: Could not open quest file at {}", path);
+            return;
+        }
+        try {
+            json data = json::parse(file);
+            m_quests.clear(); 
 
-        json data = json::parse(file);
-        m_quests.clear(); 
+            for (const auto& item : data) {
+                int id = item.value("id", -1);
+                std::string name = item.value("name", "Unnamed Quest");
+                std::string desc = item.value("desc", "");
+                int amount = item.value("goal_amount", 0);
+                int progress = item.value("progress", 0);
+                int rewardAmt = item.value("reward_amount", 0);
+                
+                std::vector<int> unlocks = item.value("unlocks_ids", std::vector<int>{});
 
-        for (const auto& item : data) {
-            Quest q;
-            q.id = item.value("id", -1);
-            q.name = item.value("name", "Misión");
-            q.goal_type = item.value("goal_type", "");
-            q.goal_amount = item.value("goal_amount", 0);
-            q.progress = 0;
-            q.unlocksId = item.value("unlocks_id", -1);
-            
-            std::string stateStr = item.value("initial_state", "Locked");
-            q.state = (stateStr == "Active") ? QuestState::Active : QuestState::Locked;
+                types::QuestGoalType gType = df::types::stringToGoalType(item.value("goal_type", "NONE"));
+                types::TileType rType = df::types::stringToTileType(item.value("reward_resource", "NONE"));
+                
+                std::string stateStr = item.value("initial_state", "Locked");
+                QuestState state = (stateStr == "Active") ? QuestState::Active : QuestState::Locked;
 
-            m_quests.push_back(q); 
+                m_quests.emplace_back(id, name, desc, gType, amount, progress, unlocks, rType, rewardAmt, state);
+            }
+        } catch (json::parse_error& e) {
+            fmt::println("JSON Parse Error: {}", e.what());
         }
     }
-    */
+    
 
     const Quest* QuestsSystem::getQuestById(int id) const {
         for (const auto& q : m_quests) {
@@ -88,7 +75,7 @@ namespace df {
     }
 
     void QuestsSystem::notifyPlayer(int questId) {
-        if(questId == 10){
+        if(questId == 100){
             m_notificationSystem->showNotification("CONGRATULATIONS", "No more quests", {"Close"});
             return;
         }
@@ -111,7 +98,7 @@ namespace df {
                 std::vector<std::string> buttons;
                 
                 if (q.state == QuestState::Completed) {
-                    dynamicDesc = fmt::format("Quest Completed! \nYou'll be rewarded with {} {}",q.reward_amount,resourceName(q.reward_resource));
+                    dynamicDesc = fmt::format("Quest Completed! \nYou'll be rewarded with {} {}",q.reward_amount,types::resourceName(q.reward_resource));
                     buttons = { "Claim" };
                     
                 } 
@@ -121,7 +108,7 @@ namespace df {
                     int remaining = q.goal_amount - q.progress;
                     if (remaining < 0) remaining = 0; 
 
-                    std::string rewardName = resourceName(q.reward_resource);
+                    std::string rewardName = types::resourceName(q.reward_resource);
 
                     dynamicDesc = fmt::format(
                         "\n{}\n\n"
@@ -221,6 +208,10 @@ namespace df {
                         case types::QuestGoalType::ROUNDS:
                             q.progress = gameState->getTurnCount();
                             break;
+                        case types::QuestGoalType::DISCOVER:
+                            q.progress = player->retExploredCountNoWater(gameState->getMap());  
+                            fmt::println("Already diuscovered ", q.progress);
+                            break;
 
                         case types::QuestGoalType::TUTORIAL:
                         case types::QuestGoalType::NONE:
@@ -242,7 +233,7 @@ namespace df {
         if (m_quests.empty()) return;
 
         if(activeQuests == 0){
-            notifyPlayer(10);
+            notifyPlayer(100);
             return;
         }
 

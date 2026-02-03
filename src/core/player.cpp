@@ -102,10 +102,26 @@ namespace df {
 		return productivityBuildingIds;
 	}
 
-	void Player::exploreTile(size_t tileId) {
+	bool Player::exploreTile(size_t tileId) {
 		if (!isTileExplored(tileId)) {
 			exploredTileIds.push_back(tileId);
+			return true;
 		}
+		return false;
+	}
+
+	int Player::retExploredCountNoWater(const Graph& map) const{
+		int count = 0;
+		
+		for (size_t tileId : exploredTileIds) {
+			const Tile* tile = map.getTile(tileId);
+			
+			if (tile && tile->getType() != types::TileType::WATER) {
+				count++;
+			}
+		}
+		
+		return count;
 	}
 
 	bool Player::isTileExplored(size_t tileId) const {

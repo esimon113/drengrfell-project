@@ -139,6 +139,7 @@ namespace df {
 		enum struct JsonFile {
 			WORLD_GENERATION_CONFIGURATION,
 			AI_BEHAVIOR_TREE_HERO,
+			QUESTS,
 			COUNT,
 		};
 
