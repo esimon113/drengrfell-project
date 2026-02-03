@@ -40,5 +40,7 @@ namespace df {
 		bool targetSet = false;
 		glm::vec2 targetPosition = glm::vec2(0.0f);
 		size_t targetPositionTileID{};
+		std::vector<size_t> currentPath;
+		size_t currentPathIndex = 0;
 	};
 } // namespace df

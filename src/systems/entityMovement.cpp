@@ -110,98 +110,98 @@ namespace df {
 				Player& player = *playerPtr;
 				player.exploreTile(tileID);
 				gameState->getMap().setRenderUpdateRequested(true);
-				fmt::println("Tile {} discovered!", tileID);
+				//fmt::println("Tile {} discovered!", tileID);
 			}
 		}
 
-		fmt::println("Hero destination: {},{} | Stored TileID: {}",
+		/* fmt::println("Hero destination: {},{} | Stored TileID: {}",
 						getTileWorldPosition(tileID).x,
 						getTileWorldPosition(tileID).y,
-						registry->tileID.get(entity));
+						registry->tileID.get(entity)); */
 	}
 
 
-	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& targetPos, float deltaTime) noexcept {
-		if (!registry) {
-			fmt::println("EntityMovementSystem::moveEntityTo: registry is null");
-			return;
-		}
+	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& /*notUsed*/, float deltaTime) noexcept {
+	if (!registry || currentPath.empty()) {
+		return;
+	}
 
-		auto& animComp = registry->animations.get(entity);
-		glm::vec2& currentPos = registry->positions.get(entity);
-		glm::vec2& scale = registry->scales.get(entity);
+	auto& animComp = registry->animations.get(entity);
+	glm::vec2& currentPos = registry->positions.get(entity);
+	glm::vec2& scale = registry->scales.get(entity);
 
-		glm::vec2 direction = targetPos - currentPos;
-		float distance = glm::length(direction);
+	if (currentPathIndex >= currentPath.size()) {
+		moving = false;
+		movementState = false;
+		targetSet = false;
+		animComp.currentType = Hero::AnimationType::Idle;
+		currentPath.clear();
+		currentPathIndex = 0;
+		return;
+	}
 
-		unsigned previousTileID = registry->tileID.has(entity) ? registry->tileID.get(entity) : 0;
+	size_t nextTileID = currentPath[currentPathIndex];
+	glm::vec2 nextTilePos = getTileWorldPosition(nextTileID);
 
-		// if we are already there
-		if (distance == 0.0f) {
+	glm::vec2 direction = nextTilePos - currentPos;
+	float distance = glm::length(direction);
+
+	unsigned previousTileID = registry->tileID.has(entity) ? registry->tileID.get(entity) : 0;
+
+	if (distance < 0.01f) {
+		registry->tileID.get(entity) = nextTileID;
+		updateTileAndDiscover(entity, nextTileID);
+
+		currentPathIndex++;
+
+		if (currentPathIndex >= currentPath.size()) {
 			moving = false;
 			movementState = false;
 			targetSet = false;
-			scale.x = 1.0f;
-			updateTileAndDiscover(entity, targetPositionTileID);
-        	return;
-		}
-
-
-		direction = glm::normalize(direction);
-		float speed = 1.5f; // speed in tiles per second
-		glm::vec2 movement = direction * speed * deltaTime;
-
-		moving = true;
-
-		if (direction.x > 0.0f) {
-			scale.x = 1.0f;
-		} else if (direction.x < 0.0f) {
-			scale.x = -1.0f;
-		}
-
-		if (glm::length(movement) >= distance) {
-			currentPos = targetPos;
-
 			animComp.currentType = Hero::AnimationType::Idle;
 			animComp.anim.setCurrentFrameIndex(0);
-			moving = false;
-			movementState = false;
-			targetSet = false;
 
-			if (registry->tileID.has(entity)) {
-				registry->tileID.get(entity) = targetPositionTileID;
-			} else {
-				registry->tileID.emplace(entity, targetPositionTileID);
-			}
+			currentPath.clear();
+			currentPathIndex = 0;
 
-			if (gameState) {
-				Player* playerPtr = gameState->getPlayer(0);
-				if (playerPtr) {
-					Player& player = *playerPtr;
-					player.exploreTile(targetPositionTileID);
-					gameState->getMap().setRenderUpdateRequested(true);
-					fmt::println("Tile {} discovered!", targetPositionTileID);
-				}
-			}
+			fmt::println(
+				"[PATH] Entity {} reached final target tile {}",
+				static_cast<int>(entity),
+				nextTileID
+			);
+			return;
+		}
+		return;
+	}
 
-			fmt::println("Hero destination: {},{} | Stored TileID: {}",
-						 getTileWorldPosition(targetPositionTileID).x,
-						 getTileWorldPosition(targetPositionTileID).y,
-						 registry->tileID.get(entity));
+	direction = glm::normalize(direction);
+	float speed = 1.5f; // speed in tiles per second
+	glm::vec2 movement = direction * speed * deltaTime;
 
-		} else {
-			if (animComp.currentType == Hero::AnimationType::Idle) {
-				animComp.currentType = Hero::AnimationType::Run;
-				animComp.anim.setCurrentFrameIndex(0);
-			}
-			currentPos += movement;
+	moving = true;
 
-			unsigned currentTileID = getTileIDFromWorldPosition(currentPos);
-			if (currentTileID != previousTileID && currentTileID != 0) {
-				updateTileAndDiscover(entity, currentTileID);
-			}
+	if (direction.x > 0.0f)
+		scale.x = 1.0f;
+	else if (direction.x < 0.0f)
+		scale.x = -1.0f;
+
+	if (animComp.currentType == Hero::AnimationType::Idle) {
+		animComp.currentType = Hero::AnimationType::Run;
+		animComp.anim.setCurrentFrameIndex(0);
+	}
+
+	if (glm::length(movement) >= distance) {
+		currentPos = nextTilePos;
+	} else {
+		currentPos += movement;
+		}
+
+	unsigned currentTileID = getTileIDFromWorldPosition(currentPos);
+	if (currentTileID != previousTileID && currentTileID != 0) {
+		updateTileAndDiscover(entity, currentTileID);
 		}
 	}
+
 
 	void EntityMovementSystem::toggleMovementState() noexcept {
 		movementState = !movementState;
@@ -221,7 +221,20 @@ namespace df {
 			targetSet = true;
 			targetPositionTileID = currentPosTileId;
 			fmt::println("Target deselected (same tile clicked twice)");
+			currentPath.clear();
+			currentPathIndex = 0;
 			return;
+		}
+
+		const Graph& map = gameState->getMap();
+		currentPath = map.dijkstraPath(currentPosTileId, id);
+		currentPathIndex = 0;
+
+		if (!currentPath.empty()) {
+			targetPosition = getTileWorldPosition(currentPath.front());
+			currentPathIndex = 0;
+		} else {
+			targetPosition = getTileWorldPosition(id);
 		}
 
 		targetPosition = getTileWorldPosition(id);

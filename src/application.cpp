@@ -424,6 +424,35 @@ namespace df {
 		// lets the hero spawn with on a random Tile (water excluded)
 		spawnHero();
 
+		const Graph& map = gameState->getMap();
+		size_t testId = registry->tileID.get(registry->animations.entities.front());
+		auto heroTile = map.getTile(testId);
+
+		auto reachable = map.dijkstra<Tile>(*heroTile);
+
+		fmt::println(
+			"[DIJKSTRA TEST] Hero tile {} reaches {} tiles",
+			testId,
+			reachable.size());
+
+		// Test 1: Pfad zu Tile 18
+		auto pathTo18 = gameState->getMap().dijkstraPath(testId, 18);
+		fmt::println("[DIJKSTRA PATH TEST] Hero {} -> Tile 18 | Path length: {}", testId, pathTo18.size());
+		fmt::print("Path: ");
+		for (auto id : pathTo18) {
+			fmt::print("{} ", id);
+		}
+		fmt::println(""); 
+
+		// Test 2: Pfad zu Tile 81
+		auto pathTo81 = gameState->getMap().dijkstraPath(testId, 81);
+		fmt::println("[DIJKSTRA PATH TEST] Hero {} -> Tile 81 | Path length: {}", testId, pathTo81.size());
+		fmt::print("Path: ");
+		for (auto id : pathTo81) {
+			fmt::print("{} ", id);
+		}
+		fmt::println(""); 
+		
 
 		// 		// This is only for DEBUGGING purposes:
 		// #if defined(__unix__) || defined(__linux__)
