@@ -90,7 +90,10 @@ namespace df {
 		if (!success) {
 			fmt::println("Not enough {} to trade!", payResource);
 			selectedResource.clear();
-			showBuyResourcePopup();
+			notificationSystem->showNotification(
+				"Trade failed",
+				fmt::format("You do not have enough {}.", payResource),
+				{"OK"});
 			return;
 		}
 
