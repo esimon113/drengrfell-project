@@ -15,7 +15,11 @@ uniform int selectedTile;
 
 void main() {
 	int frame = int(floor(time * frames)) % frames;
-	int sprite = vertExplored * vertType * frames + frame;
+	int renderExplored = vertExplored;
+	if( vertType == 1){
+		renderExplored = 1;
+	}
+	int sprite = renderExplored * vertType * frames + frame;
 
 	vec4 baseColor = indicatorColor * texture(tileAtlas, vec3(uv.x, uv.y, sprite));
 

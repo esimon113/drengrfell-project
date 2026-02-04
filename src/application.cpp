@@ -502,9 +502,7 @@ namespace df {
 					size_t tileId = row * width + col;
 					const TileHandle tile = gameState->getMap().getTile(tileId);
 
-					if (tile && tile->getType() == types::TileType::WATER) {
-						gameState->getPlayer(0)->exploreTile(tileId);
-					} else if (tile && tile->getType() == types::TileType::ICE) {
+					if (tile && tile->getType() == types::TileType::ICE) {
 						gameState->getPlayer(0)->exploreTile(tileId);
 					}
 				}
