@@ -14,14 +14,13 @@ namespace df {
 		if (kind == "none") {
 			if (j.size() == 1) {
 				// Assume shorthand function
-				for (auto& [name, args] : j.items()) {
-					auto ptr = std::make_shared<BTFunction>();
-					if (ptr->deserializeInplaceCompact(j.value(name, json::object()), c, name.starts_with("!") ? name.substr(1) : name)) {
-						return ptr;
-					} else {
-						std::cerr << "[AI Error]: Missing kind. Assumed shorthand function. In: " << j << std::endl;
-						return nullptr;
-					}
+				const auto& [name, args] = *j.items().begin();
+				auto ptr = std::make_shared<BTFunction>();
+				if (ptr->deserializeInplaceCompact(j.value(name, json::object()), c, name)) {
+					return ptr;
+				} else {
+					std::cerr << "[AI Error]: Missing kind. Assumed shorthand function. In: " << j << std::endl;
+					return nullptr;
 				}
 			}
 			std::cerr << "[AI Error]: Missing kind. In: " << j << std::endl;
