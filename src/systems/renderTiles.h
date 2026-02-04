@@ -29,9 +29,15 @@ namespace df {
 
 		// Render tile id. 0 = no tile
 		unsigned getTileIdAtPosition(int x, int y) noexcept;
+		void setPath(std::vector<size_t> path) {
+			currentPath = path;
+			updateRequired = true;
+		};
 
 		// Map tile id. Equal to index in Graph::tiles. -1 = no tile / error.
 		[[nodiscard]] int tileIdToMapId(unsigned tileId) const noexcept;
+
+		size_t mapIdToTileId(size_t mapId) const noexcept;
 
 		[[nodiscard]] int getMapIdAtMouse() noexcept;
 
@@ -52,6 +58,7 @@ namespace df {
 		}
 
 		int selectedTile = -1;
+		std::vector<size_t> currentPath = {};
 
 	  private:
 		Registry* registry = nullptr;
@@ -80,6 +87,7 @@ namespace df {
 			std::int32_t padding;
 			std::int32_t explored; // 0 = unexplored, 1 = explored
 			std::uint32_t index;   // used for mouse picking
+			std::int32_t onPath;	//used for highlighting the hero path
 		};
 
 		std::vector<TileVertex> tileMesh;

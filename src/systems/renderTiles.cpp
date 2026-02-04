@@ -83,6 +83,12 @@ namespace df {
 		glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, index));
 		glVertexAttribDivisor(5, 1);
 
+		// layout(location = 6) in uint onPath;
+		glEnableVertexAttribArray(6);
+		glVertexAttribIPointer(6, 1, GL_INT, sizeof(TileInstance), (void*)offsetof(TileInstance, onPath));
+		glVertexAttribDivisor(6, 1);
+
+
 		glBindVertexArray(0);
 	}
 
@@ -109,6 +115,14 @@ namespace df {
 		auto tileInstanceResult = makeTileInstances(map.getTiles(), static_cast<int>(this->tileColumns), player);
 		if (tileInstanceResult.isOk()) {
 			this->tileInstances = tileInstanceResult.unwrap<>();
+
+			// Mark tiles on the hero path
+			for (size_t mapId : currentPath) {
+				size_t tileId = mapIdToTileId(mapId);
+				if (tileId < tileInstances.size()) {
+					tileInstances[tileId].onPath = 1;
+				}
+			}
 		} else {
 			return Err(tileInstanceResult.unwrapErr());
 		}
@@ -188,6 +202,13 @@ namespace df {
 		}
 
 		return -1;
+	}
+
+	size_t RenderTilesSystem::mapIdToTileId(size_t mapId) const noexcept {
+		const size_t row = mapId / this->tileColumns;
+		const size_t col = mapId % this->tileColumns;
+
+		return (this->tileRows - 1 - row) * this->tileColumns + col;
 	}
 
 
@@ -414,7 +435,7 @@ namespace df {
 			for (int column = 0; column < columns; column++) {
 				const glm::vec2 position = RenderCommon::rowColToWorldCoordinates(column, row);
 				const TileHandle tile = tiles[row * columns + column].get();
-				instances.push_back({position, static_cast<int>(tile->getType()), 0, player == nullptr, index});
+				instances.push_back({position, static_cast<int>(tile->getType()), 0, player == nullptr, index, 0});
 				index++;
 			}
 		}
