@@ -109,27 +109,30 @@ namespace df {
 			Player* playerPtr = gameState->getPlayer(0);
 			auto* quests = registry->getSystem<QuestsSystem>();
 			if (playerPtr && quests) {
-				if (playerPtr->exploreTile(tileID)) {
-					gameState->getMap().setRenderUpdateRequested(true);
-					fmt::println("New Tile {} discovered!", tileID);
-					quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
-				}
-			}
-			auto tile = gameState->getMap().getTile(tileID); 
-			if (tile) {
-				types::TileType currentType = tile->getType();
-				if (currentType == types::TileType::WATER) {
-					if (animComp.currentType != Hero::AnimationType::Swim) {
-						animComp.currentType = Hero::AnimationType::Swim;
-						animComp.anim.setCurrentFrameIndex(0);
+				auto tile = gameState->getMap().getTile(tileID); 
+				if (tile) {
+					types::TileType currentType = tile->getType();
+
+					if (playerPtr->exploreTile(tileID) && currentType != types::TileType::WATER) {
+						gameState->getMap().setRenderUpdateRequested(true);
+						fmt::println("New Tile {} discovered!", tileID);
+						quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
 					}
-				} else {
-					if (animComp.currentType != Hero::AnimationType::Run) {
-						animComp.currentType = Hero::AnimationType::Run;
-						animComp.anim.setCurrentFrameIndex(0);
+					if (currentType == types::TileType::WATER) {
+						if (animComp.currentType != Hero::AnimationType::Swim) {
+							animComp.currentType = Hero::AnimationType::Swim;
+							animComp.anim.setCurrentFrameIndex(0);
+						}
+					} else {
+						if (animComp.currentType != Hero::AnimationType::Run) {
+							animComp.currentType = Hero::AnimationType::Run;
+							animComp.anim.setCurrentFrameIndex(0);
+						}
 					}
 				}
+				
 			}
+			
 
 			/* fmt::println("Hero destination: {},{} | Stored TileID: {}",
 							getTileWorldPosition(tileID).x,
@@ -213,15 +216,15 @@ namespace df {
 					Player* playerPtr = gameState->getPlayer(0);
 					auto* quests = registry->getSystem<QuestsSystem>();
 					if (playerPtr && quests) {
-						if (playerPtr->exploreTile(targetPositionTileID)) { 
-							gameState->getMap().setRenderUpdateRequested(true);
-							fmt::println("New Tile {} discovered!", targetPositionTileID);
-							quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
-						}
-
 						auto questCheckTile = gameState->getMap().getTile(targetPositionTileID);
 						if (questCheckTile) {
 							types::TileType currentType = questCheckTile->getType();
+							if (playerPtr->exploreTile(targetPositionTileID) && currentType != types::TileType::WATER) { 
+								gameState->getMap().setRenderUpdateRequested(true);
+								fmt::println("New Tile {} discovered!", targetPositionTileID);
+								quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+							}
+							
 							if (currentType == types::TileType::ICE) {
 								quests->updateProgress(types::QuestGoalType::ICE, 1);
 							}
