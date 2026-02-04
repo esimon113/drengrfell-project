@@ -1,7 +1,6 @@
 #include "renderNotification.h"
 
 namespace df {
-
 	RenderNotificationSystem RenderNotificationSystem::init(Window* window, Registry* registry) noexcept {
 		RenderNotificationSystem self;
 		self.window = window;
