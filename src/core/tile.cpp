@@ -92,7 +92,7 @@ namespace df {
 			cost = 2.0;
 			break;
 		case types::TileType::WATER:
-			cost =50.0;
+			cost =5.0;
 			break;
 		default:
 			cost = 1.0;

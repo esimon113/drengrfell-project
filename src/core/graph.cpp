@@ -875,7 +875,7 @@ namespace df {
 					continue;
 
 				double cost = neighborTile->getMovementCost();
-				if (player && !player->isTileExplored(neighborId)) {
+				if (player && !player->isTileExplored(neighborId) && neighborTile->getType() != types::TileType::WATER) {
 					cost = 2; // Penalty for undiscovered tiles
 				}
 
