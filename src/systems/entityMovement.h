@@ -25,6 +25,7 @@ namespace df {
 		bool getMovementState() noexcept { return movementState; };
 		bool isEntityMoving() const noexcept { return moving; }
 		bool isTargetSet() const noexcept { return targetSet; }
+		std::vector<size_t> getCurrentPath() const noexcept { return currentPath; };
 
 		glm::vec2 getTargetPosition() const noexcept { return targetPosition; }
 		void setTarget(const size_t id, Entity entity) noexcept;

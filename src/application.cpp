@@ -927,6 +927,8 @@ namespace df {
 						//  TODO: For multiplayer use hero of active player
 						Entity hero = registry->animations.entities.front();
 						movementSystem->setTarget(mapId, hero);
+						auto path = movementSystem->getCurrentPath();
+						render.renderTilesSystem.setPath(movementSystem->getCurrentPath());
 					}
 				}
 
