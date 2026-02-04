@@ -53,19 +53,23 @@ namespace df {
 
 
 	float Tile::getPotencyProbability(types::TilePotency currPotency) const {
-		switch (currPotency) { // TODO: make probabilities configurable
-		case types::TilePotency::LOW:
-			return 0.2f;
-		case types::TilePotency::MEDIUMLOW:
-			return 0.35f;
-		case types::TilePotency::MEDIUM:
-			return 0.5f;
-		case types::TilePotency::MEDIUMHIGH:
-			return 0.7f;
-		case types::TilePotency::HIGH:
-			return 0.9f;
-		default:
-			return 0.0f;
+		switch (currPotency) { 
+			case types::TilePotency::LOW:
+				return 0.15f; 
+			case types::TilePotency::MEDIUMLOW:
+				return 0.30f;
+			case types::TilePotency::MEDIUM:
+				return 0.45f;
+			case types::TilePotency::MEDIUMHIGH:
+				return 0.60f;
+			case types::TilePotency::HIGH:
+				return 0.75f;
+			case types::TilePotency::VERYHIGH:
+				return 0.90f;
+			case types::TilePotency::ULTRA:
+				return 1.0f; 
+			default:
+				return 0.0f;
 		}
 	}
 
@@ -104,7 +108,7 @@ namespace df {
 	bool Tile::isResourceTile() const {
 		switch (this->type) {
 		case types::TileType::EMPTY:
-		case types::TileType::WATER: // TODO: discuss: maybe use water to get resource fish?!
+		case types::TileType::WATER:
 		case types::TileType::ICE:
 		case types::TileType::COUNT:
 			return false;
@@ -134,8 +138,8 @@ namespace df {
 	types::TilePotency Tile::getEffectivePotency() const {
 		int effective = static_cast<int>(basePotency) + weatherModifier;
 		
-		if (effective < 1) effective = 1;
-		if (effective > 5) effective = 5;
+		if (effective < 0) effective = 0;
+    	if (effective > 6) effective = 6;
 		
 		return static_cast<types::TilePotency>(effective);
 	}

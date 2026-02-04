@@ -806,7 +806,7 @@ namespace df {
 		df::types::TilePotency next = df::types::getNextPotency(current);
 		if (current != next) {
 			tile->setPotency(next); 
-			fmt::println("Productivity increased! Tile {} is now {}", tile->getId(), df::types::potencyToString(next));
+			//fmt::println("Productivity increased! Tile {} is now {}", tile->getId(), df::types::potencyToString(next));
 		}
 
 		return true;

@@ -57,7 +57,7 @@ namespace df {
 				}
 
 				size_t id = row * columns + column;
-				tiles.emplace_back(id, static_cast<types::TileType>(type), types::TilePotency::MEDIUM);
+				tiles.emplace_back(id, static_cast<types::TileType>(type), types::TilePotency::MEDIUMLOW);
 			}
 		}
 		return tiles;
