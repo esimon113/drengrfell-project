@@ -103,6 +103,7 @@ namespace df {
 		} else {
 			registry->tileID.emplace(entity, targetPositionTileID);
 		}
+		auto& animComp = registry->animations.get(entity);
 
 		if (gameState) {
 			Player* playerPtr = gameState->getPlayer(0);
@@ -113,11 +114,20 @@ namespace df {
 					fmt::println("New Tile {} discovered!", tileID);
 					quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
 				}
-				if (playerPtr) {
-					Player& player = *playerPtr;
-					player.exploreTile(tileID);
-					gameState->getMap().setRenderUpdateRequested(true);
-					// fmt::println("Tile {} discovered!", tileID);
+			}
+			auto tile = gameState->getMap().getTile(tileID); 
+			if (tile) {
+				types::TileType currentType = tile->getType();
+				if (currentType == types::TileType::WATER) {
+					if (animComp.currentType != Hero::AnimationType::Swim) {
+						animComp.currentType = Hero::AnimationType::Swim;
+						animComp.anim.setCurrentFrameIndex(0);
+					}
+				} else {
+					if (animComp.currentType != Hero::AnimationType::Run) {
+						animComp.currentType = Hero::AnimationType::Run;
+						animComp.anim.setCurrentFrameIndex(0);
+					}
 				}
 			}
 
@@ -143,103 +153,110 @@ namespace df {
 	}
 
 	void EntityMovementSystem::moveEntityTo(Entity entity, const glm::vec2& /*notUsed*/, float deltaTime) noexcept {
-	if (!registry) {
-		return;
-	}
+		if (!registry) {
+			return;
+		}
 
-	auto& animComp = registry->animations.get(entity);
-	glm::vec2& currentPos = registry->positions.get(entity);
-	glm::vec2& scale = registry->scales.get(entity);
-
-	if (currentPathIndex >= currentPath.size()) {
-		moving = false;
-		movementState = false;
-		targetSet = false;
-		animComp.currentType = Hero::AnimationType::Idle;
-		currentPath.clear();
-		currentPathIndex = 0;
-		return;
-	}
-
-	size_t nextTileID = currentPath[currentPathIndex];
-	glm::vec2 nextTilePos = getTileWorldPosition(nextTileID);
-
-	glm::vec2 direction = nextTilePos - currentPos;
-	float distance = glm::length(direction);
-
-	unsigned previousTileID = registry->tileID.has(entity) ? registry->tileID.get(entity) : 0;
-
-	if (distance < 0.01f) {
-		registry->tileID.get(entity) = nextTileID;
-		updateTileAndDiscover(entity, nextTileID);
-
-		currentPathIndex++;
-		pathT = 0.0f;
+		auto& animComp = registry->animations.get(entity);
+		glm::vec2& currentPos = registry->positions.get(entity);
+		glm::vec2& scale = registry->scales.get(entity);
+		 
 
 		if (currentPathIndex >= currentPath.size()) {
 			moving = false;
 			movementState = false;
 			targetSet = false;
-			animComp.currentType = Hero::AnimationType::Idle;
-			animComp.anim.setCurrentFrameIndex(0);
-
+			//animComp.currentType = Hero::AnimationType::Idle;
 			currentPath.clear();
 			currentPathIndex = 0;
+			return;
+		}
 
-			if (gameState) {
-				Player* playerPtr = gameState->getPlayer(0);
-				auto* quests = registry->getSystem<QuestsSystem>();
-				if (playerPtr && quests) {
-					if (playerPtr->exploreTile(targetPositionTileID)) { 
-						gameState->getMap().setRenderUpdateRequested(true);
-						fmt::println("New Tile {} discovered!", targetPositionTileID);
-						quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+		size_t nextTileID = currentPath[currentPathIndex];
+		glm::vec2 nextTilePos = getTileWorldPosition(nextTileID);
+
+		glm::vec2 direction = nextTilePos - currentPos;
+		float distance = glm::length(direction);
+
+		unsigned previousTileID = registry->tileID.has(entity) ? registry->tileID.get(entity) : 0;
+
+		if (distance < 0.01f) {
+			registry->tileID.get(entity) = nextTileID;
+			updateTileAndDiscover(entity, nextTileID);
+
+			currentPathIndex++;
+			pathT = 0.0f;
+
+			if (currentPathIndex >= currentPath.size()) {
+				moving = false;
+				movementState = false;
+				targetSet = false;
+				auto tile = gameState->getMap().getTile(targetPositionTileID);
+				if (tile) {
+					types::TileType currentType = tile->getType();
+					if (currentType == types::TileType::WATER) {
+						if (animComp.currentType != Hero::AnimationType::Swim) {
+							animComp.currentType = Hero::AnimationType::Swim;
+							animComp.anim.setCurrentFrameIndex(0);
+						}
+					} else {
+						animComp.currentType = Hero::AnimationType::Idle;
+						animComp.anim.setCurrentFrameIndex(0);
 					}
+				}
+				animComp.anim.setCurrentFrameIndex(0);
 
-					auto tile = gameState->getMap().getTile(targetPositionTileID);
-					if (tile) {
-						types::TileType currentType = tile->getType();
-						
-						if (currentType == types::TileType::ICE) {
-							fmt::println("Player is standing on ICE! Updating quest...");
-							quests->updateProgress(types::QuestGoalType::ICE, 1);
+				currentPath.clear();
+				currentPathIndex = 0;
+
+				if (gameState) {
+					Player* playerPtr = gameState->getPlayer(0);
+					auto* quests = registry->getSystem<QuestsSystem>();
+					if (playerPtr && quests) {
+						if (playerPtr->exploreTile(targetPositionTileID)) { 
+							gameState->getMap().setRenderUpdateRequested(true);
+							fmt::println("New Tile {} discovered!", targetPositionTileID);
+							quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+						}
+
+						auto tile = gameState->getMap().getTile(targetPositionTileID);
+						if (tile) {
+							types::TileType currentType = tile->getType();
+							if (currentType == types::TileType::ICE) {
+								quests->updateProgress(types::QuestGoalType::ICE, 1);
+							}
 						}
 					}
 				}
+				return;
 			}
 			return;
 		}
-		return;
-	}
 
-	if (pathT == 0.0f) {
-		bezierP0 = currentPos;
-		bezierP2 = nextTilePos;
-		bezierP1 = computeControlPoint(bezierP0, bezierP2);
-	}
+		if (pathT == 0.0f) {
+			bezierP0 = currentPos;
+			bezierP2 = nextTilePos;
+			bezierP1 = computeControlPoint(bezierP0, bezierP2);
+		}
 
-	pathT += deltaTime * speed;
-	if (pathT > 1.0f)
-		pathT = 1.0f;
-	glm::vec2 nextPos = quadraticBezier(bezierP0, bezierP1, bezierP2, pathT);
-	glm::vec2 movement = nextPos - currentPos;
-	currentPos = nextPos;
+		pathT += deltaTime * speed;
+		if (pathT > 1.0f)
+			pathT = 1.0f;
+		glm::vec2 nextPos = quadraticBezier(bezierP0, bezierP1, bezierP2, pathT);
+		glm::vec2 movement = nextPos - currentPos;
+		currentPos = nextPos;
 
-	moving = true;
+		moving = true;
 
-	if (movement.x > 0.0f)
-		scale.x = 1.0f;
-	else if (movement.x < 0.0f)
-		scale.x = -1.0f;
+		if (movement.x > 0.0f)
+			scale.x = 1.0f;
+		else if (movement.x < 0.0f)
+			scale.x = -1.0f;
 
-	if (animComp.currentType == Hero::AnimationType::Idle) {
-		animComp.currentType = Hero::AnimationType::Run;
-		animComp.anim.setCurrentFrameIndex(0);
-	}
 
-	unsigned currentTileID = getTileIDFromWorldPosition(currentPos);
-	if (currentTileID != previousTileID && currentTileID != 0) {
-		updateTileAndDiscover(entity, currentTileID);
+		unsigned currentTileID = getTileIDFromWorldPosition(currentPos);
+		if (currentTileID != previousTileID && currentTileID != 0) {
+			updateTileAndDiscover(entity, currentTileID);
 		}
 	}
 
