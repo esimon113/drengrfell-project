@@ -39,6 +39,7 @@ namespace df {
 		const std::vector<size_t>& getVisibleForPlayers() const { return this->visibleForPlayers; }
 		void setVisibleForPlayers(const std::vector<size_t>& playerIds) { this->visibleForPlayers = playerIds; }
 		void addVisibleForPlayers(size_t playerId) { this->visibleForPlayers.push_back(playerId); }
+		double getMovementCost() const noexcept;
 
 		float getRangeFactor() const { return this->rangeFactor; }
 		void setRangeFactor(float range) { this->rangeFactor = range; }

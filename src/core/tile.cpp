@@ -69,6 +69,37 @@ namespace df {
 		}
 	}
 
+	double Tile::getMovementCost() const noexcept {
+		double cost;
+
+		switch (type) {
+		case types::TileType::GRASS:
+			cost = 1.0;
+			break;
+		case types::TileType::FIELD:
+			cost = 1.0;
+			break;
+		case types::TileType::FOREST:
+			cost = 1.5;
+			break;
+		case types::TileType::CLAY:
+			cost = 1.0;
+			break;
+		case types::TileType::ICE:
+			cost = 2.0;
+			break;
+		case types::TileType::MOUNTAIN:
+			cost = 2.0;
+			break;
+		case types::TileType::WATER:
+			cost = 5.0;
+			break;
+		default:
+			cost = 1.0;
+		}
+		return cost;
+	}
+
 
 	bool Tile::isResourceTile() const {
 		switch (this->type) {
