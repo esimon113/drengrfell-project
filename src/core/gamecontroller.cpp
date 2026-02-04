@@ -1123,12 +1123,8 @@ namespace df {
 		const Quest* q = quests->getQuestById(questId);
 
 		if (q && q->state == QuestState::Completed) {
-
 			player->addResources(q->reward_resource, q->reward_amount);
-
 			quests->claimQuest(questId, player, &gameState);
-
-			fmt::println("Reward given to the  player: {} units of type {}", q->reward_amount, (int)q->reward_resource);
 		}
 	}
 

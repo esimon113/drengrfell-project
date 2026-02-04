@@ -76,7 +76,7 @@ namespace df {
 
     void QuestsSystem::notifyPlayer(int questId) {
         if(questId == 100){
-            m_notificationSystem->showNotification("CONGRATULATIONS", "No more quests", {"Close"});
+            m_notificationSystem->showNotification("CONGRATULATIONS", "You have been awarded with 5 points.\nNo more quests", {"Close"});
             return;
         }
 
@@ -229,11 +229,19 @@ namespace df {
         }
     }
 
-    void QuestsSystem::notifyNextActiveQuest() {
+    void QuestsSystem::notifyNextActiveQuest(Player* player) {
         if (m_quests.empty()) return;
 
         if(activeQuests == 0){
-            notifyPlayer(100);
+            if (player) {
+            const int COMPLETION_BONUS = 5;
+            player->addHeroPoints(COMPLETION_BONUS);
+            
+            fmt::println("[QuestsSystem] All quests finished! Player {} awarded {} points.", 
+                         player->getId(), COMPLETION_BONUS);
+            }
+
+            notifyPlayer(100); 
             return;
         }
 
