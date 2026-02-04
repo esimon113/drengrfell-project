@@ -33,6 +33,11 @@ namespace df {
 			currentPath = path;
 			updateRequired = true;
 		};
+		void setSelectedTile(int tile) {
+			selectedTile = tile;
+			if (tile == -1)
+				currentPath = {};
+		}
 
 		// Map tile id. Equal to index in Graph::tiles. -1 = no tile / error.
 		[[nodiscard]] int tileIdToMapId(unsigned tileId) const noexcept;

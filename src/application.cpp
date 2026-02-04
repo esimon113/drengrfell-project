@@ -272,7 +272,7 @@ namespace df {
 						Entity hero = registry->animations.entities.front();
 						movementSystem->moveEntityTo(hero, movementSystem->getTargetPosition(), delta_time);
 						if (!movementSystem->getMovementState()) {
-							render.renderTilesSystem.selectedTile = -1; // remove tile highlighting after hero arrived
+							render.renderTilesSystem.setSelectedTile(-1); // remove tile highlighting after hero arrived
 						}
 					} else {
 						fmt::println("No hero entity available!");
