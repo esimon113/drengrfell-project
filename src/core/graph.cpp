@@ -876,7 +876,7 @@ namespace df {
 
 				double cost = neighborTile->getMovementCost();
 				if (player && !player->isTileExplored(neighborId)) {
-					cost *= 1.5; // Penalty for undiscovered tiles
+					cost = 2; // Penalty for undiscovered tiles
 				}
 
 				double alt = dist + cost; 
