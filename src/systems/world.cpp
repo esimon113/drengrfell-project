@@ -282,7 +282,7 @@ namespace df {
 				} else {
 					map.regenerate(worldGenConfResult.unwrap<>());
 				}
-
+				/*
 				if (Player* player = this->gameState->getPlayer(0)) {
 					const int width = map.getMapWidth();
 					const int height = map.getTileCount() / width;
@@ -295,7 +295,7 @@ namespace df {
 							}
 						}
 					}
-				}
+				}*/
 			} break;
 			case GLFW_KEY_RIGHT_BRACKET:
 				// This case is the key which can produce +, *, ~ on the german keyboard layout, so a plus
