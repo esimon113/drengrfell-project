@@ -66,7 +66,7 @@ namespace df {
 		bool isTileExplored(size_t tileId) const;
 		const std::vector<size_t>& getExploredTileIds() const;
 		void forgetExploredTiles();
-		int retExploredCountNoWater(const Graph& map) const;
+		int retExploredCount(const Graph& map) const;
 
 		size_t getPlayerId() const;
 		void setPlayerId(size_t newPlayerId);

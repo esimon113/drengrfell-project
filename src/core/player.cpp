@@ -110,13 +110,13 @@ namespace df {
 		return false;
 	}
 
-	int Player::retExploredCountNoWater(const Graph& map) const{
+	int Player::retExploredCount(const Graph& map) const{
 		int count = 0;
 		
 		for (size_t tileId : exploredTileIds) {
 			const Tile* tile = map.getTile(tileId);
 			
-			if (tile && tile->getType() != types::TileType::WATER) {
+			if (tile) {
 				count++;
 			}
 		}
