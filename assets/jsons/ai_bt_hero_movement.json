@@ -2,29 +2,29 @@
 	"kind": "and",
 	"children": [
 		{
-			"!getUnexploredTiles": {
+			"getUnexploredTiles": {
 				"store": "unexplored_tiles"
 			}
 		},
 		{
-			"!size": {
+			"size": {
 				"array": "*unexplored_tiles"
 			}
 		},
 		{
-			"!getUniformInt": {
+			"getUniformInt": {
 				"start": 0,
 				"end": "*ans"
 			}
 		},
 		{
-			"!get": {
+			"get": {
 				"array": "*unexplored_tiles",
 				"index": "*ans"
 			}
 		},
 		{
-			"!setMoveTarget": {
+			"setMoveTarget": {
 				"id": "*ans"
 			}
 		}
