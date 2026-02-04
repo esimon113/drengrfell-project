@@ -219,9 +219,9 @@ namespace df {
 							quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
 						}
 
-						auto tile = gameState->getMap().getTile(targetPositionTileID);
-						if (tile) {
-							types::TileType currentType = tile->getType();
+						auto questCheckTile = gameState->getMap().getTile(targetPositionTileID);
+						if (questCheckTile) {
+							types::TileType currentType = questCheckTile->getType();
 							if (currentType == types::TileType::ICE) {
 								quests->updateProgress(types::QuestGoalType::ICE, 1);
 							}
