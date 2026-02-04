@@ -238,13 +238,13 @@ namespace df {
 					render.step(delta_time);
 					if (!victoryScreenShown) {
 						size_t winnerId = gameState->getCurrentPlayerId(); 
-						std::string leaderboard = fmt::format("CONGRATULATIONS PLAYER {}!\n\nFinal Scores:\n", winnerId);
+						std::string leaderboard = fmt::format("CONGRATULATIONS PLAYER {}!\n\nFinal Score:\n", winnerId);
 
 						for (size_t i = 0; i < gameState->getPlayerCount(); ++i) {
 							auto p = gameController->getPlayerbyId(i);
 							if (p) {
-								std::string crown = (i == winnerId) ? " [WINNER] " : "";
-								leaderboard += fmt::format("Player {}: {} points{}\n", i, p->getHeroPoints(), crown);
+								//std::string crown = (i == winnerId) ? " [WINNER] " : "";
+								leaderboard += fmt::format("You finished the game in {} rounds\n", p->getHeroPoints(), gameState->getTurnCount());
 							}
 						}
 

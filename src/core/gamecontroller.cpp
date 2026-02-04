@@ -510,7 +510,6 @@ namespace df {
 			vertex->setSettlementId(newSettlementId);
 			this->gameState.addSettlement(newSettlement);
 			player->addSettlement(newSettlement->getId());
-			player->addHeroPoints(1); 
             fmt::println("[GameController] Player {} awarded 1 point for new settlement", playerId);
 
 			// this->chargeResourceCost(*player, newSettlement->getBuildingCost());
@@ -845,7 +844,7 @@ namespace df {
 			notification->showNotification("You don't have enough ressources!", "You need more ressources to upgrade this settlement.\n", {"Okay"});
 			return false;
 		}
-
+		
 		const auto settlements = this->gameState.getSettlements();
 		for (const auto& settlement : settlements) {
 			if (settlement && settlement->getId() == settlementId) {
@@ -866,9 +865,34 @@ namespace df {
 		}
 
 		this->chargeResourceCost(*player, buildingCost);
-		player->addHeroPoints(2);	// 3 points for stone and 5 for castle
+		if( targetType == types::SettlementType::STONE){
+			player->addHeroPoints(1);	
+		} else if ( targetType == types::SettlementType::CASTLE ){
+			player->addHeroPoints(4);	
+		}
+		
     	fmt::println("[GameController] Upgrade success. Player {} Hero Points: {}", playerId, player->getHeroPoints());
 		return true;
+	}
+
+	int GameController::getCountCastles(size_t playerId) {
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player) return 0;
+
+		int castleCount = 0;
+		const auto& settlementIds = player->getSettlementIds();
+
+		for (size_t id : settlementIds) {
+			for (const auto& settlement : gameState.getSettlements()) {
+				if (settlement && settlement->getId() == id) {
+					if (settlement->getSettlementType() == types::SettlementType::CASTLE) {
+						castleCount++;
+					}
+					break; 
+				}
+			}
+		}
+		return castleCount;
 	}
 
 

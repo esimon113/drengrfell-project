@@ -62,6 +62,8 @@ namespace df {
 		Player* getPlayerbyId(size_t playerId);
 		const Player* getPlayerById(size_t playerId) const;
 
+		int getCountCastles(size_t playerId);
+
 	  private:
 		GameState& gameState;
 		std::mt19937 rng;
