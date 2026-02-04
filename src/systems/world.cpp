@@ -115,6 +115,7 @@ namespace df {
 		auto* step = this->gameState->getCurrentTutorialStep();
 		auto* quests = registry->getSystem<QuestsSystem>();
 		auto* notifications = registry->getSystem<RenderNotificationSystem>();
+		Player* player = this->gameState->getPlayer(gameState->getCurrentPlayerId());
 
 		if (this->gameState->isGameOver()) {
 			return; 
@@ -195,7 +196,7 @@ namespace df {
 				showCosts	= false;
 				showTrade = false;
 				if (quests) {
-					quests->notifyNextActiveQuest(); 
+					quests->notifyNextActiveQuest(player); 
 				}
 				if (step && step->id == TutorialStepId::OPEN_QUEST_MENU) {
 					this->gameState->completeCurrentTutorialStep();

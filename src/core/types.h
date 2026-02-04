@@ -44,32 +44,57 @@ namespace df::types {
 	}
 
 
-	// maybe like 10/25/50% chance to get resource per round?!
 	enum class TilePotency {
-		LOW = 1,
-		MEDIUMLOW =2,
-		MEDIUM = 3,
-		MEDIUMHIGH = 4,
-		HIGH = 5
+		LOW = 0,
+		MEDIUMLOW,
+		MEDIUM,
+		MEDIUMHIGH,
+		HIGH,
+		VERYHIGH,
+		ULTRA      
 	};
 
+	inline TilePotency getNextPotency(TilePotency p) {
+        switch (p) {
+			case TilePotency::LOW:
+				return TilePotency::MEDIUMLOW;
+			case TilePotency::MEDIUMLOW:
+				return TilePotency::MEDIUM;
+			case TilePotency::MEDIUM:
+				return TilePotency::MEDIUMHIGH;
+			case TilePotency::MEDIUMHIGH:
+				return TilePotency::HIGH;
+			case TilePotency::HIGH:
+				return TilePotency::VERYHIGH;
+			case TilePotency::VERYHIGH:
+				return TilePotency::ULTRA;
+			case TilePotency::ULTRA:
+				return TilePotency::ULTRA; 
+			default:
+				return p;
+        }
+    }
 
-	inline std::string potencyToString(TilePotency p) {
-		switch (p) {
-		case TilePotency::LOW:
-			return "LOW";
-		case TilePotency::MEDIUMLOW:
-			return "MEDIUM LOW";
-		case TilePotency::MEDIUM:
-			return "MEDIUM";
-		case TilePotency::MEDIUMHIGH:
-			return "MEDIUM HIGH";
-		case TilePotency::HIGH:
-			return "HIGH";
-		default:
-			return "";
-		};
-	}
+    inline std::string potencyToString(TilePotency p) {
+        switch (p) {
+			case TilePotency::LOW:
+				return "LOW";
+			case TilePotency::MEDIUMLOW:
+				return "MEDIUM LOW";
+			case TilePotency::MEDIUM:
+				return "MEDIUM";
+			case TilePotency::MEDIUMHIGH:
+				return "MEDIUM HIGH";
+			case TilePotency::HIGH:
+				return "HIGH";
+			case TilePotency::VERYHIGH:
+				return "VERY HIGH";
+			case TilePotency::ULTRA:
+				return "ULTRA";
+			default:
+				return "UNKNOWN";
+        };
+    }
 
 
 	enum class TileDirection {

@@ -455,8 +455,33 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 	}
 
 	bool GameState::isGameOver() const {
-		const size_t MAX_ROUNDS = 50; // Or whatever limit you want
-		return this->roundNumber >= MAX_ROUNDS;
+		const int WINNING_POINTS = 20; 
+
+		for (const auto& player : this->players) {
+			if (player.getHeroPoints() >= WINNING_POINTS) {
+				fmt::println("[GameState] Player {} has reached {} points! Game Over.", 
+							player.getId(), player.getHeroPoints());
+				return true;
+			} 
+
+			int castleCount = 0;
+			for (size_t sId : player.getSettlementIds()) {
+				for (const auto& settlement : this->settlements) {
+					if (settlement && settlement->getId() == sId) {
+						if (settlement->getSettlementType() == types::SettlementType::CASTLE) {
+							castleCount++;
+						}
+						break;
+					}
+				}
+			}
+
+			if (castleCount >= 3) {
+				fmt::println("[GameState] Player {} built 3 Castles!", player.getId());
+				return true;
+			}
+		}
+		return false;
 	}
 
 

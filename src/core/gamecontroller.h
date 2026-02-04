@@ -59,14 +59,18 @@ namespace df {
 		QuestsSystem* getQuestsSystem() const { return m_questsSystem.get(); }
 		void claimQuestReward(int questId);
 
+		Player* getPlayerbyId(size_t playerId);
+		const Player* getPlayerById(size_t playerId) const;
+
+		int getCountCastles(size_t playerId);
+
 	  private:
 		GameState& gameState;
 		std::mt19937 rng;
 		std::unique_ptr<QuestsSystem> m_questsSystem;
 		Registry* registry;
 
-		Player* getPlayerbyId(size_t playerId);
-		const Player* getPlayerById(size_t playerId) const;
+		
 
 		void resetHeroMovement(Player& player);
 		void exploreTile(Player& player, size_t tileId);

@@ -18,7 +18,7 @@ namespace df {
         void claimQuest(int questId, Player* player, GameState* gameState);
 
         void notifyPlayer(int questId);
-        void notifyNextActiveQuest();
+        void notifyNextActiveQuest(Player* player);
 
         const Quest* getQuestById(int id) const;
         const std::vector<Quest>& getQuests() const { return m_quests; }

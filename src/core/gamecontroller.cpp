@@ -510,6 +510,7 @@ namespace df {
 			vertex->setSettlementId(newSettlementId);
 			this->gameState.addSettlement(newSettlement);
 			player->addSettlement(newSettlement->getId());
+            fmt::println("[GameController] Player {} awarded 1 point for new settlement", playerId);
 
 			// this->chargeResourceCost(*player, newSettlement->getBuildingCost());
 			this->chargeResourceCost(*player, buildingCost);
@@ -771,7 +772,7 @@ namespace df {
 		}
 		if (!this->hasEnoughResources(*player, buildingCost)) {
 			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
-			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\n", {"Okay"});
 			return false;
 		}
 		if (!this->canBuildProductivityBuilding(playerId, tileId, tileType)) {
@@ -801,6 +802,13 @@ namespace df {
 		this->gameState.addProductivityBuilding(newBuilding);
 		player->addProductivityBuilding(newBuildingId);
 		this->chargeResourceCost(*player, buildingCost);
+		df::types::TilePotency current = tile->getPotency();
+    
+		df::types::TilePotency next = df::types::getNextPotency(current);
+		if (current != next) {
+			tile->setPotency(next); 
+			//fmt::println("Productivity increased! Tile {} is now {}", tile->getId(), df::types::potencyToString(next));
+		}
 
 		return true;
 	}
@@ -836,7 +844,7 @@ namespace df {
 			notification->showNotification("You don't have enough ressources!", "You need more ressources to upgrade this settlement.\n", {"Okay"});
 			return false;
 		}
-
+		
 		const auto settlements = this->gameState.getSettlements();
 		for (const auto& settlement : settlements) {
 			if (settlement && settlement->getId() == settlementId) {
@@ -857,7 +865,34 @@ namespace df {
 		}
 
 		this->chargeResourceCost(*player, buildingCost);
+		if( targetType == types::SettlementType::STONE){
+			player->addHeroPoints(1);	
+		} else if ( targetType == types::SettlementType::CASTLE ){
+			player->addHeroPoints(4);	
+		}
+		
+    	fmt::println("[GameController] Upgrade success. Player {} Hero Points: {}", playerId, player->getHeroPoints());
 		return true;
+	}
+
+	int GameController::getCountCastles(size_t playerId) {
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player) return 0;
+
+		int castleCount = 0;
+		const auto& settlementIds = player->getSettlementIds();
+
+		for (size_t id : settlementIds) {
+			for (const auto& settlement : gameState.getSettlements()) {
+				if (settlement && settlement->getId() == id) {
+					if (settlement->getSettlementType() == types::SettlementType::CASTLE) {
+						castleCount++;
+					}
+					break; 
+				}
+			}
+		}
+		return castleCount;
 	}
 
 
@@ -1112,12 +1147,8 @@ namespace df {
 		const Quest* q = quests->getQuestById(questId);
 
 		if (q && q->state == QuestState::Completed) {
-
 			player->addResources(q->reward_resource, q->reward_amount);
-
 			quests->claimQuest(questId, player, &gameState);
-
-			fmt::println("Reward given to the  player: {} units of type {}", q->reward_amount, (int)q->reward_resource);
 		}
 	}
 
