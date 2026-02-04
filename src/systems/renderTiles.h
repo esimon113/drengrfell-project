@@ -35,8 +35,10 @@ namespace df {
 		};
 		void setSelectedTile(int tile) {
 			selectedTile = tile;
-			if (tile == -1)
+			if (tile == -1) {
 				currentPath = {};
+				updateRequired = true;
+			}
 		}
 
 		// Map tile id. Equal to index in Graph::tiles. -1 = no tile / error.
