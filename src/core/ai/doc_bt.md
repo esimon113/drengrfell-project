@@ -71,7 +71,7 @@ Therefore, a shorthand notation exists.
 
 ```json
 {
-	"!getUniformInt": {
+	"getUniformInt": {
 		"start": 0,
 		"end": "*ans"
 	}
@@ -91,7 +91,7 @@ is interpreted as
 }
 ```
 
-To use this notation, the object must not have a `kind` key and the command name has to be prefixed with `!`.
+To use this notation, the object must not have a `kind` key.
 
 ## Command Registry
 

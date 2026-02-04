@@ -12,17 +12,18 @@ namespace df {
 	std::shared_ptr<BTNode> BTNode::deserialize(const json &j, const CommandRegistry& c) {
 		std::string kind = j.value("kind", "none");
 		if (kind == "none") {
-			for (auto& [key, val] : j.items()) {
-				if (key.starts_with("!")) {
-					auto ptr = std::make_shared<BTFunction>();
-					if (ptr->deserializeInplaceCompact(j.value(key, json::object()), c, key.substr(1))) {
-						return ptr;
-					} else {
-						return nullptr;
-					}
+			if (j.size() == 1) {
+				// Assume shorthand function
+				const auto& [name, args] = *j.items().begin();
+				auto ptr = std::make_shared<BTFunction>();
+				if (ptr->deserializeInplaceCompact(j.value(name, json::object()), c, name)) {
+					return ptr;
+				} else {
+					std::cerr << "[AI Error]: Missing kind. Assumed shorthand function. In: " << j << std::endl;
+					return nullptr;
 				}
 			}
-			std::cerr << "[AI Error]: Missing kind. Maybe shorthand without ! before command name? In: " << to_string(j) << std::endl;
+			std::cerr << "[AI Error]: Missing kind. In: " << j << std::endl;
 			return nullptr;
 		} else if (kind == "sequence" || kind == "and") {
 			auto ptr = std::make_shared<BTSequence>();

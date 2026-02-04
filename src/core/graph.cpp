@@ -865,9 +865,16 @@ namespace df {
 			if (dist > distance[currentId])
 				continue;
 
+
+
 			auto neighborIds = getTileNeighbors(currentId);
 			for (size_t neighborId : neighborIds) {
-				double alt = dist + 1.0; 
+				const Tile* neighborTile = getTile(neighborId);
+				if (!neighborTile)
+					continue;
+				double cost = neighborTile->getMovementCost();
+
+				double alt = dist + cost; 
 				if (alt < distance[neighborId]) {
 					distance[neighborId] = alt;
 					previous[neighborId] = currentId;
@@ -887,7 +894,7 @@ namespace df {
 
 		std::reverse(path.begin(), path.end());
 		if (path.front() != startId)
-			path.clear(); // kein Pfad gefunden
+			path.clear();
 
 		return path;
 	}

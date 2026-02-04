@@ -2,7 +2,7 @@
 	"kind": "and",
 	"children": [
 		{
-			"!run": {
+			"run": {
 				"file": "ai_bt_hero_movement"
 			}
 		}

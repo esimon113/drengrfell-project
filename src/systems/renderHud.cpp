@@ -33,6 +33,7 @@ namespace df {
 		self.questTexture = Texture::init(assets::Texture::SIDE_HUD_QUEST_BUTTON);
 		self.keybindingsTexture = Texture::init(assets::Texture::SIDE_HUD_KEYBINDINGS_BUTTON);
 		self.costTexture = Texture::init(assets::Texture::SIDE_HUD_COST_BUTTON);
+		self.hudEndTurnButtonTexture = Texture::init(assets::Texture::HUD_END_TURN_BUTTON);
 
 		// Viewport
 		glViewport(0, 0, extent.x, extent.y);
@@ -79,8 +80,8 @@ namespace df {
 		};
 		// End Turn Button
 		float paddingX = hudSize.x * 0.02f; // ensure black hud layout below endTurn button
-		endTurnButton.w = hudSize.x * 0.20f;
-		endTurnButton.h = hudSize.y * 0.7f;
+		endTurnButton.w = hudSize.x * 0.15f;
+		endTurnButton.h = hudSize.y * 0.85f;
 		endTurnButton.x = hudPos.x + hudSize.x - endTurnButton.w - paddingX;
 		endTurnButton.y = hudPos.y + (hudSize.y - endTurnButton.h) / 2.0f;
 
@@ -210,19 +211,15 @@ namespace df {
 			// display round
 			std::string roundText = "Round: " + std::to_string(gameState->getRoundNumber());
 			glm::vec2 roundTextSize = textSystem->measureText(roundText, scale * 1.2f);
+			// centerr round text between last resource text and end turn button
+			float roundCenterX = (x + endTurnButton.x) / 2.0f;
 			glm::vec2 roundTextPos = {
-				x + iconPadding,
+				roundCenterX - roundTextSize.x / 2.0f,
 				hudCenterY - roundTextSize.y / 2.0f + hudTextOffset};
 			textSystem->renderText(roundText, roundTextPos, scale * 1.2f, {1.f, 1.f, 1.f});
 
 			// End Turn Button
-			renderRectBox({endTurnButton.x, endTurnButton.y}, {endTurnButton.w, endTurnButton.h}, {0.0f, 0.0f, 1.0f});
-			glm::vec2 textSizeEndTurn = textSystem->measureText("End Turn", scale * 0.9f);
-			glm::vec2 buttonTextPos = {
-				endTurnButton.x + (endTurnButton.w - textSizeEndTurn.x) / 2.0f,
-				endTurnButton.y + (endTurnButton.h - textSizeEndTurn.y) / 2.0f + textSizeEndTurn.y * 0.15 // shift slightly up
-			};
-			textSystem->renderText("End Turn", buttonTextPos, scale * 0.9f, {1.f, 1.f, 1.f});
+			drawSprite(hudEndTurnButtonTexture, {endTurnButton.x, endTurnButton.y}, {endTurnButton.w, endTurnButton.h}, {1.f, 1.f, 1.f});
 
 			// SIDE HUD FOR UI INTERACTIONS
 			EventPresentationSystem* eventSystem = registry->getSystem<EventPresentationSystem>();

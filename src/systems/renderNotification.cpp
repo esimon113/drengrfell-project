@@ -1,7 +1,6 @@
 #include "renderNotification.h"
 
 namespace df {
-
 	RenderNotificationSystem RenderNotificationSystem::init(Window* window, Registry* registry) noexcept {
 		RenderNotificationSystem self;
 		self.window = window;
@@ -11,13 +10,18 @@ namespace df {
 		self.viewport.size = self.window->getWindowExtent();
 
 		self.rectShader = Shader::init(assets::Shader::hud).value();
+		// Textures for Background/Buttons
+		self.textureShader = Shader::init(assets::Shader::menu).value(); 
+		self.notificationBackgroundTexture = Texture::init(assets::Texture::NOTIFICATIONS_BACKGROUND);
+		self.notificationButtonTexture = Texture::init(assets::Texture::NOTIFICATIONS_BUTTON); 
 
 		// Quad rectangle 1x1, transformed via model later
 		float quad[] = {
-			0.f, 0.f,
-			1.f, 0.f,
-			1.f, 1.f,
-			0.f, 1.f};
+			0.f, 0.f, 0.f, 0.f, 
+			1.f, 0.f, 1.f, 0.f, 
+			1.f, 1.f, 1.f, 1.f, 
+			0.f, 1.f, 0.f, 1.f  
+		};
 
 		glGenVertexArrays(1, &self.quadVao);
 		glBindVertexArray(self.quadVao);
@@ -26,8 +30,16 @@ namespace df {
 		glBindBuffer(GL_ARRAY_BUFFER, self.vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
 
+		// Texture
+		// layout: location 0 = positions (x,y), location 1 = texture-coords (u,v)
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+		// Enabled Blending for transparency
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glBindVertexArray(0);
 
@@ -73,7 +85,7 @@ namespace df {
 
 		// compute button position
 		float totalButtonWidth = 0.f;
-		float buttonHeight = 50.f * scale;
+		float buttonHeight = 60.f * scale;
 
 		// save all buttons
 		for (std::string text : buttonTexts) {
@@ -133,15 +145,15 @@ namespace df {
 		if (!textSystem)
 			return;
 
-		// background box
-		renderBox(boxPos, boxSize, {0.f, 0.f, 0.f});
+		// background texture
+		drawSprite(notificationBackgroundTexture, boxPos, boxSize, {1.f, 1.f, 1.f});
 
 		// title
 		glm::vec2 titleSize = textSystem->measureText(title, scale * 1.2f); // ensure a little more space for title therefore scale *1.2f
 		glm::vec2 titlePos{
 			boxPos.x + (boxSize.x - titleSize.x) / 2.0f,	// center title
 			boxPos.y + boxSize.y - titleSize.y - paddingY + titleSize.y * 0.40f};	// manually tweaked to look good
-		textSystem->renderText(title, titlePos, scale * 1.2f, {1.f, 1.f, 1.f}); // ensure a little more space for title therefore scale *1.2f
+		textSystem->renderText(title, titlePos, scale * 1.2f, {0.f, 0.f, 0.f}); // ensure a little more space for title therefore scale *1.2f
 
 		// message
 		glm::vec2 messageSize = textSystem->measureText(message, scale);
@@ -151,19 +163,19 @@ namespace df {
 			boxPos.x + (boxSize.x - messageSize.x) / 2.0f,	// center message
 			messageStartY};
 
-		textSystem->renderText(message, messagePos, scale, {1.f, 1.f, 1.f});
+		textSystem->renderText(message, messagePos, scale, {0.f, 0.f, 0.f});
 
 		// buttons
 		for (Button& btn : buttons) {
-			// render box for each button
-			renderBox({btn.x, btn.y}, {btn.w, btn.h}, {0.f, 0.f, 1.f});
+			// render texture for each button
+			drawSprite(notificationButtonTexture, {btn.x, btn.y}, {btn.w, btn.h}, {1.f, 1.f, 1.f});
 
 			glm::vec2 textSize = textSystem->measureText(btn.text, scale);
 			glm::vec2 textPos{
 				btn.x + (btn.w - textSize.x) / 2.0f,	// center text
 				btn.y + (btn.h - textSize.y) / 2.0f + textSize.y * 0.15f}; // shift slightly up to look good
 
-			textSystem->renderText(btn.text, textPos, scale, {1.f, 1.f, 1.f});
+			textSystem->renderText(btn.text, textPos, scale, {0.f, 0.f, 0.f});
 		}
 	}
 
@@ -206,6 +218,30 @@ namespace df {
 			.setMat4("projection", projection)
 			.setMat4("view", glm::identity<glm::mat4>())
 			.setMat4("model", model)
+			.setVec3("fcolor", color);
+
+		glBindVertexArray(quadVao);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		glBindVertexArray(0);
+	}
+
+	// used from mainMenu.cpp; slighlty modified
+	void RenderNotificationSystem::drawSprite(Texture& tex, glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept {
+		const float width = viewport.size.x;
+		const float height = viewport.size.y;
+
+		glm::mat4 projection = glm::ortho(0.f, width, 0.f, height, -1.f, 1.f);
+		glm::mat4 view = glm::identity<glm::mat4>();
+
+		glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), glm::vec3(pos, 0.f));
+		model = glm::scale(model, glm::vec3(size, 1.f));
+
+		tex.bind(0);
+		textureShader.use()
+			.setMat4("projection", projection)
+			.setMat4("view", view)
+			.setMat4("model", model)
+			.setSampler("sprite", 0)
 			.setVec3("fcolor", color);
 
 		glBindVertexArray(quadVao);
