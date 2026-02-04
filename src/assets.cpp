@@ -121,6 +121,7 @@ namespace df {
 		"hud/buttons/quest.png",			//quest
 		"hud/buttons/keybindings.png",		//keybinds
 		"hud/buttons/cost.png",		        //costs
+		"hud/buttons/endTurn.png",		    //end turn button
 
 		"events/bear.png",		// AI generated
 		"events/blizzard.png",	// AI generated
