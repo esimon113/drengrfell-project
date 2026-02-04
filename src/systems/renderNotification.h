@@ -5,6 +5,7 @@
 #include "window.h"
 #include <renderText.h>
 #include <utils/shader.h>
+#include "utils/texture.h"
 
 namespace df {
 
@@ -26,6 +27,8 @@ namespace df {
 		void onResizeCallback(GLFWwindow*, int width, int height) noexcept;
 		void renderBox(glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept;
 
+		void drawSprite(Texture& tex, glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept;
+
 		void updateViewport(const glm::uvec2& origin, const glm::uvec2& size) noexcept {
 			viewport.origin = origin;
 			viewport.size = size;
@@ -44,6 +47,11 @@ namespace df {
 		Shader rectShader;
 		GLuint quadVao = 0;
 		GLuint vbo = 0;
+
+		// Texture for Background/Buttons
+		Shader textureShader;
+		Texture notificationBackgroundTexture;
+		Texture notificationButtonTexture;
 
 		std::string title;
 		std::string message;
