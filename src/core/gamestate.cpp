@@ -455,8 +455,16 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 	}
 
 	bool GameState::isGameOver() const {
-		const size_t MAX_ROUNDS = 50; // Or whatever limit you want
-		return this->roundNumber >= MAX_ROUNDS;
+		const int WINNING_POINTS = 20; 
+
+		for (const auto& player : this->players) {
+			if (player.getHeroPoints() >= WINNING_POINTS) {
+				fmt::println("[GameState] Player {} has reached {} points! Game Over.", 
+							player.getId(), player.getHeroPoints());
+				return true;
+			}
+		}
+		return false;
 	}
 
 

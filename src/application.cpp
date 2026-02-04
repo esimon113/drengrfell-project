@@ -237,12 +237,22 @@ namespace df {
 					glClear(GL_COLOR_BUFFER_BIT);
 					render.step(delta_time);
 					if (!victoryScreenShown) {
-						// Render victory notification
+						size_t winnerId = gameState->getCurrentPlayerId(); 
+						std::string leaderboard = fmt::format("CONGRATULATIONS PLAYER {}!\n\nFinal Scores:\n", winnerId);
+
+						for (size_t i = 0; i < gameState->getPlayerCount(); ++i) {
+							auto p = gameController->getPlayerbyId(i);
+							if (p) {
+								std::string crown = (i == winnerId) ? " [WINNER] " : "";
+								leaderboard += fmt::format("Player {}: {} points{}\n", i, p->getHeroPoints(), crown);
+							}
+						}
+
 						RenderNotificationSystem* notification = registry->getSystem<RenderNotificationSystem>();
-						std::string message = fmt::format("\nYou have played for {} rounds!\n\nYou build {} settlements and {} roads.\n",
-														  gameState->getRoundNumber(), gameState->getSettlements().size(), gameState->getRoads().size());
-						notification->showNotification("You won the Game!", message, {"Back to Menu"});
-						fmt::println("Victory! You survived {} rounds.", gameState->getRoundNumber());
+						
+						notification->showNotification(fmt::format("Player {} Wins!", winnerId), leaderboard, {"Back to Menu"});
+						
+						fmt::println("Game ended. Winner: Player {}", winnerId);
 						victoryScreenShown = true;
 					}
 					if (victoryScreenClosed) {
