@@ -44,15 +44,30 @@ namespace df::types {
 	}
 
 
-	// maybe like 10/25/50% chance to get resource per round?!
 	enum class TilePotency {
 		LOW = 1,
-		MEDIUMLOW =2,
-		MEDIUM = 3,
-		MEDIUMHIGH = 4,
-		HIGH = 5
+		MEDIUMLOW,
+		MEDIUM,
+		MEDIUMHIGH,
+		HIGH
 	};
 
+	inline TilePotency getNextPotency(TilePotency p) {
+		switch (p) {
+		case TilePotency::LOW:
+			return TilePotency::MEDIUMLOW;
+		case TilePotency::MEDIUMLOW:
+			return TilePotency::MEDIUM;
+		case TilePotency::MEDIUM:
+			return TilePotency::MEDIUMHIGH;
+		case TilePotency::MEDIUMHIGH:
+			return TilePotency::HIGH;
+		case TilePotency::HIGH:
+			return TilePotency::HIGH; 
+		default:
+			return p;
+		}
+	}
 
 	inline std::string potencyToString(TilePotency p) {
 		switch (p) {

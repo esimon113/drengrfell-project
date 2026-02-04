@@ -771,7 +771,7 @@ namespace df {
 		}
 		if (!this->hasEnoughResources(*player, buildingCost)) {
 			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
-			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
+			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\n", {"Okay"});
 			return false;
 		}
 		if (!this->canBuildProductivityBuilding(playerId, tileId, tileType)) {
@@ -801,6 +801,13 @@ namespace df {
 		this->gameState.addProductivityBuilding(newBuilding);
 		player->addProductivityBuilding(newBuildingId);
 		this->chargeResourceCost(*player, buildingCost);
+		df::types::TilePotency current = tile->getPotency();
+    
+		df::types::TilePotency next = df::types::getNextPotency(current);
+		if (current != next) {
+			tile->setPotency(next); 
+			fmt::println("Productivity increased! Tile {} is now {}", tile->getId(), df::types::potencyToString(next));
+		}
 
 		return true;
 	}
