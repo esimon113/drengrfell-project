@@ -20,8 +20,9 @@ using json = nlohmann::json;
 #include "vertex.h"
 
 
-namespace df {
 
+namespace df {
+	class Player;
 
 	// make sure T has id
 	namespace HasIdPropertyHelper {
@@ -107,7 +108,7 @@ namespace df {
 		std::vector<T> depthFirstSearch(const T& start) const;
 		template <HasIdProperty T>
 		std::vector<const T*> dijkstra(const T& start) const;
-		std::vector<size_t> dijkstraPath(size_t startId, size_t goalId) const;
+		std::vector<size_t> dijkstraPath(size_t startId, size_t goalId, Player* player) const;
 
 		template <HasIdProperty T>
 		size_t getDistanceBetween(const T& start, const T& end) const;

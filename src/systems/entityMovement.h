@@ -28,7 +28,7 @@ namespace df {
 		std::vector<size_t> getCurrentPath() const noexcept { return currentPath; };
 
 		glm::vec2 getTargetPosition() const noexcept { return targetPosition; }
-		void setTarget(const size_t id, Entity entity) noexcept;
+		void setTarget(const size_t id, Entity entity, Player* player) noexcept;
 
 		unsigned getTileIDFromWorldPosition(const glm::vec2& worldPos) const noexcept;
     	void updateTileAndDiscover(Entity entity, unsigned tileID) noexcept;

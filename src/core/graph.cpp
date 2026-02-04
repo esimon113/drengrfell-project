@@ -15,6 +15,7 @@
 #include "fmt/base.h"
 #include "vertex.h"
 #include "worldGenerator.h"
+#include "player.h"
 
 
 namespace df {
@@ -831,7 +832,7 @@ namespace df {
 
 	// Dijkstra but gives the Path from tile x to tile y in tileIDs
 
-	std::vector<size_t> Graph::dijkstraPath(size_t startId, size_t goalId) const {
+	std::vector<size_t> Graph::dijkstraPath(size_t startId, size_t goalId, Player* player) const {
 		constexpr double INF = std::numeric_limits<double>::infinity();
 
 		std::unordered_map<size_t, double> distance;
@@ -872,7 +873,11 @@ namespace df {
 				const Tile* neighborTile = getTile(neighborId);
 				if (!neighborTile)
 					continue;
+
 				double cost = neighborTile->getMovementCost();
+				if (player && !player->isTileExplored(neighborId)) {
+					cost *= 1.5; // Penalty for undiscovered tiles
+				}
 
 				double alt = dist + cost; 
 				if (alt < distance[neighborId]) {

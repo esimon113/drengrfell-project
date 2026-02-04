@@ -15,7 +15,7 @@ namespace df {
 		"setMoveTarget",
 		[this](const BTContext& context, const BTF::Args& a) {
 			int target = glm::iround(BTF::getArg<double>(a, "id", 0.0));
-			this->setTarget(target, context.entity);
+				this->setTarget(target, context.entity, this->gameState->getPlayer(1));
 			movementState = true;
 			targetSet = true;
 			fmt::println("Set move target of entity: {} to {}", static_cast<int>(context.entity), target);
@@ -269,7 +269,7 @@ namespace df {
 		targetSet = !targetSet;
 	}
 
-	void EntityMovementSystem::setTarget(const size_t id, Entity entity) noexcept {
+	void EntityMovementSystem::setTarget(const size_t id, Entity entity, Player* player) noexcept {
 		glm::vec2& currentPos = registry->positions.get(entity);
 		size_t& currentPosTileId = registry->tileID.get(entity);
 
@@ -285,7 +285,7 @@ namespace df {
 		}
 
 		const Graph& map = gameState->getMap();
-		currentPath = map.dijkstraPath(currentPosTileId, id);
+		currentPath = map.dijkstraPath(currentPosTileId, id, player);
 		currentPathIndex = 0;
 
 		if (!currentPath.empty()) {

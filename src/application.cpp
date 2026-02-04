@@ -654,7 +654,8 @@ namespace df {
 		} else {
 			registry->tileID.emplace(hero, randomTileID);
 		}
-		movementSystem->setTarget(randomTileID, hero);
+		Player* player = this->gameState->getPlayer(0);
+		movementSystem->setTarget(randomTileID, hero, player);
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
@@ -924,7 +925,8 @@ namespace df {
 					if (mapId >= 0 && !movementSystem->isEntityMoving()) {
 						//  TODO: For multiplayer use hero of active player
 						Entity hero = registry->animations.entities.front();
-						movementSystem->setTarget(mapId, hero);
+						Player* player = this->gameState->getPlayer(0);
+						movementSystem->setTarget(mapId, hero, player);
 						auto path = movementSystem->getCurrentPath();
 						render.renderTilesSystem.setPath(movementSystem->getCurrentPath());
 					}
