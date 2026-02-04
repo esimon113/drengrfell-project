@@ -510,6 +510,8 @@ namespace df {
 			vertex->setSettlementId(newSettlementId);
 			this->gameState.addSettlement(newSettlement);
 			player->addSettlement(newSettlement->getId());
+			player->addHeroPoints(1); 
+            fmt::println("[GameController] Player {} awarded 1 point for new settlement", playerId);
 
 			// this->chargeResourceCost(*player, newSettlement->getBuildingCost());
 			this->chargeResourceCost(*player, buildingCost);
@@ -864,6 +866,8 @@ namespace df {
 		}
 
 		this->chargeResourceCost(*player, buildingCost);
+		player->addHeroPoints(2);	// 3 points for stone and 5 for castle
+    	fmt::println("[GameController] Upgrade success. Player {} Hero Points: {}", playerId, player->getHeroPoints());
 		return true;
 	}
 
