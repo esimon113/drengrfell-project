@@ -238,19 +238,20 @@ namespace df {
 					render.step(delta_time);
 					if (!victoryScreenShown) {
 						size_t winnerId = gameState->getCurrentPlayerId(); 
-						std::string leaderboard = fmt::format("CONGRATULATIONS PLAYER {}!\n\nFinal Score:\n", winnerId);
+						std::string leaderboard;
 
 						for (size_t i = 0; i < gameState->getPlayerCount(); ++i) {
 							auto p = gameController->getPlayerbyId(i);
 							if (p) {
-								//std::string crown = (i == winnerId) ? " [WINNER] " : "";
-								leaderboard += fmt::format("You finished the game in {} rounds\n", p->getHeroPoints(), gameState->getTurnCount());
+								leaderboard += fmt::format("Finished in {} rounds with {} points.\n", 
+															gameState->getRoundNumber(), 
+															p->getHeroPoints());
 							}
 						}
 
 						RenderNotificationSystem* notification = registry->getSystem<RenderNotificationSystem>();
 						
-						notification->showNotification(fmt::format("Player {} Wins!", winnerId), leaderboard, {"Back to Menu"});
+						notification->showNotification("FINISHED!", leaderboard, {"Back to Menu"});
 						
 						fmt::println("Game ended. Winner: Player {}", winnerId);
 						victoryScreenShown = true;

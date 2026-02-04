@@ -11,7 +11,7 @@ namespace df {
 
     void QuestsSystem::init(RenderNotificationSystem* notificationSys) {
         m_notificationSystem = notificationSys;
-
+        activeQuests = 1;
         m_quests.clear();
         // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress (-1 if must be updated during gameplay) | unblock id | Reward type | Reward | Initial state
         auto path = assets::getAssetPath(assets::JsonFile::QUESTS);        
