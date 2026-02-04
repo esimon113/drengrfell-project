@@ -54,6 +54,8 @@ namespace df {
 
 		// bottom hud background
 		Texture hudBackgroundTexture;
+
+		Texture hudEndTurnButtonTexture;
 		// ressources textures
 		Texture woodTexture;
 		Texture stoneTexture;
