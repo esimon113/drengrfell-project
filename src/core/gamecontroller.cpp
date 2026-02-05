@@ -119,6 +119,11 @@ namespace df {
 		const auto& def = HazardDB::getDefinition(profile.hazardType);
 
 		this->registry->hazards.emplace(hero) = {profile.hazardType, def.defaultRoundDuration};
+		auto& animComp = registry->animations.get(hero);
+		if (animComp.currentType != Hero::AnimationType::Attack) {
+			animComp.currentType = Hero::AnimationType::Attack;
+			animComp.anim.setCurrentFrameIndex(0);
+		}
 		fmt::println("[Hazard] You encountered a {}, which will stop your movement for {} turns", def.name, def.defaultRoundDuration);
 	}
 
@@ -147,6 +152,12 @@ namespace df {
 												   hazardDefinition.name),
 											   {"Continue"});
 				this->registry->hazards.remove(e);
+				Entity hero = registry->animations.entities.front();
+				auto& animComp = registry->animations.get(hero);
+				if (animComp.currentType != Hero::AnimationType::Idle) {
+					animComp.currentType = Hero::AnimationType::Idle;
+					animComp.anim.setCurrentFrameIndex(0);
+				}
 			} else if (hazard.turnsLeft == hazardDefinition.defaultRoundDuration) {
 				fmt::println("[Hazard] {} encountered. It is active for {} turns", hazardDefinition.name, hazard.turnsLeft);
 				event->presentEvent("You encountered a hazard",
@@ -197,6 +208,13 @@ namespace df {
 			}
 			player->removeResources(hazardDefinition.skipRessource, hazard.turnsLeft * hazardDefinition.skipCost);
 			this->registry->hazards.remove(e);
+
+			Entity hero = registry->animations.entities.front();
+			auto& animComp = registry->animations.get(hero);
+			if (animComp.currentType != Hero::AnimationType::Idle) {
+				animComp.currentType = Hero::AnimationType::Idle;
+				animComp.anim.setCurrentFrameIndex(0);
+			}
 		}
 	}
 
