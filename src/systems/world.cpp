@@ -242,6 +242,12 @@ namespace df {
 						{"Close"});
 				}
 			} break;
+			case GLFW_KEY_J: {
+				notifications->showNotification(
+					"Reset Tutorial",
+					"Do you really want to reset the tutorial?",
+					{"Reset tutorial", "Don't reset tutorial"});
+			} break;
 			case GLFW_KEY_K:{
 				quests->setCurrentQuest();
 				showCosts = false;
@@ -261,6 +267,7 @@ namespace df {
 						"T:  Open trade menu\n"
 						"C:  See costs\n"
 						"V:  How to get victory points\n"
+						"J:  Reset Tutorial\n"
 						"Esc:  Close Popup\n"
 						"Enter:  Next Turn\n"
 						"+/-:  Zoom\n"
