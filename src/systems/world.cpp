@@ -435,9 +435,9 @@ namespace df {
 			//fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
 			// Update Tutorial if finished
-			if (step && step->id == TutorialStepId::WELCOME ||
+			if (step && (step->id == TutorialStepId::WELCOME ||
 				step->id == TutorialStepId::EXPLAIN_HEROPOINTS ||
-				step->id == TutorialStepId::EXPLAIN_MOVEMENT) {
+				step->id == TutorialStepId::EXPLAIN_MOVEMENT)) {
 				this->gameState->completeCurrentTutorialStep();
 			} else if (step && step->id == TutorialStepId::END) {
 				this->gameState->completeCurrentTutorialStep();
