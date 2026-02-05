@@ -225,6 +225,9 @@ namespace df {
 				
 			} break;
 			case GLFW_KEY_V: {
+				if (step && step->id == TutorialStepId::OPEN_HEROPOINTS_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
 				showCosts = false;
 				showTrade = false;
 				showKeybinds = false;
@@ -432,7 +435,9 @@ namespace df {
 			//fmt::println("LMB pressed at screen coordinates: ({}, {})", mouseX, mouseY);
 
 			// Update Tutorial if finished
-			if (step && step->id == TutorialStepId::WELCOME) {
+			if (step && step->id == TutorialStepId::WELCOME ||
+				step->id == TutorialStepId::EXPLAIN_HEROPOINTS ||
+				step->id == TutorialStepId::EXPLAIN_MOVEMENT) {
 				this->gameState->completeCurrentTutorialStep();
 			} else if (step && step->id == TutorialStepId::END) {
 				this->gameState->completeCurrentTutorialStep();

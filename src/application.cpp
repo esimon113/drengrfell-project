@@ -849,6 +849,10 @@ namespace df {
 					if (hoveredSettlementId != SIZE_MAX) {
 						selectedSettlementId = hoveredSettlementId;
 						render.renderSettlementMenuSystem.showMenu(hoveredSettlementId);
+						auto* step = this->gameState->getCurrentTutorialStep();
+						if (step && step->id == TutorialStepId::SETTLEMENT_MENU) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 						return;
 					}
 				}
