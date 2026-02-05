@@ -746,6 +746,10 @@ namespace df {
 				return; // notification clicked -> no further actions (including movement) for now
 			}
 			if (render.renderNotificationSystem.isActive() || render.eventPresentationSystem.currentEvent) {
+				TutorialStep* step = this->gameState->getCurrentTutorialStep();
+				if (step && step->id == TutorialStepId::WELCOME) {
+					this->gameState->completeCurrentTutorialStep();
+				}
 				return;
 			}
 			if (render.renderSettlementMenuSystem.isActive()) {
@@ -832,6 +836,8 @@ namespace df {
 							onKeyCallback(windowParam, GLFW_KEY_C, 0, GLFW_PRESS, 0);
 						} else if (SideHudButton == "Keybindings") {
 							onKeyCallback(windowParam, GLFW_KEY_K, 0, GLFW_PRESS, 0);
+						} else if (SideHudButton == "HeroPoints") {
+							onKeyCallback(windowParam, GLFW_KEY_V, 0, GLFW_PRESS, 0);
 						}
 					}
 					return;

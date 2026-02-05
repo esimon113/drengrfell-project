@@ -28,6 +28,7 @@ namespace df {
 		self.clayTexture = Texture::init(assets::Texture::RESSOURCE_CLAY);
 		self.woolTexture = Texture::init(assets::Texture::RESSOURCE_WOOL);
 		self.grainTexture = Texture::init(assets::Texture::RESSOURCE_GRAIN);
+		self.heroPointsTexture = Texture::init(assets::Texture::RESSOURCE_HERO_POINTS);
 
 		// texture init	side hud buttons
 		self.tradeTexture = Texture::init(assets::Texture::SIDE_HUD_TRADE_BUTTON);
@@ -35,6 +36,7 @@ namespace df {
 		self.keybindingsTexture = Texture::init(assets::Texture::SIDE_HUD_KEYBINDINGS_BUTTON);
 		self.costTexture = Texture::init(assets::Texture::SIDE_HUD_COST_BUTTON);
 		self.hudEndTurnButtonTexture = Texture::init(assets::Texture::HUD_END_TURN_BUTTON);
+		self.heroPointsSideHudTexture = Texture::init(assets::Texture::SIDE_HUD_HERO_POINTS_BUTTON);
 
 		// Viewport
 		glViewport(0, 0, extent.x, extent.y);
@@ -125,6 +127,7 @@ namespace df {
 			{sideHudPos.x + 10.f * scale, buttonYPos - (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Trade", tradeTexture},
 			{sideHudPos.x + 10.f * scale, buttonYPos - 2 * (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Cost", costTexture},
 			{sideHudPos.x + 10.f * scale, buttonYPos - 3 * (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Keybindings", keybindingsTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos - 4 * (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "HeroPoints", heroPointsSideHudTexture},
 		};
 	}
 
@@ -215,19 +218,31 @@ namespace df {
 				// prepare next writing position
 				x += iconPadding * 1.3f + textSize.x;
 			}
-			// display round
-			std::string roundText = "Round: " + std::to_string(gameState->getRoundNumber());	// update rounds
-			std::string heroPointsText = "Points: " + std::to_string(player.getHeroPoints());	// update hero points
-			glm::vec2 roundTextSize = textSystem->measureText(roundText, scale * 1.2f);
+			// display round + hero points
+			int heroPoints = player.getHeroPoints();
+
+			glm::vec2 heroIconSize = {iconSize, iconSize}; 
+			std::string heroPointsText = std::to_string(heroPoints);
 			glm::vec2 heroPointsTextSize = textSystem->measureText(heroPointsText, scale * 1.2f);
-			float textPadding = 40.f * scale;	// padding between rounds / hero points
-			float totalWidth = roundTextSize.x + textPadding + heroPointsTextSize.x;
-			// centerr round text between last resource text and end turn button
+
+			std::string roundText = "Round: " + std::to_string(gameState->getRoundNumber());
+			glm::vec2 roundTextSize = textSystem->measureText(roundText, scale * 1.2f);
+
+			// compute max width
+			float textPadding = 120.f * scale; // padding between hero points and rounds
+			float totalWidth = heroIconSize.x + hudTextOffset + heroPointsTextSize.x + textPadding + roundTextSize.x;
+
+			// center hero points and round count
 			float centerX = (x + endTurnButton.x) / 2.0f;
 			float startX = centerX - totalWidth / 2.0f;
-			float textY = hudCenterY - roundTextSize.y / 2.0f + hudTextOffset;
-			textSystem->renderText(roundText, {startX, textY}, scale * 1.2f, {1.f, 1.f, 1.f});
-			textSystem->renderText(heroPointsText, {startX + textPadding + roundTextSize.x, textY}, scale * 1.2f, {1.f, 1.f, 1.f});
+			float textY = hudCenterY - heroPointsTextSize.y / 2.0f + hudTextOffset;
+
+			// display hero points texture + amount
+			drawSprite(heroPointsTexture, {startX, hudCenterY - iconSize / 2.0f}, heroIconSize, {1.f, 1.f, 1.f});
+			textSystem->renderText(heroPointsText, {startX + iconSize + hudTextOffset, textY}, scale * 1.2f, {1.f, 1.f, 1.f});
+
+			// display rounds
+			textSystem->renderText(roundText, {startX + iconSize + hudTextOffset + heroPointsTextSize.x + textPadding, textY}, scale * 1.2f, {1.f, 1.f, 1.f});
 
 			// End Turn Button
 			// hover detection (update hovered flags)
