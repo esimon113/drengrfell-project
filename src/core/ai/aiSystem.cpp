@@ -139,7 +139,7 @@ namespace df {
 		if (!this->commandsLoaded) {
 			loadCommands();
 		}
-		return loadBehaviorTree("ai_bt_hero", false);
+		return loadBehaviorTree("ai_bt_hero");
 	}
 
 	Result<void, ResultError> AiSystem::loadBehaviorTree(const std::string& filename, bool skipIfLoaded) {
@@ -151,6 +151,7 @@ namespace df {
 				return Err(result.unwrapErr());
 			} else {
 				this->loadedRoots[filename] = result.unwrap();
+				fmt::println("[Ai]: Loaded BT: {}", this->loadedRoots[filename]->serialize().dump());
 				return Ok();
 			}
 		}
@@ -160,21 +161,29 @@ namespace df {
 	void AiSystem::onKeyCallback(GLFWwindow* /*window*/, const int key, int /*scancode*/, const int action, int /*mods*/) {
 		if (action == GLFW_PRESS) {
 			if (key == GLFW_KEY_L) {
-				loadBehaviorTrees();
-				fmt::println("Loaded BT: {}", this->loadedRoots["ai_bt_hero"]->serialize().dump());
+				aiActive = !aiActive;
+				fmt::println("[Ai]: AI active set to {}", aiActive);
 			}
 			if (key == GLFW_KEY_P) {
 				if (registry) {
-					if (!this->commandsLoaded) {
-						loadCommands();
-					}
-					loadBehaviorTree("ai_bt_hero");
+					loadBehaviorTrees();
 					const Agent p = registry->animations.entities.front();
 					fmt::println("Agent P is {}", static_cast<int>(p));
 					BTContext context {p};
 					fmt::println("{}", to_string(this->loadedRoots["ai_bt_hero"]->process(context)));
 				}
 			}
+		}
+	}
+
+	void AiSystem::processHero(Agent a) {
+		if (registry) {
+			if (!this->commandsLoaded) {
+				loadCommands();
+			}
+			loadBehaviorTree("ai_bt_hero");
+			BTContext context {a};
+			fmt::println("{}", to_string(this->loadedRoots["ai_bt_hero"]->process(context)));
 		}
 	}
 }
