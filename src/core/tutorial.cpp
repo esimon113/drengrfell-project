@@ -49,6 +49,7 @@ namespace df {
 		steps.push_back({.id = TutorialStepId::EXPLAIN_MOVEMENT,
 						 .text = "Some terrain is harder to traverse, so your hero\nwill circumvent it if he finds a better way.\n"
 								 "Swimming is the hardest, but traversing through fog, mountains, ice or forests\nis hard as well. "
+								 "You got a limited amount of range you can move each turn.\nThe tiles you can traverse are marked by a pulsating path.\n"
 								 "Press left mouse button to continue.",
 						 .completed = false,
 						 .renderBox = true});
