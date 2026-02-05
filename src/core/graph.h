@@ -151,7 +151,7 @@ namespace df {
 		std::vector<size_t> getNeighborIds(size_t id) const;
 		std::vector<size_t> getTileNeighbors(size_t tileId) const;
 		// max movement range for dijkstra (max weight)
-		double maxRange = 20.0f;
+		double maxRange = 13.0f;
 
 		// Methods for using the graph as a rectangular map
 		unsigned mapWidth = 0;
