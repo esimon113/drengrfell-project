@@ -746,6 +746,10 @@ namespace df {
 				return; // notification clicked -> no further actions (including movement) for now
 			}
 			if (render.renderNotificationSystem.isActive() || render.eventPresentationSystem.currentEvent) {
+				TutorialStep* step = this->gameState->getCurrentTutorialStep();
+				if (step && step->id == TutorialStepId::WELCOME) {
+					this->gameState->completeCurrentTutorialStep();
+				}
 				return;
 			}
 			if (render.renderSettlementMenuSystem.isActive()) {

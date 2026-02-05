@@ -113,6 +113,7 @@ namespace df {
 		"ressources/clay.png",
 		"ressources/wool.png",
 		"ressources/grain.png",
+		"ressources/heroPoints.png",
 
 		"hud/hudBackgroundTexture.png",	// hud background
 

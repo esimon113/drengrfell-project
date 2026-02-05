@@ -103,6 +103,7 @@ namespace df {
 			RESSOURCE_CLAY,
 			RESSOURCE_WOOL,
 			RESSOURCE_GRAIN,
+			RESSOURCE_HERO_POINTS,
 
 			HUD_BACKGROUND,	// Hud background
 

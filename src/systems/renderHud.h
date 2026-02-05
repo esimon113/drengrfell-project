@@ -63,6 +63,7 @@ namespace df {
 		Texture clayTexture;
 		Texture woolTexture;
 		Texture grainTexture;
+		Texture heroPointsTexture;
 		std::vector<std::tuple<Texture, int, glm::vec3>> resourceIconsWithAmount;
 
 		// shader
