@@ -165,6 +165,10 @@ namespace df {
 			}
 			if (key == GLFW_KEY_P) {
 				if (registry) {
+					if (!this->commandsLoaded) {
+						loadCommands();
+					}
+					loadBehaviorTree("ai_bt_hero");
 					const Agent p = registry->animations.entities.front();
 					fmt::println("Agent P is {}", static_cast<int>(p));
 					BTContext context {p};

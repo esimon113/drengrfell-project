@@ -227,6 +227,7 @@ namespace df {
 			case GLFW_KEY_V: {
 				showCosts = false;
 				showTrade = false;
+				showKeybinds = false;
 				if (showHeroPoints) {
 					notifications->close();
 					showHeroPoints = false;
@@ -234,7 +235,7 @@ namespace df {
 					showHeroPoints = true;
 					notifications->showNotification(
 						"Hero Points",
-						"1 point per stone settlement\n5 points per castle\nYou need 20 points to win\nGood luck!",
+						"1 point per stone settlement\n5 points per castle\n5 points for completing all quests\nYou need 20 points to win\nGood luck!",
 						{"Close"});
 				}
 			} break;
@@ -250,13 +251,16 @@ namespace df {
 					showKeybinds = true;
 					std::vector<std::string> buttons;
 					std::string keybindsList = 
-						"WASD: Move map\n"
-						"Q: Active quests\n"
-						"N: Build settlement\n"
-						"B: Build road\n"
-						"T: Open trade menu\n"
-						"C: See costs\n"
-						"+/-: Zoom\n"
+						"WASD:  Move map\n"
+						"Q:  Active quests\n"
+						"N:  Build settlement\n"
+						"B:  Build road\n"
+						"T:  Open trade menu\n"
+						"C:  See costs\n"
+						"V:  How to get victory points\n"
+						"Esc:  Close Popup\n"
+						"Enter:  Next Turn\n"
+						"+/-:  Zoom\n"
 						"Space: Center camera to hero";
 					buttons = {"Close"};
 					notifications->showNotification("Keybinds", keybindsList, buttons);
