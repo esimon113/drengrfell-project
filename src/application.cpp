@@ -744,6 +744,9 @@ namespace df {
 				if (pressedButton == "Back to Menu") {
 					victoryScreenClosed = true; // close victory screen and go back to menu
 				}
+				if (pressedButton == "Reset tutorial") {
+					gameState->resetTutorial();
+				}
 				return; // notification clicked -> no further actions (including movement) for now
 			}
 			if (render.renderNotificationSystem.isActive() || render.eventPresentationSystem.currentEvent) {
