@@ -64,7 +64,7 @@ namespace df {
 		glfwSetWindowSizeLimits(
 			self.window->getHandle(),
 			1280, 720,
-			GLFW_DONT_CARE, GLFW_DONT_CARE 
+			GLFW_DONT_CARE, GLFW_DONT_CARE
 		);
 
 		self.window->makeContextCurrent();
@@ -129,6 +129,7 @@ namespace df {
 		registry->addSystem<RenderTilesSystem>(&render.getRenderTilesSystem());
 		registry->addSystem<EventPresentationSystem>(&render.getEventPresentationSystem());
 		registry->addSystem<RenderSettlementMenuSystem>(&render.getRenderSettlementMenuSystem());
+		registry->addSystem<AiSystem>(aiSystem.get());
 
 		auto* qSys = gameController->getQuestsSystem();
 		if (qSys) {
@@ -237,22 +238,22 @@ namespace df {
 					glClear(GL_COLOR_BUFFER_BIT);
 					render.step(delta_time);
 					if (!victoryScreenShown) {
-						size_t winnerId = gameState->getCurrentPlayerId(); 
+						size_t winnerId = gameState->getCurrentPlayerId();
 						std::string leaderboard;
 
 						for (size_t i = 0; i < gameState->getPlayerCount(); ++i) {
 							auto p = gameController->getPlayerbyId(i);
 							if (p) {
-								leaderboard += fmt::format("Finished in {} rounds with {} points.\n", 
-															gameState->getRoundNumber(), 
+								leaderboard += fmt::format("Finished in {} rounds with {} points.\n",
+															gameState->getRoundNumber(),
 															p->getHeroPoints());
 							}
 						}
 
 						RenderNotificationSystem* notification = registry->getSystem<RenderNotificationSystem>();
-						
+
 						notification->showNotification("FINISHED!", leaderboard, {"Back to Menu"});
-						
+
 						fmt::println("Game ended. Winner: Player {}", winnerId);
 						victoryScreenShown = true;
 					}
@@ -456,7 +457,7 @@ namespace df {
 		for (auto id : pathTo18) {
 			fmt::print("{} ", id);
 		}
-		fmt::println(""); 
+		fmt::println("");
 
 		// Test 2: Pfad zu Tile 81
 		auto pathTo81 = gameState->getMap().dijkstraPath(testId, 81);
@@ -466,7 +467,7 @@ namespace df {
 			fmt::print("{} ", id);
 		}
 		fmt::println(""); */
-		
+
 
 		// 		// This is only for DEBUGGING purposes:
 		// #if defined(__unix__) || defined(__linux__)
@@ -588,7 +589,7 @@ namespace df {
 
 			if(action == GLFW_PRESS && key == GLFW_KEY_ENTER){
 				if (!gameState->isGameOver() && !movementSystem->getMovementState() && !render.renderNotificationSystem.isActive()) {
-            
+
 					auto* step = this->gameState->getCurrentTutorialStep();
 					if (step && step->id == TutorialStepId::MOVE_HERO) {
 						this->gameState->completeCurrentTutorialStep();
@@ -598,7 +599,7 @@ namespace df {
 					if (!registry->hazards.has(hero)) {
 						movementSystem->toggleMovementState();
 					}
-					awaitingTurnEnd = true; 
+					awaitingTurnEnd = true;
 				}
 			}
 
@@ -717,7 +718,7 @@ namespace df {
 					tradingSystem.handleOptionClicked(pressedButton);
 					if(world.getShowTrade()){
 						world.setShowTrade(false);
-					} 
+					}
 				}
 				if (pressedButton == "Pay ressources") {
 					gameController->payForHazard();
@@ -849,6 +850,10 @@ namespace df {
 					if (hoveredSettlementId != SIZE_MAX) {
 						selectedSettlementId = hoveredSettlementId;
 						render.renderSettlementMenuSystem.showMenu(hoveredSettlementId);
+						auto* step = this->gameState->getCurrentTutorialStep();
+						if (step && step->id == TutorialStepId::SETTLEMENT_MENU) {
+							this->gameState->completeCurrentTutorialStep();
+						}
 						return;
 					}
 				}
@@ -939,7 +944,7 @@ namespace df {
 					auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
 					fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
-					if (mapId >= 0 && !movementSystem->isEntityMoving()) {
+					if (mapId >= 0 && !movementSystem->isEntityMoving() && !aiSystem->isAiActive()) {
 						//  TODO: For multiplayer use hero of active player
 						Entity hero = registry->animations.entities.front();
 						Player* player = this->gameState->getPlayer(0);
