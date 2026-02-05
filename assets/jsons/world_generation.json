@@ -5,7 +5,7 @@
         "persistence": 0.5
     },
     "columns": 20,
-    "generationMode": 1,
+    "generationMode": 0,
     "precipitationNoise": {
         "frequency": 0.10000000149011612,
         "octaves": 6,
