@@ -6,6 +6,8 @@
 #include "worldGenerator.h"
 #include <iostream>
 
+#include "ai/aiSystem.h"
+
 namespace df {
 	RenderTilesSystem RenderTilesSystem::init(Window& window, Registry& registry, std::shared_ptr<GameState> gameState) noexcept {
 		RenderTilesSystem self;
@@ -156,7 +158,7 @@ namespace df {
 				fmt::println("Set hex rendering to {}", this->useHex ? "true" : "false");
 			} break;*/
 			case GLFW_KEY_P: {
-                    
+
 			} break;
 			}
 		}
@@ -164,7 +166,12 @@ namespace df {
 	}
 
 	void RenderTilesSystem::onMouseButtonCallback(GLFWwindow* /* pwindow */, int button, int action, int /* mods */) noexcept {
+
 		if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+			auto* aiSystem = registry->getSystem<AiSystem>();
+			if (aiSystem) {
+				if (aiSystem->isAiActive()) return;
+			}
 			glm::dvec2 cursor = this->window->getCursorPosition();
 			auto extent = this->window->getWindowExtent();
 
@@ -352,7 +359,7 @@ namespace df {
 
 
 	void RenderTilesSystem::reset() noexcept {
-		this->tileAtlas.deinit(); 
+		this->tileAtlas.deinit();
 		this->tileAtlas = TextureArray::init(assets::Texture::TILE_ATLAS);
 		this->updateRequired = true;
 	}

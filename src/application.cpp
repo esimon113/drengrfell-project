@@ -936,7 +936,7 @@ namespace df {
 					}
 				}
 
-				if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+				if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && !aiSystem->isAiActive()) {
 					glm::vec2 mouseCoords = glm::vec2(mouseX, mouseY);
 					auto extent = this->window->getWindowExtent();
 
@@ -944,7 +944,7 @@ namespace df {
 					auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
 					fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
-					if (mapId >= 0 && !movementSystem->isEntityMoving() && !aiSystem->isAiActive()) {
+					if (mapId >= 0 && !movementSystem->isEntityMoving()) {
 						//  TODO: For multiplayer use hero of active player
 						Entity hero = registry->animations.entities.front();
 						Player* player = this->gameState->getPlayer(0);
