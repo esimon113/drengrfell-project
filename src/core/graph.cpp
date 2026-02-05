@@ -831,6 +831,7 @@ namespace df {
 	template std::vector<const Tile*> Graph::dijkstra<Tile>(const Tile&) const;
 
 	// Dijkstra but gives the Path from tile x to tile y in tileIDs
+	// uses maxRange and weights
 
 	std::vector<size_t> Graph::dijkstraPath(size_t startId, size_t goalId, Player* player) const {
 		constexpr double INF = std::numeric_limits<double>::infinity();
@@ -838,9 +839,7 @@ namespace df {
 		std::unordered_map<size_t, double> distance;
 		std::unordered_map<size_t, size_t> previous;
 
-		std::vector<size_t> nodes;
 		for (const auto& t : tiles) {
-			nodes.push_back(t->getId());
 			distance[t->getId()] = INF;
 			previous[t->getId()] = SIZE_MAX;
 		}
@@ -854,32 +853,30 @@ namespace df {
 							std::vector<std::pair<double, size_t>>,
 							decltype(cmp)>
 			q(cmp);
+
 		q.emplace(0.0, startId);
 
 		while (!q.empty()) {
 			auto [dist, currentId] = q.top();
 			q.pop();
 
-			if (currentId == goalId)
-				break; 
-
 			if (dist > distance[currentId])
 				continue;
 
+			if (currentId == goalId)
+				break;
 
-
-			auto neighborIds = getTileNeighbors(currentId);
-			for (size_t neighborId : neighborIds) {
+			for (size_t neighborId : getTileNeighbors(currentId)) {
 				const Tile* neighborTile = getTile(neighborId);
 				if (!neighborTile)
 					continue;
 
 				double cost = neighborTile->getMovementCost();
 				if (player && !player->isTileExplored(neighborId) && neighborTile->getType() != types::TileType::WATER) {
-					cost = 2; // Penalty for undiscovered tiles
+					cost = 2; // sets cost of undiscovered tiles = 2 (except for water tiles)
 				}
 
-				double alt = dist + cost; 
+				double alt = dist + cost;
 				if (alt < distance[neighborId]) {
 					distance[neighborId] = alt;
 					previous[neighborId] = currentId;
@@ -890,6 +887,17 @@ namespace df {
 
 		std::vector<size_t> path;
 		size_t current = goalId;
+
+		// finds last tile with distance < maxRange
+		while (current != SIZE_MAX) {
+			if (distance[current] > maxRange) {
+				current = previous[current];
+				continue;
+			}
+			break;
+		}
+
+		// creates path
 		while (current != SIZE_MAX) {
 			path.push_back(current);
 			if (current == startId)
@@ -898,7 +906,8 @@ namespace df {
 		}
 
 		std::reverse(path.begin(), path.end());
-		if (path.front() != startId)
+
+		if (path.empty() || path.front() != startId)
 			path.clear();
 
 		return path;
