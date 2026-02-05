@@ -14,8 +14,8 @@ namespace df {
 		if (kind == "none") {
 			if (j.size() == 1) {
 				// Assume shorthand function
-				const auto items = j.items();
-				const auto& [name, args] = *items.begin();
+				const auto it = j.items().begin();
+				std::string name = it.key();
 				auto ptr = std::make_shared<BTFunction>();
 				if (ptr->deserializeInplaceCompact(j.value(name, json::object()), c, name)) {
 					return ptr;
