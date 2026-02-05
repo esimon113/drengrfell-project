@@ -5,6 +5,8 @@
  * Asgard represents the authoritative game server.
  * It wraps the TcpServer with Bifrost protocol handling and integrates
  * the SessionManager for game logic.
+ *
+ * Created with AI-assistance
  */
 
 #pragma once
@@ -17,8 +19,8 @@
 #include <unordered_map>
 
 #include "bifrost.h"
-#include "sessionManager.h"
 #include "multiplayer/network/tcpServer.h"
+#include "sessionManager.h"
 
 
 namespace df::bifrost {
@@ -201,4 +203,3 @@ namespace df::bifrost {
 	};
 
 } // namespace df::bifrost
-

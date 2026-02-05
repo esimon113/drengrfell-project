@@ -10,6 +10,8 @@
  * - Intent-Based Commands: Clients send what they want to do, not what happened
  * - Full State Sync: Complete GameState broadcast after every action
  * - No Client Prediction: Clients wait for server confirmation
+ *
+ * Created with AI assistance
  */
 
 #pragma once
@@ -192,8 +194,8 @@ namespace df::bifrost {
 			wgc.columns = columns;
 			wgc.rows = rows;
 			wgc.generationMode = (generationMode == GenerationMode::INSULAR)
-				? df::WorldGeneratorConfig::GenerationMode::INSULAR
-				: df::WorldGeneratorConfig::GenerationMode::PERLIN;
+									 ? df::WorldGeneratorConfig::GenerationMode::INSULAR
+									 : df::WorldGeneratorConfig::GenerationMode::PERLIN;
 			wgc.seed = seed;
 			return wgc;
 		}

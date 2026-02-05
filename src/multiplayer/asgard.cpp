@@ -1,6 +1,8 @@
 /**
  * @file asgard.cpp
  * @brief Implementation of the Bifrost game server
+ *
+ * Created with AI-assistance
  */
 
 #include "asgard.h"
@@ -477,4 +479,3 @@ namespace df::bifrost {
 
 
 } // namespace df::bifrost
-

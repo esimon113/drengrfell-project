@@ -1,6 +1,8 @@
 /**
  * @file bifrost.cpp
  * @brief Implementation of the Bifrost Protocol v1.0
+ *
+ * Created with AI assistance
  */
 
 #include "bifrost.h"
