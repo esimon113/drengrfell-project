@@ -47,7 +47,7 @@ namespace df {
 						 .renderBox = true});
 
 		steps.push_back({.id = TutorialStepId::EXPLAIN_MOVEMENT,
-						 .text = "Some terrain is harder to traverse, so your hero will circumvent it if he finds a better way.\n"
+						 .text = "Some terrain is harder to traverse, so your hero\nwill circumvent it if he finds a better way.\n"
 								 "Swimming is the hardest, but traversing through fog, mountains, ice or forests\nis hard as well. "
 								 "Press left mouse button to continue.",
 						 .completed = false,
@@ -58,14 +58,14 @@ namespace df {
 							 "Build your first settlement using the 'N' button.\n"
 							 "Then you get the hover view.\n"
 							 "To build the settlement click any free spot where\ntwo tiles meet the one your hero is standing on.\n"
-							 "They can not be build right next no each other.\n"
+							 "They can not be build right next to each other.\n"
 							 "Settlements generate resources from nearby tiles each round.",
 						 .completed = false,
 						 .renderBox = true});
 
 		steps.push_back({.id = TutorialStepId::BUILD_ROAD,
-						 .text = "Build a road to expand using 'B' Button to create the hover view.\nThen select any free edge close to your hero to build the road.\n"
-								 "Roads can also be built adjacent to other roads or settlements anywhere on the map,\nenabling you to also build settlements there.\n"
+						 .text = "Build a road to expand using 'B' Button to create the hover view.\nThen select any free edge next to a settlement or road to build the road.\n"
+								 "Roads can also be built adjacent to other roads or settlements anywhere on the\nmap, enabling you to also build settlements there.\n"
 								 "You can use this to your advantage by creating a road network\nfor easier building, even when far away.",
 						 .completed = false,
 						 .renderBox = true});
@@ -79,7 +79,7 @@ namespace df {
 
 		steps.push_back({.id = TutorialStepId::OPEN_TRADE_MENU,
 						 .text = "Use 'T' to open the trade menu and trade your ressources.\n"
-								 "This can be very useful if you are just a few resources short for building or upgrading.\n"
+								 "This can be very useful if you are just\na few resources short for building or upgrading.\n"
 								 "You can also access the trade menu by clicking the scale icon on the right.",
 						 .completed = false,
 						 .renderBox = true});
@@ -98,12 +98,12 @@ namespace df {
 
 		steps.push_back({.id = TutorialStepId::OPEN_HEROPOINTS_MENU,
 						 .text = "You can see which actions award hero points by pressing the 'V' button.\n"
-								 "You can also access the hero point menu by clicking the laurel wreath icon on the right.",
+								 "You can also access the hero point menu by\nclicking the laurel wreath icon on the right.",
 						 .completed = false,
 						 .renderBox = true});
 
 		steps.push_back({.id = TutorialStepId::SETTLEMENT_MENU,
-						 .text = "When you click on a settlement you can upgrade it or build buildings to boost individual recource production.\n"
+						 .text = "When you click on a settlement you can upgrade it or\nbuild buildings to boost individual recource production.\n"
 								 "Upgrading a settlement is also a great source of hero points.",
 						 .completed = false,
 						 .renderBox = true});

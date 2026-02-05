@@ -225,6 +225,9 @@ namespace df {
 				
 			} break;
 			case GLFW_KEY_V: {
+				if (step && step->id == TutorialStepId::OPEN_HEROPOINTS_MENU) {
+					this->gameState->completeCurrentTutorialStep();
+				}
 				showCosts = false;
 				showTrade = false;
 				showKeybinds = false;
