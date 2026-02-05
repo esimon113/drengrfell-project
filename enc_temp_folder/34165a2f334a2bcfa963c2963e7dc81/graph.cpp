@@ -831,7 +831,6 @@ namespace df {
 	template std::vector<const Tile*> Graph::dijkstra<Tile>(const Tile&) const;
 
 	// Dijkstra but gives the Path from tile x to tile y in tileIDs
-	// uses maxRange and weights
 
 	std::vector<size_t> Graph::dijkstraPath(size_t startId, size_t goalId, Player* player) const {
 		constexpr double INF = std::numeric_limits<double>::infinity();
@@ -873,7 +872,7 @@ namespace df {
 
 				double cost = neighborTile->getMovementCost();
 				if (player && !player->isTileExplored(neighborId) && neighborTile->getType() != types::TileType::WATER) {
-					cost = 2; // sets cost of undiscovered tiles = 2 (except for water tiles)
+					cost = 2;
 				}
 
 				double alt = dist + cost;
@@ -888,7 +887,6 @@ namespace df {
 		std::vector<size_t> path;
 		size_t current = goalId;
 
-		// finds last tile with distance < maxRange
 		while (current != SIZE_MAX) {
 			if (distance[current] > maxRange) {
 				current = previous[current];
@@ -897,7 +895,6 @@ namespace df {
 			break;
 		}
 
-		// creates path
 		while (current != SIZE_MAX) {
 			path.push_back(current);
 			if (current == startId)

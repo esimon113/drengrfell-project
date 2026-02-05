@@ -292,15 +292,16 @@ namespace df {
 		currentPathIndex = 0;
 
 		if (!currentPath.empty()) {
-			targetPosition = getTileWorldPosition(currentPath.front());
+			size_t lastTile = currentPath.back();
+			targetPositionTileID = lastTile;
+			targetPosition = getTileWorldPosition(lastTile);
 			currentPathIndex = 0;
 		} else {
-			targetPosition = getTileWorldPosition(id);
+			targetPositionTileID = currentPosTileId;
+			targetPosition = getTileWorldPosition(currentPosTileId);
 		}
 
-		targetPosition = getTileWorldPosition(id);
 		targetSet = true;
-		targetPositionTileID = id;
 		fmt::println("New target tile selected: {}", id);
 	}
 
