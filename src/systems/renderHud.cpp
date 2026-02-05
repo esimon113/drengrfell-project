@@ -154,6 +154,9 @@ namespace df {
 					textSize.x + boxPosPaddingX,
 					textSize.y + boxPosPaddingY};
 				glm::vec2 pos = {10.0f, window->getWindowExtent().y - rectBoxSize.y - 10.0f}; // box position always top left
+				if (step->id == TutorialStepId::WELCOME)
+					// center box in the middle of the screen
+					pos = {(viewport.size.x - rectBoxSize.x) / 2.0f, (viewport.size.y - rectBoxSize.y) / 2.0f}; // render first tutorial "into your face" like requested in cross-play session					
 				// Tutorial box
 				if (step->renderBox) {
 					drawSprite(tutorialTexture, pos, rectBoxSize, {1.f, 1.f, 1.f});
