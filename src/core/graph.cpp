@@ -40,7 +40,7 @@ namespace df {
 
 		const size_t edgeId = edge->getId();
 		if (this->findEdgeById(edgeId) != nullptr) {
-			fmt::println("[DEBUG].[addEdge] edge with ID {} already exists; returning...", edgeId);
+			//fmt::println("[DEBUG].[addEdge] edge with ID {} already exists; returning...", edgeId);
 			return;
 		}
 
@@ -52,24 +52,24 @@ namespace df {
 
 	void Graph::addVertex(std::unique_ptr<Vertex> vertex) {
 		if (!vertex) {
-			fmt::println("[DEBUG].[addVertex] vertex is null, returning");
+			//fmt::println("[DEBUG].[addVertex] vertex is null, returning");
 			return;
 		}
 
 		const size_t vertexId = vertex->getId();
-		fmt::println("[DEBUG].[addVertex] adding vertex with ID: {}", vertexId);
+		//fmt::println("[DEBUG].[addVertex] adding vertex with ID: {}", vertexId);
 		if (this->findVertexById(vertexId) != nullptr) {
-			fmt::println("[DEBUG].[addVertex] vertex with ID {} already exists; returning...", vertexId);
+			//fmt::println("[DEBUG].[addVertex] vertex with ID {} already exists; returning...", vertexId);
 			return;
 		}
 
-		fmt::println("[DEBUG].[addVertex] pushing vertex to vector");
+		//fmt::println("[DEBUG].[addVertex] pushing vertex to vector");
 		this->vertices.push_back(std::move(vertex));
-		fmt::println("[DEBUG].[addVertex] vertex pushed, now emplace in maps");
+		//fmt::println("[DEBUG].[addVertex] vertex pushed, now emplace in maps");
 
 		this->vertexEdges.emplace(vertexId, std::array<EdgeHandle, 3>{});
 		this->vertexTiles.emplace(vertexId, std::array<TileHandle, 3>{});
-		fmt::println("[DEBUG].[addVertex] vertex added successfully");
+		//fmt::println("[DEBUG].[addVertex] vertex added successfully");
 	}
 
 
@@ -961,18 +961,18 @@ namespace df {
 	// Map methods
 	void Graph::regenerate(const WorldGeneratorConfig& worldGeneratorConfig) {
 		if (const Result<std::vector<Tile>, ResultError> generatedTiles = WorldGenerator::generateTiles(worldGeneratorConfig); generatedTiles.isOk()) {
-			fmt::println("[DEBUG] generated tiles");
+			//fmt::println("[DEBUG] generated tiles");
 			setMapWidth(worldGeneratorConfig.columns);
 			// tiles = generatedTiles.unwrap();
-			fmt::println("[DEBUG] start initializing tiles");
+			//fmt::println("[DEBUG] start initializing tiles");
 			this->initializeTilesForGraph(generatedTiles.unwrap());
-			fmt::println("[DEBUG] finished initializing tiles, try populating graph");
+			//fmt::println("[DEBUG] finished initializing tiles, try populating graph");
 			try {
 				this->populate();
 			} catch (const std::exception& e) {
 				std::cerr << "Error populating graph: " << e.what() << std::endl;
 			}
-			fmt::println("[DEBUG] finished populating graph");
+			//fmt::println("[DEBUG] finished populating graph");
 			this->renderUpdateRequested = true;
 		} else {
 			std::cerr << generatedTiles.unwrapErr() << std::endl;
@@ -983,10 +983,10 @@ namespace df {
 	void Graph::initializeTilesForGraph(std::vector<Tile> newTiles) {
 		if (newTiles.empty())
 			return;
-		fmt::println("[DEBUG] start initializing tiles with a non-empty newTiles vector");
-		fmt::println("[DEBUG] clear existing tiles");
+		//fmt::println("[DEBUG] start initializing tiles with a non-empty newTiles vector");
+		//fmt::println("[DEBUG] clear existing tiles");
 		this->tiles.clear();
-		fmt::println("[DEBUG] iterating over tiles to create new ones");
+		//fmt::println("[DEBUG] iterating over tiles to create new ones");
 
 		for (auto newTile : newTiles) {
 			std::unique_ptr<Tile> tile = std::make_unique<Tile>(newTile.getId(), newTile.getType(), newTile.getPotency());
@@ -994,7 +994,7 @@ namespace df {
 			tile->initializeHazardProfile();
 			this->addTile(std::move(tile));
 		}
-		fmt::println("[DEBUG] finished initializing tiles");
+		//fmt::println("[DEBUG] finished initializing tiles");
 	}
 
 
@@ -1012,14 +1012,14 @@ namespace df {
 		this->vertexEdges.clear();
 		this->vertexTiles.clear();
 
-		fmt::println("[DEBUG].[populate] cleared vectors");
+		//fmt::println("[DEBUG].[populate] cleared vectors");
 
 		const size_t columns = this->mapWidth;
 		const size_t rows = this->tiles.size() / columns;
-		fmt::println("[DEBUG].[populate] received map dimensions: columns={}, rows={}, tiles.size()={}", columns, rows, this->tiles.size());
+		//fmt::println("[DEBUG].[populate] received map dimensions: columns={}, rows={}, tiles.size()={}", columns, rows, this->tiles.size());
 
 		if (columns == 0 || rows == 0 || this->tiles.empty()) {
-			fmt::println("[DEBUG].[populate] ERROR: Invalid map dimensions or empty tiles!");
+			//fmt::println("[DEBUG].[populate] ERROR: Invalid map dimensions or empty tiles!");
 			return;
 		}
 
@@ -1036,7 +1036,7 @@ namespace df {
 		std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash> edgeIdMap;
 		std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash> vertexIdMap;
 
-		fmt::println("[DEBUG].[populate] start defining neighbour helpers");
+		//fmt::println("[DEBUG].[populate] start defining neighbour helpers");
 
 		// Build lookup from tile id to its position in the grid (row-major order).
 		std::unordered_map<size_t, size_t> tileIdToIndex;
@@ -1187,54 +1187,54 @@ namespace df {
 
 		size_t nextVertexId = maxTileId + 1;
 		size_t nextEdgeId = maxTileId + 1000000;
-		fmt::println("[DEBUG].[populate] got max tile id: {} and start iterating over tiles", maxTileId);
-		fmt::println("[DEBUG].[populate] about to iterate over {} tiles", this->tiles.size());
+		//fmt::println("[DEBUG].[populate] got max tile id: {} and start iterating over tiles", maxTileId);
+		//fmt::println("[DEBUG].[populate] about to iterate over {} tiles", this->tiles.size());
 
-		fmt::println("[DEBUG].[populate] starting tile iteration loop");
+		//fmt::println("[DEBUG].[populate] starting tile iteration loop");
 		for (size_t tileIndex = 0; tileIndex < this->tiles.size(); ++tileIndex) {
 			const auto& tile = this->tiles[tileIndex];
-			fmt::println("[DEBUG].[populate] processing tile index {}", tileIndex);
+			//fmt::println("[DEBUG].[populate] processing tile index {}", tileIndex);
 			if (!tile) {
-				fmt::println("[DEBUG].[populate] ERROR: Found null tile pointer!");
+				//fmt::println("[DEBUG].[populate] ERROR: Found null tile pointer!");
 				continue;
 			}
-			fmt::println("[DEBUG].[populate] got tile pointer, getting ID");
+			//fmt::println("[DEBUG].[populate] got tile pointer, getting ID");
 			size_t tileId = tile->getId();
-			fmt::println("[DEBUG].[populate] tile ID: {}", tileId);
+			//fmt::println("[DEBUG].[populate] tile ID: {}", tileId);
 			std::array<EdgeHandle, 6> tileEdgesArray{};
 			std::array<VertexHandle, 6> tileVerticesArray{};
 
-			fmt::println("[DEBUG].[populate] starting vertex loop for tile {}", tileId);
+			//fmt::println("[DEBUG].[populate] starting vertex loop for tile {}", tileId);
 			for (size_t vi = 0; vi < 6; ++vi) {
 				// canonical key for vertex
-				fmt::println("[DEBUG].[populate] calling getVertexKey for tile {}, vertex index {}", tileId, vi);
+				//fmt::println("[DEBUG].[populate] calling getVertexKey for tile {}, vertex index {}", tileId, vi);
 				auto key = getVertexKey(tileIndex, vi);
-				fmt::println("[DEBUG].[populate] got vertex key: ({}, {})", key.first, key.second);
+				//fmt::println("[DEBUG].[populate] got vertex key: ({}, {})", key.first, key.second);
 				VertexHandle tmpVertex = nullptr;
 
 				// if already exists, use existing vertex, else add unique new one
-				fmt::println("[DEBUG].[populate] looking up key in vertexIdMap (size: {})", vertexIdMap.size());
+				//fmt::println("[DEBUG].[populate] looking up key in vertexIdMap (size: {})", vertexIdMap.size());
 				try {
 					if (auto it = vertexIdMap.find(key); it != vertexIdMap.end()) {
-						fmt::println("[DEBUG].[populate] found existing vertex in map");
+						//fmt::println("[DEBUG].[populate] found existing vertex in map");
 						tmpVertex = this->findVertexById(it->second);
 						if (!tmpVertex) {
 							throw std::logic_error(fmt::format("Error while getting vertex. vertexIdMap out of sync: vertex {} missing", it->second));
 							// continue;
 						}
 					} else {
-						fmt::println("[DEBUG].[populate] creating new vertex");
+						//fmt::println("[DEBUG].[populate] creating new vertex");
 						size_t vertexId = nextVertexId++;
-						fmt::println("[DEBUG].[populate] new vertex ID: {}", vertexId);
+						//fmt::println("[DEBUG].[populate] new vertex ID: {}", vertexId);
 
 						auto vertex = std::make_unique<Vertex>(vertexId);
 						tmpVertex = vertex.get();
-						fmt::println("[DEBUG].[populate] created vertex unique_ptr, calling addVertex");
+						//fmt::println("[DEBUG].[populate] created vertex unique_ptr, calling addVertex");
 						this->addVertex(std::move(vertex));
-						fmt::println("[DEBUG].[populate] added vertex, storing in map");
+						//fmt::println("[DEBUG].[populate] added vertex, storing in map");
 
 						vertexIdMap[key] = vertexId;
-						fmt::println("[DEBUG].[populate] stored vertex in map");
+						//fmt::println("[DEBUG].[populate] stored vertex in map");
 					}
 				} catch (const std::exception& e) {
 					fmt::println("[DEBUG].[populate] EXCEPTION in vertex handling: {}", e.what());
@@ -1258,7 +1258,7 @@ namespace df {
 					}
 				}
 			}
-			fmt::println("[DEBUG].[populate] finished with vertices for tile with id: {}", tile->getId());
+			//fmt::println("[DEBUG].[populate] finished with vertices for tile with id: {}", tile->getId());
 
 			// simliar to above
 			for (size_t ei = 0; ei < 6; ++ei) {
@@ -1326,7 +1326,7 @@ namespace df {
 					}
 				}
 			}
-			fmt::println("[DEBUG].[populate] finished with edges");
+			//fmt::println("[DEBUG].[populate] finished with edges");
 
 			// store for this tile
 			this->tileEdges[tileId] = tileEdgesArray;
@@ -1335,7 +1335,7 @@ namespace df {
 
 		// Reverse lookup maps (vertexEdges and vertexTiles) are now built during the connection phase above
 		// No need for the slow O(V*E + V*T) pass anymore!
-		fmt::println("[DEBUG].[populate] finished with populating");
-		fmt::println("[DEBUG].[populate] finished wiht populating");
+		//fmt::println("[DEBUG].[populate] finished with populating");
+		//fmt::println("[DEBUG].[populate] finished wiht populating");
 	}
 } // namespace df

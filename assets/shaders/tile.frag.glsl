@@ -24,7 +24,7 @@ void main() {
 	vec4 baseColor = indicatorColor * texture(tileAtlas, vec3(uv.x, uv.y, sprite));
 
 	// Pulses intensity for highlighted path between 0.5 and 1
-	float pulse = 0.75 + 0.25 * sin(time * 2 * 3.1415);
+	float pulse = 0.75 + 0.25 * sin(time * 3.1415);
 
 	if (vertOnPath == 1 && vertTileIndex != selectedTile) {
 		baseColor.a *= pulse;

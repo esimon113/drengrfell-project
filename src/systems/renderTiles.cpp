@@ -238,12 +238,7 @@ namespace df {
 	}
 
 
-	float accumulator = 0.0f;
 	void RenderTilesSystem::step(const float delta) noexcept {
-		accumulator += delta;
-		if (accumulator > 1.0) {
-			accumulator = 0.0f;
-		}
 		if (Graph& map = this->gameState->getMap(); map.isRenderUpdateRequested() or this->updateRequired) {
 			if (const Result<void, ResultError> result = updateMap(); result.isErr()) {
 				std::cerr << result.unwrapErr() << std::endl;
@@ -251,7 +246,9 @@ namespace df {
 			map.setRenderUpdateRequested(false);
 			this->updateRequired = false;
 		}
-		renderMap(accumulator);
+		(void)delta;
+		float time = static_cast<float>(glfwGetTime());
+		renderMap(time);
 		// renderPickerMap(true);
 	}
 

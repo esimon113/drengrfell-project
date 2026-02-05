@@ -20,7 +20,13 @@ namespace df {
 
 		CommandRegistry& getCommandRegistry() { return commands; };
 
+		void processHero(Agent a);
+		void setAiActive(const bool active) {aiActive = active;};
+		bool isAiActive() const {return aiActive;};
+
 	private:
+		bool aiActive = false;
+
 		Registry* registry;
 		CommandRegistry commands{};
 		bool commandsLoaded{false};
