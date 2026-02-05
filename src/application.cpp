@@ -944,7 +944,7 @@ namespace df {
 					auto mapId = render.renderTilesSystem.tileIdToMapId(tileId);
 					fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
-					if (mapId >= 0 && !movementSystem->isEntityMoving()) {
+					if (mapId >= 0 && !movementSystem->isEntityMoving() && !aiSystem->isAiActive()) {
 						//  TODO: For multiplayer use hero of active player
 						Entity hero = registry->animations.entities.front();
 						Player* player = this->gameState->getPlayer(0);
