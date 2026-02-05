@@ -219,8 +219,21 @@ namespace df {
 			textSystem->renderText(roundText, roundTextPos, scale * 1.2f, {1.f, 1.f, 1.f});
 
 			// End Turn Button
-			drawSprite(hudEndTurnButtonTexture, {endTurnButton.x, endTurnButton.y}, {endTurnButton.w, endTurnButton.h}, {1.f, 1.f, 1.f});
+			// hover detection (update hovered flags)
+			glm::dvec2 cursor = window->getCursorPosition();
+			// window returns screen coords with origin top-left
+			float mouseX = static_cast<float>(cursor.x);
+			float mouseY = static_cast<float>(cursor.y);
 
+			// convert to bottom-left origin, because the layout uses bottom-left
+			glm::uvec2 extent = window->getWindowExtent();
+			mouseY = static_cast<float>(extent.y) - mouseY;
+			if (isMouseOverEndTurn({mouseX, mouseY})) {
+				drawSprite(hudEndTurnButtonTexture, {endTurnButton.x, endTurnButton.y}, {endTurnButton.w, endTurnButton.h}, {1.3f, 1.3f, 1.3f});
+			} else {
+				drawSprite(hudEndTurnButtonTexture, {endTurnButton.x, endTurnButton.y}, {endTurnButton.w, endTurnButton.h}, {1.f, 1.f, 1.f});
+			}
+			
 			// SIDE HUD FOR UI INTERACTIONS
 			EventPresentationSystem* eventSystem = registry->getSystem<EventPresentationSystem>();
 			RenderSettlementMenuSystem* settlementSystem = registry->getSystem<RenderSettlementMenuSystem>();
@@ -233,7 +246,11 @@ namespace df {
 				for (SideHudButton& btn : sideButtons) {
 					// render icons
 					if (btn.icon) {
-						drawSprite(btn.icon, {btn.x, btn.y}, {btn.w, btn.h}, {1.f, 1.f, 1.f});
+						if (isMouseOverSideHudButton(btn, {mouseX, mouseY})) {
+							drawSprite(btn.icon, {btn.x, btn.y}, {btn.w, btn.h}, {1.3f, 1.3f, 1.3f});
+						} else {
+							drawSprite(btn.icon, {btn.x, btn.y}, {btn.w, btn.h}, {1.f, 1.f, 1.f});
+						}
 					}
 				}
 			}
@@ -312,9 +329,9 @@ namespace df {
 
 	bool RenderHudSystem::isMouseOverEndTurn(glm::vec2 mouse) const noexcept {
 		return mouse.x >= endTurnButton.x &&
-			   mouse.x <= endTurnButton.x + endTurnButton.w &&
-			   mouse.y >= endTurnButton.y &&
-			   mouse.y <= endTurnButton.y + endTurnButton.h;
+			mouse.x <= endTurnButton.x + endTurnButton.w &&
+			mouse.y >= endTurnButton.y &&
+			mouse.y <= endTurnButton.y + endTurnButton.h;
 	}
 
 	bool RenderHudSystem::wasEndTurnClicked(glm::vec2 mouse, int button, int action) const noexcept {

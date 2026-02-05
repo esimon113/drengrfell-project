@@ -48,6 +48,7 @@ namespace df {
 
 	void RenderNotificationSystem::deinit() noexcept {
 		rectShader.deinit();
+		textureShader.deinit();
 	}
 
 	void RenderNotificationSystem::reset() noexcept {
