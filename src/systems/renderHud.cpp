@@ -35,6 +35,7 @@ namespace df {
 		self.keybindingsTexture = Texture::init(assets::Texture::SIDE_HUD_KEYBINDINGS_BUTTON);
 		self.costTexture = Texture::init(assets::Texture::SIDE_HUD_COST_BUTTON);
 		self.hudEndTurnButtonTexture = Texture::init(assets::Texture::HUD_END_TURN_BUTTON);
+		self.heroPointsSideHudTexture = Texture::init(assets::Texture::SIDE_HUD_HERO_POINTS_BUTTON);
 
 		// Viewport
 		glViewport(0, 0, extent.x, extent.y);
@@ -125,6 +126,7 @@ namespace df {
 			{sideHudPos.x + 10.f * scale, buttonYPos - (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Trade", tradeTexture},
 			{sideHudPos.x + 10.f * scale, buttonYPos - 2 * (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Cost", costTexture},
 			{sideHudPos.x + 10.f * scale, buttonYPos - 3 * (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "Keybindings", keybindingsTexture},
+			{sideHudPos.x + 10.f * scale, buttonYPos - 4 * (buttonHeight + buttonPadding), buttonHeight, buttonHeight, "HeroPoints", heroPointsSideHudTexture},
 		};
 	}
 

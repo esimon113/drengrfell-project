@@ -121,6 +121,7 @@ namespace df {
 		"hud/buttons/quest.png",			//quest
 		"hud/buttons/keybindings.png",		//keybinds
 		"hud/buttons/cost.png",		        //costs
+		"hud/buttons/heroPointsButtonTexture.png",	//hero points
 		"hud/buttons/endTurn.png",		    //end turn button
 
 		"notifications/buttonBackground.png",

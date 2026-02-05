@@ -832,6 +832,8 @@ namespace df {
 							onKeyCallback(windowParam, GLFW_KEY_C, 0, GLFW_PRESS, 0);
 						} else if (SideHudButton == "Keybindings") {
 							onKeyCallback(windowParam, GLFW_KEY_K, 0, GLFW_PRESS, 0);
+						} else if (SideHudButton == "HeroPoints") {
+							onKeyCallback(windowParam, GLFW_KEY_V, 0, GLFW_PRESS, 0);
 						}
 					}
 					return;
