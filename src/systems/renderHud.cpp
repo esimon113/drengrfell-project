@@ -135,13 +135,15 @@ namespace df {
 
 	void RenderHudSystem::step(float /*dt*/) noexcept {
 		RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
+		EventPresentationSystem* eventSystem = registry->getSystem<EventPresentationSystem>();
+		RenderSettlementMenuSystem* settlementSystem = registry->getSystem<RenderSettlementMenuSystem>();
 		if (textSystem) {
 			// scale text size for fullscreen
 			float scaleX = viewport.size.x / DEFAULT_WIDTH;
 			float scaleY = viewport.size.y / DEFAULT_HEIGHT;
 			float scale = std::min(scaleX, scaleY);
 			// Render Tutorial
-			if (gameState->isTutorialActive()) {
+			if (gameState->isTutorialActive() && !eventSystem->currentEvent && !settlementSystem->isActive()) {
 				// get next tutorial step
 				TutorialStep* step = gameState->getCurrentTutorialStep();
 				if (!step)
@@ -156,7 +158,7 @@ namespace df {
 				glm::vec2 pos = {10.0f, window->getWindowExtent().y - rectBoxSize.y - 10.0f}; // box position always top left
 				if (step->id == TutorialStepId::WELCOME)
 					// center box in the middle of the screen
-					pos = {(viewport.size.x - rectBoxSize.x) / 2.0f, (viewport.size.y - rectBoxSize.y) / 2.0f}; // render first tutorial "into your face" like requested in cross-play session					
+					pos = {(viewport.size.x - rectBoxSize.x) / 2.0f, (viewport.size.y - rectBoxSize.y) / 2.0f}; // render first tutorial "into your face" like requested in cross-play session
 				// Tutorial box
 				if (step->renderBox) {
 					drawSprite(tutorialTexture, pos, rectBoxSize, {1.f, 1.f, 1.f});
@@ -244,8 +246,6 @@ namespace df {
 			}
 			
 			// SIDE HUD FOR UI INTERACTIONS
-			EventPresentationSystem* eventSystem = registry->getSystem<EventPresentationSystem>();
-			RenderSettlementMenuSystem* settlementSystem = registry->getSystem<RenderSettlementMenuSystem>();
 			// check if any event or settlement menu active, if not display ui controlls
 			if (!eventSystem->currentEvent && !settlementSystem->isActive()) {
 				// side hud background box

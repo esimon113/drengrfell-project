@@ -392,7 +392,7 @@ namespace df {
 
 		float scaleX = viewport.size.x / DEFAULT_WIDTH;
 		float scaleY = viewport.size.y / DEFAULT_HEIGHT;
-		scale = std::min(scaleX, scaleY);
+		scale = std::min(scaleX, scaleY) * 0.9f;
 		paddingX = 20.f * scale;
 		paddingY = 20.f * scale;
 
