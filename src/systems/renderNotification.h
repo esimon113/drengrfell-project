@@ -13,6 +13,11 @@ namespace df {
 	  public:
 		RenderNotificationSystem() = default;
 
+		struct Button {
+			std::string text;
+			float x{}, y{}, w{}, h{};
+		};
+
 		static RenderNotificationSystem init(Window* window, Registry* registry) noexcept;
 		void deinit() noexcept;
 		void reset() noexcept;
@@ -22,6 +27,7 @@ namespace df {
 
 		// Returns pressed button text or empty string
 		std::string onMouseButton(glm::vec2 mouse, int button, int action) noexcept;
+		bool isMouseOverNotificationButton(Button& btn, glm::vec2 mouse) const noexcept;
 		bool isActive() const noexcept { return active; }
 		void close() noexcept { active = false; }
 		void onResizeCallback(GLFWwindow*, int width, int height) noexcept;
@@ -35,10 +41,6 @@ namespace df {
 		}
 
 	  private:
-		struct Button {
-			std::string text;
-			float x{}, y{}, w{}, h{};
-		};
 
 		Window* window = nullptr;
 		Registry* registry = nullptr;
