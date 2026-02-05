@@ -8,6 +8,7 @@
 #include <core/camera.h>
 #include <renderText.h>
 #include <utils/shader.h>
+#include <utils/texture.h>
 
 namespace df {
 
@@ -56,6 +57,7 @@ namespace df {
 
 		void rebuildLayout();
 		void renderBox(glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept;
+		void drawSprite(Texture& tex, glm::vec2 pos, glm::vec2 size, glm::vec3 color) const noexcept;
 		void renderHoveredTileHighlight(size_t tileId, float time) const noexcept;
 		const glm::mat4 calculateProjection(const Camera& cam) const;
 		std::string formatCostLine(const std::vector<int>& cost) const;
@@ -69,8 +71,13 @@ namespace df {
 
 		Shader rectShader;
 		Shader locationHighlightShader;
+		Shader textureShader;
+		Texture menuBackgroundTexture;
+		Texture menuButtonTexture;
 		GLuint quadVao = 0;
 		GLuint vbo = 0;
+		GLuint textureVao = 0;
+		GLuint textureVbo = 0;
 		GLuint highlightVao = 0;
 		GLuint highlightVbo = 0;
 
