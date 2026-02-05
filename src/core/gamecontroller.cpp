@@ -20,9 +20,7 @@
 #include "utils/worldNodeMapper.h"
 #include "vertex.h"
 #include "eventPresentation.h"
-
-
-
+#include "ai/aiSystem.h"
 
 
 namespace df {
@@ -76,11 +74,17 @@ namespace df {
 
 		this->m_questsSystem->updateProgress(df::types::QuestGoalType::ROUNDS, 1);
 
+		auto* aiSystem = this->registry->getSystem<AiSystem>();
+		if (aiSystem && aiSystem->isAiActive()) {
+			const auto hero = registry->animations.entities.front();
+			aiSystem->processHero(hero);
+		}
+
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
 		}
 
-		
+
 	}
 
 	// This function checks if the hero encounters a hazard at the destination (in world coordinates)
@@ -821,10 +825,10 @@ namespace df {
 		player->addProductivityBuilding(newBuildingId);
 		this->chargeResourceCost(*player, buildingCost);
 		df::types::TilePotency current = tile->getPotency();
-    
+
 		df::types::TilePotency next = df::types::getNextPotency(current);
 		if (current != next) {
-			tile->setPotency(next); 
+			tile->setPotency(next);
 			//fmt::println("Productivity increased! Tile {} is now {}", tile->getId(), df::types::potencyToString(next));
 		}
 
@@ -862,7 +866,7 @@ namespace df {
 			notification->showNotification("You don't have enough ressources!", "You need more ressources to upgrade this settlement.\n", {"Okay"});
 			return false;
 		}
-		
+
 		const auto settlements = this->gameState.getSettlements();
 		for (const auto& settlement : settlements) {
 			if (settlement && settlement->getId() == settlementId) {
@@ -884,11 +888,11 @@ namespace df {
 
 		this->chargeResourceCost(*player, buildingCost);
 		if( targetType == types::SettlementType::STONE){
-			player->addHeroPoints(1);	
+			player->addHeroPoints(1);
 		} else if ( targetType == types::SettlementType::CASTLE ){
-			player->addHeroPoints(4);	
+			player->addHeroPoints(4);
 		}
-		
+
     	fmt::println("[GameController] Upgrade success. Player {} Hero Points: {}", playerId, player->getHeroPoints());
 		return true;
 	}
@@ -906,7 +910,7 @@ namespace df {
 					if (settlement->getSettlementType() == types::SettlementType::CASTLE) {
 						castleCount++;
 					}
-					break; 
+					break;
 				}
 			}
 		}
