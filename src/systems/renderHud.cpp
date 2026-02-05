@@ -21,6 +21,7 @@ namespace df {
 
 		// texture init
 		self.hudBackgroundTexture = Texture::init(assets::Texture::HUD_BACKGROUND);
+		self.tutorialTexture = Texture::init(assets::Texture::HUD_BACKGROUND);	// use same as hud for now
 		// buttom hud ressources
 		self.woodTexture = Texture::init(assets::Texture::RESSOURCE_WOOD);
 		self.stoneTexture = Texture::init(assets::Texture::RESSOURCE_STONE);
@@ -79,8 +80,8 @@ namespace df {
 			window->getWindowExtent().y * 0.08f	 // 6% in height starting from 2% window height
 		};
 		// End Turn Button
-		float paddingX = hudSize.x * 0.02f; // ensure black hud layout below endTurn button
-		endTurnButton.w = hudSize.x * 0.15f;
+		float paddingX = hudSize.x * 0.01f; // ensure black hud layout below endTurn button
+		endTurnButton.w = hudSize.x * 0.12f;
 		endTurnButton.h = hudSize.y * 0.85f;
 		endTurnButton.x = hudPos.x + hudSize.x - endTurnButton.w - paddingX;
 		endTurnButton.y = hudPos.y + (hudSize.y - endTurnButton.h) / 2.0f;
@@ -155,7 +156,8 @@ namespace df {
 				glm::vec2 pos = {10.0f, window->getWindowExtent().y - rectBoxSize.y - 10.0f}; // box position always top left
 				// Tutorial box
 				if (step->renderBox) {
-					renderRectBox(pos, rectBoxSize, {0.0f, 0.0f, 0.0f});
+					drawSprite(tutorialTexture, pos, rectBoxSize, {1.f, 1.f, 1.f});
+					//renderRectBox(pos, rectBoxSize, {0.0f, 0.0f, 0.0f});
 				}
 
 				// center text in the middle of the box
@@ -209,14 +211,18 @@ namespace df {
 				x += iconPadding * 1.3f + textSize.x;
 			}
 			// display round
-			std::string roundText = "Round: " + std::to_string(gameState->getRoundNumber());
+			std::string roundText = "Round: " + std::to_string(gameState->getRoundNumber());	// update rounds
+			std::string heroPointsText = "Points: " + std::to_string(player.getHeroPoints());	// update hero points
 			glm::vec2 roundTextSize = textSystem->measureText(roundText, scale * 1.2f);
+			glm::vec2 heroPointsTextSize = textSystem->measureText(heroPointsText, scale * 1.2f);
+			float textPadding = 40.f * scale;	// padding between rounds / hero points
+			float totalWidth = roundTextSize.x + textPadding + heroPointsTextSize.x;
 			// centerr round text between last resource text and end turn button
-			float roundCenterX = (x + endTurnButton.x) / 2.0f;
-			glm::vec2 roundTextPos = {
-				roundCenterX - roundTextSize.x / 2.0f,
-				hudCenterY - roundTextSize.y / 2.0f + hudTextOffset};
-			textSystem->renderText(roundText, roundTextPos, scale * 1.2f, {1.f, 1.f, 1.f});
+			float centerX = (x + endTurnButton.x) / 2.0f;
+			float startX = centerX - totalWidth / 2.0f;
+			float textY = hudCenterY - roundTextSize.y / 2.0f + hudTextOffset;
+			textSystem->renderText(roundText, {startX, textY}, scale * 1.2f, {1.f, 1.f, 1.f});
+			textSystem->renderText(heroPointsText, {startX + textPadding + roundTextSize.x, textY}, scale * 1.2f, {1.f, 1.f, 1.f});
 
 			// End Turn Button
 			// hover detection (update hovered flags)
