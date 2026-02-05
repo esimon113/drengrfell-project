@@ -1,6 +1,7 @@
 build
 
 # config
+enc_temp_folder/
 assets/jsons/world_generation.json
 test/asan_direct_leaks.txt
 
@@ -9,5 +10,6 @@ test/asan_direct_leaks.txt
 .vscode
 .vs/
 .idea/
+
 *.user
 *.suo
