@@ -272,6 +272,9 @@ namespace df {
 						"  - 1 clay";
 					buttons = {"Close"};
 					notifications->showNotification("COSTS", costsList, buttons);
+					if (step && step->id == TutorialStepId::OPEN_COST_MENU) {
+						this->gameState->completeCurrentTutorialStep();
+					}
 				}
 			}
 				break;

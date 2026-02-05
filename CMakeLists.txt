@@ -142,6 +142,7 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/mainMenu.cpp
 	${PROJECT_SOURCE_DIR}/src/core/configMenu.cpp
 	${PROJECT_SOURCE_DIR}/src/core/hazards.cpp
+	${PROJECT_SOURCE_DIR}/src/core/tutorial.cpp
 
 	${PROJECT_SOURCE_DIR}/src/core/ai/behaviorTree.cpp
 	${PROJECT_SOURCE_DIR}/src/core/ai/commandRegistry.cpp

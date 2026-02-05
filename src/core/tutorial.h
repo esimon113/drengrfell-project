@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 namespace df {
 
@@ -14,6 +15,7 @@ namespace df {
 		BUILD_ROAD,
 		OPEN_TRADE_MENU,
 		OPEN_KEYBINDS_MENU,
+		OPEN_COST_MENU,
 		END
 	};
 
@@ -21,8 +23,9 @@ namespace df {
 		TutorialStepId id;
 		std::string text;
 		bool completed = false;
-		std::optional<glm::vec2> screenPosition;
 		bool renderBox = true;
 	};
+
+	std::vector<TutorialStep> createDefaultTutorial();
 
 } // namespace df
