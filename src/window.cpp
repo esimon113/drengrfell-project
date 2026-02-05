@@ -42,6 +42,7 @@ namespace df {
 		int minWidth = 400;
 		int minHeight = 400;
 		glfwSetWindowSizeLimits(window, minWidth, minHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
+		glfwSetWindowAspectRatio(window, 16, 9);	// ensure 16:9 aspect ratio
 
 		self->handle = window;
 
