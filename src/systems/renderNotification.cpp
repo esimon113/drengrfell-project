@@ -167,9 +167,22 @@ namespace df {
 		textSystem->renderText(message, messagePos, scale, {0.f, 0.f, 0.f});
 
 		// buttons
+		// hover detection (update hovered flags)
+		glm::dvec2 cursor = window->getCursorPosition();
+		// window returns screen coords with origin top-left
+		float mouseX = static_cast<float>(cursor.x);
+		float mouseY = static_cast<float>(cursor.y);
+
+		// convert to bottom-left origin, because the layout uses bottom-left
+		glm::uvec2 extent = window->getWindowExtent();
+		mouseY = static_cast<float>(extent.y) - mouseY;
 		for (Button& btn : buttons) {
 			// render texture for each button
-			drawSprite(notificationButtonTexture, {btn.x, btn.y}, {btn.w, btn.h}, {1.f, 1.f, 1.f});
+			if (isMouseOverNotificationButton(btn, {mouseX, mouseY})) {
+				drawSprite(notificationButtonTexture, {btn.x, btn.y}, {btn.w, btn.h}, {1.3f, 1.3f, 1.3f});
+			} else {
+				drawSprite(notificationButtonTexture, {btn.x, btn.y}, {btn.w, btn.h}, {1.f, 1.f, 1.f});
+			}
 
 			glm::vec2 textSize = textSystem->measureText(btn.text, scale);
 			glm::vec2 textPos{
@@ -195,6 +208,16 @@ namespace df {
 		}
 		return "";
 	}
+
+	bool RenderNotificationSystem::isMouseOverNotificationButton(Button& btn, glm::vec2 mouse) const noexcept {
+		// check if button is hovered
+		if (mouse.x >= btn.x && mouse.x <= btn.x + btn.w &&
+			mouse.y >= btn.y && mouse.y <= btn.y + btn.h) {
+			return true;
+		}
+		return false;
+	}
+
 
 	void RenderNotificationSystem::onResizeCallback(GLFWwindow*, int width, int height) noexcept {
 		viewport.size = {
