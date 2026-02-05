@@ -277,7 +277,8 @@ namespace df {
 		size_t& currentPosTileId = registry->tileID.get(entity);
 
 		// Same tile has been selected twice -> deselect it by choosing the current hero position as the new target -> hero stands still
-		if (targetPositionTileID == id) {
+		if (markedTargetPositionTileID == id) {
+			markedTargetPositionTileID = 9999999;
 			targetPosition = currentPos;
 			targetSet = true;
 			targetPositionTileID = currentPosTileId;
@@ -285,6 +286,8 @@ namespace df {
 			currentPath.clear();
 			currentPathIndex = 0;
 			return;
+		} else {
+			markedTargetPositionTileID = id;
 		}
 
 		const Graph& map = gameState->getMap();
