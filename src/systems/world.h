@@ -28,7 +28,11 @@ namespace df {
 		bool getShowTrade() noexcept { return showTrade;};
 		void setShowTrade ( bool newShowTrade) noexcept { showTrade = newShowTrade;};
 
-		void escPressed() noexcept {showKeybinds = false; showCosts = false;}
+		void escPressed() noexcept {
+			showKeybinds = false;
+			showCosts = false;
+			showHeroPoints = false;
+		}
 
 		double getMouseX();
 		double getMouseY();
@@ -56,6 +60,7 @@ namespace df {
 		bool showTrade = false;
 		bool showKeybinds = false;
 		bool showCosts = false;
+		bool showHeroPoints = false;
 
 		Window* window;
 		Registry* registry;

@@ -93,7 +93,7 @@ namespace df {
 		Texture questTexture;
 		Texture keybindingsTexture;
 		Texture costTexture;
-
+		Texture heroPointsSideHudTexture;
 
 		// last button pressed on the side hud for ui interactions
 		std::string lastSideHudButtonPressed = "";
