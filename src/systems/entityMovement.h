@@ -3,13 +3,14 @@
 #include <core/gamestate.h>
 #include <glm/vec2.hpp>
 #include <registry.h>
+#include "events/eventBus.h"
 
 
 namespace df {
 	class AiSystem;
 	class EntityMovementSystem {
 	  public:
-		explicit EntityMovementSystem(Registry* registry, const std::shared_ptr<GameState> &gameState, const std::shared_ptr<AiSystem>& aiSystem);
+		explicit EntityMovementSystem(Registry* registry, const std::shared_ptr<GameState> &gameState, const std::shared_ptr<AiSystem>& aiSystem, const std::shared_ptr<EventBus>& bus);
 		~EntityMovementSystem();
 
 		void moveEntityTo(Entity entity, const glm::vec2& targetPosition, float deltaTime) noexcept;
@@ -37,6 +38,7 @@ namespace df {
 		Registry* registry;
 		std::shared_ptr<GameState> gameState;
 		std::shared_ptr<AiSystem> aiSystem;
+		std::shared_ptr<EventBus> eventBus;
 
 		float speed = 1.5f; // speed in tiles per second
 		bool movementState = false;

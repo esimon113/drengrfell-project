@@ -3,11 +3,12 @@
 #include "registry.h"
 #include "resultError.h"
 #include "behaviorTree.h"
+#include "events/eventBus.h"
 
 namespace df {
 	class AiSystem {
 	public:
-		explicit AiSystem(Registry* registry/*,std::shared_ptr<GameState> gameState,*/ /*GameController* gameController*/);
+		explicit AiSystem(Registry* registry, std::shared_ptr<EventBus> bus/*,std::shared_ptr<GameState> gameState,*/ /*GameController* gameController*/);
 		~AiSystem();
 
 		/*void step(float dt) noexcept;*/
@@ -28,6 +29,7 @@ namespace df {
 		bool aiActive = false;
 
 		Registry* registry;
+		std::shared_ptr<EventBus> eventBus;
 		CommandRegistry commands{};
 		bool commandsLoaded{false};
 

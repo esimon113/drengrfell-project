@@ -29,6 +29,7 @@ namespace df {
 
 		// Application Events {
 		RegisterSignal(applicationRunStarted);
+		RegisterSignal(aiActiveToggled, const bool);
 		// }
 
 		// In-game Events {

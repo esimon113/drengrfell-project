@@ -80,7 +80,7 @@ namespace df {
 		self.registry = Registry::init();
 		self.eventBus = std::make_shared<EventBus>();
 		self.audioEngine = std::make_unique<AudioSystem>(self.eventBus);
-		self.aiSystem = std::make_unique<AiSystem>(self.registry);
+		self.aiSystem = std::make_unique<AiSystem>(self.registry, self.eventBus);
 		self.gameState = std::make_shared<GameState>(self.registry);
 		self.gameController = std::make_shared<GameController>(*self.gameState, self.registry);
 		self.world = WorldSystem::init(self.window.get(), self.registry, self.audioEngine.get(), *self.gameState);
@@ -90,7 +90,7 @@ namespace df {
 		self.mainMenu.init(self.window.get());
 		// for testing
 		// movement until we have a triggerpoint
-		self.movementSystem = std::make_unique<EntityMovementSystem>(self.registry, self.gameState, self.aiSystem);
+		self.movementSystem = std::make_unique<EntityMovementSystem>(self.registry, self.gameState, self.aiSystem, self.eventBus);
 		// building preview system
 		self.buildingPreviewSystem = BuildingPreviewSystem::init(self.window.get(), self.registry, *self.gameState);
 		// Create config menu

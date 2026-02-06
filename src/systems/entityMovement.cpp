@@ -5,8 +5,9 @@ namespace df {
 	EntityMovementSystem::EntityMovementSystem(
 		Registry* registry,
 		const std::shared_ptr<GameState>& gameState,
-		const std::shared_ptr<AiSystem>& aiSystem
-	) : registry(registry), gameState(gameState), aiSystem(aiSystem) {
+		const std::shared_ptr<AiSystem>& aiSystem,
+		const std::shared_ptr<EventBus>& eventBus
+	) : registry(registry), gameState(gameState), aiSystem(aiSystem), eventBus(eventBus) {
 		// The capturing of the this-pointer renders the former init-method invalid
 		if (!aiSystem) {
 			fmt::print("EntityMovementSystem::EntityMovementSystem: aiSystem is null");
@@ -15,12 +16,24 @@ namespace df {
 		"setMoveTarget",
 		[this](const BTContext& context, const BTF::Args& a) {
 			int target = glm::iround(BTF::getArg<double>(a, "id", 0.0));
-				this->setTarget(target, context.entity, this->gameState->getPlayer(1));
+			this->setTarget(target, context.entity, this->gameState->getPlayer(1));
 			movementState = true;
 			targetSet = true;
 			fmt::println("Set move target of entity: {} to {}", static_cast<int>(context.entity), target);
 			return BTState::Success;
 		});
+		eventBus->aiActiveToggled.connect(
+			[this, registry](const bool aiActive) {
+				if (aiActive) {
+					const auto hero = registry->animations.entities.front();
+					size_t& currentPosTileId = registry->tileID.get(hero);
+					this->setTarget(currentPosTileId, hero, this->gameState->getPlayer(1));
+					movementState = true;
+					targetSet = true;
+				}
+			},
+			"entityMovementSystem_onAiActiveToggled"
+		);
 		aiSystem->getCommandRegistry().registerCommand(
 		"getMapSize",
 		[this](BTContext& context, const BTF::Args& args) {
@@ -77,7 +90,8 @@ namespace df {
 	EntityMovementSystem::~EntityMovementSystem() {
 		aiSystem->getCommandRegistry().unregisterCommand("setMoveTarget");
 		aiSystem->getCommandRegistry().unregisterCommand("getMapSize");
-		aiSystem->getCommandRegistry().unregisterCommand("questsgetExploredTiles");
+		aiSystem->getCommandRegistry().unregisterCommand("getExploredTiles");
+		eventBus->aiActiveToggled.disconnect("entityMovementSystem_onAiActiveToggled");
 	}
 
 	unsigned EntityMovementSystem::getTileIDFromWorldPosition(const glm::vec2& worldPos) const noexcept{

@@ -1,6 +1,7 @@
 #include "aiSystem.h"
 
 #include <iostream>
+#include <utility>
 
 #include "behaviorTree.h"
 #include "resultError.h"
@@ -8,7 +9,7 @@
 #include "fmt/os.h"
 
 namespace df {
-	AiSystem::AiSystem(Registry* registry) : registry(registry) {}
+	AiSystem::AiSystem(Registry* registry, std::shared_ptr<EventBus> bus) : registry(registry), eventBus(std::move(bus)) {}
 
 	AiSystem::~AiSystem() {
 		this->commands.unregisterCommand("run");
@@ -163,6 +164,7 @@ namespace df {
 			if (key == GLFW_KEY_L) {
 				aiActive = !aiActive;
 				fmt::println("[Ai]: AI active set to {}", aiActive);
+				this->eventBus->aiActiveToggled.emit(this->aiActive);
 			}
 			if (key == GLFW_KEY_P) {
 				if (registry) {
