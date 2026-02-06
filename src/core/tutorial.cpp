@@ -17,7 +17,7 @@ namespace df {
 
 		steps.push_back({.id = TutorialStepId::EXPLAIN_HEROPOINTS,
 						 .text =
-							 "Your goal is to earn a total of 20 hero points.\n"
+							 "Your goal is to earn a total of 20 hero points or build 3 castles.\n"
 							 "These are awarded for different actions, which are explained later in this tutorial.\n"
 							 "Take on the challenge to earn the needed points in the least rounds possible.\n"
 							 "Press left mouse button to continue.",
@@ -105,7 +105,8 @@ namespace df {
 
 		steps.push_back({.id = TutorialStepId::SETTLEMENT_MENU,
 						 .text = "When you click on a settlement you can upgrade it or\nbuild buildings to boost individual recource production.\n"
-								 "Upgrading a settlement is also a great source of hero points.",
+								 "Upgrading a settlement is also a great source of hero points.\n"
+								 "Fully upgrading 3 settlements to castles will get you the victory.",
 						 .completed = false,
 						 .renderBox = true});
 
