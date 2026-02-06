@@ -238,7 +238,7 @@ namespace df {
 					showHeroPoints = true;
 					notifications->showNotification(
 						"Hero Points",
-						"1 point per stone settlement\n5 points per castle\n5 points for completing all quests\nYou need 20 points to win\nGood luck!",
+						"1 point per stone settlement\n5 points per castle\n5 points for completing all quests\nYou need 20 points or 3 castles to win\nGood luck!",
 						{"Close"});
 				}
 			} break;
