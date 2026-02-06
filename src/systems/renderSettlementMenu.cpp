@@ -27,6 +27,11 @@ namespace df {
 		self.textureShader = Shader::init(assets::Shader::menu).value();
 		self.menuBackgroundTexture = Texture::init(assets::Texture::NOTIFICATIONS_BACKGROUND);
 		self.menuButtonTexture = Texture::init(assets::Texture::NOTIFICATIONS_BUTTON);
+	self.woodTexture = Texture::init(assets::Texture::RESSOURCE_WOOD);
+	self.stoneTexture = Texture::init(assets::Texture::RESSOURCE_STONE);
+	self.clayTexture = Texture::init(assets::Texture::RESSOURCE_CLAY);
+	self.woolTexture = Texture::init(assets::Texture::RESSOURCE_WOOL);
+	self.grainTexture = Texture::init(assets::Texture::RESSOURCE_GRAIN);
 
 		float quad[] = {
 			0.f, 0.f,
@@ -119,9 +124,9 @@ namespace df {
 		active = false;
 		selectedSettlementId = SIZE_MAX;
 		title.clear();
-		textLines.clear();
-		displayLines.clear();
-		textPositions.clear();
+	lineItems.clear();
+	displayLines.clear();
+	lineYPositions.clear();
 		buttons.clear();
 	}
 
@@ -146,12 +151,45 @@ namespace df {
 		active = true;
 
 		title = "Settlement " + std::to_string(settlementId);
-		textLines.clear();
-		displayLines.clear();
-		textPositions.clear();
+	lineItems.clear();
+	displayLines.clear();
+	lineYPositions.clear();
 		buttons.clear();
 
-		textLines.emplace_back("Productivity");
+	auto addTextLine = [&](const std::string& text) {
+		LineRender line;
+		line.kind = LineRender::Kind::Text;
+		line.text = text;
+		lineItems.push_back(line);
+	};
+	auto addProductivityLine = [&](types::TileType type, int percent, const std::string& suffix) {
+		LineRender line;
+		line.kind = LineRender::Kind::Productivity;
+		line.tileType = type;
+		line.percent = percent;
+		line.suffix = suffix;
+		lineItems.push_back(line);
+	};
+	auto addCostLine = [&](const std::string& label, const std::vector<int>& cost) {
+		LineRender line;
+		line.kind = LineRender::Kind::Cost;
+		line.text = label;
+		const auto addCost = [&](types::TileType type) {
+			const size_t idx = static_cast<size_t>(type);
+			if (idx >= cost.size() || cost[idx] <= 0) {
+				return;
+			}
+			line.costs.emplace_back(type, cost[idx]);
+		};
+		addCost(types::TileType::FOREST);
+		addCost(types::TileType::MOUNTAIN);
+		addCost(types::TileType::CLAY);
+		addCost(types::TileType::FIELD);
+		addCost(types::TileType::GRASS);
+		lineItems.push_back(line);
+	};
+
+	addTextLine("Productivity");
 
 		types::WeatherType currentWeather = WeatherSystem->getCurrentType();
 
@@ -172,15 +210,15 @@ namespace df {
 						continue;
 					}
 
-					const int percent = getPotencyPercent(tile->getEffectivePotency());
-					textLines.emplace_back(std::string(types::tileTypeToString(type)) + " " + std::to_string(percent) + "%" + tile->getPotencyModifierLabel(currentWeather));
+				const int percent = getPotencyPercent(tile->getEffectivePotency());
+				addProductivityLine(type, percent, tile->getPotencyModifierLabel(currentWeather));
 					
 				}
 			}
 		}
 
-		textLines.emplace_back("");
-		textLines.emplace_back("Upgrades");
+	addTextLine("");
+	addTextLine("Upgrades");
 
 		auto makeCostVector = [](int wood, int grass, int stone, int field, int clay) {
 			std::vector<int> cost(static_cast<size_t>(types::TileType::COUNT), 0);
@@ -202,11 +240,11 @@ namespace df {
 
 		const types::SettlementType settlementType = settlementPtr->getSettlementType();
 		if (settlementType == types::SettlementType::WOOD) {
-			textLines.emplace_back("Stone Settlement: " + formatCostLine(stoneSettlementCost));
+		addCostLine("Stone Settlement:", stoneSettlementCost);
 			buttons.push_back({"Stone Settlement", ButtonAction::UpgradeStone});
 		} else {
 			if (settlementType == types::SettlementType::STONE) {
-				textLines.emplace_back("Castle: " + formatCostLine(castleCost));
+			addCostLine("Castle:", castleCost);
 				buttons.push_back({"Castle", ButtonAction::UpgradeCastle});
 			}
 
@@ -222,23 +260,23 @@ namespace df {
 						const auto type = tile->getType();
 						switch (type) {
 						case types::TileType::FOREST:
-							textLines.emplace_back("Lumber Camp: " + formatCostLine(lumberCampCost));
+						addCostLine("Lumber Camp:", lumberCampCost);
 							buttons.push_back({"Lumber Camp", ButtonAction::BuildProductivity, type, tile->getId()});
 							break;
 						case types::TileType::MOUNTAIN:
-							textLines.emplace_back("Stone Quarry: " + formatCostLine(stoneQuarryCost));
+						addCostLine("Stone Quarry:", stoneQuarryCost);
 							buttons.push_back({"Stone Quarry", ButtonAction::BuildProductivity, type, tile->getId()});
 							break;
 						case types::TileType::GRASS:
-							textLines.emplace_back("Stable: " + formatCostLine(stableCost));
+						addCostLine("Stable:", stableCost);
 							buttons.push_back({"Stable", ButtonAction::BuildProductivity, type, tile->getId()});
 							break;
 						case types::TileType::FIELD:
-							textLines.emplace_back("Mill: " + formatCostLine(millCost));
+						addCostLine("Mill:", millCost);
 							buttons.push_back({"Mill", ButtonAction::BuildProductivity, type, tile->getId()});
 							break;
 						case types::TileType::CLAY:
-							textLines.emplace_back("Brick Kiln: " + formatCostLine(brickKilnCost));
+						addCostLine("Brick Kiln:", brickKilnCost);
 							buttons.push_back({"Brick Kiln", ButtonAction::BuildProductivity, type, tile->getId()});
 							break;
 						default:
@@ -395,22 +433,103 @@ namespace df {
 		drawSprite(menuBackgroundTexture, boxPos, boxSize, {1.f, 1.f, 1.f});
 
 		glm::vec2 titleSize = textSystem->measureText(title, scale * 1.2f);
-		const float topInset = paddingY * 0.8f;
+	const float topInset = paddingY * 1.2f;
 		glm::vec2 titlePos{
 			boxPos.x + (boxSize.x - titleSize.x) / 2.0f,
 			boxPos.y + boxSize.y - titleSize.y - paddingY - topInset + titleSize.y * 0.40f};
 		textSystem->renderText(title, titlePos, scale * 1.2f, {0.f, 0.f, 0.f});
 
-	for (size_t i = 0; i < displayLines.size(); ++i) {
-			if (i >= textPositions.size()) {
-				break;
-			}
-		textSystem->renderText(displayLines[i], textPositions[i], scale, {0.f, 0.f, 0.f});
+	auto getResourceTexture = [&](types::TileType type) -> Texture& {
+		switch (type) {
+		case types::TileType::FOREST:
+			return woodTexture;
+		case types::TileType::MOUNTAIN:
+			return stoneTexture;
+		case types::TileType::CLAY:
+			return clayTexture;
+		case types::TileType::GRASS:
+			return woolTexture;
+		case types::TileType::FIELD:
+			return grainTexture;
+		default:
+			return woodTexture;
 		}
+	};
+
+	const float lineHeight = textSystem->measureText("Ay", scale).y;
+	const float iconSize = lineHeight * 1.1f;
+	const float iconTextGap = 10.f * scale;
+	const float itemGap = 12.f * scale;
+
+	for (size_t i = 0; i < displayLines.size(); ++i) {
+		if (i >= lineYPositions.size()) {
+			break;
+		}
+		const float lineY = lineYPositions[i];
+		const LineRender& line = displayLines[i];
+		switch (line.kind) {
+		case LineRender::Kind::Text: {
+			if (line.text.empty()) {
+				continue;
+			}
+			float lineWidth = textSystem->measureText(line.text, scale).x;
+			float lineX = boxPos.x + (boxSize.x - lineWidth) / 2.0f;
+			textSystem->renderText(line.text, {lineX, lineY}, scale, {0.f, 0.f, 0.f});
+			break;
+		}
+		case LineRender::Kind::Productivity: {
+			std::string percentText = std::to_string(line.percent) + "%" + line.suffix;
+			float textWidth = textSystem->measureText(percentText, scale).x;
+			float totalWidth = iconSize + iconTextGap + textWidth;
+			float startX = boxPos.x + (boxSize.x - totalWidth) / 2.0f;
+			float iconY = lineY + (lineHeight - iconSize) * 0.2f;
+
+			drawSprite(getResourceTexture(line.tileType), {startX, iconY}, {iconSize, iconSize}, {1.f, 1.f, 1.f});
+			textSystem->renderText(percentText, {startX + iconSize + iconTextGap, lineY}, scale, {0.f, 0.f, 0.f});
+			break;
+		}
+		case LineRender::Kind::Cost: {
+			const float labelWidth = line.text.empty() ? 0.f : textSystem->measureText(line.text, scale).x;
+			float totalWidth = labelWidth;
+			if (labelWidth > 0.f && !line.costs.empty()) {
+				totalWidth += iconTextGap;
+			}
+			for (size_t idx = 0; idx < line.costs.size(); ++idx) {
+				const int amount = line.costs[idx].second;
+				const float amountWidth = textSystem->measureText(std::to_string(amount), scale).x;
+				totalWidth += iconSize + iconTextGap + amountWidth;
+				if (idx + 1 < line.costs.size()) {
+					totalWidth += itemGap;
+				}
+			}
+
+			float startX = boxPos.x + (boxSize.x - totalWidth) / 2.0f;
+			float cursorX = startX;
+			if (labelWidth > 0.f) {
+				textSystem->renderText(line.text, {cursorX, lineY}, scale, {0.f, 0.f, 0.f});
+				cursorX += labelWidth + iconTextGap;
+			}
+			for (size_t idx = 0; idx < line.costs.size(); ++idx) {
+				const auto& [type, amount] = line.costs[idx];
+				float iconY = lineY + (lineHeight - iconSize) * 0.2f;
+				drawSprite(getResourceTexture(type), {cursorX, iconY}, {iconSize, iconSize}, {1.f, 1.f, 1.f});
+				cursorX += iconSize + iconTextGap;
+				std::string amountText = std::to_string(amount);
+				textSystem->renderText(amountText, {cursorX, lineY}, scale, {0.f, 0.f, 0.f});
+				cursorX += textSystem->measureText(amountText, scale).x;
+				if (idx + 1 < line.costs.size()) {
+					cursorX += itemGap;
+				}
+			}
+			break;
+		}
+		}
+	}
 
 	if (separatorY > 0.0f) {
 		const float separatorHeight = std::max(1.0f, 1.5f * scale);
-		renderBox({boxPos.x + paddingX, separatorY}, {boxSize.x - paddingX * 2.f, separatorHeight}, {0.25f, 0.25f, 0.25f});
+		const float separatorInset = paddingX * 1.5f;
+		renderBox({boxPos.x + separatorInset, separatorY}, {boxSize.x - separatorInset * 2.f, separatorHeight}, {0.25f, 0.25f, 0.25f});
 	}
 
 		for (const Button& btn : buttons) {
@@ -448,36 +567,87 @@ namespace df {
 	const float maxContentWidth = std::max(1.0f, boxSize.x - paddingX * 2.f);
 	displayLines.clear();
 
-	for (const auto& line : textLines) {
-		if (line.empty()) {
-			displayLines.push_back("");
+	const float lineHeight = textSystem->measureText("Ay", scale).y;
+	const float lineSpacing = lineHeight * 0.35f;
+	const float buttonHeight = 56.f * scale;
+	const float buttonSpacing = paddingY * 0.35f;
+	const float titleContentGap = lineHeight * 1.1f;
+	const float iconSize = lineHeight * 1.1f;
+	const float iconTextGap = 10.f * scale;
+	const float itemGap = 12.f * scale;
+
+	auto costItemWidth = [&](int amount) -> float {
+		std::string amountText = std::to_string(amount);
+		return iconSize + iconTextGap + textSystem->measureText(amountText, scale).x;
+	};
+
+	for (const auto& line : lineItems) {
+		if (line.kind == LineRender::Kind::Text) {
+			if (line.text.empty()) {
+				displayLines.push_back(line);
+				continue;
+			}
+
+			std::istringstream iss(line.text);
+			std::string word;
+			std::string current;
+
+			while (iss >> word) {
+				std::string candidate = current.empty() ? word : current + " " + word;
+				float candidateWidth = textSystem->measureText(candidate, scale).x;
+				if (candidateWidth <= maxContentWidth || current.empty()) {
+					current = candidate;
+				} else {
+					LineRender wrappedLine;
+					wrappedLine.kind = LineRender::Kind::Text;
+					wrappedLine.text = current;
+					displayLines.push_back(wrappedLine);
+					current = word;
+				}
+			}
+			if (!current.empty()) {
+				LineRender wrappedLine;
+				wrappedLine.kind = LineRender::Kind::Text;
+				wrappedLine.text = current;
+				displayLines.push_back(wrappedLine);
+			}
 			continue;
 		}
 
-		std::istringstream iss(line);
-		std::string word;
-		std::string current;
-
-		while (iss >> word) {
-			std::string candidate = current.empty() ? word : current + " " + word;
-			float candidateWidth = textSystem->measureText(candidate, scale).x;
-			if (candidateWidth <= maxContentWidth || current.empty()) {
-				current = candidate;
-			} else {
-				displayLines.push_back(current);
-				current = word;
+		if (line.kind == LineRender::Kind::Cost) {
+			if (!line.text.empty()) {
+				LineRender labelLine;
+				labelLine.kind = LineRender::Kind::Text;
+				labelLine.text = line.text;
+				displayLines.push_back(labelLine);
 			}
-		}
-		if (!current.empty()) {
-			displayLines.push_back(current);
-		}
-	}
 
-	const float lineHeight = textSystem->measureText("Ay", scale).y;
-		const float lineSpacing = lineHeight * 0.35f;
-		const float buttonHeight = 56.f * scale;
-		const float buttonSpacing = paddingY * 0.35f;
-		const float titleContentGap = lineHeight * 1.1f;
+			LineRender costLine;
+			costLine.kind = LineRender::Kind::Cost;
+			float currentWidth = 0.f;
+			for (size_t idx = 0; idx < line.costs.size(); ++idx) {
+				const auto& [type, amount] = line.costs[idx];
+				float nextWidth = costItemWidth(amount);
+				float totalNext = currentWidth + (costLine.costs.empty() ? 0.f : itemGap) + nextWidth;
+				if (totalNext > maxContentWidth && !costLine.costs.empty()) {
+					displayLines.push_back(costLine);
+					costLine.costs.clear();
+					currentWidth = 0.f;
+				}
+				if (!costLine.costs.empty()) {
+					currentWidth += itemGap;
+				}
+				costLine.costs.emplace_back(type, amount);
+				currentWidth += nextWidth;
+			}
+			if (!costLine.costs.empty()) {
+				displayLines.push_back(costLine);
+			}
+			continue;
+		}
+
+		displayLines.push_back(line);
+	}
 
 	float contentHeight = 0.f;
 	for (size_t i = 0; i < displayLines.size(); ++i) {
@@ -498,14 +668,12 @@ namespace df {
 	boxPos.x = viewport.size.x - boxSize.x - outerMargin;
 	boxPos.y = hudHeight + outerMargin;
 
-	textPositions.clear();
+	lineYPositions.clear();
 	separatorY = -1.0f;
 	float yCursor = boxPos.y + boxSize.y - paddingY - titleSize.y - paddingY - topInset - titleContentGap;
 	for (const auto& line : displayLines) {
-		float lineWidth = textSystem->measureText(line, scale).x;
-		float lineX = boxPos.x + (boxSize.x - lineWidth) / 2.0f;
-		textPositions.push_back({lineX, yCursor});
-		if (line.empty() && separatorY < 0.0f) {
+		lineYPositions.push_back(yCursor);
+		if (line.kind == LineRender::Kind::Text && line.text.empty() && separatorY < 0.0f) {
 			separatorY = yCursor + lineHeight * 0.4f;
 		}
 			yCursor -= lineHeight + lineSpacing;
@@ -646,6 +814,8 @@ namespace df {
 			return 70;
 		case types::TilePotency::HIGH:
 			return 90;
+		case types::TilePotency::ULTRA:
+			return 100;
 		default:
 			return 0;
 		}

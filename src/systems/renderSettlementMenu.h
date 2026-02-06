@@ -9,6 +9,7 @@
 #include <renderText.h>
 #include <utils/shader.h>
 #include <utils/texture.h>
+#include <utility>
 
 namespace df {
 
@@ -47,6 +48,21 @@ namespace df {
 			Close
 		};
 
+		struct LineRender {
+			enum class Kind {
+				Text,
+				Productivity,
+				Cost
+			};
+
+			Kind kind = Kind::Text;
+			std::string text;
+			types::TileType tileType = types::TileType::EMPTY;
+			int percent = 0;
+			std::string suffix;
+			std::vector<std::pair<types::TileType, int>> costs;
+		};
+
 		struct Button {
 			std::string text;
 			ButtonAction action;
@@ -74,6 +90,11 @@ namespace df {
 		Shader textureShader;
 		Texture menuBackgroundTexture;
 		Texture menuButtonTexture;
+		Texture woodTexture;
+		Texture stoneTexture;
+		Texture clayTexture;
+		Texture woolTexture;
+		Texture grainTexture;
 		GLuint quadVao = 0;
 		GLuint vbo = 0;
 		GLuint textureVao = 0;
@@ -84,9 +105,9 @@ namespace df {
 		bool active = false;
 		size_t selectedSettlementId = SIZE_MAX;
 		std::string title;
-		std::vector<std::string> textLines;
-		std::vector<std::string> displayLines;
-		std::vector<glm::vec2> textPositions;
+		std::vector<LineRender> lineItems;
+		std::vector<LineRender> displayLines;
+		std::vector<float> lineYPositions;
 		std::vector<Button> buttons;
 
 		glm::vec2 boxPos{};
