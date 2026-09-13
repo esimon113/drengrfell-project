@@ -181,8 +181,17 @@ add_executable(${PROJECT_NAME}
 	${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
 	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
 	${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
- 	"src/systems/entityMovement.cpp"
- "src/systems/tradingSystem.h" "src/systems/tradingSystem.cpp")
+ 	${PROJECT_SOURCE_DIR}/src/systems/entityMovement.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/tradingSystem.cpp
+
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/socketPlatform.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/tcpClient.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/tcpServer.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/bifrost.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/sessionManager.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/midgard.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/asgard.cpp
+)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 20
@@ -213,3 +222,80 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	nlohmann_json::nlohmann_json
 	freetype
 )
+
+if (WIN32)
+	target_link_libraries(${PROJECT_NAME} PUBLIC ws2_32)
+endif()
+
+add_executable(network_tests
+	${PROJECT_SOURCE_DIR}/test/network/network_tests.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/socketPlatform.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/tcpClient.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/tcpServer.cpp
+)
+
+target_include_directories(network_tests PRIVATE
+	${PROJECT_SOURCE_DIR}/src
+)
+
+target_link_libraries(network_tests PRIVATE
+	compiler_flags
+	fmt
+)
+
+if (WIN32)
+	target_link_libraries(network_tests PRIVATE ws2_32)
+endif()
+
+add_executable(session_logic_test
+	${PROJECT_SOURCE_DIR}/test/session/session_logic_test.cpp
+	${PROJECT_SOURCE_DIR}/src/core/graph.cpp
+	${PROJECT_SOURCE_DIR}/src/core/tile.cpp
+	${PROJECT_SOURCE_DIR}/src/core/edge.cpp
+	${PROJECT_SOURCE_DIR}/src/core/vertex.cpp
+	${PROJECT_SOURCE_DIR}/src/core/settlement.cpp
+	${PROJECT_SOURCE_DIR}/src/core/productivityBuilding.cpp
+	${PROJECT_SOURCE_DIR}/src/core/road.cpp
+	${PROJECT_SOURCE_DIR}/src/core/player.cpp
+	${PROJECT_SOURCE_DIR}/src/core/gamestate.cpp
+	${PROJECT_SOURCE_DIR}/src/core/gamecontroller.cpp
+	${PROJECT_SOURCE_DIR}/src/core/hero.cpp
+	${PROJECT_SOURCE_DIR}/src/core/hazards.cpp
+	${PROJECT_SOURCE_DIR}/src/core/tutorial.cpp
+	${PROJECT_SOURCE_DIR}/src/core/worldGenerator.cpp
+	${PROJECT_SOURCE_DIR}/src/core/worldGeneratorConfig.cpp
+	${PROJECT_SOURCE_DIR}/src/systems/questsSystem.cpp
+	${PROJECT_SOURCE_DIR}/test/session/render_notification_stub.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/worldNodeMapper.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/resultError.cpp
+	${PROJECT_SOURCE_DIR}/src/utils/animations.cpp
+	${PROJECT_SOURCE_DIR}/src/registry.cpp
+	${PROJECT_SOURCE_DIR}/src/assets.cpp
+	${PROJECT_SOURCE_DIR}/src/common.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/sessionManager.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/bifrost.cpp
+	${PROJECT_SOURCE_DIR}/src/multiplayer/network/socketPlatform.cpp
+)
+
+target_include_directories(session_logic_test PRIVATE
+	${PROJECT_BINARY_DIR}
+	${PROJECT_SOURCE_DIR}/src
+	${PROJECT_SOURCE_DIR}/src/core
+	${PROJECT_SOURCE_DIR}/src/systems
+	${PROJECT_SOURCE_DIR}/src/utils
+	${stb_SOURCE_DIR}
+)
+
+target_link_libraries(session_logic_test PRIVATE
+	compiler_flags
+	glfw
+	glm::glm
+	gl3w
+	fmt
+	tinyECS
+	nlohmann_json::nlohmann_json
+)
+
+if (WIN32)
+	target_link_libraries(session_logic_test PRIVATE ws2_32)
+endif()
