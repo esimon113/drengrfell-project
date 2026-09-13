@@ -75,6 +75,9 @@ namespace df {
     }
 
     void QuestsSystem::notifyPlayer(int questId) {
+        if (!m_notificationSystem) {
+            return;
+        }
         if(questId == 100){
             m_notificationSystem->showNotification("CONGRATULATIONS", "You have been awarded with 5 points.\nNo more quests", {"Close"});
             return;
@@ -263,7 +266,9 @@ namespace df {
             }
         }
         currentQuest = 1;
-        m_notificationSystem->close();
+        if (m_notificationSystem) {
+            m_notificationSystem->close();
+        }
         m_currentShowingQuestId = -1;
 
     }

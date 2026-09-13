@@ -8,6 +8,7 @@
 #include "types.h"
 #include <glm/gtc/matrix_transform.hpp>
 // test for entityMovement
+#include "core/hero.h"
 #include "core/road.h"
 #include "entityMovement.h"
 // #include "utils/graphDebugDump.h"
@@ -82,7 +83,7 @@ namespace df {
 		self.audioEngine = std::make_unique<AudioSystem>(self.eventBus);
 		self.aiSystem = std::make_unique<AiSystem>(self.registry, self.eventBus);
 		self.gameState = std::make_shared<GameState>(self.registry);
-		self.gameController = std::make_shared<GameController>(*self.gameState, self.registry);
+		self.gameController = std::make_shared<GameController>(*self.gameState);
 		self.world = WorldSystem::init(self.window.get(), self.registry, self.audioEngine.get(), *self.gameState);
 		// self.physics = PhysicsSystem::init(self.registry, self.audioEngine);
 		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get(), self.eventBus.get());
@@ -294,10 +295,15 @@ namespace df {
 
 				// Only truly end the turn and start a new one when the hero finished walking
 				if (awaitingTurnEnd && !movementSystem->getMovementState()) {
-					Entity hero = registry->animations.entities.front();
+					const size_t moverId = gameState->getCurrentPlayerId();
+					const glm::vec2 dest = movementSystem->getTargetPosition();
+					TileHandle destTile = gameState->getMap().getTileFromWorldPosition(dest.x, dest.y);
+					if (destTile) {
+						gameController->moveHeroToTile(moverId, destTile->getId());
+						gameController->applyHazard(moverId, destTile->getId());
+					}
 					gameController->endTurn();
-					gameController->applyHazard(hero, movementSystem->getTargetPosition());
-					gameController->startTurn(); // Start turn for the next player
+					gameController->startTurn();
 					awaitingTurnEnd = false;
 				}
 			} break;
@@ -595,8 +601,8 @@ namespace df {
 						this->gameState->completeCurrentTutorialStep();
 					}
 
-					Entity hero = registry->animations.entities.front();
-					if (!registry->hazards.has(hero)) {
+					Player* current = gameState->getPlayer(gameState->getCurrentPlayerId());
+					if (!current || !current->hasActiveHazard()) {
 						movementSystem->toggleMovementState();
 					}
 					awaitingTurnEnd = true;
@@ -668,6 +674,10 @@ namespace df {
 		}
 		Player* player = this->gameState->getPlayer(0);
 		movementSystem->setTarget(randomTileID, hero, player);
+		if (player) {
+			auto domainHero = std::make_shared<Hero>(static_cast<size_t>(randomTileID), startPosition, "", 3);
+			player->setHero(domainHero);
+		}
 	}
 
 	void Application::onMouseButtonCallback(GLFWwindow* windowParam, int button, int action, int mods) noexcept {
@@ -816,9 +826,8 @@ namespace df {
 							this->gameState->completeCurrentTutorialStep();
 						}
 
-						Entity hero = registry->animations.entities.front();
-						// TODO: For multiplayer check only for active player for hazards
-						if (!registry->hazards.has(hero) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
+						Player* current = this->gameState->getPlayer(this->gameState->getCurrentPlayerId());
+						if ((!current || !current->hasActiveHazard()) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
 							movementSystem->toggleMovementState();
 							fmt::println("Hero destination: {},{}", movementSystem->getTargetPosition().x, movementSystem->getTargetPosition().y);
 						}

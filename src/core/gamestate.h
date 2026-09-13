@@ -15,6 +15,7 @@ using json = nlohmann::json;
 #include "settlement.h"
 #include "tutorial.h"
 #include "types.h"
+#include "worldGeneratorConfig.h"
 
 
 
@@ -72,7 +73,9 @@ namespace df {
 		void addSettlement(std::shared_ptr<Settlement> settlement);
 		void clearSettlements() {
 			settlements.clear();
-			registry->settlements.clear();
+			if (registry) {
+				registry->settlements.clear();
+			}
 		}
 		const std::vector<int>& getCurrentSettlementCost() const;
 
@@ -82,7 +85,9 @@ namespace df {
 		void addRoad(std::shared_ptr<Road> road);
 		void clearRoads() {
 			roads.clear();
-			registry->roads.clear();
+			if (registry) {
+				registry->roads.clear();
+			}
 		}
 		const std::vector<int>& getCurrentRoadCost() const;
 
@@ -91,7 +96,9 @@ namespace df {
 		void addProductivityBuilding(std::shared_ptr<ProductivityBuilding> building);
 		void clearProductivityBuildings() {
 			productivityBuildings.clear();
-			registry->productivityBuildings.clear();
+			if (registry) {
+				registry->productivityBuildings.clear();
+			}
 		}
 
 
@@ -114,7 +121,12 @@ namespace df {
 
 		// persistence
 		json serialize() const;
+		json serializeFor(size_t viewerPlayerId) const;
 		void deserialize(const json& j);
+
+		void setWorldConfig(const WorldGeneratorConfig& config) { worldConfig = config; }
+		const WorldGeneratorConfig& getWorldConfig() const { return worldConfig; }
+		void syncSettlementType(size_t settlementId, types::SettlementType type);
 		void save(const std::filesystem::path& filepath) const;
 		void load(const std::filesystem::path& filepath);
 
@@ -150,6 +162,11 @@ namespace df {
 
 		std::vector<int> roadCosts;
 		std::vector<int> settlementCosts;
+		WorldGeneratorConfig worldConfig;
+
+		bool isTileVisibleTo(size_t playerId, size_t tileId) const;
+		bool isVertexVisibleTo(size_t playerId, size_t vertexId) const;
+		bool isEdgeVisibleTo(size_t playerId, size_t edgeId) const;
 	};
 
 } // namespace df

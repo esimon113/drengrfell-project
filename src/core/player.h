@@ -13,14 +13,20 @@
 using json = nlohmann::json;
 #include "hero.h"
 #include "road.h"
+#include <optional>
 
 
 
 namespace df {
 	class Graph;
 	class Player {
+	  public:
+		struct ActiveHazard {
+			types::HazardType type{types::HazardType::NONE};
+			int turnsLeft{0};
+		};
+
 	  private:
-		// We store IDs instead of references to respect ECS principles and serialize easily
 
 		size_t playerId;
 		int heroPoints;
@@ -30,6 +36,7 @@ namespace df {
 		std::vector<size_t> roadIds;
 		std::vector<size_t> productivityBuildingIds;
 		std::vector<size_t> exploredTileIds;
+		std::optional<ActiveHazard> activeHazard;
 
 
 	  public:
@@ -76,5 +83,10 @@ namespace df {
 		void deserialize(const json& j);
 
 		void reset();
+
+		bool hasActiveHazard() const;
+		const std::optional<ActiveHazard>& getActiveHazard() const;
+		void setActiveHazard(ActiveHazard hazard);
+		void clearActiveHazard();
 	};
 } // namespace df

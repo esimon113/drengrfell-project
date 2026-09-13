@@ -144,6 +144,23 @@ namespace df {
 		roadIds.clear();
 		productivityBuildingIds.clear();
 		exploredTileIds.clear();
+		activeHazard.reset();
+	}
+
+	bool Player::hasActiveHazard() const {
+		return activeHazard.has_value();
+	}
+
+	const std::optional<Player::ActiveHazard>& Player::getActiveHazard() const {
+		return activeHazard;
+	}
+
+	void Player::setActiveHazard(ActiveHazard hazard) {
+		activeHazard = hazard;
+	}
+
+	void Player::clearActiveHazard() {
+		activeHazard.reset();
 	}
 
 	size_t Player::getPlayerId() const { return playerId; }
@@ -169,8 +186,7 @@ namespace df {
 		j["resources"] = resourcesJson;
 
 		if (heroReference) {
-			// Uncomment this when hero serialization is implemented
-			// j["hero"] = heroReference->serialize();
+			j["hero"] = heroReference->serialize();
 		}
 
 		return j;
@@ -201,8 +217,7 @@ namespace df {
 
 		if (j.contains("hero")) {
 			auto hero = std::make_shared<Hero>();
-			// UNcomment this when hero deserialization is implemented
-			// hero->deserialize(j["hero"]);
+			hero->deserialize(j["hero"]);
 			this->setHero(hero);
 		}
 	}

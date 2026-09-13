@@ -36,27 +36,11 @@ namespace df {
 	json GameState::serialize() const {
 		json j;
 
-		fmt::println("Serializing Game state");
-		fmt::println("---------");
-		fmt::println("Map: {}", this->map.serialize().dump());
-		fmt::println("---------");
-		fmt::println("Players: {}", this->players.size());
-		fmt::println("---------");
-		fmt::println("Settlements: {}", this->settlements.size());
-		fmt::println("---------");
-		fmt::println("Roads: {}", this->roads.size());
-		fmt::println("---------");
-		fmt::println("Current player id: {}", this->currentPlayerId);
-		fmt::println("---------");
+		j["world"] = this->worldConfig.serialize();
 
-		// map
-		j["map"] = this->map.serialize();
-
-		// players
 		json playersJson = json::array();
-		for (const auto& player : this->players) { // TODO
-			// playersJson.push_back(player.serialize());
-			playersJson.push_back(player.getId());
+		for (const auto& player : this->players) {
+			playersJson.push_back(player.serialize());
 		}
 		j["players"] = playersJson;
 
@@ -104,22 +88,22 @@ namespace df {
 		// clear current state
 		this->players.clear();
 
-		// map
-		if (j.contains("map") && j["map"].is_object() && !j["map"].empty()) {
+		if (j.contains("world") && j["world"].is_object()) {
+			this->worldConfig = WorldGeneratorConfig::deserialize(j["world"]);
+			this->map.regenerate(this->worldConfig);
+		} else if (j.contains("map") && j["map"].is_object() && !j["map"].empty()) {
 			std::string mapData = j["map"].dump();
 			this->map.deserialize(mapData);
 		}
 
-		// players
 		if (j.contains("players") && j["players"].is_array()) {
 			for (const auto& playerJson : j["players"]) {
-				size_t playerId = 0;
-				if (playerJson.contains("id") && playerJson["id"].is_number()) {
-					playerId = playerJson["id"].get<size_t>();
+				Player player;
+				if (playerJson.is_object()) {
+					player.deserialize(playerJson);
+				} else if (playerJson.is_number()) {
+					player = Player(playerJson.get<size_t>());
 				}
-
-				Player player(playerId); // TODO
-				// player.deserialize(playerJson);
 				this->players.push_back(player);
 			}
 		}
@@ -205,18 +189,17 @@ namespace df {
 	}
 
 	void GameState::addSettlement(std::shared_ptr<Settlement> settlement) {
-		if (!settlement || !registry) {
+		if (!settlement) {
 			return;
 		}
 
-		// Also add to ECS registry for rendering/systems
-		Entity e;
-		Settlement& s = registry->settlements.emplace(e);
-		s = *settlement; // Copy data to ECS
-
-		// Add position and scale components for rendering
-		registry->positions.emplace(e) = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), this->map);
-		registry->scales.emplace(e) = glm::vec2(0.45f, 0.45f); // Scale to match hexagon size -> 1/2 hex radius
+		if (registry) {
+			Entity e;
+			Settlement& s = registry->settlements.emplace(e);
+			s = *settlement;
+			registry->positions.emplace(e) = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), this->map);
+			registry->scales.emplace(e) = glm::vec2(0.45f, 0.45f);
+		}
 
 		settlements.push_back(settlement);
 	}
@@ -224,22 +207,19 @@ namespace df {
 
 	// roads
 	void GameState::addRoad(std::shared_ptr<Road> road) {
-		if (!road || !registry) {
+		if (!road) {
 			return;
 		}
 
-		// Also add to ECS registry for rendering/systems
-		Entity e;
-		Road& r = registry->roads.emplace(e);
-		r = *road; // Copy data to ECS
-
-		// Add position and scale components for rendering
-		registry->positions.emplace(e) = WorldNodeMapper::getWorldPositionForEdge(road->getEdgeId(), this->map);
-		registry->scales.emplace(e) = glm::vec2(1.0f, 1.0f);
-
-		// edge index is required for selecting the correcxt texture
-		int edgeIndex = this->map.getEdgeIndex(road->getEdgeId());
-		registry->roadEdgeIndices.emplace(e) = edgeIndex;
+		if (registry) {
+			Entity e;
+			Road& r = registry->roads.emplace(e);
+			r = *road;
+			registry->positions.emplace(e) = WorldNodeMapper::getWorldPositionForEdge(road->getEdgeId(), this->map);
+			registry->scales.emplace(e) = glm::vec2(1.0f, 1.0f);
+			int edgeIndex = this->map.getEdgeIndex(road->getEdgeId());
+			registry->roadEdgeIndices.emplace(e) = edgeIndex;
+		}
 
 		roads.push_back(road);
 	}
@@ -253,22 +233,24 @@ std::vector<std::shared_ptr<ProductivityBuilding>> GameState::getProductivityBui
 }
 
 void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> building) {
-	if (!building || !registry) {
+	if (!building) {
 		return;
 	}
 
-	Entity e;
-	ProductivityBuilding& pb = registry->productivityBuildings.emplace(e);
-	pb = *building;
+	if (registry) {
+		Entity e;
+		ProductivityBuilding& pb = registry->productivityBuildings.emplace(e);
+		pb = *building;
 
-	const uint32_t columns = map.getMapWidth();
-	const size_t tileId = building->getTileId();
-	uint32_t row = static_cast<uint32_t>(tileId / columns);
-	uint32_t col = static_cast<uint32_t>(tileId % columns);
-	glm::vec2 tileCenterPos = WorldNodeMapper::getTilePosition(row, col);
+		const uint32_t columns = map.getMapWidth();
+		const size_t tileId = building->getTileId();
+		uint32_t row = static_cast<uint32_t>(tileId / columns);
+		uint32_t col = static_cast<uint32_t>(tileId % columns);
+		glm::vec2 tileCenterPos = WorldNodeMapper::getTilePosition(row, col);
 
-	registry->positions.emplace(e) = tileCenterPos;
-	registry->scales.emplace(e) = glm::vec2(0.4f, 0.4f);
+		registry->positions.emplace(e) = tileCenterPos;
+		registry->scales.emplace(e) = glm::vec2(0.4f, 0.4f);
+	}
 
 	productivityBuildings.push_back(building);
 }
@@ -408,6 +390,135 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 			}
 		}
 		return false;
+	}
+
+	bool GameState::isTileVisibleTo(size_t playerId, size_t tileId) const {
+		const Player* player = getPlayer(playerId);
+		if (!player) {
+			return false;
+		}
+		return player->isTileExplored(tileId);
+	}
+
+	bool GameState::isVertexVisibleTo(size_t playerId, size_t vertexId) const {
+		VertexHandle vertex = map.findVertexById(vertexId);
+		if (!vertex) {
+			return false;
+		}
+		const auto tiles = map.getVertexTiles(vertex);
+		if (!tiles) {
+			return false;
+		}
+		for (const auto& tile : *tiles) {
+			if (tile && isTileVisibleTo(playerId, tile->getId())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool GameState::isEdgeVisibleTo(size_t playerId, size_t edgeId) const {
+		EdgeHandle edge = map.findEdgeById(edgeId);
+		if (!edge) {
+			return false;
+		}
+		const auto vertices = map.getEdgeVertices(edge);
+		if (!vertices) {
+			return false;
+		}
+		for (const auto& vertex : *vertices) {
+			if (vertex && isVertexVisibleTo(playerId, vertex->getId())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void GameState::syncSettlementType(size_t settlementId, types::SettlementType type) {
+		if (!registry) {
+			return;
+		}
+		for (Entity e : registry->settlements.entities) {
+			if (!registry->settlements.has(e)) {
+				continue;
+			}
+			Settlement& registrySettlement = registry->settlements.get(e);
+			if (registrySettlement.getId() == settlementId) {
+				registrySettlement.setSettlementType(type);
+				break;
+			}
+		}
+	}
+
+	json GameState::serializeFor(size_t viewerPlayerId) const {
+		json j = serialize();
+		if (!j.contains("players") || !j["players"].is_array()) {
+			return j;
+		}
+
+		json filteredPlayers = json::array();
+		for (auto playerJson : j["players"]) {
+			if (!playerJson.is_object()) {
+				continue;
+			}
+			const size_t id = playerJson.value("playerId", static_cast<size_t>(0));
+			if (id == viewerPlayerId) {
+				filteredPlayers.push_back(std::move(playerJson));
+				continue;
+			}
+
+			playerJson.erase("resources");
+			playerJson.erase("exploredTileIds");
+			if (playerJson.contains("hero") && playerJson["hero"].contains("tileID")) {
+				const size_t heroTile = playerJson["hero"]["tileID"].get<size_t>();
+				if (!isTileVisibleTo(viewerPlayerId, heroTile)) {
+					playerJson.erase("hero");
+				}
+			}
+			filteredPlayers.push_back(std::move(playerJson));
+		}
+		j["players"] = std::move(filteredPlayers);
+
+		json filteredSettlements = json::array();
+		if (j.contains("settlements") && j["settlements"].is_array()) {
+			for (const auto& settlementJson : j["settlements"]) {
+				if (!settlementJson.contains("vertexId")) {
+					continue;
+				}
+				if (isVertexVisibleTo(viewerPlayerId, settlementJson["vertexId"].get<size_t>())) {
+					filteredSettlements.push_back(settlementJson);
+				}
+			}
+		}
+		j["settlements"] = std::move(filteredSettlements);
+
+		json filteredRoads = json::array();
+		if (j.contains("roads") && j["roads"].is_array()) {
+			for (const auto& roadJson : j["roads"]) {
+				if (!roadJson.contains("edgeId")) {
+					continue;
+				}
+				if (isEdgeVisibleTo(viewerPlayerId, roadJson["edgeId"].get<size_t>())) {
+					filteredRoads.push_back(roadJson);
+				}
+			}
+		}
+		j["roads"] = std::move(filteredRoads);
+
+		json filteredBuildings = json::array();
+		if (j.contains("productivityBuildings") && j["productivityBuildings"].is_array()) {
+			for (const auto& buildingJson : j["productivityBuildings"]) {
+				if (!buildingJson.contains("tileId")) {
+					continue;
+				}
+				if (isTileVisibleTo(viewerPlayerId, buildingJson["tileId"].get<size_t>())) {
+					filteredBuildings.push_back(buildingJson);
+				}
+			}
+		}
+		j["productivityBuildings"] = std::move(filteredBuildings);
+
+		return j;
 	}
 
 
