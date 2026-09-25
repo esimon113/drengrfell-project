@@ -141,6 +141,8 @@ namespace df {
 		void setTutorialReporter(std::function<void(TutorialStepId)> reporter) { tutorialReporter = std::move(reporter); }
 		bool isTutorialActive() const;
 		bool hasAuthoritativeMap() const { return authoritativeMap; }
+		size_t getViewerPlayerId() const { return viewerPlayerId; }
+		void setViewerPlayerId(size_t id) { viewerPlayerId = id; }
 		types::WeatherType getWeather() const { return weather; }
 		void setWeather(types::WeatherType type) { weather = type; }
 		float getWeatherIntensity() const { return weatherIntensity; }
@@ -171,6 +173,7 @@ namespace df {
 		std::function<void(TutorialStepId)> tutorialReporter;
 		size_t tutorialReportSentFor = static_cast<size_t>(-1);
 		bool authoritativeMap = false;
+		size_t viewerPlayerId = 0;
 		types::WeatherType weather = types::WeatherType::SUNNY;
 		float weatherIntensity = 0.f;
 

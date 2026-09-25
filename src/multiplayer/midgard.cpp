@@ -359,6 +359,20 @@ namespace df::bifrost {
 	}
 
 
+	void Midgard::claimQuest(int questId) {
+		if (!connected_) {
+			return;
+		}
+
+		Message msg;
+		msg.type = MessageType::CLAIM_QUEST;
+		msg.seq = getNextSeq();
+		msg.payload = ClaimQuestPayload{questId};
+
+		sendMessage(msg);
+	}
+
+
 	void Midgard::reportTutorialEvent(int stepId) {
 		if (!connected_) {
 			return;

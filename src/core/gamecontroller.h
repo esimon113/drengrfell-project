@@ -52,6 +52,7 @@ namespace df {
 
 		QuestsSystem* getQuestsSystem() const { return m_questsSystem.get(); }
 		void claimQuestReward(int questId);
+		bool claimQuestRewardFor(size_t playerId, int questId);
 
 		Player* getPlayerbyId(size_t playerId);
 		const Player* getPlayerById(size_t playerId) const;

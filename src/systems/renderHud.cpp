@@ -225,7 +225,7 @@ namespace df {
 			std::string heroPointsText = std::to_string(heroPoints);
 			glm::vec2 heroPointsTextSize = textSystem->measureText(heroPointsText, scale * 1.2f);
 
-			std::string roundText = "Round: " + std::to_string(gameState->getRoundNumber());
+			std::string roundText = "Round: " + std::to_string(gameState->getRoundNumber()) + "  Player: " + std::to_string(gameState->getCurrentPlayerId());
 			glm::vec2 roundTextSize = textSystem->measureText(roundText, scale * 1.2f);
 
 			// compute max width

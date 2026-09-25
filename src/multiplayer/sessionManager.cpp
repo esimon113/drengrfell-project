@@ -472,6 +472,14 @@ SessionManager::MessageResult SessionManager::processMessage(int socket, const M
 			break;
 		}
 
+		case MessageType::CLAIM_QUEST: {
+			const auto& payload = std::get<ClaimQuestPayload>(msg.payload);
+			auto [success, error] = claimQuest(socket, payload.questId);
+			result.response = createActionResult(msg.seq, success, error);
+			result.broadcastGameState = success;
+			break;
+		}
+
 		case MessageType::PING: {
 			const auto& payload = std::get<PingPayload>(msg.payload);
 			result.response = createPongMessage(msg.seq, payload.timestamp);
@@ -863,7 +871,33 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::reportTutorialEvent(in
 		return {false, ErrorInfo{ErrorCode::PLAYER_NOT_FOUND, "Player not found"}};
 	}
 
+	const TutorialStep* before = gameState_->getCurrentTutorialStep();
+	const bool finishingTutorial = before && before->id == TutorialStepId::END &&
+		static_cast<TutorialStepId>(stepId) == TutorialStepId::END;
 	gameState_->completeTutorialStep(static_cast<TutorialStepId>(stepId));
+	if (finishingTutorial && gameController_ && gameController_->getQuestsSystem()) {
+		gameController_->getQuestsSystem()->updateProgress(types::QuestGoalType::TUTORIAL, 1);
+	}
+	return {true, std::nullopt};
+}
+
+
+std::pair<bool, std::optional<ErrorInfo>> SessionManager::claimQuest(int socket, int questId) {
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	if (state_ != SessionState::PLAYING) {
+		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "Game not in progress"}};
+	}
+
+	auto playerIdOpt = getPlayerIdBySocket(socket);
+	if (!playerIdOpt) {
+		return {false, ErrorInfo{ErrorCode::PLAYER_NOT_FOUND, "Player not found"}};
+	}
+
+	if (!gameController_ || !gameController_->claimQuestRewardFor(*playerIdOpt, questId)) {
+		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "Quest cannot be claimed"}};
+	}
+
 	return {true, std::nullopt};
 }
 
@@ -1035,6 +1069,9 @@ void SessionManager::initializeGame() {
 
 	// Initialize game controller
 	gameController_ = std::make_unique<GameController>(*gameState_);
+	if (QuestsSystem* quests = gameController_->getQuestsSystem()) {
+		quests->init(nullptr);
+	}
 
 	// Set initial game phase
 	gameState_->setPhase(types::GamePhase::PLAY);
@@ -1131,6 +1168,7 @@ std::optional<ErrorInfo> SessionManager::validateAction(int socket, MessageType 
 		case MessageType::BUILD_PRODUCTIVITY_BUILDING:
 		case MessageType::PAY_HAZARD:
 		case MessageType::TUTORIAL_EVENT:
+		case MessageType::CLAIM_QUEST:
 			if (state_ == SessionState::LOBBY) {
 				return ErrorInfo{ErrorCode::INVALID_ACTION, "Game not started"};
 			}

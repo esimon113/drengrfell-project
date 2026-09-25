@@ -641,7 +641,8 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 				if (!settlementJson.contains("vertexId")) {
 					continue;
 				}
-				if (isVertexVisibleTo(viewerPlayerId, settlementJson["vertexId"].get<size_t>())) {
+				const size_t ownerId = settlementJson.value("playerId", static_cast<size_t>(-1));
+				if (ownerId == viewerPlayerId || isVertexVisibleTo(viewerPlayerId, settlementJson["vertexId"].get<size_t>())) {
 					filteredSettlements.push_back(settlementJson);
 				}
 			}
@@ -654,7 +655,8 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 				if (!roadJson.contains("edgeId")) {
 					continue;
 				}
-				if (isEdgeVisibleTo(viewerPlayerId, roadJson["edgeId"].get<size_t>())) {
+				const size_t ownerId = roadJson.value("playerId", static_cast<size_t>(-1));
+				if (ownerId == viewerPlayerId || isEdgeVisibleTo(viewerPlayerId, roadJson["edgeId"].get<size_t>())) {
 					filteredRoads.push_back(roadJson);
 				}
 			}
@@ -667,7 +669,8 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 				if (!buildingJson.contains("tileId")) {
 					continue;
 				}
-				if (isTileVisibleTo(viewerPlayerId, buildingJson["tileId"].get<size_t>())) {
+				const size_t ownerId = buildingJson.value("playerId", static_cast<size_t>(-1));
+				if (ownerId == viewerPlayerId || isTileVisibleTo(viewerPlayerId, buildingJson["tileId"].get<size_t>())) {
 					filteredBuildings.push_back(buildingJson);
 				}
 			}

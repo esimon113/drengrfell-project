@@ -234,6 +234,8 @@ namespace df::bifrost {
 
 		[[nodiscard]] std::pair<bool, std::optional<ErrorInfo>> reportTutorialEvent(int socket, int stepId);
 
+		[[nodiscard]] std::pair<bool, std::optional<ErrorInfo>> claimQuest(int socket, int questId);
+
 		/**
 		 * Get serialized game state.
 		 */

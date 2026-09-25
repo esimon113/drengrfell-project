@@ -445,9 +445,15 @@ namespace df {
 			}
 
 			// finish quest once requirements met
-			if (!midgard || !midgard->isConnected()) {
-				currentQuestId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
-				gameController->claimQuestReward(currentQuestId);
+			currentQuestId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
+			if (const Quest* showingQuest = gameController->getQuestsSystem()->getQuestById(currentQuestId);
+				showingQuest && showingQuest->state == QuestState::Completed) {
+				if (midgard && midgard->isConnected()) {
+					midgard->claimQuest(currentQuestId);
+					gameController->getQuestsSystem()->claimQuest(currentQuestId, gameState->getPlayer(gameState->getViewerPlayerId()), gameState.get());
+				} else {
+					gameController->claimQuestReward(currentQuestId);
+				}
 			}
 
 			if (render.renderSettlementMenuSystem.isActive()) {
@@ -620,9 +626,14 @@ namespace df {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
 
 				// finish quest once requirements met
-				if (!midgard || !midgard->isConnected()) {
+				if (pressedButton == "Claim") {
 					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
-					gameController->claimQuestReward(currentId);
+					if (midgard && midgard->isConnected()) {
+						midgard->claimQuest(currentId);
+						gameController->getQuestsSystem()->claimQuest(currentId, gameState->getPlayer(gameState->getViewerPlayerId()), gameState.get());
+					} else {
+						gameController->claimQuestReward(currentId);
+					}
 				}
 
 				// TODO: add actions for button pressed in notifications
@@ -856,7 +867,7 @@ namespace df {
 					if (mapId >= 0 && !movementSystem->isEntityMoving()) {
 						//  TODO: For multiplayer use hero of active player
 						Entity hero = registry->animations.entities.front();
-						Player* player = this->gameState->getPlayer(0);
+						Player* player = this->gameState->getPlayer(this->gameState->getViewerPlayerId());
 						movementSystem->setTarget(mapId, hero, player);
 						auto path = movementSystem->getCurrentPath();
 						render.renderTilesSystem.setPath(movementSystem->getCurrentPath());
@@ -964,6 +975,7 @@ namespace df {
 
 	void Application::onAuthoritativeState(const nlohmann::json& state) noexcept {
 		const size_t playerId = midgard && midgard->getPlayerId() ? *midgard->getPlayerId() : 0;
+		gameState->setViewerPlayerId(playerId);
 		const bool alreadyPlaying = sessionMapReady;
 		bool hadHazard = false;
 		std::string previousName;

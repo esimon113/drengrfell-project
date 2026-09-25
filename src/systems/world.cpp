@@ -196,7 +196,7 @@ namespace df {
 				showCosts	= false;
 				showTrade = false;
 				if (quests) {
-					quests->notifyNextActiveQuest(player); 
+					quests->notifyNextActiveQuest(player, this->gameState); 
 				}
 				if (step && step->id == TutorialStepId::OPEN_QUEST_MENU) {
 					this->gameState->completeCurrentTutorialStep();

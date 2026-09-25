@@ -130,6 +130,8 @@ namespace df::bifrost {
 			return "PayHazard";
 		case MessageType::TUTORIAL_EVENT:
 			return "TutorialEvent";
+		case MessageType::CLAIM_QUEST:
+			return "ClaimQuest";
 		case MessageType::PING:
 			return "Ping";
 		case MessageType::RECONNECT:
@@ -195,6 +197,8 @@ namespace df::bifrost {
 			return MessageType::PAY_HAZARD;
 		if (str == "TutorialEvent")
 			return MessageType::TUTORIAL_EVENT;
+		if (str == "ClaimQuest")
+			return MessageType::CLAIM_QUEST;
 		if (str == "Ping")
 			return MessageType::PING;
 		if (str == "Reconnect")
@@ -394,6 +398,11 @@ namespace df::bifrost {
 				j["stepId"] = p.stepId;
 				break;
 			}
+			case MessageType::CLAIM_QUEST: {
+				const auto& p = std::get<ClaimQuestPayload>(payload);
+				j["questId"] = p.questId;
+				break;
+			}
 			case MessageType::PING: {
 				const auto& p = std::get<PingPayload>(payload);
 				j["timestamp"] = p.timestamp;
@@ -569,6 +578,11 @@ namespace df::bifrost {
 			case MessageType::TUTORIAL_EVENT: {
 				TutorialEventPayload p;
 				p.stepId = j.value("stepId", 0);
+				return p;
+			}
+			case MessageType::CLAIM_QUEST: {
+				ClaimQuestPayload p;
+				p.questId = j.value("questId", 0);
 				return p;
 			}
 			case MessageType::PING: {

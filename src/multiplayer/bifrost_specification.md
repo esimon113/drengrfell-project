@@ -93,6 +93,7 @@ All messages must contain these fields in the json payload.
 | BuildProductivityBuilding  | Place a productivity building on a tile          | `{ "tileId": 12, "tileType": "FOREST" }`             |
 | PayHazard                  | Pay to clear the current hazard                  | `{ }`                                                |
 | TutorialEvent              | Report a tutorial step the server cannot see     | `{ "stepId": 0 }`                                    |
+| ClaimQuest                 | Claim a completed quest reward                   | `{ "questId": 0 }`                                   |
 
 #### 3.2.3 Connection management
 

@@ -120,7 +120,7 @@ namespace df {
 		auto& animComp = registry->animations.get(entity);
 
 		if (gameState) {
-			Player* playerPtr = gameState->getPlayer(0);
+			Player* playerPtr = gameState->getPlayer(gameState->getViewerPlayerId());
 			auto* quests = registry->getSystem<QuestsSystem>();
 			if (playerPtr && quests) {
 				auto tile = gameState->getMap().getTile(tileID); 
@@ -227,7 +227,7 @@ namespace df {
 				currentPathIndex = 0;
 
 				if (gameState) {
-					Player* playerPtr = gameState->getPlayer(0);
+					Player* playerPtr = gameState->getPlayer(gameState->getViewerPlayerId());
 					auto* quests = registry->getSystem<QuestsSystem>();
 					if (playerPtr && quests) {
 						auto questCheckTile = gameState->getMap().getTile(targetPositionTileID);

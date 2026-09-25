@@ -241,6 +241,12 @@ namespace df {
 			if (!player.isTileExplored(tileId)) {
 				tile->addVisibleForPlayers(player.getId());
 				player.exploreTile(tileId);
+				if (this->m_questsSystem && tile->getType() != types::TileType::WATER) {
+					this->m_questsSystem->updateProgress(types::QuestGoalType::DISCOVER, 1);
+				}
+				if (this->m_questsSystem && tile->getType() == types::TileType::ICE) {
+					this->m_questsSystem->updateProgress(types::QuestGoalType::ICE, 1);
+				}
 			}
 		} catch (const std::exception&) {
 		} // invalid tile -> ignore
@@ -274,8 +280,22 @@ namespace df {
 
 		Player* player = this->getPlayerbyId(playerId);
 		std::shared_ptr<Hero> hero = player->getHero();
-		this->exploreTile(*player, targetTileId);
-		hero->setTileID(targetTileId);
+		const size_t startTile = hero->getTileID();
+		std::vector<size_t> path = this->gameState.getMap().dijkstraPath(startTile, targetTileId, player);
+		const int range = hero->getBaseRange();
+		const size_t maxTiles = static_cast<size_t>(range > 0 ? range : 0) + 1;
+		if (path.size() > maxTiles) {
+			path.resize(maxTiles);
+		}
+		if (path.empty()) {
+			this->exploreTile(*player, targetTileId);
+			hero->setTileID(targetTileId);
+		} else {
+			for (size_t tileId : path) {
+				this->exploreTile(*player, tileId);
+			}
+			hero->setTileID(path.back());
+		}
 		hero->setMovedThisTurn(true);
 
 		return true;
@@ -1084,6 +1104,23 @@ namespace df {
 			player->addResources(q->reward_resource, q->reward_amount);
 			quests->claimQuest(questId, player, &gameState);
 		}
+	}
+
+	bool GameController::claimQuestRewardFor(size_t playerId, int questId) {
+		Player* player = this->getPlayerbyId(playerId);
+		QuestsSystem* quests = this->getQuestsSystem();
+		if (!player || !quests || !quests->prepareClaim(questId)) {
+			return false;
+		}
+
+		const Quest* quest = quests->getQuestById(questId);
+		if (!quest || quest->state != QuestState::Completed) {
+			return false;
+		}
+
+		player->addResources(quest->reward_resource, quest->reward_amount);
+		quests->claimQuest(questId, player, &gameState);
+		return true;
 	}
 
 } // namespace df

@@ -157,6 +157,22 @@ namespace df {
     }
 
 
+    bool QuestsSystem::prepareClaim(int questId) {
+        for (auto& quest : m_quests) {
+            if (quest.id != questId) {
+                continue;
+            }
+            if (quest.state == QuestState::Claimed || quest.state == QuestState::Locked) {
+                return false;
+            }
+            if (quest.state != QuestState::Completed) {
+                quest.state = QuestState::Completed;
+            }
+            return true;
+        }
+        return false;
+    }
+
     void QuestsSystem::claimQuest(int questId, Player* player,GameState* gameState) {
         for (auto& q : m_quests) {
             if (q.id == questId && q.state == QuestState::Completed) {
@@ -232,11 +248,11 @@ namespace df {
         }
     }
 
-    void QuestsSystem::notifyNextActiveQuest(Player* player) {
+    void QuestsSystem::notifyNextActiveQuest(Player* player, GameState* gameState) {
         if (m_quests.empty()) return;
 
         if(activeQuests == 0){
-            if (player) {
+            if (player && !(gameState && gameState->hasAuthoritativeMap())) {
             const int COMPLETION_BONUS = 5;
             player->addHeroPoints(COMPLETION_BONUS);
             

@@ -96,6 +96,38 @@ int main() {
 			std::cerr << "solo endTurn failed\n";
 			return EXIT_FAILURE;
 		}
+
+		const auto beforeClaim = solo.getSerializedGameState();
+		int forestBefore = 0;
+		if (beforeClaim.contains("players")) {
+			for (const auto& playerJson : beforeClaim["players"]) {
+				if (playerJson.value("playerId", static_cast<size_t>(0)) == 0 && playerJson.contains("resources")) {
+					forestBefore = playerJson["resources"].value("2", 0);
+				}
+			}
+		}
+		const auto claimed = solo.claimQuest(20, 0);
+		if (!claimed.first) {
+			std::cerr << "claim quest failed\n";
+			return EXIT_FAILURE;
+		}
+		const auto afterClaim = solo.getSerializedGameState();
+		int forestAfter = 0;
+		if (afterClaim.contains("players")) {
+			for (const auto& playerJson : afterClaim["players"]) {
+				if (playerJson.value("playerId", static_cast<size_t>(0)) == 0 && playerJson.contains("resources")) {
+					forestAfter = playerJson["resources"].value("2", 0);
+				}
+			}
+		}
+		if (forestAfter != forestBefore + 5) {
+			std::cerr << "quest reward was not granted\n";
+			return EXIT_FAILURE;
+		}
+		if (solo.claimQuest(20, 0).first) {
+			std::cerr << "quest was claimed twice\n";
+			return EXIT_FAILURE;
+		}
 	}
 
 	{

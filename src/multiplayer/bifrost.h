@@ -121,6 +121,7 @@ namespace df::bifrost {
 		BUILD_PRODUCTIVITY_BUILDING,
 		PAY_HAZARD,
 		TUTORIAL_EVENT,
+		CLAIM_QUEST,
 
 		// Client -> Server: Connection
 		PING,
@@ -320,6 +321,10 @@ namespace df::bifrost {
 		int stepId{0};
 	};
 
+	struct ClaimQuestPayload {
+		int questId{0};
+	};
+
 	struct PingPayload {
 		int64_t timestamp{0};
 	};
@@ -415,6 +420,7 @@ namespace df::bifrost {
 		BuildProductivityBuildingPayload,
 		PayHazardPayload,
 		TutorialEventPayload,
+		ClaimQuestPayload,
 		PingPayload,
 		ReconnectPayload,
 		// Server -> Client

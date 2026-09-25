@@ -232,6 +232,8 @@ namespace df::bifrost {
 
 		void reportTutorialEvent(int stepId);
 
+		void claimQuest(int questId);
+
 		/**
 		 * Send a ping to measure latency.
 		 */

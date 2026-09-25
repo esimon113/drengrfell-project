@@ -16,9 +16,10 @@ namespace df {
         void updateProgress(types::QuestGoalType type, int amount);
         void activateQuest(int questId, Player* player, GameState* gameState);
         void claimQuest(int questId, Player* player, GameState* gameState);
+        bool prepareClaim(int questId);
 
         void notifyPlayer(int questId);
-        void notifyNextActiveQuest(Player* player);
+        void notifyNextActiveQuest(Player* player, GameState* gameState = nullptr);
 
         const Quest* getQuestById(int id) const;
         const std::vector<Quest>& getQuests() const { return m_quests; }
