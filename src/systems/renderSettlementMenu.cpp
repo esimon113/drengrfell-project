@@ -649,15 +649,7 @@ namespace df {
 		displayLines.push_back(line);
 	}
 
-	float contentHeight = 0.f;
-	for (size_t i = 0; i < displayLines.size(); ++i) {
-			contentHeight += lineHeight;
-		if (i + 1 < displayLines.size()) {
-				contentHeight += lineSpacing;
-			}
-		}
-
-		float buttonsHeight = 0.f;
+	float buttonsHeight = 0.f;
 		if (!buttons.empty()) {
 			buttonsHeight = buttons.size() * buttonHeight + (buttons.size() - 1) * buttonSpacing;
 		}
