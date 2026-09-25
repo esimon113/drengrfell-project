@@ -33,7 +33,9 @@ namespace df {
 
 		void giveResourcesTo(Player& player);
 
+		bool canMoveHeroToTile(size_t playerId, size_t targetTileId) const;
 		bool moveHeroToTile(size_t playerId, size_t targetTileId);
+		bool canAfford(size_t playerId, const std::vector<int>& cost) const;
 
 		bool canBuildSettlement(size_t playerId, size_t vertexId) const;
 		bool buildSettlement(size_t playerId, size_t vertexId, const std::vector<int>& buildingCost);

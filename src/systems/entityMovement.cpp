@@ -286,6 +286,15 @@ namespace df {
 		targetSet = !targetSet;
 	}
 
+	void EntityMovementSystem::cancelMovement() noexcept {
+		movementState = false;
+		moving = false;
+		targetSet = false;
+		currentPath.clear();
+		currentPathIndex = 0;
+		pathT = 0.0f;
+	}
+
 	void EntityMovementSystem::setTarget(const size_t id, Entity entity, Player* player) noexcept {
 		glm::vec2& currentPos = registry->positions.get(entity);
 		size_t& currentPosTileId = registry->tileID.get(entity);
@@ -309,6 +318,16 @@ namespace df {
 		currentPathIndex = 0;
 
 		if (!currentPath.empty()) {
+			if (gameState) {
+				Player* current = gameState->getPlayer(gameState->getCurrentPlayerId());
+				if (current && current->getHero()) {
+					const int range = current->getHero()->getBaseRange();
+					const size_t maxTiles = static_cast<size_t>(range > 0 ? range : 0) + 1;
+					if (currentPath.size() > maxTiles) {
+						currentPath.resize(maxTiles);
+					}
+				}
+			}
 			size_t lastTile = currentPath.back();
 			targetPositionTileID = lastTile;
 			targetPosition = getTileWorldPosition(lastTile);

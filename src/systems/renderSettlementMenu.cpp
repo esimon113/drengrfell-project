@@ -1,4 +1,5 @@
 #include "renderSettlementMenu.h"
+#include "renderNotification.h"
 #include "core/camera.h"
 #include "glm/ext/matrix_transform.hpp"
 #include "utils/worldNodeMapper.h"
@@ -315,14 +316,29 @@ namespace df {
 				mouse.y >= btn.y && mouse.y <= btn.y + btn.h) {
 				const size_t playerId = gameState ? gameState->getCurrentPlayerId() : 0;
 				bool success = false;
+				auto* notification = registry ? registry->getSystem<RenderNotificationSystem>() : nullptr;
 				switch (btn.action) {
 				case ButtonAction::UpgradeStone: {
 					const std::vector<int> cost = {0, 0, 10, 10, 20, 10, 10, 0};
+					if (gameController->canUpgradeSettlement(playerId, selectedSettlementId, types::SettlementType::STONE) &&
+						!gameController->canAfford(playerId, cost)) {
+						if (notification) {
+							notification->showNotification("You don't have enough ressources!", "You need more ressources to upgrade this settlement.\n", {"Okay"});
+						}
+						break;
+					}
 					success = gameController->upgradeSettlement(playerId, selectedSettlementId, types::SettlementType::STONE, cost);
 					break;
 				}
 				case ButtonAction::UpgradeCastle: {
 					const std::vector<int> cost = {0, 0, 30, 20, 50, 40, 30, 0};
+					if (gameController->canUpgradeSettlement(playerId, selectedSettlementId, types::SettlementType::CASTLE) &&
+						!gameController->canAfford(playerId, cost)) {
+						if (notification) {
+							notification->showNotification("You don't have enough ressources!", "You need more ressources to upgrade this settlement.\n", {"Okay"});
+						}
+						break;
+					}
 					success = gameController->upgradeSettlement(playerId, selectedSettlementId, types::SettlementType::CASTLE, cost);
 					break;
 				}
@@ -355,6 +371,12 @@ namespace df {
 						cost[static_cast<size_t>(types::TileType::GRASS)] = 10;
 						break;
 					default:
+						break;
+					}
+					if (!gameController->canAfford(playerId, cost)) {
+						if (notification) {
+							notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\n", {"Okay"});
+						}
 						break;
 					}
 					success = gameController->buildProductivityBuilding(playerId, btn.tileId, btn.tileType, cost);

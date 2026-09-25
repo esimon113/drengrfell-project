@@ -23,6 +23,7 @@
 
 #include <registry.h>
 #include <window.h>
+#include <optional>
 
 
 
@@ -69,6 +70,7 @@ namespace df {
 		void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 		void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 		void spawnHero() noexcept;
+		void presentHazardState(size_t playerId, bool hadHazardBefore, const std::string& previousHazardName) noexcept;
 
 
 		bool test = false;
@@ -76,6 +78,8 @@ namespace df {
 		bool victoryScreenClosed = false;
 		bool victoryScreenShown = false;
 		bool awaitingTurnEnd = false;
+		bool walkValidated = false;
+		std::optional<size_t> pendingHeroTile;
 		size_t selectedSettlementId = SIZE_MAX;
 
 		// GameState

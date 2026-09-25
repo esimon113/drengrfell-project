@@ -206,50 +206,33 @@ namespace df {
 	}
 
 
-	bool GameController::moveHeroToTile(size_t playerId, size_t targetTileId) {
-		Player* player = this->getPlayerbyId(playerId);
+	bool GameController::canMoveHeroToTile(size_t playerId, size_t targetTileId) const {
+		const Player* player = this->getPlayerById(playerId);
 		if (!player) {
 			return false;
 		}
 
+		const std::shared_ptr<Hero> hero = player->getHero();
+		if (!hero || hero->hasMovedThisTurn()) {
+			return false;
+		}
+
+		const size_t distance = this->gameState.getMap().getTileStepDistance(hero->getTileID(), targetTileId);
+		if (distance == SIZE_MAX) {
+			return false;
+		}
+
+		return static_cast<int>(distance) <= hero->getBaseRange();
+	}
+
+
+	bool GameController::moveHeroToTile(size_t playerId, size_t targetTileId) {
+		if (!this->canMoveHeroToTile(playerId, targetTileId)) {
+			return false;
+		}
+
+		Player* player = this->getPlayerbyId(playerId);
 		std::shared_ptr<Hero> hero = player->getHero();
-		if (!hero) {
-			return false;
-		}
-
-		if (hero->hasMovedThisTurn()) {
-			return false;
-		}
-
-		const int currentTileId = static_cast<int>(hero->getTileID());
-		size_t distance = 0;
-		if (currentTileId >= 0) {
-			const Graph& map = this->gameState.getMap();
-			const TileHandle currentTile = map.getTile(currentTileId);
-			const TileHandle targetTile = map.getTile(targetTileId);
-			distance = map.getDistanceBetween(currentTile, targetTile);
-
-			if (distance == SIZE_MAX) {
-				return false;
-			}
-		}
-
-		// TODO: hero class should implement moving the hero to a specified tile.
-		// TODO: use size_t in hero -> id and distance cannot be negative -> make this information explicit by used datatype
-		// if (!hero->moveToTile(targetTileId, distance)) { return false; }
-
-		auto range = hero->getBaseRange();
-		auto remainingRange = range - static_cast<int>(distance);
-		// TODO: set remaining range for the hero for the current turn
-		// otherwise we need to specify that the hero can be moved only once per turn
-		// something like this:
-		// hero->setRemainingRange(remainingRange);
-
-		// TODO: this is only a temporary workaround:
-		if (remainingRange < 0) {
-			return false;
-		}
-
 		this->exploreTile(*player, targetTileId);
 		hero->setTileID(targetTileId);
 		hero->setMovedThisTurn(true);
@@ -944,6 +927,24 @@ namespace df {
 		}
 
 		return false;
+	}
+
+
+	bool GameController::canAfford(size_t playerId, const std::vector<int>& cost) const {
+		const Player* player = this->getPlayerById(playerId);
+		if (!player) {
+			return false;
+		}
+		if (cost.empty()) {
+			return true;
+		}
+
+		for (size_t i = 0; i < cost.size() && i < static_cast<size_t>(types::TileType::COUNT); ++i) {
+			if (cost[i] > 0 && player->getResources(static_cast<types::TileType>(i)) < cost[i]) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 
