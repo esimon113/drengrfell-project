@@ -1,4 +1,5 @@
 #include "renderSettlementMenu.h"
+#include "constructionCosts.h"
 #include "multiplayer/midgard.h"
 #include "renderNotification.h"
 #include "core/camera.h"
@@ -222,23 +223,13 @@ namespace df {
 	addTextLine("");
 	addTextLine("Upgrades");
 
-		auto makeCostVector = [](int wood, int grass, int stone, int field, int clay) {
-			std::vector<int> cost(static_cast<size_t>(types::TileType::COUNT), 0);
-			cost[static_cast<size_t>(types::TileType::FOREST)] = wood;
-			cost[static_cast<size_t>(types::TileType::GRASS)] = grass;
-			cost[static_cast<size_t>(types::TileType::MOUNTAIN)] = stone;
-			cost[static_cast<size_t>(types::TileType::FIELD)] = field;
-			cost[static_cast<size_t>(types::TileType::CLAY)] = clay;
-			return cost;
-		};
-
-		const std::vector<int> stoneSettlementCost = makeCostVector(10, 10, 20, 10, 10);
-		const std::vector<int> castleCost = makeCostVector(30, 20, 50, 40, 30);
-		const std::vector<int> lumberCampCost = makeCostVector(10, 0, 30, 0, 20);
-		const std::vector<int> stoneQuarryCost = makeCostVector(30, 0, 10, 0, 20);
-		const std::vector<int> stableCost = makeCostVector(30, 0, 0, 10, 20);
-		const std::vector<int> millCost = makeCostVector(20, 0, 20, 0, 20);
-		const std::vector<int> brickKilnCost = makeCostVector(20, 10, 30, 0, 0);
+		const std::vector<int>& stoneSettlementCost = stoneSettlementUpgradeCost();
+		const std::vector<int>& castleCost = castleUpgradeCost();
+		const std::vector<int> lumberCampCost = productivityBuildingCost(types::TileType::FOREST);
+		const std::vector<int> stoneQuarryCost = productivityBuildingCost(types::TileType::MOUNTAIN);
+		const std::vector<int> stableCost = productivityBuildingCost(types::TileType::GRASS);
+		const std::vector<int> millCost = productivityBuildingCost(types::TileType::FIELD);
+		const std::vector<int> brickKilnCost = productivityBuildingCost(types::TileType::CLAY);
 
 		const types::SettlementType settlementType = settlementPtr->getSettlementType();
 		if (settlementType == types::SettlementType::WOOD) {
@@ -320,7 +311,7 @@ namespace df {
 				auto* notification = registry ? registry->getSystem<RenderNotificationSystem>() : nullptr;
 				switch (btn.action) {
 				case ButtonAction::UpgradeStone: {
-					const std::vector<int> cost = {0, 0, 10, 10, 20, 10, 10, 0};
+					const std::vector<int>& cost = stoneSettlementUpgradeCost();
 					if (gameController->canUpgradeSettlement(playerId, selectedSettlementId, types::SettlementType::STONE) &&
 						!gameController->canAfford(playerId, cost)) {
 						if (notification) {
@@ -337,7 +328,7 @@ namespace df {
 					break;
 				}
 				case ButtonAction::UpgradeCastle: {
-					const std::vector<int> cost = {0, 0, 30, 20, 50, 40, 30, 0};
+					const std::vector<int>& cost = castleUpgradeCost();
 					if (gameController->canUpgradeSettlement(playerId, selectedSettlementId, types::SettlementType::CASTLE) &&
 						!gameController->canAfford(playerId, cost)) {
 						if (notification) {
@@ -354,36 +345,7 @@ namespace df {
 					break;
 				}
 				case ButtonAction::BuildProductivity: {
-					std::vector<int> cost(static_cast<size_t>(types::TileType::COUNT), 0);
-					switch (btn.tileType) {
-					case types::TileType::FOREST:
-						cost[static_cast<size_t>(types::TileType::FOREST)] = 10;
-						cost[static_cast<size_t>(types::TileType::MOUNTAIN)] = 30;
-						cost[static_cast<size_t>(types::TileType::CLAY)] = 20;
-						break;
-					case types::TileType::MOUNTAIN:
-						cost[static_cast<size_t>(types::TileType::FOREST)] = 30;
-						cost[static_cast<size_t>(types::TileType::MOUNTAIN)] = 10;
-						cost[static_cast<size_t>(types::TileType::CLAY)] = 20;
-						break;
-					case types::TileType::GRASS:
-						cost[static_cast<size_t>(types::TileType::FOREST)] = 30;
-						cost[static_cast<size_t>(types::TileType::CLAY)] = 20;
-						cost[static_cast<size_t>(types::TileType::FIELD)] = 10;
-						break;
-					case types::TileType::FIELD:
-						cost[static_cast<size_t>(types::TileType::FOREST)] = 20;
-						cost[static_cast<size_t>(types::TileType::MOUNTAIN)] = 20;
-						cost[static_cast<size_t>(types::TileType::CLAY)] = 20;
-						break;
-					case types::TileType::CLAY:
-						cost[static_cast<size_t>(types::TileType::FOREST)] = 20;
-						cost[static_cast<size_t>(types::TileType::MOUNTAIN)] = 30;
-						cost[static_cast<size_t>(types::TileType::GRASS)] = 10;
-						break;
-					default:
-						break;
-					}
+					const std::vector<int> cost = productivityBuildingCost(btn.tileType);
 					if (!gameController->canAfford(playerId, cost)) {
 						if (notification) {
 							notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\n", {"Okay"});

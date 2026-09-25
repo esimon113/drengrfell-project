@@ -13,6 +13,7 @@ using json = nlohmann::json;
 #include "productivityBuilding.h"
 #include "road.h"
 #include "settlement.h"
+#include "constructionCosts.h"
 #include "tutorial.h"
 #include "types.h"
 #include "worldGeneratorConfig.h"
@@ -32,26 +33,8 @@ namespace df {
 		GameState() = default;
 		GameState(Registry* reg)
 			: registry(reg),
-			  roadCosts{
-				  0, // EMPTY
-				  0, // WATER
-				  1, // FOREST (wood)
-				  0, // GRASS
-				  0, // MOUNTAIN
-				  0, // FIELD
-				  1, // CLAY
-				  0	 // ICE
-			  },
-			  settlementCosts{
-				  0, // EMPTY
-				  0, // WATER
-				  5, // FOREST (wood)
-				  3, // GRASS
-				  0, // MOUNTAIN
-				  3, // FIELD
-				  5, // CLAY
-				  0	 // ICE
-			  } {};
+			  roadCosts(roadPlacementCost()),
+			  settlementCosts(settlementPlacementCost()) {}
 
 
 		Graph& getMap() { return this->map; }

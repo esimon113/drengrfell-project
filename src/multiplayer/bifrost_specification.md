@@ -224,10 +224,10 @@ The server defines building costs in a configuration structure:
 ```json
 {
 	"settlementCost": {
-		"FOREST": 1,
-		"CLAY": 1,
-		"GRASS": 1,
-		"FIELD": 1
+		"FOREST": 5,
+		"CLAY": 5,
+		"GRASS": 3,
+		"FIELD": 3
 	},
 	"roadCost": {
 		"level1": {

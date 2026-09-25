@@ -4,6 +4,7 @@
  */
 
 #include "sessionManager.h"
+#include "constructionCosts.h"
 #include "hazards.h"
 #include "hero.h"
 #include "tile.h"
@@ -677,10 +678,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::buildSettlement(int so
 		return {false, ErrorInfo{ErrorCode::INVALID_LOCATION, "Cannot build settlement at this location"}};
 	}
 
-	// Get costs from server config
-	auto costs = buildingCosts_.getSettlementCostVector();
-
-	// Try to build
+	const auto& costs = settlementPlacementCost();
 	bool success = gameController_->buildSettlement(playerId, vertexId, costs);
 
 	if (!success) {
@@ -716,10 +714,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::buildRoad(int socket, 
 		return {false, ErrorInfo{ErrorCode::INVALID_LOCATION, "Cannot build road at this location"}};
 	}
 
-	// Get costs from server config
-	auto costs = buildingCosts_.getRoadCostVector(level);
-
-	// Try to build (convert bifrost::RoadLevel to df::RoadLevel)
+	const auto& costs = roadPlacementCost();
 	bool success = gameController_->buildRoad(playerId, edgeId, toGameRoadLevel(level), costs);
 
 	if (!success) {
@@ -781,7 +776,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::upgradeSettlement(int 
 		return {false, ErrorInfo{ErrorCode::INVALID_LOCATION, "Cannot upgrade this settlement"}};
 	}
 
-	auto costs = buildingCosts_.getSettlementCostVector();
+	const auto& costs = targetType == types::SettlementType::STONE ? stoneSettlementUpgradeCost() : castleUpgradeCost();
 	bool success = gameController_->upgradeSettlement(playerId, settlementId, targetType, costs);
 	if (!success) {
 		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "You need more ressources to upgrade this settlement.\n"}};
@@ -813,7 +808,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::buildProductivityBuild
 		return {false, ErrorInfo{ErrorCode::INVALID_LOCATION, "Cannot place productivity building here"}};
 	}
 
-	auto costs = buildingCosts_.getSettlementCostVector();
+	const std::vector<int> costs = productivityBuildingCost(tileType);
 	bool success = gameController_->buildProductivityBuilding(playerId, tileId, tileType, costs);
 	if (!success) {
 		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "You need more ressources to build this.\n"}};

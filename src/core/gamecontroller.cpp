@@ -839,6 +839,9 @@ namespace df {
 		try {
 			size_t vertexId = settlement.getVertexId();
 			auto vertex = map.findVertexById(vertexId);
+			if (!vertex) {
+				return tileIds;
+			}
 			auto vertexTiles = map.getVertexTiles(vertex);
 
 			if (!vertexTiles) {
@@ -846,6 +849,9 @@ namespace df {
 			}
 
 			for (const auto& tile : *vertexTiles) {
+				if (!tile) {
+					continue;
+				}
 				tileIds.push_back(tile->getId());
 			}
 		} catch (const std::exception&) {

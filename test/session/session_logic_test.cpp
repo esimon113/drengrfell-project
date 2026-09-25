@@ -1,9 +1,39 @@
+#include "constructionCosts.h"
 #include "multiplayer/sessionManager.h"
 #include "player.h"
 
 #include <cstdlib>
 #include <iostream>
+#include <string>
 #include <variant>
+
+namespace {
+
+int resourceAmount(const nlohmann::json& state, size_t playerId, df::types::TileType type) {
+	if (!state.contains("players")) {
+		return 0;
+	}
+	const std::string key = std::to_string(static_cast<int>(type));
+	for (const auto& playerJson : state["players"]) {
+		if (playerJson.value("playerId", static_cast<size_t>(0)) != playerId || !playerJson.contains("resources")) {
+			continue;
+		}
+		return playerJson["resources"].value(key, 0);
+	}
+	return 0;
+}
+
+bool resourcesUnchanged(const nlohmann::json& before, const nlohmann::json& after, size_t playerId) {
+	using df::types::TileType;
+	for (TileType type : {TileType::FOREST, TileType::GRASS, TileType::MOUNTAIN, TileType::FIELD, TileType::CLAY}) {
+		if (resourceAmount(before, playerId, type) != resourceAmount(after, playerId, type)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+}
 
 int main() {
 	df::bifrost::SessionManager session;
@@ -178,6 +208,72 @@ int main() {
 		const auto& tutorialPayload = std::get<df::bifrost::TutorialEventPayload>(decodedTutorial.payload);
 		if (tutorialPayload.stepId != static_cast<int>(df::TutorialStepId::MOVE_CAMERA)) {
 			std::cerr << "TutorialEvent roundtrip payload failed\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::SessionManager costs;
+		if (!costs.addClient(30, "Builder")) {
+			std::cerr << "cost session failed to start\n";
+			return EXIT_FAILURE;
+		}
+		costs.setPlayerReady(30, true);
+		if (!costs.startGame(30)) {
+			std::cerr << "cost session failed to start\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto before = costs.getSerializedGameState();
+		bool built = false;
+		for (size_t vertexId = 576; vertexId < 2500; ++vertexId) {
+			if (costs.buildSettlement(30, vertexId).first) {
+				built = true;
+				break;
+			}
+		}
+		if (!built) {
+			std::cerr << "could not place a settlement to check costs\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto placed = costs.getSerializedGameState();
+		if (!placed.contains("settlements") || !placed["settlements"].is_array() || placed["settlements"].empty()) {
+			std::cerr << "settlement was not recorded\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto& expectedSettlement = df::settlementPlacementCost();
+		using df::types::TileType;
+		for (TileType type : {TileType::FOREST, TileType::GRASS, TileType::MOUNTAIN, TileType::FIELD, TileType::CLAY}) {
+			const size_t index = static_cast<size_t>(type);
+			const int delta = resourceAmount(before, 0, type) - resourceAmount(placed, 0, type);
+			if (index >= expectedSettlement.size() || delta != expectedSettlement[index]) {
+				std::cerr << "settlement cost was not charged\n";
+				return EXIT_FAILURE;
+			}
+		}
+
+		const size_t settlementId = placed["settlements"][0].value("id", static_cast<size_t>(0));
+		const auto upgrade = costs.upgradeSettlement(30, settlementId, df::types::SettlementType::STONE);
+		const auto afterUpgrade = costs.getSerializedGameState();
+		if (upgrade.first || !resourcesUnchanged(placed, afterUpgrade, 0)) {
+			std::cerr << "stone upgrade charged the wrong cost\n";
+			return EXIT_FAILURE;
+		}
+
+		bool productivityBuilt = false;
+		for (size_t tileId = 0; tileId < 576 && !productivityBuilt; ++tileId) {
+			for (TileType type : {TileType::FOREST, TileType::MOUNTAIN, TileType::GRASS, TileType::FIELD, TileType::CLAY}) {
+				if (costs.buildProductivityBuilding(30, tileId, type).first) {
+					productivityBuilt = true;
+					break;
+				}
+			}
+		}
+		const auto afterProductivity = costs.getSerializedGameState();
+		if (productivityBuilt || !resourcesUnchanged(placed, afterProductivity, 0)) {
+			std::cerr << "productivity building charged the wrong cost\n";
 			return EXIT_FAILURE;
 		}
 	}

@@ -228,10 +228,10 @@ namespace df::bifrost {
 	struct BuildingCosts {
 		// Settlement cost: map of TileType -> amount
 		std::map<types::TileType, int> settlementCost{
-			{types::TileType::FOREST, 1},
-			{types::TileType::CLAY, 1},
-			{types::TileType::GRASS, 1},
-			{types::TileType::FIELD, 1}};
+			{types::TileType::FOREST, 5},
+			{types::TileType::CLAY, 5},
+			{types::TileType::GRASS, 3},
+			{types::TileType::FIELD, 3}};
 
 		// Road costs per level
 		std::map<RoadLevel, std::map<types::TileType, int>> roadCosts{
