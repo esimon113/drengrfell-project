@@ -1108,11 +1108,11 @@ void SessionManager::createPlayers() {
 
 	for (const auto& [playerId, name] : playerList) {
 		Player player(playerId);
-		player.addResources(types::TileType::FOREST, 2);
-		player.addResources(types::TileType::CLAY, 2);
-		player.addResources(types::TileType::GRASS, 2);
-		player.addResources(types::TileType::FIELD, 2);
-		player.addResources(types::TileType::MOUNTAIN, 1);
+		player.addResources(types::TileType::FOREST, 7);
+		player.addResources(types::TileType::CLAY, 7);
+		player.addResources(types::TileType::GRASS, 7);
+		player.addResources(types::TileType::FIELD, 7);
+		player.addResources(types::TileType::MOUNTAIN, 7);
 
 		const Graph& map = gameState_->getMap();
 		const size_t tileCount = map.getTileCount();
