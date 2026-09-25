@@ -126,6 +126,10 @@ namespace df::bifrost {
 			return "UpgradeSettlement";
 		case MessageType::BUILD_PRODUCTIVITY_BUILDING:
 			return "BuildProductivityBuilding";
+		case MessageType::PAY_HAZARD:
+			return "PayHazard";
+		case MessageType::TUTORIAL_EVENT:
+			return "TutorialEvent";
 		case MessageType::PING:
 			return "Ping";
 		case MessageType::RECONNECT:
@@ -187,6 +191,10 @@ namespace df::bifrost {
 			return MessageType::UPGRADE_SETTLEMENT;
 		if (str == "BuildProductivityBuilding")
 			return MessageType::BUILD_PRODUCTIVITY_BUILDING;
+		if (str == "PayHazard")
+			return MessageType::PAY_HAZARD;
+		if (str == "TutorialEvent")
+			return MessageType::TUTORIAL_EVENT;
 		if (str == "Ping")
 			return MessageType::PING;
 		if (str == "Reconnect")
@@ -379,6 +387,13 @@ namespace df::bifrost {
 				j["tileType"] = types::tileTypeToString(p.tileType);
 				break;
 			}
+			case MessageType::PAY_HAZARD:
+				break;
+			case MessageType::TUTORIAL_EVENT: {
+				const auto& p = std::get<TutorialEventPayload>(payload);
+				j["stepId"] = p.stepId;
+				break;
+			}
 			case MessageType::PING: {
 				const auto& p = std::get<PingPayload>(payload);
 				j["timestamp"] = p.timestamp;
@@ -547,6 +562,13 @@ namespace df::bifrost {
 				BuildProductivityBuildingPayload p;
 				p.tileId = j.value("tileId", size_t{0});
 				p.tileType = types::stringToTileType(j.value("tileType", "FOREST"));
+				return p;
+			}
+			case MessageType::PAY_HAZARD:
+				return PayHazardPayload{};
+			case MessageType::TUTORIAL_EVENT: {
+				TutorialEventPayload p;
+				p.stepId = j.value("stepId", 0);
 				return p;
 			}
 			case MessageType::PING: {

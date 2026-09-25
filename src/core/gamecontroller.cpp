@@ -62,6 +62,47 @@ namespace df {
 		}
 	}
 
+	void GameController::rollWeather() {
+		const types::WeatherType previous = this->gameState.getWeather();
+		static constexpr float transition[3][3] = {
+			{0.70f, 0.20f, 0.10f},
+			{0.25f, 0.60f, 0.15f},
+			{0.20f, 0.20f, 0.60f},
+		};
+
+		std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+		const float roll = dist(this->rng);
+		const int row = static_cast<int>(previous);
+		float cumulative = 0.0f;
+		types::WeatherType next = previous;
+		for (int col = 0; col < 3; ++col) {
+			cumulative += transition[row][col];
+			if (roll <= cumulative) {
+				next = static_cast<types::WeatherType>(col);
+				break;
+			}
+		}
+
+		float intensity = this->gameState.getWeatherIntensity();
+		if (next == types::WeatherType::SUNNY) {
+			intensity = 0.0f;
+		} else if (next == types::WeatherType::RAIN) {
+			intensity = previous == types::WeatherType::RAIN ? intensity - 0.2f : -0.6f;
+		} else if (next == types::WeatherType::SNOW) {
+			intensity = previous == types::WeatherType::SNOW ? intensity + 0.2f : 0.6f;
+		}
+
+		this->gameState.setWeather(next);
+		this->gameState.setWeatherIntensity(intensity);
+		if (next != previous) {
+			for (const auto& tile : this->gameState.getMap().getTiles()) {
+				if (tile) {
+					tile->updateEffect(next);
+				}
+			}
+		}
+	}
+
 	void GameController::applyHazard(size_t playerId, size_t tileId) {
 		Player* player = this->getPlayerbyId(playerId);
 		if (!player || player->hasActiveHazard()) {

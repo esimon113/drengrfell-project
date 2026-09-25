@@ -91,6 +91,8 @@ All messages must contain these fields in the json payload.
 | MoveHero                   | Move hero (at most one successful move per turn) | `{ "targetTileId": 5 }`                              |
 | UpgradeSettlement          | Upgrade WOOD → STONE → CASTLE                    | `{ "settlementId": 3, "targetType": "STONE" }`       |
 | BuildProductivityBuilding  | Place a productivity building on a tile          | `{ "tileId": 12, "tileType": "FOREST" }`             |
+| PayHazard                  | Pay to clear the current hazard                  | `{ }`                                                |
+| TutorialEvent              | Report a tutorial step the server cannot see     | `{ "stepId": 0 }`                                    |
 
 #### 3.2.3 Connection management
 
@@ -152,7 +154,7 @@ All messages must contain these fields in the json payload.
 		"seed": 0,
 		"reconnectTimeoutSeconds": 60
 	},
-	"minPlayers": 2,
+	"minPlayers": 1,
 	"maxPlayers": 6
 }
 ```

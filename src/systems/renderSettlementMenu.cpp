@@ -1,4 +1,5 @@
 #include "renderSettlementMenu.h"
+#include "multiplayer/midgard.h"
 #include "renderNotification.h"
 #include "core/camera.h"
 #include "glm/ext/matrix_transform.hpp"
@@ -327,6 +328,11 @@ namespace df {
 						}
 						break;
 					}
+					if (midgard && midgard->isConnected() &&
+						gameController->canUpgradeSettlement(playerId, selectedSettlementId, types::SettlementType::STONE)) {
+						midgard->upgradeSettlement(selectedSettlementId, types::SettlementType::STONE);
+						break;
+					}
 					success = gameController->upgradeSettlement(playerId, selectedSettlementId, types::SettlementType::STONE, cost);
 					break;
 				}
@@ -337,6 +343,11 @@ namespace df {
 						if (notification) {
 							notification->showNotification("You don't have enough ressources!", "You need more ressources to upgrade this settlement.\n", {"Okay"});
 						}
+						break;
+					}
+					if (midgard && midgard->isConnected() &&
+						gameController->canUpgradeSettlement(playerId, selectedSettlementId, types::SettlementType::CASTLE)) {
+						midgard->upgradeSettlement(selectedSettlementId, types::SettlementType::CASTLE);
 						break;
 					}
 					success = gameController->upgradeSettlement(playerId, selectedSettlementId, types::SettlementType::CASTLE, cost);
@@ -377,6 +388,10 @@ namespace df {
 						if (notification) {
 							notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\n", {"Okay"});
 						}
+						break;
+					}
+					if (midgard && midgard->isConnected()) {
+						midgard->buildProductivityBuilding(btn.tileId, btn.tileType);
 						break;
 					}
 					success = gameController->buildProductivityBuilding(playerId, btn.tileId, btn.tileType, cost);

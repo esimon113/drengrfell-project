@@ -90,6 +90,10 @@ namespace df {
 		self.render = RenderSystem::init(self.window.get(), self.registry, self.gameState, self.gameController.get(), self.eventBus.get());
 		// Create main menu
 		self.mainMenu.init(self.window.get());
+		self.netMutex = std::make_unique<std::mutex>();
+		self.serverHost = options.getHost();
+		self.serverPort = options.getPort();
+		self.playerName = options.getPlayerName();
 		// for testing
 		// movement until we have a triggerpoint
 		self.movementSystem = std::make_unique<EntityMovementSystem>(self.registry, self.gameState, self.aiSystem, self.eventBus);
@@ -192,6 +196,7 @@ namespace df {
 
 		while (!window->shouldClose()) {
 			glfwPollEvents();
+			drainNet();
 
 			float time = static_cast<float>(glfwGetTime());
 			delta_time = time - last_time;
@@ -201,7 +206,9 @@ namespace df {
 
 			// Start turn when first entering PLAY phase -> future TODO: adjust for multiple players + ending game + reentering
 			if (gamePhase == types::GamePhase::PLAY && previousGamePhase != types::GamePhase::PLAY) {
-				gameController->startTurn();
+				if (!midgard || !midgard->isConnected()) {
+					gameController->startTurn();
+				}
 				fmt::println("Turn started for player {}", gameState->getCurrentPlayerId());
 				// Prepare the camera so it can be centered
 				world.step(0.0f);
@@ -282,79 +289,21 @@ namespace df {
 				render.step(delta_time);
 				// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
 				if (movementSystem->getMovementState()) {
-					if (!walkValidated) {
-						const size_t playerId = gameState->getCurrentPlayerId();
-						Player* mover = gameState->getPlayer(playerId);
-						const size_t targetTile = movementSystem->getTargetTileId();
-						const bool differentTile = mover && mover->getHero() && mover->getHero()->getTileID() != targetTile;
-						if (differentTile) {
-							if (!gameController->canMoveHeroToTile(playerId, targetTile)) {
-								fmt::println("[Application] Move rejected: hero cannot reach tile {} this turn", targetTile);
-								movementSystem->cancelMovement();
-								render.renderTilesSystem.setPath({});
-								render.renderTilesSystem.setSelectedTile(-1);
-								pendingHeroTile.reset();
-								walkValidated = false;
-							} else {
-								pendingHeroTile = targetTile;
-								walkValidated = true;
-							}
-						} else {
-							walkValidated = true;
+					if (!registry->animations.entities.empty()) {
+						Entity hero = registry->animations.entities.front();
+						movementSystem->moveEntityTo(hero, movementSystem->getTargetPosition(), delta_time);
+						if (!movementSystem->getMovementState()) {
+							render.renderTilesSystem.setSelectedTile(-1);
 						}
-					}
-
-					if (movementSystem->getMovementState()) {
-						if (!registry->animations.entities.empty()) {
-							Entity hero = registry->animations.entities.front();
-							movementSystem->moveEntityTo(hero, movementSystem->getTargetPosition(), delta_time);
-							if (!movementSystem->getMovementState()) {
-								render.renderTilesSystem.setSelectedTile(-1); // remove tile highlighting after hero arrived
-								if (pendingHeroTile) {
-									const size_t playerId = gameState->getCurrentPlayerId();
-									if (!gameController->moveHeroToTile(playerId, *pendingHeroTile)) {
-										fmt::println("[Application] moveHeroToTile failed for tile {}", *pendingHeroTile);
-									}
-								}
-								pendingHeroTile.reset();
-								walkValidated = false;
-							}
-						} else {
-							fmt::println("No hero entity available!");
-						}
+					} else {
+						fmt::println("No hero entity available!");
 					}
 				}
 				// ------------------------------------------------------------
 
-				// Only truly end the turn and start a new one when the hero finished walking
-				if (awaitingTurnEnd && !movementSystem->getMovementState()) {
-					const size_t moverId = gameState->getCurrentPlayerId();
-					Player* mover = gameState->getPlayer(moverId);
-					const bool hadHazard = mover && mover->hasActiveHazard();
-					std::string previousHazardName;
-					if (hadHazard) {
-						previousHazardName = HazardDB::getDefinition(mover->getActiveHazard()->type).name;
-					}
-					size_t heroTileId = 0;
-					bool hasHeroTile = false;
-					if (mover && mover->getHero()) {
-						heroTileId = mover->getHero()->getTileID();
-						hasHeroTile = true;
-					}
-
-					gameController->endTurn();
-					render.renderWeatherSystem.randomizeWeather();
-					if (aiSystem && aiSystem->isAiActive() && !registry->animations.entities.empty()) {
-						aiSystem->processHero(registry->animations.entities.front());
-					}
-					if (hasHeroTile) {
-						gameController->applyHazard(moverId, heroTileId);
-					}
-					gameController->startTurn();
-					presentHazardState(moverId, hadHazard, previousHazardName);
-					awaitingTurnEnd = false;
-					walkValidated = false;
-					pendingHeroTile.reset();
+				if (hazardPresentationPending && !movementSystem->getMovementState()) {
+					presentHazardState(hazardPlayerId, hazardHadBefore, hazardPreviousName);
+					hazardPresentationPending = false;
 				}
 			} break;
 			case types::GamePhase::END:
@@ -417,218 +366,66 @@ namespace df {
 	}
 
 	void Application::startGame(int seedParam, int widthParam, int heightParam, int mode) noexcept {
-		std::string seedName = std::to_string(seedParam);
-		std::string widthName = std::to_string(widthParam);
-		std::string heightName = std::to_string(heightParam);
-		std::string modeName = "";
-
-
-		// read config from json file
-		WorldGeneratorConfig config;
-		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
-			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
-		} else {
-			config = worldGenConfResult.unwrap<>();
+		if (joining) {
+			return;
 		}
 
-		// set config to user input or keep existing config-values if no input was made (== -1)
-		if (mode == -1) {
-			if (config.generationMode == WorldGeneratorConfig::GenerationMode::INSULAR) {
-				modeName = "kept as insular";
-			} else if (config.generationMode == WorldGeneratorConfig::GenerationMode::PERLIN) {
-				modeName = "kept as perlin";
-			}
-		} else if (mode == 0) {
-			config.generationMode = WorldGeneratorConfig::GenerationMode::INSULAR;
-			modeName = "insular";
-		} else if (mode == 1) {
-			config.generationMode = WorldGeneratorConfig::GenerationMode::PERLIN;
-			modeName = "perlin";
-		}
+		pendingSeed = seedParam;
+		pendingWidth = widthParam;
+		pendingHeight = heightParam;
+		pendingMode = mode;
+		configSent = false;
+		readySent = false;
+		startSent = false;
+		sessionMapReady = false;
+		heroPlaced = false;
+		tradingReady = false;
+		hazardPresentationPending = false;
 
-		if (seedParam != -1) {
-			config.seed = static_cast<unsigned>(seedParam);
-		} else {
-			seedName = "kept as " + std::to_string(config.seed);
-		}
-
-		if (widthParam != -1) {
-			config.columns = static_cast<unsigned>(widthParam);
-		} else {
-			widthName = "kept as " + std::to_string(config.columns);
-		}
-
-		if (widthParam != -1) {
-			config.rows = static_cast<unsigned>(heightParam);
-		} else {
-			heightName = "kept as " + std::to_string(config.rows);
-		}
-
-		fmt::println("set worldGen parameters to seed: {}, width: {}, height: {}, mode: {}", seedName, widthName, heightName, modeName);
-
-
-		// write config to json
-		const auto path = assets::getAssetPath(assets::JsonFile::WORLD_GENERATION_CONFIGURATION);
-
-		{ // open the stream in an extra block, so the stream gets closed before deserialize tries to open the json
-			std::ofstream file(path);
-			if (!file) {
-				std::cerr << "Could not open config file: " << path << '\n';
-				return;
-			}
-			file << config.serialize().dump(4);
-		}
-		fmt::println("[DEBUG] config written to file: {}", path.c_str());
-
-		// generate map with the WorldGeneratorConfig
-		if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
-			fmt::println("[DEBUG] config deserialized");
-			std::cerr << worldGenConfResult.unwrapErr() << std::endl;
-			fmt::println("[DEBUG] start regenerating...");
-			gameState->getMap().regenerate();
-		} else {
-			gameState->getMap().regenerate(worldGenConfResult.unwrap<>());
-		}
-
-
-		/*
-		debugging code for dijkstra
-
-		const Graph& map = gameState->getMap();
-		size_t testId = registry->tileID.get(registry->animations.entities.front());
-		auto heroTile = map.getTile(testId);
-		auto reachable = map.dijkstra<Tile>(*heroTile);
-
-		fmt::println(
-			"[DIJKSTRA TEST] Hero tile {} reaches {} tiles",
-			testId,
-			reachable.size());
-
-		// Test 1: Pfad zu Tile 18
-		auto pathTo18 = gameState->getMap().dijkstraPath(testId, 18);
-		fmt::println("[DIJKSTRA PATH TEST] Hero {} -> Tile 18 | Path length: {}", testId, pathTo18.size());
-		fmt::print("Path: ");
-		for (auto id : pathTo18) {
-			fmt::print("{} ", id);
-		}
-		fmt::println("");
-
-		// Test 2: Pfad zu Tile 81
-		auto pathTo81 = gameState->getMap().dijkstraPath(testId, 81);
-		fmt::println("[DIJKSTRA PATH TEST] Hero {} -> Tile 81 | Path length: {}", testId, pathTo81.size());
-		fmt::print("Path: ");
-		for (auto id : pathTo81) {
-			fmt::print("{} ", id);
-		}
-		fmt::println(""); */
-
-
-		// 		// This is only for DEBUGGING purposes:
-		// #if defined(__unix__) || defined(__linux__)
-		// 		fmt::println("Log map config");
-		// 		df::utils::writeGraphDebugDump(this->gameState->getMap(), "~/Pictures/debug/graph_debug.txt");
-		// 		df::utils::writeGraphDebugImage(this->gameState->getMap(), "~/Pictures/debug/graph_debug.png");
-		// #endif
-
-		fmt::println("[DEBUG] regenerated world");
-		{
-			// only supports one player for now. TODO: if we do multplayer update this.
-			Player* player = this->gameState->getPlayer(0);
-			if (!player) {
-				gameState->addPlayer(Player{});
-				player = this->gameState->getPlayer(0);
-			}
-			player->reset();
-			// After reset, so the domain hero is not cleared before settlement checks read it.
-			spawnHero();
-			// TODO: add 'test' mode where the player starts with a lot more resources (to show upgrading system)
-			player->addResources(types::TileType::FOREST, 10);	 // give player initial wood
-			player->addResources(types::TileType::CLAY, 10);	 // give player initial clay
-			player->addResources(types::TileType::MOUNTAIN, 10); // give player initial stone
-			player->addResources(types::TileType::FIELD, 10);	 // give player initial grain
-			player->addResources(types::TileType::GRASS, 10);	 // give player initial grass (cattle)
-
-			fmt::println("[DEBUG] resources distributed to player");
-
-			tradingSystem.init(&render.getRenderNotificationSystem(), player);
-
-			world.setTradeCallback([this]() {
-				tradingSystem.startTrading();
+		if (!midgard) {
+			midgard = std::make_unique<df::bifrost::Midgard>();
+			render.renderSettlementMenuSystem.setMidgard(midgard.get());
+			gameState->setTutorialReporter([this](TutorialStepId id) {
+				if (midgard && midgard->isConnected()) {
+					midgard->reportTutorialEvent(static_cast<int>(id));
+				}
 			});
-
-			const int width = gameState->getMap().getMapWidth();
-			const int height = gameState->getMap().getTileCount() / width;
-
-			// auto randomEngine = std::default_random_engine(std::random_device()());
-			// auto uniformDistribution = std::uniform_int_distribution();
-
-
-			// Remove this if we dont want to be the water tiles already explored
-			// same for ice
-			for (int row = 0; row < height; ++row) {
-				for (int col = 0; col < width; ++col) {
-					size_t tileId = row * width + col;
-					const TileHandle tile = gameState->getMap().getTile(tileId);
-
-					if (tile && tile->getType() == types::TileType::ICE) {
-						gameState->getPlayer(0)->exploreTile(tileId);
-					}
-				}
-			}
-
-			// Discover a radius of one tile around the hero
-			if (!registry->animations.entities.empty()) {
-				Entity hero = registry->animations.entities.front();
-				if (registry->tileID.has(hero)) {
-					int heroTileId = static_cast<int>(registry->tileID.get(hero));
-
-					int centerRow = heroTileId / width;
-					int centerCol = heroTileId % width;
-					int radius = 1;
-					if (centerRow % 2 == 0) {
-						for (int r = -radius; r <= radius; ++r) {
-							for (int c = -radius; c <= radius; ++c) {
-								int targetRow = centerRow + r;
-								int targetCol = centerCol + c;
-
-								if (!((c == 1 && r == 1) || (c == 1 && r == -1))) {
-									if (targetRow >= 0 && targetRow < height && targetCol >= 0 && targetCol < width) {
-										size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
-										player->exploreTile(idToExplore);
-									}
-								}
-							}
-						}
-					} else {
-						for (int r = -radius; r <= radius; ++r) {
-							for (int c = -radius; c <= radius; ++c) {
-								int targetRow = centerRow + r;
-								int targetCol = centerCol + c;
-								if (!((c == -1 && r == -1) || (c == -1 && r == 1))) {
-									if (targetRow >= 0 && targetRow < height && targetCol >= 0 && targetCol < width) {
-										size_t idToExplore = static_cast<size_t>(targetRow * width + targetCol);
-										player->exploreTile(idToExplore);
-									}
-								}
-							}
-						}
-					}
-				}
-			}
 		}
-		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
-			std::cerr << result.unwrapErr() << std::endl;
-		}
-		render.renderHeroSystem.updateDimensionsFromMap();
 
-		gameState->initTutorial(); // Init the Tutorial
-		gameState->setPhase(types::GamePhase::PLAY);
-		fmt::println("[DEBUG] Application::startGame completed");
+		midgard->setLobbyStateCallback([this](const df::bifrost::LobbyState& lobby) {
+			enqueueNet([this, lobby] { onLobby(lobby); });
+		});
+		midgard->setGameStateCallback([this](const nlohmann::json& state) {
+			enqueueNet([this, state] { onAuthoritativeState(state); });
+		});
+		midgard->setActionResultCallback([this](uint32_t, bool success, const std::optional<df::bifrost::ErrorInfo>& error) {
+			enqueueNet([this, success, error] { onActionResult(success, error); });
+		});
+		midgard->setConnectionCallback([this](bool connected, const std::string& reason) {
+			enqueueNet([this, connected, reason] {
+				if (!connected) {
+					fmt::println(stderr, "Disconnected from server: {}", reason);
+					joining = false;
+				}
+			});
+		});
+
+		if (!midgard->isConnected() && !midgard->connect(serverHost, serverPort)) {
+			fmt::println(stderr, "Could not connect to {}:{}", serverHost, serverPort);
+			fmt::println(stderr, "Start drengrfell_server first, then start the game.");
+			return;
+		}
+
+		fmt::println("Joining {} at {}:{}", playerName, serverHost, serverPort);
+		joining = true;
+		midgard->join(playerName);
 	}
 
 	void Application::onKeyCallback(GLFWwindow* windowParam, int key, int scancode, int action, int mods) noexcept {
-		// For testing purposes
-		aiSystem->onKeyCallback(windowParam, key, scancode, action, mods);
+		// L-key AI stays local and must not move the server hero.
+		if (!midgard || !midgard->isConnected()) {
+			aiSystem->onKeyCallback(windowParam, key, scancode, action, mods);
+		}
 		int currentQuestId;
 		types::GamePhase gamePhase = gameState->getPhase();
 		switch (gamePhase) {
@@ -644,24 +441,14 @@ namespace df {
 			}
 
 			if(action == GLFW_PRESS && key == GLFW_KEY_ENTER){
-				if (!gameState->isGameOver() && !movementSystem->getMovementState() && !render.renderNotificationSystem.isActive()) {
-
-					auto* step = this->gameState->getCurrentTutorialStep();
-					if (step && step->id == TutorialStepId::MOVE_HERO) {
-						this->gameState->completeCurrentTutorialStep();
-					}
-
-					Player* current = gameState->getPlayer(gameState->getCurrentPlayerId());
-					if (!current || !current->hasActiveHazard()) {
-						movementSystem->toggleMovementState();
-					}
-					awaitingTurnEnd = true;
-				}
+				requestEndTurn();
 			}
 
 			// finish quest once requirements met
-			currentQuestId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
-			gameController->claimQuestReward(currentQuestId);
+			if (!midgard || !midgard->isConnected()) {
+				currentQuestId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
+				gameController->claimQuestReward(currentQuestId);
+			}
 
 			if (render.renderSettlementMenuSystem.isActive()) {
 				render.renderSettlementMenuSystem.close();
@@ -833,45 +620,24 @@ namespace df {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
 
 				// finish quest once requirements met
-				int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
-				gameController->claimQuestReward(currentId);
+				if (!midgard || !midgard->isConnected()) {
+					int currentId = gameController->getQuestsSystem()->getCurrentShowingQuestId();
+					gameController->claimQuestReward(currentId);
+				}
 
 				// TODO: add actions for button pressed in notifications
 				if (pressedButton == "Wood" || pressedButton == "Stone" ||
 					pressedButton == "Clay" || pressedButton == "Wool" || pressedButton == "Grain") {
-					tradingSystem.handleOptionClicked(pressedButton);
+					if (!midgard || !midgard->isConnected()) {
+						tradingSystem.handleOptionClicked(pressedButton);
+					}
 					if(world.getShowTrade()){
 						world.setShowTrade(false);
 					}
 				}
 				if (pressedButton == "Pay ressources") {
-					Player* player = gameState->getPlayer(gameState->getCurrentPlayerId());
-					if (player && player->hasActiveHazard()) {
-						const auto hazard = *player->getActiveHazard();
-						const auto& hazardDefinition = HazardDB::getDefinition(hazard.type);
-						const int cost = hazard.turnsLeft * hazardDefinition.skipCost;
-						if (player->getResources(hazardDefinition.skipRessource) < cost) {
-							render.renderNotificationSystem.showNotification(
-								"Not enough ressources",
-								fmt::format(
-									"You have {} {}, but need {} to overcome the hazard",
-									player->getResources(hazardDefinition.skipRessource),
-									hazardDefinition.skipRessourceStr,
-									cost),
-								{"Continue"});
-						} else {
-							gameController->payForHazard();
-							if (!registry->animations.entities.empty()) {
-								Entity hero = registry->animations.entities.front();
-								if (registry->animations.has(hero)) {
-									auto& animComp = registry->animations.get(hero);
-									if (animComp.currentType != Hero::AnimationType::Idle) {
-										animComp.currentType = Hero::AnimationType::Idle;
-										animComp.anim.setCurrentFrameIndex(0);
-									}
-								}
-							}
-						}
+					if (midgard && midgard->isConnected()) {
+						midgard->payHazard();
 					}
 					render.eventPresentationSystem.endEvent();
 				}
@@ -960,21 +726,8 @@ namespace df {
 			if (!movementSystem->getMovementState()) {
 				// Check if End Turn button was clicked -> needs to be adjusted for AI-players
 				if (render.renderHudSystem.wasEndTurnClicked(mouse, button, action)) {
-					if (!gameState->isGameOver()) {
-
-						auto* step = this->gameState->getCurrentTutorialStep();
-						if (step && step->id == TutorialStepId::MOVE_HERO) {
-							this->gameState->completeCurrentTutorialStep();
-						}
-
-						Player* current = this->gameState->getPlayer(this->gameState->getCurrentPlayerId());
-						if ((!current || !current->hasActiveHazard()) && world.getMouseX() >= 0 && world.getMouseY() >= 0) {
-							movementSystem->toggleMovementState();
-							fmt::println("Hero destination: {},{}", movementSystem->getTargetPosition().x, movementSystem->getTargetPosition().y);
-						}
-						awaitingTurnEnd = true;
-						return;
-					}
+					requestEndTurn();
+					return;
 				}
 
 				if (render.renderHudSystem.onMouseButton(mouse, button, action)) {
@@ -1048,19 +801,9 @@ namespace df {
 											"You don't have enough ressources!",
 											"You need more ressources to build this.\nPress 'C' to check for ressource cost.",
 											{"Okay"});
-									} else {
-										bool success = this->gameController->buildSettlement(currentPlayerId, vertexId, settlementCost);
-
-										if (success) {
-											fmt::println("Settlement built at vertex {}", vertexId);
-											this->world.isSettlementPreviewActive = false;
-											auto* step = this->gameState->getCurrentTutorialStep();
-											if (step && step->id == TutorialStepId::BUILD_SETTLEMENT) {
-												this->gameState->completeCurrentTutorialStep();
-											}
-										} else {
-											fmt::println("Failed to build settlement at vertex {}", vertexId);
-										}
+									} else if (midgard && midgard->isConnected()) {
+										midgard->buildSettlement(vertexId);
+										this->world.isSettlementPreviewActive = false;
 									}
 
 								} else {
@@ -1085,18 +828,9 @@ namespace df {
 											"You don't have enough ressources!",
 											"You need more ressources to build this.\nPress 'C' to check for ressource cost.",
 											{"Okay"});
-									} else {
-										bool success = gameController->buildRoad(currentPlayerId, edgeId, RoadLevel::Path, roadCost);
-										if (success) {
-											fmt::println("Road built at edge {}", edgeId);
-											this->world.isRoadPreviewActive = false;
-											auto* step = this->gameState->getCurrentTutorialStep();
-											if (step && step->id == TutorialStepId::BUILD_ROAD) {
-												this->gameState->completeCurrentTutorialStep();
-											}
-										} else {
-											fmt::println("Failed to build road at edge {}", edgeId);
-										}
+									} else if (midgard && midgard->isConnected()) {
+										midgard->buildRoad(edgeId);
+										this->world.isRoadPreviewActive = false;
 									}
 
 								} else {
@@ -1136,6 +870,217 @@ namespace df {
 		case types::GamePhase::END:
 			break;
 		}
+	}
+
+	void Application::enqueueNet(std::function<void()> fn) noexcept {
+		std::lock_guard<std::mutex> lock(*netMutex);
+		netQueue.push_back(std::move(fn));
+	}
+
+	void Application::drainNet() noexcept {
+		std::vector<std::function<void()>> pending;
+		{
+			std::lock_guard<std::mutex> lock(*netMutex);
+			pending.swap(netQueue);
+		}
+		for (auto& fn : pending) {
+			fn();
+		}
+	}
+
+	void Application::onLobby(const df::bifrost::LobbyState& lobby) noexcept {
+		if (!midgard || sessionMapReady || startSent) {
+			return;
+		}
+
+		bool allReady = !lobby.players.empty();
+		for (const auto& player : lobby.players) {
+			if (!player.ready) {
+				allReady = false;
+			}
+		}
+
+		if (midgard->isHost() && !configSent) {
+			df::bifrost::LobbyConfig config = lobby.config;
+			if (pendingMode == 0) {
+				config.generationMode = df::bifrost::GenerationMode::INSULAR;
+			} else if (pendingMode == 1) {
+				config.generationMode = df::bifrost::GenerationMode::PERLIN;
+			}
+			if (pendingSeed >= 0) {
+				config.seed = static_cast<uint32_t>(pendingSeed);
+			}
+			if (pendingWidth > 0) {
+				config.columns = static_cast<uint32_t>(pendingWidth);
+			}
+			if (pendingHeight > 0) {
+				config.rows = static_cast<uint32_t>(pendingHeight);
+			}
+			midgard->updateConfig(config);
+			configSent = true;
+		}
+
+		if (!readySent && (!midgard->isHost() || configSent)) {
+			midgard->setReady(true);
+			readySent = true;
+		}
+
+		if (midgard->isHost() && allReady && readySent && !startSent) {
+			midgard->startGame();
+			startSent = true;
+		}
+	}
+
+	void Application::placeHeroFromServer(bool force) noexcept {
+		if (!force && movementSystem->getMovementState()) {
+			return;
+		}
+		const size_t playerId = midgard && midgard->getPlayerId() ? *midgard->getPlayerId() : 0;
+		Player* player = gameState->getPlayer(playerId);
+		if (!player || !player->getHero() || registry->animations.entities.empty()) {
+			return;
+		}
+
+		Entity hero = registry->animations.entities.front();
+		const size_t tileId = player->getHero()->getTileID();
+		if (!force && registry->tileID.has(hero) && registry->tileID.get(hero) == tileId) {
+			return;
+		}
+
+		const glm::vec2 position = movementSystem->getTileWorldPosition(tileId);
+		if (registry->positions.has(hero)) {
+			registry->positions.get(hero) = position;
+		} else {
+			registry->positions.emplace(hero, position);
+		}
+		if (registry->tileID.has(hero)) {
+			registry->tileID.get(hero) = tileId;
+		} else {
+			registry->tileID.emplace(hero, tileId);
+		}
+		movementSystem->setTarget(tileId, hero, player);
+		heroPlaced = true;
+	}
+
+	void Application::onAuthoritativeState(const nlohmann::json& state) noexcept {
+		const size_t playerId = midgard && midgard->getPlayerId() ? *midgard->getPlayerId() : 0;
+		const bool alreadyPlaying = sessionMapReady;
+		bool hadHazard = false;
+		std::string previousName;
+		int previousTurns = -1;
+		int previousType = -1;
+		if (Player* before = gameState->getPlayer(playerId)) {
+			if (before->hasActiveHazard()) {
+				hadHazard = true;
+				const auto hazard = *before->getActiveHazard();
+				previousTurns = hazard.turnsLeft;
+				previousType = static_cast<int>(hazard.type);
+				previousName = HazardDB::getDefinition(hazard.type).name;
+			}
+		}
+
+		if (!sessionMapReady) {
+			reset();
+		}
+
+		gameState->applyAuthoritativeSnapshot(state);
+		sessionMapReady = true;
+		placeHeroFromServer(!alreadyPlaying);
+
+		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
+			std::cerr << result.unwrapErr() << std::endl;
+		}
+		render.renderHeroSystem.updateDimensionsFromMap();
+		render.renderWeatherSystem.syncFromGameState();
+
+		if (!tradingReady) {
+			if (Player* player = gameState->getPlayer(playerId)) {
+				tradingSystem.init(&render.getRenderNotificationSystem(), player);
+			}
+			world.setTradeCallback([this]() {
+				tradingSystem.startTrading();
+			});
+			tradingReady = true;
+		}
+
+		if (render.renderSettlementMenuSystem.isActive()) {
+			render.renderSettlementMenuSystem.showMenu(selectedSettlementId);
+		}
+
+		bool hasHazard = false;
+		int turns = -1;
+		int type = -1;
+		if (Player* after = gameState->getPlayer(playerId)) {
+			if (after->hasActiveHazard()) {
+				hasHazard = true;
+				const auto hazard = *after->getActiveHazard();
+				turns = hazard.turnsLeft;
+				type = static_cast<int>(hazard.type);
+			}
+		}
+
+		if (alreadyPlaying && (hadHazard != hasHazard || previousTurns != turns || previousType != type)) {
+			hazardPresentationPending = true;
+			hazardHadBefore = hadHazard;
+			hazardPreviousName = previousName;
+			hazardPlayerId = playerId;
+		}
+
+		gameState->setPhase(types::GamePhase::PLAY);
+	}
+
+	void Application::onActionResult(bool success, const std::optional<df::bifrost::ErrorInfo>& error) noexcept {
+		if (success || !error) {
+			return;
+		}
+		if (!sessionMapReady) {
+			fmt::println(stderr, "Could not join: {}", error->message);
+			joining = false;
+			return;
+		}
+		if (error->code == df::bifrost::ErrorCode::INSUFFICIENT_RESOURCES) {
+			const bool hazard = error->message.find("overcome the hazard") != std::string::npos;
+			render.renderNotificationSystem.showNotification(
+				hazard ? "Not enough ressources" : "You don't have enough ressources!",
+				error->message,
+				{hazard ? "Continue" : "Okay"});
+			return;
+		}
+		if (error->code == df::bifrost::ErrorCode::INVALID_ACTION &&
+			error->message.find("move") != std::string::npos) {
+			movementSystem->cancelMovement();
+			render.renderTilesSystem.setPath({});
+			render.renderTilesSystem.setSelectedTile(-1);
+		}
+	}
+
+	void Application::requestEndTurn() noexcept {
+		if (!midgard || !midgard->isConnected() || !sessionMapReady) {
+			return;
+		}
+		if (gameState->isGameOver() || movementSystem->getMovementState() || render.renderNotificationSystem.isActive()) {
+			return;
+		}
+		if (render.eventPresentationSystem.currentEvent) {
+			return;
+		}
+
+		const size_t playerId = gameState->getCurrentPlayerId();
+		Player* current = gameState->getPlayer(playerId);
+		if (!current || !current->hasActiveHazard()) {
+			const size_t target = movementSystem->getTargetTileId();
+			const bool differentTile = current && current->getHero() && current->getHero()->getTileID() != target;
+			if (differentTile && gameController->canMoveHeroToTile(playerId, target)) {
+				midgard->moveHero(target);
+				movementSystem->toggleMovementState();
+				fmt::println("Hero destination: {},{}", movementSystem->getTargetPosition().x, movementSystem->getTargetPosition().y);
+			} else if (differentTile) {
+				movementSystem->cancelMovement();
+				render.renderTilesSystem.setPath({});
+				render.renderTilesSystem.setSelectedTile(-1);
+			}
+		}
+		midgard->endTurn();
 	}
 
 	void Application::onScrollCallback(GLFWwindow* windowParam, double xoffset, double yoffset) noexcept {

@@ -4,6 +4,7 @@
  */
 
 #include "sessionManager.h"
+#include "hazards.h"
 #include "hero.h"
 #include "tile.h"
 #include <glm/vec2.hpp>
@@ -24,6 +25,43 @@ namespace {
 			case df::bifrost::RoadLevel::HighQualityRoad: return df::RoadLevel::HighQualityRoad;
 		}
 		return df::RoadLevel::Path;
+	}
+
+	void exploreStartingArea(df::Player& player, const df::Graph& map, size_t heroTileId) {
+		const int width = static_cast<int>(map.getMapWidth());
+		if (width <= 0) {
+			return;
+		}
+		const int height = static_cast<int>(map.getTileCount() / static_cast<size_t>(width));
+
+		for (int row = 0; row < height; ++row) {
+			for (int col = 0; col < width; ++col) {
+				const size_t tileId = static_cast<size_t>(row * width + col);
+				const df::TileHandle tile = map.getTile(tileId);
+				if (tile && tile->getType() == df::types::TileType::ICE) {
+					player.exploreTile(tileId);
+				}
+			}
+		}
+
+		const int centerRow = static_cast<int>(heroTileId) / width;
+		const int centerCol = static_cast<int>(heroTileId) % width;
+		constexpr int radius = 1;
+		const bool evenRow = centerRow % 2 == 0;
+		for (int r = -radius; r <= radius; ++r) {
+			for (int c = -radius; c <= radius; ++c) {
+				const bool skip = evenRow ? ((c == 1 && r == 1) || (c == 1 && r == -1))
+										  : ((c == -1 && r == -1) || (c == -1 && r == 1));
+				if (skip) {
+					continue;
+				}
+				const int targetRow = centerRow + r;
+				const int targetCol = centerCol + c;
+				if (targetRow >= 0 && targetRow < height && targetCol >= 0 && targetCol < width) {
+					player.exploreTile(static_cast<size_t>(targetRow * width + targetCol));
+				}
+			}
+		}
 	}
 }  // anonymous namespace
 
@@ -419,6 +457,21 @@ SessionManager::MessageResult SessionManager::processMessage(int socket, const M
 			break;
 		}
 
+		case MessageType::PAY_HAZARD: {
+			auto [success, error] = payHazard(socket);
+			result.response = createActionResult(msg.seq, success, error);
+			result.broadcastGameState = success;
+			break;
+		}
+
+		case MessageType::TUTORIAL_EVENT: {
+			const auto& payload = std::get<TutorialEventPayload>(msg.payload);
+			auto [success, error] = reportTutorialEvent(socket, payload.stepId);
+			result.response = createActionResult(msg.seq, success, error);
+			result.broadcastGameState = success;
+			break;
+		}
+
 		case MessageType::PING: {
 			const auto& payload = std::get<PingPayload>(msg.payload);
 			result.response = createPongMessage(msg.seq, payload.timestamp);
@@ -573,7 +626,19 @@ bool SessionManager::endTurn(int socket) {
 		return false;
 	}
 
+	const size_t moverId = gameState_->getCurrentPlayerId();
+	size_t heroTileId = 0;
+	bool hasHeroTile = false;
+	if (Player* mover = gameState_->getPlayer(moverId); mover && mover->getHero()) {
+		heroTileId = mover->getHero()->getTileID();
+		hasHeroTile = true;
+	}
+
 	gameController_->endTurn();
+	gameController_->rollWeather();
+	if (hasHeroTile) {
+		gameController_->applyHazard(moverId, heroTileId);
+	}
 	gameController_->startTurn();
 
 	return true;
@@ -611,9 +676,10 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::buildSettlement(int so
 	bool success = gameController_->buildSettlement(playerId, vertexId, costs);
 
 	if (!success) {
-		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "Not enough resources"}};
+		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "You need more ressources to build this.\nPress 'C' to check for ressource cost."}};
 	}
 
+	gameState_->completeTutorialStep(TutorialStepId::BUILD_SETTLEMENT);
 	return {true, std::nullopt};
 }
 
@@ -649,9 +715,10 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::buildRoad(int socket, 
 	bool success = gameController_->buildRoad(playerId, edgeId, toGameRoadLevel(level), costs);
 
 	if (!success) {
-		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "Not enough resources"}};
+		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "You need more ressources to build this.\nPress 'C' to check for ressource cost."}};
 	}
 
+	gameState_->completeTutorialStep(TutorialStepId::BUILD_ROAD);
 	return {true, std::nullopt};
 }
 
@@ -679,6 +746,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::moveHero(int socket, s
 		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "Cannot move hero to that tile this turn"}};
 	}
 
+	gameState_->completeTutorialStep(TutorialStepId::MOVE_HERO);
 	return {true, std::nullopt};
 }
 
@@ -708,7 +776,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::upgradeSettlement(int 
 	auto costs = buildingCosts_.getSettlementCostVector();
 	bool success = gameController_->upgradeSettlement(playerId, settlementId, targetType, costs);
 	if (!success) {
-		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "Not enough resources"}};
+		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "You need more ressources to upgrade this settlement.\n"}};
 	}
 
 	return {true, std::nullopt};
@@ -740,9 +808,62 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::buildProductivityBuild
 	auto costs = buildingCosts_.getSettlementCostVector();
 	bool success = gameController_->buildProductivityBuilding(playerId, tileId, tileType, costs);
 	if (!success) {
-		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "Not enough resources"}};
+		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "You need more ressources to build this.\n"}};
 	}
 
+	return {true, std::nullopt};
+}
+
+
+std::pair<bool, std::optional<ErrorInfo>> SessionManager::payHazard(int socket) {
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	if (state_ != SessionState::PLAYING) {
+		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "Game not in progress"}};
+	}
+
+	auto playerIdOpt = getPlayerIdBySocket(socket);
+	if (!playerIdOpt) {
+		return {false, ErrorInfo{ErrorCode::PLAYER_NOT_FOUND, "Player not found"}};
+	}
+
+	if (gameState_->getCurrentPlayerId() != *playerIdOpt) {
+		return {false, ErrorInfo{ErrorCode::NOT_YOUR_TURN, "Not your turn"}};
+	}
+
+	Player* player = gameState_->getPlayer(*playerIdOpt);
+	if (!player || !player->hasActiveHazard()) {
+		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "No active hazard"}};
+	}
+
+	const auto hazard = *player->getActiveHazard();
+	const auto& hazardDefinition = HazardDB::getDefinition(hazard.type);
+	const int cost = hazard.turnsLeft * hazardDefinition.skipCost;
+	if (player->getResources(hazardDefinition.skipRessource) < cost) {
+		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES,
+			fmt::format("You have {} {}, but need {} to overcome the hazard",
+				player->getResources(hazardDefinition.skipRessource),
+				hazardDefinition.skipRessourceStr,
+				cost)}};
+	}
+
+	gameController_->payForHazard();
+	return {true, std::nullopt};
+}
+
+
+std::pair<bool, std::optional<ErrorInfo>> SessionManager::reportTutorialEvent(int socket, int stepId) {
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	if (state_ != SessionState::PLAYING) {
+		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "Game not in progress"}};
+	}
+
+	if (!getPlayerIdBySocket(socket)) {
+		return {false, ErrorInfo{ErrorCode::PLAYER_NOT_FOUND, "Player not found"}};
+	}
+
+	gameState_->completeTutorialStep(static_cast<TutorialStepId>(stepId));
 	return {true, std::nullopt};
 }
 
@@ -921,6 +1042,8 @@ void SessionManager::initializeGame() {
 	gameState_->setTurnCount(0);
 	gameState_->setRoundNumber(0);
 
+	gameState_->initTutorial();
+
 	// Start first player's turn
 	gameController_->startTurn();
 
@@ -969,6 +1092,7 @@ void SessionManager::createPlayers() {
 			}
 			player.setHero(std::make_shared<Hero>(chosen, glm::vec2(0.f), "", 3));
 			player.exploreTile(chosen);
+			exploreStartingArea(player, map, chosen);
 		}
 
 		gameState_->addPlayer(player);
@@ -1005,6 +1129,8 @@ std::optional<ErrorInfo> SessionManager::validateAction(int socket, MessageType 
 		case MessageType::MOVE_HERO:
 		case MessageType::UPGRADE_SETTLEMENT:
 		case MessageType::BUILD_PRODUCTIVITY_BUILDING:
+		case MessageType::PAY_HAZARD:
+		case MessageType::TUTORIAL_EVENT:
 			if (state_ == SessionState::LOBBY) {
 				return ErrorInfo{ErrorCode::INVALID_ACTION, "Game not started"};
 			}

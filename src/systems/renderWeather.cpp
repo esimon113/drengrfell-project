@@ -101,6 +101,44 @@ namespace df {
 		particleShader.deinit();
 	}
 
+	void RenderWeatherSystem::syncFromGameState() noexcept {
+		if (!gameState || !registry) {
+			return;
+		}
+
+		const types::WeatherType next = gameState->getWeather();
+		const float nextIntensity = gameState->getWeatherIntensity();
+		if (next == currentType && nextIntensity == weatherIntensity) {
+			return;
+		}
+
+		auto* tileSystem = registry->getSystem<RenderTilesSystem>();
+		const types::WeatherType previous = currentType;
+		currentType = next;
+		weatherIntensity = nextIntensity;
+		if (!tileSystem) {
+			return;
+		}
+
+		if (currentType == types::WeatherType::SUNNY) {
+			if (previous != types::WeatherType::SNOW) {
+				tileSystem->updateTileAtlas(1);
+			}
+			reset();
+		} else if (currentType == types::WeatherType::RAIN) {
+			if (previous != types::WeatherType::RAIN) {
+				reset();
+			}
+			tileSystem->updateTileAtlas(static_cast<int>(currentType));
+		} else if (currentType == types::WeatherType::SNOW) {
+			if (previous != types::WeatherType::SNOW) {
+				reset();
+			} else {
+				tileSystem->updateTileAtlas(static_cast<int>(currentType));
+			}
+		}
+	}
+
 	void RenderWeatherSystem::randomizeWeather() noexcept {
 		auto tileSystem = registry->getSystem<RenderTilesSystem>();
 		static std::random_device rd;

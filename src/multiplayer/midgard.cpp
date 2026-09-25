@@ -345,6 +345,34 @@ namespace df::bifrost {
 	}
 
 
+	void Midgard::payHazard() {
+		if (!connected_) {
+			return;
+		}
+
+		Message msg;
+		msg.type = MessageType::PAY_HAZARD;
+		msg.seq = getNextSeq();
+		msg.payload = PayHazardPayload{};
+
+		sendMessage(msg);
+	}
+
+
+	void Midgard::reportTutorialEvent(int stepId) {
+		if (!connected_) {
+			return;
+		}
+
+		Message msg;
+		msg.type = MessageType::TUTORIAL_EVENT;
+		msg.seq = getNextSeq();
+		msg.payload = TutorialEventPayload{stepId};
+
+		sendMessage(msg);
+	}
+
+
 	void Midgard::ping() {
 		if (!connected_) {
 			return;

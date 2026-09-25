@@ -230,6 +230,10 @@ namespace df::bifrost {
 		 */
 		[[nodiscard]] std::pair<bool, std::optional<ErrorInfo>> buildProductivityBuilding(int socket, size_t tileId, types::TileType tileType);
 
+		[[nodiscard]] std::pair<bool, std::optional<ErrorInfo>> payHazard(int socket);
+
+		[[nodiscard]] std::pair<bool, std::optional<ErrorInfo>> reportTutorialEvent(int socket, int stepId);
+
 		/**
 		 * Get serialized game state.
 		 */

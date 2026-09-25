@@ -21,6 +21,7 @@ namespace df {
 		df::types::WeatherType getCurrentType() const noexcept { return currentType; }
 
 		void randomizeWeather() noexcept;
+		void syncFromGameState() noexcept;
 
 
 		void step(float deltaTime) noexcept;

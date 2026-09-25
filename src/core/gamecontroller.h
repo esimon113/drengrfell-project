@@ -27,6 +27,7 @@ namespace df {
 		void endTurn();
 
 		void applyHazard(size_t playerId, size_t tileId);
+		void rollWeather();
 		void updateHazards();
 		void showHazards();
 		void payForHazard();

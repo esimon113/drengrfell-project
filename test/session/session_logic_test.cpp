@@ -1,4 +1,5 @@
 #include "multiplayer/sessionManager.h"
+#include "player.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -72,6 +73,80 @@ int main() {
 				std::cerr << "other player resources leaked to viewer 0\n";
 				return EXIT_FAILURE;
 			}
+		}
+	}
+
+	{
+		df::bifrost::SessionManager solo;
+		if (!solo.addClient(20, "Solo")) {
+			std::cerr << "solo addClient failed\n";
+			return EXIT_FAILURE;
+		}
+		solo.setPlayerReady(20, true);
+		if (!solo.startGame(20)) {
+			std::cerr << "one player could not start\n";
+			return EXIT_FAILURE;
+		}
+		const auto soloState = solo.getSerializedGameState();
+		if (!soloState.contains("currentTutorialStep") || !soloState.contains("weather") || !soloState.contains("weatherIntensity")) {
+			std::cerr << "snapshot missing tutorial or weather\n";
+			return EXIT_FAILURE;
+		}
+		if (!solo.endTurn(20)) {
+			std::cerr << "solo endTurn failed\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::Player player(4);
+		df::Player::ActiveHazard hazard;
+		hazard.type = df::types::HazardType::BEAR;
+		hazard.turnsLeft = 2;
+		player.setActiveHazard(hazard);
+		const auto hazardJson = player.serialize();
+		if (!hazardJson.contains("activeHazard") || hazardJson["activeHazard"].value("turnsLeft", 0) != 2) {
+			std::cerr << "active hazard was not serialized\n";
+			return EXIT_FAILURE;
+		}
+		df::Player restored;
+		restored.deserialize(hazardJson);
+		if (!restored.hasActiveHazard() || restored.getActiveHazard()->type != df::types::HazardType::BEAR ||
+			restored.getActiveHazard()->turnsLeft != 2) {
+			std::cerr << "active hazard did not roundtrip\n";
+			return EXIT_FAILURE;
+		}
+		df::Player clearPlayer(5);
+		if (clearPlayer.serialize().contains("activeHazard")) {
+			std::cerr << "missing hazard should be omitted\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::Message pay;
+		pay.type = df::bifrost::MessageType::PAY_HAZARD;
+		pay.seq = 3;
+		pay.payload = df::bifrost::PayHazardPayload{};
+		const auto decodedPay = df::bifrost::Message::deserialize(pay.serialize());
+		if (decodedPay.type != df::bifrost::MessageType::PAY_HAZARD) {
+			std::cerr << "PayHazard roundtrip failed\n";
+			return EXIT_FAILURE;
+		}
+
+		df::bifrost::Message tutorial;
+		tutorial.type = df::bifrost::MessageType::TUTORIAL_EVENT;
+		tutorial.seq = 4;
+		tutorial.payload = df::bifrost::TutorialEventPayload{static_cast<int>(df::TutorialStepId::MOVE_CAMERA)};
+		const auto decodedTutorial = df::bifrost::Message::deserialize(tutorial.serialize());
+		if (decodedTutorial.type != df::bifrost::MessageType::TUTORIAL_EVENT) {
+			std::cerr << "TutorialEvent roundtrip type failed\n";
+			return EXIT_FAILURE;
+		}
+		const auto& tutorialPayload = std::get<df::bifrost::TutorialEventPayload>(decodedTutorial.payload);
+		if (tutorialPayload.stepId != static_cast<int>(df::TutorialStepId::MOVE_CAMERA)) {
+			std::cerr << "TutorialEvent roundtrip payload failed\n";
+			return EXIT_FAILURE;
 		}
 	}
 

@@ -228,6 +228,10 @@ namespace df::bifrost {
 
 		void buildProductivityBuilding(size_t tileId, types::TileType tileType);
 
+		void payHazard();
+
+		void reportTutorialEvent(int stepId);
+
 		/**
 		 * Send a ping to measure latency.
 		 */

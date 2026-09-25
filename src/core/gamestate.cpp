@@ -76,6 +76,9 @@ namespace df {
 		j["turnCount"] = this->turnCount;
 		j["roundNumber"] = this->roundNumber;
 		j["phase"] = static_cast<int>(this->phase);
+		j["currentTutorialStep"] = this->currentTutorialStep;
+		j["weather"] = static_cast<int>(this->weather);
+		j["weatherIntensity"] = this->weatherIntensity;
 
 		return j;
 	}
@@ -148,6 +151,140 @@ namespace df {
 		if (j.contains("phase")) {
 			this->setPhase(static_cast<types::GamePhase>(j["phase"].get<int>()));
 		}
+	}
+
+	void GameState::applyAuthoritativeSnapshot(const json& j) {
+		WorldGeneratorConfig incoming;
+		const bool haveWorld = j.contains("world") && j["world"].is_object();
+		if (haveWorld) {
+			incoming = WorldGeneratorConfig::deserialize(j["world"]);
+		}
+
+		const bool needsMap = this->map.getTileCount() == 0;
+		const bool mapChanged = !haveWorld || needsMap || incoming.seed != this->worldConfig.seed ||
+			incoming.columns != this->worldConfig.columns || incoming.rows != this->worldConfig.rows;
+		if (haveWorld && (needsMap || mapChanged)) {
+			this->worldConfig = incoming;
+			this->map.regenerate(this->worldConfig);
+		} else {
+			for (const auto& vertex : this->map.getVertices()) {
+				if (vertex) {
+					vertex->setSettlementId(std::nullopt);
+				}
+			}
+			for (const auto& edge : this->map.getEdges()) {
+				if (edge) {
+					edge->setRoadId(std::nullopt);
+				}
+			}
+			for (const auto& tile : this->map.getTiles()) {
+				if (tile) {
+					tile->setBuildingId(std::nullopt);
+					tile->setVisibleForPlayers({});
+				}
+			}
+		}
+
+		this->clearSettlements();
+		this->clearRoads();
+		this->clearProductivityBuildings();
+		this->players.clear();
+
+		if (j.contains("players") && j["players"].is_array()) {
+			for (const auto& playerJson : j["players"]) {
+				Player player;
+				if (playerJson.is_object()) {
+					player.deserialize(playerJson);
+				} else if (playerJson.is_number()) {
+					player = Player(playerJson.get<size_t>());
+				}
+				this->players.push_back(player);
+			}
+		}
+
+		if (j.contains("settlements") && j["settlements"].is_array()) {
+			for (const auto& settlementJson : j["settlements"]) {
+				auto settlement = std::make_shared<Settlement>();
+				settlement->deserialize(settlementJson);
+				if (VertexHandle vertex = this->map.findVertexById(settlement->getVertexId())) {
+					vertex->setSettlementId(settlement->getId());
+				}
+				this->addSettlement(settlement);
+			}
+		}
+
+		if (j.contains("roads") && j["roads"].is_array()) {
+			for (const auto& roadJson : j["roads"]) {
+				auto road = std::make_shared<Road>();
+				road->deserialize(roadJson);
+				if (EdgeHandle edge = this->map.findEdgeById(road->getEdgeId())) {
+					edge->setRoadId(road->getId());
+				}
+				this->addRoad(road);
+			}
+		}
+
+		if (j.contains("productivityBuildings") && j["productivityBuildings"].is_array()) {
+			for (const auto& buildingJson : j["productivityBuildings"]) {
+				auto building = std::make_shared<ProductivityBuilding>();
+				building->deserialize(buildingJson);
+				if (building->getTileId() < this->map.getTileCount()) {
+					if (TileHandle tile = this->map.getTile(building->getTileId())) {
+						tile->setBuildingId(building->getPlayerId());
+					}
+				}
+				this->addProductivityBuilding(building);
+			}
+		}
+
+		if (j.contains("currentPlayerId")) {
+			this->currentPlayerId = j["currentPlayerId"].get<size_t>();
+		}
+		if (j.contains("turnCount")) {
+			this->turnCount = j["turnCount"].get<size_t>();
+		}
+		if (j.contains("roundNumber")) {
+			this->roundNumber = j["roundNumber"].get<size_t>();
+		}
+		if (j.contains("phase")) {
+			this->phase = static_cast<types::GamePhase>(j["phase"].get<int>());
+		}
+
+		if (this->tutorialSteps.empty()) {
+			this->initTutorial();
+		}
+		if (j.contains("currentTutorialStep")) {
+			this->currentTutorialStep = j["currentTutorialStep"].get<size_t>();
+			for (size_t i = 0; i < this->tutorialSteps.size(); ++i) {
+				this->tutorialSteps[i].completed = i < this->currentTutorialStep;
+			}
+		}
+		this->tutorialReportSentFor = static_cast<size_t>(-1);
+		this->authoritativeMap = true;
+
+		if (j.contains("weather")) {
+			this->weather = static_cast<types::WeatherType>(j["weather"].get<int>());
+		}
+		if (j.contains("weatherIntensity")) {
+			this->weatherIntensity = j["weatherIntensity"].get<float>();
+		}
+		for (const auto& tile : this->map.getTiles()) {
+			if (tile) {
+				tile->updateEffect(this->weather);
+			}
+		}
+
+		for (const Player& player : this->players) {
+			for (size_t tileId : player.getExploredTileIds()) {
+				if (tileId < this->map.getTileCount()) {
+					if (TileHandle tile = this->map.getTile(tileId)) {
+						tile->addVisibleForPlayers(player.getId());
+					}
+				}
+			}
+		}
+
+		this->map.setRenderUpdateRequested(true);
 	}
 
 
@@ -285,9 +422,28 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 	}
 
 	void GameState::completeCurrentTutorialStep() {
-		if (currentTutorialStep < tutorialSteps.size()) {
-			tutorialSteps[currentTutorialStep].completed = true;
-			currentTutorialStep++;
+		if (currentTutorialStep >= tutorialSteps.size()) {
+			return;
+		}
+		if (tutorialReporter) {
+			if (tutorialReportSentFor == currentTutorialStep) {
+				return;
+			}
+			tutorialReportSentFor = currentTutorialStep;
+			tutorialReporter(tutorialSteps[currentTutorialStep].id);
+			return;
+		}
+		tutorialSteps[currentTutorialStep].completed = true;
+		currentTutorialStep++;
+	}
+
+	void GameState::completeTutorialStep(TutorialStepId id) {
+		if (tutorialSteps.empty()) {
+			initTutorial();
+		}
+		const TutorialStep* step = getCurrentTutorialStep();
+		if (step && step->id == id) {
+			completeCurrentTutorialStep();
 		}
 	}
 

@@ -16,6 +16,7 @@ using json = nlohmann::json;
 #include "tutorial.h"
 #include "types.h"
 #include "worldGeneratorConfig.h"
+#include <functional>
 
 
 
@@ -123,6 +124,7 @@ namespace df {
 		json serialize() const;
 		json serializeFor(size_t viewerPlayerId) const;
 		void deserialize(const json& j);
+		void applyAuthoritativeSnapshot(const json& j);
 
 		void setWorldConfig(const WorldGeneratorConfig& config) { worldConfig = config; }
 		const WorldGeneratorConfig& getWorldConfig() const { return worldConfig; }
@@ -135,7 +137,14 @@ namespace df {
 		void resetTutorial();
 		TutorialStep* getCurrentTutorialStep();
 		void completeCurrentTutorialStep();
+		void completeTutorialStep(TutorialStepId id);
+		void setTutorialReporter(std::function<void(TutorialStepId)> reporter) { tutorialReporter = std::move(reporter); }
 		bool isTutorialActive() const;
+		bool hasAuthoritativeMap() const { return authoritativeMap; }
+		types::WeatherType getWeather() const { return weather; }
+		void setWeather(types::WeatherType type) { weather = type; }
+		float getWeatherIntensity() const { return weatherIntensity; }
+		void setWeatherIntensity(float intensity) { weatherIntensity = intensity; }
 		std::vector<glm::vec3> computeHudResourceColor(std::string mode);
 		bool isGameOver() const;
 
@@ -159,6 +168,11 @@ namespace df {
 		// Tutorial
 		std::vector<TutorialStep> tutorialSteps;
 		size_t currentTutorialStep = 0;
+		std::function<void(TutorialStepId)> tutorialReporter;
+		size_t tutorialReportSentFor = static_cast<size_t>(-1);
+		bool authoritativeMap = false;
+		types::WeatherType weather = types::WeatherType::SUNNY;
+		float weatherIntensity = 0.f;
 
 		std::vector<int> roadCosts;
 		std::vector<int> settlementCosts;

@@ -67,7 +67,7 @@ namespace df::bifrost {
 	inline constexpr uint32_t PROTOCOL_VERSION = 1;
 	inline constexpr uint32_t MAX_MESSAGE_SIZE = 16 * 1024 * 1024; // 16 MB
 	inline constexpr uint32_t HEADER_SIZE = 4;					   // 4 bytes for length prefix
-	inline constexpr size_t MIN_PLAYERS = 2;
+	inline constexpr size_t MIN_PLAYERS = 1;
 	inline constexpr size_t MAX_PLAYERS = 6;
 	inline constexpr uint32_t DEFAULT_RECONNECT_TIMEOUT_SECONDS = 60;
 	inline constexpr uint16_t DEFAULT_PORT = 7777;
@@ -119,6 +119,8 @@ namespace df::bifrost {
 		MOVE_HERO,
 		UPGRADE_SETTLEMENT,
 		BUILD_PRODUCTIVITY_BUILDING,
+		PAY_HAZARD,
+		TUTORIAL_EVENT,
 
 		// Client -> Server: Connection
 		PING,
@@ -312,6 +314,12 @@ namespace df::bifrost {
 		types::TileType tileType{types::TileType::FOREST};
 	};
 
+	struct PayHazardPayload {};
+
+	struct TutorialEventPayload {
+		int stepId{0};
+	};
+
 	struct PingPayload {
 		int64_t timestamp{0};
 	};
@@ -405,6 +413,8 @@ namespace df::bifrost {
 		MoveHeroPayload,
 		UpgradeSettlementPayload,
 		BuildProductivityBuildingPayload,
+		PayHazardPayload,
+		TutorialEventPayload,
 		PingPayload,
 		ReconnectPayload,
 		// Server -> Client

@@ -310,6 +310,9 @@ namespace df {
 			}
 				break;
 			case GLFW_KEY_G: {
+				if (this->gameState->hasAuthoritativeMap()) {
+					break;
+				}
 				Graph& map = this->gameState->getMap();
 				if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
 					std::cerr << worldGenConfResult.unwrapErr() << std::endl;

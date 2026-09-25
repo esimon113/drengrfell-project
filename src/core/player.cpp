@@ -189,6 +189,13 @@ namespace df {
 			j["hero"] = heroReference->serialize();
 		}
 
+		if (activeHazard) {
+			j["activeHazard"] = {
+				{"type", static_cast<int>(activeHazard->type)},
+				{"turnsLeft", activeHazard->turnsLeft},
+			};
+		}
+
 		return j;
 	}
 
@@ -219,6 +226,13 @@ namespace df {
 			auto hero = std::make_shared<Hero>();
 			hero->deserialize(j["hero"]);
 			this->setHero(hero);
+		}
+
+		if (j.contains("activeHazard") && j["activeHazard"].is_object()) {
+			ActiveHazard hazard;
+			hazard.type = static_cast<types::HazardType>(j["activeHazard"].value("type", 0));
+			hazard.turnsLeft = j["activeHazard"].value("turnsLeft", 0);
+			setActiveHazard(hazard);
 		}
 	}
 

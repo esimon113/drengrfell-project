@@ -11,6 +11,10 @@
 #include <utils/texture.h>
 #include <utility>
 
+namespace df::bifrost {
+	class Midgard;
+}
+
 namespace df {
 
 	class RenderSettlementMenuSystem {
@@ -32,6 +36,8 @@ namespace df {
 		bool onMouseButton(glm::vec2 mouse, int button, int action) noexcept;
 		void onKeyCallback(int key, int action) noexcept;
 		void onResizeCallback(GLFWwindow*, int width, int height) noexcept;
+		void setMidgard(df::bifrost::Midgard* client) noexcept { midgard = client; }
+
 		void updateViewport(const glm::uvec2& origin, const glm::uvec2& size) noexcept {
 			viewport.origin = origin;
 			viewport.size = size;
@@ -83,6 +89,7 @@ namespace df {
 		Registry* registry = nullptr;
 		std::shared_ptr<GameState> gameState;
 		GameController* gameController = nullptr;
+		df::bifrost::Midgard* midgard = nullptr;
 		Viewport viewport;
 
 		Shader rectShader;
