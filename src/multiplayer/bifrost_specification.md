@@ -153,12 +153,15 @@ All messages must contain these fields in the json payload.
 		"rows": 24,
 		"generationMode": "PERLIN",
 		"seed": 0,
-		"reconnectTimeoutSeconds": 60
+		"reconnectTimeoutSeconds": 60,
+		"solo": false
 	},
 	"minPlayers": 1,
 	"maxPlayers": 6
 }
 ```
+
+In `config`, `solo` is `false` by default; `true` allows the host to start with one ready player.
 
 #### 3.4.2 ActionResult
 ```json

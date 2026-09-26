@@ -125,6 +125,12 @@ int main() {
 			return EXIT_FAILURE;
 		}
 		solo.setPlayerReady(20, true);
+		df::bifrost::LobbyConfig soloConfig;
+		soloConfig.solo = true;
+		if (!solo.updateConfig(20, soloConfig)) {
+			std::cerr << "solo config failed\n";
+			return EXIT_FAILURE;
+		}
 		if (!solo.startGame(20)) {
 			std::cerr << "one player could not start\n";
 			return EXIT_FAILURE;
@@ -231,6 +237,12 @@ int main() {
 			return EXIT_FAILURE;
 		}
 		costs.setPlayerReady(30, true);
+		df::bifrost::LobbyConfig soloConfig;
+		soloConfig.solo = true;
+		if (!costs.updateConfig(30, soloConfig)) {
+			std::cerr << "solo config failed\n";
+			return EXIT_FAILURE;
+		}
 		if (!costs.startGame(30)) {
 			std::cerr << "cost session failed to start\n";
 			return EXIT_FAILURE;
@@ -297,6 +309,12 @@ int main() {
 			return EXIT_FAILURE;
 		}
 		quests.setPlayerReady(40, true);
+		df::bifrost::LobbyConfig soloConfig;
+		soloConfig.solo = true;
+		if (!quests.updateConfig(40, soloConfig)) {
+			std::cerr << "solo config failed\n";
+			return EXIT_FAILURE;
+		}
 		if (!quests.startGame(40)) {
 			std::cerr << "quest session failed to start\n";
 			return EXIT_FAILURE;
@@ -344,6 +362,30 @@ int main() {
 		shownQuest = shown.getQuestById(1);
 		if (!shownQuest || shownQuest->progress != settlementsAfter) {
 			std::cerr << "quest window did not take the updated snapshot\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::SessionManager alone;
+		if (!alone.addClient(50, "Only")) {
+			std::cerr << "alone addClient failed\n";
+			return EXIT_FAILURE;
+		}
+		alone.setPlayerReady(50, true);
+		if (alone.startGame(50)) {
+			std::cerr << "one player started a multiplayer match\n";
+			return EXIT_FAILURE;
+		}
+
+		df::bifrost::LobbyConfig soloConfig;
+		soloConfig.solo = true;
+		if (!alone.updateConfig(50, soloConfig)) {
+			std::cerr << "host could not set solo\n";
+			return EXIT_FAILURE;
+		}
+		if (!alone.startGame(50)) {
+			std::cerr << "solo start failed\n";
 			return EXIT_FAILURE;
 		}
 	}

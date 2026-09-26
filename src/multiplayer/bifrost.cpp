@@ -739,7 +739,8 @@ namespace df::bifrost {
 			{"rows", rows},
 			{"generationMode", modeStr},
 			{"seed", seed},
-			{"reconnectTimeoutSeconds", reconnectTimeoutSeconds}};
+			{"reconnectTimeoutSeconds", reconnectTimeoutSeconds},
+			{"solo", solo}};
 	}
 
 	LobbyConfig LobbyConfig::deserialize(const nlohmann::json& j) {
@@ -755,6 +756,7 @@ namespace df::bifrost {
 
 		lc.seed = j.value("seed", uint32_t{0});
 		lc.reconnectTimeoutSeconds = j.value("reconnectTimeoutSeconds", DEFAULT_RECONNECT_TIMEOUT_SECONDS);
+		lc.solo = j.value("solo", false);
 		return lc;
 	}
 

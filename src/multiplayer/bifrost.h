@@ -188,6 +188,7 @@ namespace df::bifrost {
 		GenerationMode generationMode{GenerationMode::PERLIN};
 		uint32_t seed{0};
 		uint32_t reconnectTimeoutSeconds{DEFAULT_RECONNECT_TIMEOUT_SECONDS};
+		bool solo{false};
 
 		[[nodiscard]] nlohmann::json serialize() const;
 		static LobbyConfig deserialize(const nlohmann::json& j);

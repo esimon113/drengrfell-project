@@ -132,7 +132,8 @@ bool SessionManager::canStartGame() const {
 		}
 	}
 
-	return connectedCount >= MIN_PLAYERS && connectedCount <= MAX_PLAYERS && allReady;
+	const size_t minimumPlayers = config_.solo ? 1 : 2;
+	return connectedCount >= minimumPlayers && connectedCount <= MAX_PLAYERS && allReady;
 }
 
 
