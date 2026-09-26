@@ -576,13 +576,14 @@ namespace df::bifrost {
 				std::lock_guard<std::mutex> lock(mutex_);
 				lastLobbyState_ = payload.lobby;
 
-				// Update host status
-				if (playerId_) {
+				if (!playerName_.empty()) {
 					for (const auto& p : payload.lobby.players) {
-						if (p.playerId == *playerId_) {
-							isHost_ = p.isHost;
-							break;
+						if (p.name.empty() || p.name != playerName_) {
+							continue;
 						}
+						playerId_ = p.playerId;
+						isHost_ = p.isHost;
+						break;
 					}
 				}
 			}
