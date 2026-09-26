@@ -300,8 +300,12 @@ namespace {
                 if (q.progress >= q.goal_amount) {
                     q.state = QuestState::Completed;
                 }
-                
-                notifyPlayer(q.id); 
+
+                if (playerId == displayedPlayerId) {
+                    m_quests = it->second;
+                    activeQuests = countOpenQuests(it->second);
+                    notifyPlayer(q.id);
+                }
             }
         }
         if (playerId == displayedPlayerId) {
@@ -311,6 +315,15 @@ namespace {
     }
 
     void QuestsSystem::notifyNextActiveQuest(Player* player, GameState* gameState) {
+        if (player) {
+            const auto playerId = player->getId();
+            if (playerId == displayedPlayerId) {
+                const auto syncIt = questsByPlayer.find(playerId);
+                if (syncIt != questsByPlayer.end()) {
+                    m_quests = syncIt->second;
+                }
+            }
+        }
         if (m_quests.empty()) return;
 
         int openCount = countOpenQuests(m_quests);
