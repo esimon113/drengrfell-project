@@ -11,6 +11,7 @@
 #include "core/hazards.h"
 #include "core/hero.h"
 #include "core/road.h"
+#include "core/visibleHeroes.h"
 #include "entityMovement.h"
 // #include "utils/graphDebugDump.h"
 // #include "utils/graphDebugImage.h"
@@ -20,6 +21,7 @@
 #include "tradingSystem.h"
 #include "utils/worldNodeMapper.h"
 
+#include <algorithm>
 #include <random>
 
 #include <fstream>
@@ -36,6 +38,15 @@
 #include "ai/commandRegistry.h"
 
 namespace df {
+	static std::optional<Entity> findHeroEntity(Registry* registry, size_t playerId) {
+		for (Entity entity : registry->animations.entities) {
+			if (registry->animations.get(entity).playerId == playerId) {
+				return entity;
+			}
+		}
+		return std::nullopt;
+	}
+
 	static void glfwErrorCallback(int error, const char* description) {
 		fmt::println(stderr, "[GLFW Error {}]: {}", error, description);
 	}
@@ -290,9 +301,8 @@ namespace df {
 				render.step(delta_time);
 				// ------- only here for testing until we have a triggerpoint for the movement-----------------------------------------------------
 				if (movementSystem->getMovementState()) {
-					if (!registry->animations.entities.empty()) {
-						Entity hero = registry->animations.entities.front();
-						movementSystem->moveEntityTo(hero, movementSystem->getTargetPosition(), delta_time);
+					if (const auto hero = findHeroEntity(registry, gameState->getViewerPlayerId())) {
+						movementSystem->moveEntityTo(*hero, movementSystem->getTargetPosition(), delta_time);
 						if (!movementSystem->getMovementState()) {
 							render.renderTilesSystem.setSelectedTile(-1);
 						}
@@ -486,14 +496,11 @@ namespace df {
 		const bool hasHazard = player && player->hasActiveHazard();
 
 		auto setHeroAnimation = [&](Hero::AnimationType type) {
-			if (registry->animations.entities.empty()) {
+			const auto hero = findHeroEntity(registry, gameState->getViewerPlayerId());
+			if (!hero) {
 				return;
 			}
-			Entity hero = registry->animations.entities.front();
-			if (!registry->animations.has(hero)) {
-				return;
-			}
-			auto& animComp = registry->animations.get(hero);
+			auto& animComp = registry->animations.get(*hero);
 			if (animComp.currentType != type) {
 				animComp.currentType = type;
 				animComp.anim.setCurrentFrameIndex(0);
@@ -547,11 +554,12 @@ namespace df {
 
 	void Application::spawnHero() noexcept {
 		Entity hero;
-		if (!registry->animations.entities.empty()) {
-			hero = registry->animations.entities.front();
+		if (const auto localHero = findHeroEntity(registry, gameState->getViewerPlayerId())) {
+			hero = *localHero;
 		} else {
 			hero = registry->getPlayer();
 			registry->animations.emplace(hero);
+			registry->animations.get(hero).playerId = gameState->getViewerPlayerId();
 		}
 
 		Graph& map = gameState->getMap();
@@ -872,10 +880,12 @@ namespace df {
 						if (!isViewerTurn()) {
 							return;
 						}
-						//  TODO: For multiplayer use hero of active player
-						Entity hero = registry->animations.entities.front();
+						const auto hero = findHeroEntity(registry, gameState->getViewerPlayerId());
+						if (!hero) {
+							return;
+						}
 						Player* player = this->gameState->getPlayer(this->gameState->getViewerPlayerId());
-						movementSystem->setTarget(mapId, hero, player);
+						movementSystem->setTarget(mapId, *hero, player);
 						auto path = movementSystem->getCurrentPath();
 						render.renderTilesSystem.setPath(movementSystem->getCurrentPath());
 					}
@@ -976,7 +986,13 @@ namespace df {
 			return;
 		}
 
-		Entity hero = registry->animations.entities.front();
+		auto heroEntity = findHeroEntity(registry, playerId);
+		if (!heroEntity) {
+			Entity initialHero = registry->animations.entities.front();
+			registry->animations.get(initialHero).playerId = playerId;
+			heroEntity = initialHero;
+		}
+		Entity hero = *heroEntity;
 		const size_t tileId = player->getHero()->getTileID();
 		if (!force && registry->tileID.has(hero) && registry->tileID.get(hero) == tileId) {
 			return;
@@ -995,6 +1011,57 @@ namespace df {
 		}
 		movementSystem->setTarget(tileId, hero, player);
 		heroPlaced = true;
+	}
+
+	static void syncVisibleHeroes(
+		Registry* registry,
+		const std::shared_ptr<GameState>& gameState,
+		EntityMovementSystem* movementSystem
+	) {
+		const size_t viewerId = gameState->getViewerPlayerId();
+		const std::vector<size_t> visibleOwners = visibleHeroOwners(*gameState, viewerId);
+
+		if (!findHeroEntity(registry, viewerId) && !registry->animations.entities.empty()) {
+			registry->animations.get(registry->animations.entities.front()).playerId = viewerId;
+		}
+
+		for (size_t ownerId : visibleOwners) {
+			if (ownerId == viewerId) {
+				continue;
+			}
+			const Player* player = gameState->getPlayer(ownerId);
+			if (!player || !player->getHero()) {
+				continue;
+			}
+
+			const size_t tileId = player->getHero()->getTileID();
+			const glm::vec2 position = movementSystem->getTileWorldPosition(tileId);
+			auto heroEntity = findHeroEntity(registry, ownerId);
+			if (!heroEntity) {
+				Entity remoteHero;
+				registry->positions.emplace(remoteHero, position);
+				registry->scales.emplace(remoteHero, glm::vec2(1.0f, 1.0f));
+				registry->collisionRadius.emplace(remoteHero, 0.5f);
+				registry->tileID.emplace(remoteHero, tileId);
+				std::vector animationOrder = {0, 1};
+				Animation anim(animationOrder, 0.65f, true);
+				registry->animations.emplace(remoteHero, AnimationComponent{anim});
+				registry->animations.get(remoteHero).playerId = ownerId;
+				continue;
+			}
+
+			registry->positions.get(*heroEntity) = position;
+			registry->tileID.get(*heroEntity) = tileId;
+		}
+
+		const std::vector<Entity> animationEntities = registry->animations.entities;
+		for (Entity entity : animationEntities) {
+			const size_t ownerId = registry->animations.get(entity).playerId;
+			if (ownerId != viewerId &&
+				std::find(visibleOwners.begin(), visibleOwners.end(), ownerId) == visibleOwners.end()) {
+				registry->clear(entity);
+			}
+		}
 	}
 
 	void Application::onAuthoritativeState(const nlohmann::json& state) noexcept {
@@ -1028,6 +1095,7 @@ namespace df {
 		}
 		sessionMapReady = true;
 		placeHeroFromServer(!alreadyPlaying);
+		syncVisibleHeroes(registry, gameState, movementSystem.get());
 
 		if (const auto result = render.renderTilesSystem.updateMap(); result.isErr()) {
 			std::cerr << result.unwrapErr() << std::endl;

@@ -25,9 +25,14 @@ namespace df {
 		eventBus->aiActiveToggled.connect(
 			[this, registry](const bool aiActive) {
 				if (aiActive) {
-					const auto hero = registry->animations.entities.front();
-					size_t& currentPosTileId = registry->tileID.get(hero);
-					this->setTarget(currentPosTileId, hero, this->gameState->getPlayer(1));
+					for (Entity hero : registry->animations.entities) {
+						if (registry->animations.get(hero).playerId != this->gameState->getViewerPlayerId()) {
+							continue;
+						}
+						size_t& currentPosTileId = registry->tileID.get(hero);
+						this->setTarget(currentPosTileId, hero, this->gameState->getPlayer(1));
+						break;
+					}
 					movementState = true;
 					targetSet = true;
 				}

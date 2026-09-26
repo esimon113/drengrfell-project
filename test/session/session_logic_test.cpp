@@ -2,6 +2,7 @@
 #include "multiplayer/sessionManager.h"
 #include "player.h"
 #include "utils/commandLineOptions.h"
+#include "visibleHeroes.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -398,6 +399,32 @@ int main() {
 		}
 		if (!alone.startGame(50)) {
 			std::cerr << "solo start failed\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::GameState state;
+		df::Player self(0);
+		df::Player other(1);
+		self.setHero(std::make_shared<df::Hero>(3, glm::vec2(0.f), "", 3));
+		other.setHero(std::make_shared<df::Hero>(9, glm::vec2(0.f), "", 3));
+		self.exploreTile(3);
+		state.addPlayer(self);
+		state.addPlayer(other);
+		state.setViewerPlayerId(0);
+		const auto hidden = df::visibleHeroOwners(state, 0);
+		if (hidden.size() != 1 || hidden[0] != 0) {
+			std::cerr << "fogged hero was visible\n";
+			return EXIT_FAILURE;
+		}
+		self.exploreTile(9);
+		state.clearPlayers();
+		state.addPlayer(self);
+		state.addPlayer(other);
+		const auto shown = df::visibleHeroOwners(state, 0);
+		if (shown.size() != 2) {
+			std::cerr << "explored hero was hidden\n";
 			return EXIT_FAILURE;
 		}
 	}

@@ -8,6 +8,7 @@ namespace df {
 	struct AnimationComponent {
 		Animation anim;
 		Hero::AnimationType currentType = Hero::AnimationType::Idle;
+		size_t playerId{0};
 
 		std::string currentFrame() const { return anim.getCurrentFrame(); }
 	};
