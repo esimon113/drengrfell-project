@@ -3,6 +3,7 @@
 #include "registry.h"
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -132,6 +133,9 @@ namespace df {
 		float getWeatherIntensity() const { return weatherIntensity; }
 		void setWeatherIntensity(float intensity) { weatherIntensity = intensity; }
 		std::vector<glm::vec3> computeHudResourceColor(std::string mode);
+		static constexpr int WINNING_POINTS = 20;
+		static constexpr int WINNING_CASTLES = 3;
+		std::optional<size_t> getWinnerId() const;
 		bool isGameOver() const;
 
 	  private:

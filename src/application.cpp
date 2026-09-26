@@ -259,15 +259,15 @@ namespace df {
 					glClear(GL_COLOR_BUFFER_BIT);
 					render.step(delta_time);
 					if (!victoryScreenShown) {
-						size_t winnerId = gameState->getCurrentPlayerId();
 						std::string leaderboard;
-
+						if (const auto winnerId = gameState->getWinnerId()) {
+							if (const Player* winner = gameState->getPlayer(*winnerId)) {
+								leaderboard += winner->getName() + " wins.\n";
+							}
+						}
 						for (size_t i = 0; i < gameState->getPlayerCount(); ++i) {
-							auto p = gameController->getPlayerbyId(i);
-							if (p) {
-								leaderboard += fmt::format("Finished in {} rounds with {} points.\n",
-															gameState->getRoundNumber(),
-															p->getHeroPoints());
+							if (const Player* p = gameState->getPlayer(i)) {
+								leaderboard += fmt::format("{}: {} points.\n", p->getName(), p->getHeroPoints());
 							}
 						}
 
@@ -275,7 +275,9 @@ namespace df {
 
 						notification->showNotification("FINISHED!", leaderboard, {"Back to Menu"});
 
-						fmt::println("Game ended. Winner: Player {}", winnerId);
+						if (const auto winnerId = gameState->getWinnerId()) {
+							fmt::println("Game ended. Winner: Player {}", *winnerId);
+						}
 						victoryScreenShown = true;
 					}
 					if (victoryScreenClosed) {

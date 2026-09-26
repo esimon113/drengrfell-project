@@ -542,15 +542,12 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 		return colors;
 	}
 
-	bool GameState::isGameOver() const {
-		const int WINNING_POINTS = 20; 
-
-		for (const auto& player : this->players) {
+	std::optional<size_t> GameState::getWinnerId() const {
+		for (size_t i = 0; i < this->players.size(); ++i) {
+			const auto& player = this->players[i];
 			if (player.getHeroPoints() >= WINNING_POINTS) {
-				fmt::println("[GameState] Player {} has reached {} points! Game Over.", 
-							player.getId(), player.getHeroPoints());
-				return true;
-			} 
+				return i;
+			}
 
 			int castleCount = 0;
 			for (size_t sId : player.getSettlementIds()) {
@@ -564,12 +561,27 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 				}
 			}
 
-			if (castleCount >= 3) {
-				fmt::println("[GameState] Player {} built 3 Castles!", player.getId());
-				return true;
+			if (castleCount >= WINNING_CASTLES) {
+				return i;
 			}
 		}
-		return false;
+		return std::nullopt;
+	}
+
+	bool GameState::isGameOver() const {
+		const auto winnerId = getWinnerId();
+		if (!winnerId) {
+			return false;
+		}
+
+		const auto& player = this->players[*winnerId];
+		if (player.getHeroPoints() >= WINNING_POINTS) {
+			fmt::println("[GameState] Player {} has reached {} points! Game Over.",
+						player.getId(), player.getHeroPoints());
+		} else {
+			fmt::println("[GameState] Player {} built 3 Castles!", player.getId());
+		}
+		return true;
 	}
 
 	bool GameState::isTileVisibleTo(size_t playerId, size_t tileId) const {

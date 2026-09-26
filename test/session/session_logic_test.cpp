@@ -516,6 +516,28 @@ int main() {
 		}
 	}
 
+	{
+		df::GameState state;
+		df::Player trailing(0);
+		df::Player leading(1);
+		trailing.setName("Trailing");
+		leading.setName("Leading");
+		trailing.setHeroPoints(4);
+		leading.setHeroPoints(20);
+		state.addPlayer(trailing);
+		state.addPlayer(leading);
+		state.setCurrentPlayerId(0);
+		const auto winner = state.getWinnerId();
+		if (!winner || *winner != 1) {
+			std::cerr << "winner followed the current turn instead of the score\n";
+			return EXIT_FAILURE;
+		}
+		if (!state.isGameOver()) {
+			std::cerr << "20 points was not game over\n";
+			return EXIT_FAILURE;
+		}
+	}
+
 	std::cout << "session_logic_test: initializeGame, endTurn, serializeFor OK\n";
 	return EXIT_SUCCESS;
 }
