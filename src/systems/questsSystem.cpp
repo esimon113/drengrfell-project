@@ -16,6 +16,8 @@ namespace df {
         // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress (-1 if must be updated during gameplay) | unblock id | Reward type | Reward | Initial state
         auto path = assets::getAssetPath(assets::JsonFile::QUESTS);        
         loadQuests(path);
+        questTemplate = m_quests;
+        questsByPlayer.clear();
     }
    
     void QuestsSystem::loadQuests(const std::string& path) {
@@ -60,8 +62,20 @@ namespace df {
     }
 
 
-    void QuestsSystem::updateProgress(types::QuestGoalType type, int amount) {
-        for (auto& quest : m_quests) {
+    void QuestsSystem::bindPlayer(size_t playerId) {
+        if (!questsByPlayer.contains(playerId)) {
+            questsByPlayer.emplace(playerId, questTemplate);
+        }
+        displayedPlayerId = playerId;
+        m_quests = questsByPlayer[playerId];
+    }
+
+    void QuestsSystem::updateProgress(size_t playerId, types::QuestGoalType type, int amount) {
+        const auto it = questsByPlayer.find(playerId);
+        if (it == questsByPlayer.end()) {
+            return;
+        }
+        for (auto& quest : it->second) {
             if (quest.state == QuestState::Active && quest.goal_type == type) {
                 
                 quest.progress += amount;
@@ -71,6 +85,9 @@ namespace df {
                     notifyPlayer(quest.id); 
                 }
             }
+        }
+        if (playerId == displayedPlayerId) {
+            m_quests = it->second;
         }
     }
 
@@ -157,8 +174,12 @@ namespace df {
     }
 
 
-    bool QuestsSystem::prepareClaim(int questId) {
-        for (auto& quest : m_quests) {
+    bool QuestsSystem::prepareClaim(size_t playerId, int questId) {
+        const auto it = questsByPlayer.find(playerId);
+        if (it == questsByPlayer.end()) {
+            return false;
+        }
+        for (auto& quest : it->second) {
             if (quest.id != questId) {
                 continue;
             }
@@ -168,13 +189,23 @@ namespace df {
             if (quest.state != QuestState::Completed) {
                 quest.state = QuestState::Completed;
             }
+            displayedPlayerId = playerId;
+            m_quests = it->second;
             return true;
         }
         return false;
     }
 
     void QuestsSystem::claimQuest(int questId, Player* player,GameState* gameState) {
-        for (auto& q : m_quests) {
+        if (!player) {
+            return;
+        }
+        const size_t playerId = player->getId();
+        const auto it = questsByPlayer.find(playerId);
+        if (it == questsByPlayer.end()) {
+            return;
+        }
+        for (auto& q : it->second) {
             if (q.id == questId && q.state == QuestState::Completed) {
                 activeQuests--;
                 q.state = QuestState::Claimed;
@@ -187,10 +218,21 @@ namespace df {
                 break;
             }
         }
+        if (playerId == displayedPlayerId) {
+            m_quests = it->second;
+        }
     }
 
     void QuestsSystem::activateQuest(int questId, Player* player, GameState* gameState) {
-        for (auto& q : m_quests) {
+        if (!player) {
+            return;
+        }
+        const size_t playerId = player->getId();
+        const auto it = questsByPlayer.find(playerId);
+        if (it == questsByPlayer.end()) {
+            return;
+        }
+        for (auto& q : it->second) {
             if (q.id == questId && q.state == QuestState::Locked) {
                 activeQuests++;
                 q.state = QuestState::Active;
@@ -245,6 +287,9 @@ namespace df {
                 
                 notifyPlayer(q.id); 
             }
+        }
+        if (playerId == displayedPlayerId) {
+            m_quests = it->second;
         }
     }
 
@@ -305,6 +350,22 @@ namespace df {
         return quests;
     }
 
+    nlohmann::json QuestsSystem::serializeFor(size_t playerId) const {
+        nlohmann::json quests = nlohmann::json::array();
+        const auto it = questsByPlayer.find(playerId);
+        if (it == questsByPlayer.end()) {
+            return quests;
+        }
+        for (const auto& quest : it->second) {
+            quests.push_back({
+                {"id", quest.id},
+                {"progress", quest.progress},
+                {"state", static_cast<int>(quest.state)},
+            });
+        }
+        return quests;
+    }
+
     void QuestsSystem::applyAuthoritative(const nlohmann::json& quests) {
         if (!quests.is_array()) {
             return;
@@ -347,5 +408,6 @@ namespace df {
         if (refreshShowing && m_currentShowingQuestId >= 0) {
             notifyPlayer(m_currentShowingQuestId);
         }
+        questsByPlayer[displayedPlayerId] = m_quests;
     }
 }

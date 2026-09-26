@@ -453,7 +453,7 @@ namespace df {
 				this->gameState->completeCurrentTutorialStep();
 				auto* quests = registry->getSystem<QuestsSystem>();
 				if (quests) {
-					quests->updateProgress(types::QuestGoalType::TUTORIAL, 1);
+					quests->updateProgress(gameState->getViewerPlayerId(), types::QuestGoalType::TUTORIAL, 1);
 				}
 			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {

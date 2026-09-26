@@ -46,6 +46,7 @@ namespace df {
 		if (playerCount == 0) {
 			return;
 		}
+		const size_t endingPlayer = this->gameState.getCurrentPlayerId();
 
 		this->updateHazards();
 
@@ -54,7 +55,7 @@ namespace df {
 		this->gameState.setTurnCount(this->gameState.getTurnCount() + 1);
 
 		if (this->m_questsSystem) {
-			this->m_questsSystem->updateProgress(df::types::QuestGoalType::ROUNDS, 1);
+			this->m_questsSystem->updateProgress(endingPlayer, df::types::QuestGoalType::ROUNDS, 1);
 		}
 
 		if (nextPlayerId == 0) {
@@ -198,7 +199,7 @@ namespace df {
 					// std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
 					auto goalType = types::tileToQuestGoal(tile->getType());
 					if (goalType != types::QuestGoalType::NONE) {
-						this->m_questsSystem->updateProgress(goalType, 1);
+						this->m_questsSystem->updateProgress(player.getId(), goalType, 1);
 					}
 				}
 			}
@@ -218,7 +219,7 @@ namespace df {
 				player.addResources(heroTile->getType(), resourceAmount);
 				auto goalType = types::tileToQuestGoal(heroTile->getType());
 				if (goalType != types::QuestGoalType::NONE && this->m_questsSystem) {
-					this->m_questsSystem->updateProgress(goalType, 1);
+					this->m_questsSystem->updateProgress(player.getId(), goalType, 1);
 				}
 			}
 		}
@@ -242,10 +243,10 @@ namespace df {
 				tile->addVisibleForPlayers(player.getId());
 				player.exploreTile(tileId);
 				if (this->m_questsSystem && tile->getType() != types::TileType::WATER) {
-					this->m_questsSystem->updateProgress(types::QuestGoalType::DISCOVER, 1);
+					this->m_questsSystem->updateProgress(player.getId(), types::QuestGoalType::DISCOVER, 1);
 				}
 				if (this->m_questsSystem && tile->getType() == types::TileType::ICE) {
-					this->m_questsSystem->updateProgress(types::QuestGoalType::ICE, 1);
+					this->m_questsSystem->updateProgress(player.getId(), types::QuestGoalType::ICE, 1);
 				}
 			}
 		} catch (const std::exception&) {
@@ -301,7 +302,7 @@ namespace df {
 			hero->setTileID(path.back());
 		}
 		if (landedOnIce && landedAlreadyExplored && this->m_questsSystem) {
-			this->m_questsSystem->updateProgress(types::QuestGoalType::ICE, 1);
+			this->m_questsSystem->updateProgress(playerId, types::QuestGoalType::ICE, 1);
 		}
 		hero->setMovedThisTurn(true);
 
@@ -483,7 +484,7 @@ namespace df {
 			// this->chargeResourceCost(*player, newSettlement->getBuildingCost());
 			this->chargeResourceCost(*player, buildingCost);
 
-			m_questsSystem->updateProgress(types::QuestGoalType::SETTLEMENT, 1);
+			m_questsSystem->updateProgress(playerId, types::QuestGoalType::SETTLEMENT, 1);
 
 
 			fmt::println("[GameController] buildSettlement succeeded: settlement {} built at vertex {} for player {}", newSettlementId, vertexId, playerId);
@@ -679,7 +680,7 @@ namespace df {
 
 			this->chargeResourceCost(*player, buildingCost);
 
-			m_questsSystem->updateProgress(types::QuestGoalType::ROAD, 1);
+			m_questsSystem->updateProgress(playerId, types::QuestGoalType::ROAD, 1);
 
 			fmt::println("[GameController] buildRoad succeeded: road {} built at edge {} for player {}", roadId, edgeId, playerId);
 
@@ -1122,7 +1123,7 @@ namespace df {
 	bool GameController::claimQuestRewardFor(size_t playerId, int questId) {
 		Player* player = this->getPlayerbyId(playerId);
 		QuestsSystem* quests = this->getQuestsSystem();
-		if (!player || !quests || !quests->prepareClaim(questId)) {
+		if (!player || !quests || !quests->prepareClaim(playerId, questId)) {
 			return false;
 		}
 

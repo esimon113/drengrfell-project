@@ -402,6 +402,39 @@ int main() {
 	}
 
 	{
+		df::bifrost::SessionManager quests;
+		if (!quests.addClient(60, "Q0") || !quests.addClient(61, "Q1")) {
+			std::cerr << "quest players failed to join\n";
+			return EXIT_FAILURE;
+		}
+		quests.setPlayerReady(60, true);
+		quests.setPlayerReady(61, true);
+		if (!quests.startGame(60)) {
+			std::cerr << "two-player quest session failed to start\n";
+			return EXIT_FAILURE;
+		}
+		if (!quests.claimQuest(60, 0).first || !quests.claimQuest(61, 0).first) {
+			std::cerr << "both players should claim their own tutorial quest\n";
+			return EXIT_FAILURE;
+		}
+		const int before = questProgress(quests.getSerializedGameStateForSocket(60), 1);
+		bool built = false;
+		for (size_t vertexId = 576; vertexId < 2500 && !built; ++vertexId) {
+			built = quests.buildSettlement(60, vertexId).first;
+		}
+		if (!built) {
+			std::cerr << "player 0 could not build for a private quest\n";
+			return EXIT_FAILURE;
+		}
+		const int afterBuilder = questProgress(quests.getSerializedGameStateForSocket(60), 1);
+		const int afterOther = questProgress(quests.getSerializedGameStateForSocket(61), 1);
+		if (afterBuilder != before + 1 || afterOther != before) {
+			std::cerr << "settlement quest progress leaked to the other player\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
 		char soloProgram[] = "drengrfell";
 		char soloFlag[] = "--solo";
 		char* withSolo[] = {soloProgram, soloFlag};

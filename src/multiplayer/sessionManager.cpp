@@ -863,7 +863,8 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::reportTutorialEvent(in
 		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "Game not in progress"}};
 	}
 
-	if (!getPlayerIdBySocket(socket)) {
+	const auto playerIdOpt = getPlayerIdBySocket(socket);
+	if (!playerIdOpt) {
 		return {false, ErrorInfo{ErrorCode::PLAYER_NOT_FOUND, "Player not found"}};
 	}
 
@@ -872,7 +873,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::reportTutorialEvent(in
 		static_cast<TutorialStepId>(stepId) == TutorialStepId::END;
 	gameState_->completeTutorialStep(static_cast<TutorialStepId>(stepId));
 	if (finishingTutorial && gameController_ && gameController_->getQuestsSystem()) {
-		gameController_->getQuestsSystem()->updateProgress(types::QuestGoalType::TUTORIAL, 1);
+		gameController_->getQuestsSystem()->updateProgress(*playerIdOpt, types::QuestGoalType::TUTORIAL, 1);
 	}
 	return {true, std::nullopt};
 }
@@ -903,7 +904,7 @@ nlohmann::json SessionManager::getSerializedGameState() const {
 	if (gameState_) {
 		nlohmann::json state = gameState_->serialize();
 		if (gameController_ && gameController_->getQuestsSystem()) {
-			state["quests"] = gameController_->getQuestsSystem()->serialize();
+			state["quests"] = gameController_->getQuestsSystem()->serializeFor(gameState_->getCurrentPlayerId());
 		}
 		return state;
 	}
@@ -921,7 +922,7 @@ nlohmann::json SessionManager::getSerializedGameStateForSocket(int socket) const
 	}
 	nlohmann::json state = gameState_->serializeFor(*playerIdOpt);
 	if (gameController_ && gameController_->getQuestsSystem()) {
-		state["quests"] = gameController_->getQuestsSystem()->serialize();
+		state["quests"] = gameController_->getQuestsSystem()->serializeFor(*playerIdOpt);
 	}
 	return state;
 }
@@ -1075,6 +1076,9 @@ void SessionManager::initializeGame() {
 	gameController_ = std::make_unique<GameController>(*gameState_);
 	if (QuestsSystem* quests = gameController_->getQuestsSystem()) {
 		quests->init(nullptr);
+		for (const Player& player : gameState_->getPlayers()) {
+			quests->bindPlayer(player.getId());
+		}
 	}
 
 	// Set initial game phase

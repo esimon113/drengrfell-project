@@ -130,7 +130,7 @@ namespace df {
 					if (playerPtr->exploreTile(tileID) && currentType != types::TileType::WATER) {
 						gameState->getMap().setRenderUpdateRequested(true);
 						fmt::println("New Tile {} discovered!", tileID);
-						quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+						quests->updateProgress(gameState->getViewerPlayerId(), types::QuestGoalType::DISCOVER, 1);
 					}
 					if (currentType == types::TileType::WATER) {
 						if (animComp.currentType != Hero::AnimationType::Swim) {
@@ -236,11 +236,11 @@ namespace df {
 							if (playerPtr->exploreTile(targetPositionTileID) && currentType != types::TileType::WATER) { 
 								gameState->getMap().setRenderUpdateRequested(true);
 								fmt::println("New Tile {} discovered!", targetPositionTileID);
-								quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+								quests->updateProgress(gameState->getViewerPlayerId(), types::QuestGoalType::DISCOVER, 1);
 							}
 							
 							if (currentType == types::TileType::ICE) {
-								quests->updateProgress(types::QuestGoalType::ICE, 1);
+								quests->updateProgress(gameState->getViewerPlayerId(), types::QuestGoalType::ICE, 1);
 							}
 						}
 					}
