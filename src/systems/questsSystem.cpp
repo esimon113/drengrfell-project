@@ -96,7 +96,10 @@ namespace {
 
                 if (quest.progress >= quest.goal_amount) {
                     quest.state = QuestState::Completed;
-                    notifyPlayer(quest.id); 
+                    if (playerId == displayedPlayerId) {
+                        m_quests = it->second;
+                        notifyPlayer(quest.id);
+                    }
                 }
             }
         }
