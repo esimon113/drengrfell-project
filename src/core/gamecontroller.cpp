@@ -287,6 +287,10 @@ namespace df {
 		if (path.size() > maxTiles) {
 			path.resize(maxTiles);
 		}
+		const size_t landedTile = path.empty() ? targetTileId : path.back();
+		const bool landedAlreadyExplored = player->isTileExplored(landedTile);
+		const TileHandle landed = this->gameState.getMap().getTile(landedTile);
+		const bool landedOnIce = landed && landed->getType() == types::TileType::ICE;
 		if (path.empty()) {
 			this->exploreTile(*player, targetTileId);
 			hero->setTileID(targetTileId);
@@ -295,6 +299,9 @@ namespace df {
 				this->exploreTile(*player, tileId);
 			}
 			hero->setTileID(path.back());
+		}
+		if (landedOnIce && landedAlreadyExplored && this->m_questsSystem) {
+			this->m_questsSystem->updateProgress(types::QuestGoalType::ICE, 1);
 		}
 		hero->setMovedThisTurn(true);
 

@@ -900,7 +900,11 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::claimQuest(int socket,
 nlohmann::json SessionManager::getSerializedGameState() const {
 	std::lock_guard<std::mutex> lock(mutex_);
 	if (gameState_) {
-		return gameState_->serialize();
+		nlohmann::json state = gameState_->serialize();
+		if (gameController_ && gameController_->getQuestsSystem()) {
+			state["quests"] = gameController_->getQuestsSystem()->serialize();
+		}
+		return state;
 	}
 	return nlohmann::json::object();
 }
@@ -914,7 +918,11 @@ nlohmann::json SessionManager::getSerializedGameStateForSocket(int socket) const
 	if (!playerIdOpt) {
 		return nlohmann::json::object();
 	}
-	return gameState_->serializeFor(*playerIdOpt);
+	nlohmann::json state = gameState_->serializeFor(*playerIdOpt);
+	if (gameController_ && gameController_->getQuestsSystem()) {
+		state["quests"] = gameController_->getQuestsSystem()->serialize();
+	}
+	return state;
 }
 
 

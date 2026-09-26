@@ -23,6 +23,18 @@ int resourceAmount(const nlohmann::json& state, size_t playerId, df::types::Tile
 	return 0;
 }
 
+int questProgress(const nlohmann::json& state, int questId) {
+	if (!state.contains("quests") || !state["quests"].is_array()) {
+		return -999;
+	}
+	for (const auto& quest : state["quests"]) {
+		if (quest.value("id", -1) == questId) {
+			return quest.value("progress", -999);
+		}
+	}
+	return -999;
+}
+
 bool resourcesUnchanged(const nlohmann::json& before, const nlohmann::json& after, size_t playerId) {
 	using df::types::TileType;
 	for (TileType type : {TileType::FOREST, TileType::GRASS, TileType::MOUNTAIN, TileType::FIELD, TileType::CLAY}) {
@@ -274,6 +286,64 @@ int main() {
 		const auto afterProductivity = costs.getSerializedGameState();
 		if (productivityBuilt || !resourcesUnchanged(placed, afterProductivity, 0)) {
 			std::cerr << "productivity building charged the wrong cost\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::SessionManager quests;
+		if (!quests.addClient(40, "Quester")) {
+			std::cerr << "quest session failed to start\n";
+			return EXIT_FAILURE;
+		}
+		quests.setPlayerReady(40, true);
+		if (!quests.startGame(40)) {
+			std::cerr << "quest session failed to start\n";
+			return EXIT_FAILURE;
+		}
+		if (!quests.claimQuest(40, 0).first) {
+			std::cerr << "could not claim the tutorial quest\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto afterClaim = quests.getSerializedGameState();
+		const int settlementsBefore = questProgress(afterClaim, 1);
+		if (settlementsBefore < 0) {
+			std::cerr << "settlement quest was not in the snapshot\n";
+			return EXIT_FAILURE;
+		}
+
+		bool built = false;
+		for (size_t vertexId = 576; vertexId < 2500; ++vertexId) {
+			if (quests.buildSettlement(40, vertexId).first) {
+				built = true;
+				break;
+			}
+		}
+		if (!built) {
+			std::cerr << "could not build a settlement for quest progress\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto afterBuild = quests.getSerializedGameState();
+		const int settlementsAfter = questProgress(afterBuild, 1);
+		if (settlementsAfter != settlementsBefore + 1) {
+			std::cerr << "settlement quest progress did not advance\n";
+			return EXIT_FAILURE;
+		}
+
+		df::QuestsSystem shown;
+		shown.init(nullptr);
+		shown.applyAuthoritative(afterClaim["quests"]);
+		const df::Quest* shownQuest = shown.getQuestById(1);
+		if (!shownQuest || shownQuest->progress != settlementsBefore) {
+			std::cerr << "quest window did not take the first snapshot\n";
+			return EXIT_FAILURE;
+		}
+		shown.applyAuthoritative(afterBuild["quests"]);
+		shownQuest = shown.getQuestById(1);
+		if (!shownQuest || shownQuest->progress != settlementsAfter) {
+			std::cerr << "quest window did not take the updated snapshot\n";
 			return EXIT_FAILURE;
 		}
 	}

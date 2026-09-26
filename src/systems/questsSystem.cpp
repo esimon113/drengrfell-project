@@ -292,4 +292,60 @@ namespace df {
     void QuestsSystem::reset(){
         init(m_notificationSystem);
     }
+
+    nlohmann::json QuestsSystem::serialize() const {
+        nlohmann::json quests = nlohmann::json::array();
+        for (const auto& quest : m_quests) {
+            quests.push_back({
+                {"id", quest.id},
+                {"progress", quest.progress},
+                {"state", static_cast<int>(quest.state)},
+            });
+        }
+        return quests;
+    }
+
+    void QuestsSystem::applyAuthoritative(const nlohmann::json& quests) {
+        if (!quests.is_array()) {
+            return;
+        }
+
+        bool refreshShowing = false;
+        for (const auto& item : quests) {
+            if (!item.is_object() || !item.contains("id")) {
+                continue;
+            }
+            const int id = item.value("id", -1);
+            for (auto& quest : m_quests) {
+                if (quest.id != id) {
+                    continue;
+                }
+                const QuestState previousState = quest.state;
+                const int previousProgress = quest.progress;
+                quest.progress = item.value("progress", quest.progress);
+                if (item.contains("state")) {
+                    quest.state = static_cast<QuestState>(item.value("state", static_cast<int>(quest.state)));
+                }
+                if (previousState != QuestState::Completed && previousState != QuestState::Claimed &&
+                    quest.state == QuestState::Completed) {
+                    notifyPlayer(quest.id);
+                    refreshShowing = false;
+                } else if (quest.id == m_currentShowingQuestId &&
+                    (quest.progress != previousProgress || quest.state != previousState)) {
+                    refreshShowing = true;
+                }
+                break;
+            }
+        }
+
+        activeQuests = 0;
+        for (const auto& quest : m_quests) {
+            if (quest.state == QuestState::Active || quest.state == QuestState::Completed) {
+                activeQuests++;
+            }
+        }
+        if (refreshShowing && m_currentShowingQuestId >= 0) {
+            notifyPlayer(m_currentShowingQuestId);
+        }
+    }
 }

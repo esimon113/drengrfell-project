@@ -996,6 +996,11 @@ namespace df {
 		}
 
 		gameState->applyAuthoritativeSnapshot(state);
+		if (state.contains("quests")) {
+			if (QuestsSystem* quests = gameController->getQuestsSystem()) {
+				quests->applyAuthoritative(state["quests"]);
+			}
+		}
 		sessionMapReady = true;
 		placeHeroFromServer(!alreadyPlaying);
 

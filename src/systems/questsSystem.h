@@ -2,6 +2,7 @@
 
 #include "../core/quest.h"
 #include "renderNotification.h"
+#include <nlohmann/json.hpp>
 #include <string>
 
 namespace df {
@@ -28,6 +29,8 @@ namespace df {
         void setCurrentQuest() { m_currentShowingQuestId = -1; currentQuest = 1; }
 
         void loadQuests(const std::string& path);
+        [[nodiscard]] nlohmann::json serialize() const;
+        void applyAuthoritative(const nlohmann::json& quests);
 
 
     private:
