@@ -1022,6 +1022,7 @@ namespace df {
 		gameState->applyAuthoritativeSnapshot(state);
 		if (state.contains("quests")) {
 			if (QuestsSystem* quests = gameController->getQuestsSystem()) {
+				quests->bindPlayer(gameState->getViewerPlayerId());
 				quests->applyAuthoritative(state["quests"]);
 			}
 		}

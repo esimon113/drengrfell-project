@@ -363,6 +363,7 @@ int main() {
 
 		df::QuestsSystem shown;
 		shown.init(nullptr);
+		shown.bindPlayer(0);
 		shown.applyAuthoritative(afterClaim["quests"]);
 		const df::Quest* shownQuest = shown.getQuestById(1);
 		if (!shownQuest || shownQuest->progress != settlementsBefore) {

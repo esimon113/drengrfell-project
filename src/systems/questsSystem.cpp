@@ -6,6 +6,19 @@
 using json = nlohmann::json;
 
 namespace df {
+namespace {
+
+    int countOpenQuests(const std::vector<Quest>& quests) {
+        int count = 0;
+        for (const auto& quest : quests) {
+            if (quest.state == QuestState::Active || quest.state == QuestState::Completed) {
+                ++count;
+            }
+        }
+        return count;
+    }
+
+}
 
     //  TODO: In a future add the functions to update the json to reload a game
 
@@ -68,6 +81,7 @@ namespace df {
         }
         displayedPlayerId = playerId;
         m_quests = questsByPlayer[playerId];
+        activeQuests = countOpenQuests(m_quests);
     }
 
     void QuestsSystem::updateProgress(size_t playerId, types::QuestGoalType type, int amount) {
@@ -207,7 +221,6 @@ namespace df {
         }
         for (auto& q : it->second) {
             if (q.id == questId && q.state == QuestState::Completed) {
-                activeQuests--;
                 q.state = QuestState::Claimed;
                 m_currentShowingQuestId = -1; 
                 for (int nextId : q.unlocksIds) {
@@ -220,6 +233,7 @@ namespace df {
         }
         if (playerId == displayedPlayerId) {
             m_quests = it->second;
+            activeQuests = countOpenQuests(it->second);
         }
     }
 
@@ -234,7 +248,6 @@ namespace df {
         }
         for (auto& q : it->second) {
             if (q.id == questId && q.state == QuestState::Locked) {
-                activeQuests++;
                 q.state = QuestState::Active;
                 if (q.progress == -1){
                     switch (q.goal_type) {
@@ -290,13 +303,21 @@ namespace df {
         }
         if (playerId == displayedPlayerId) {
             m_quests = it->second;
+            activeQuests = countOpenQuests(it->second);
         }
     }
 
     void QuestsSystem::notifyNextActiveQuest(Player* player, GameState* gameState) {
         if (m_quests.empty()) return;
 
-        if(activeQuests == 0){
+        int openCount = countOpenQuests(m_quests);
+        if (player) {
+            const auto it = questsByPlayer.find(player->getId());
+            if (it != questsByPlayer.end()) {
+                openCount = countOpenQuests(it->second);
+            }
+        }
+        if (openCount == 0) {
             if (player && !(gameState && gameState->hasAuthoritativeMap())) {
             const int COMPLETION_BONUS = 5;
             player->addHeroPoints(COMPLETION_BONUS);
