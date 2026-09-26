@@ -31,6 +31,22 @@ namespace df {
 		heroPoints = points;
 	}
 
+	const std::string& Player::getName() const {
+		return name;
+	}
+
+	void Player::setName(const std::string& newName) {
+		name = newName;
+	}
+
+	size_t Player::getTutorialStep() const {
+		return tutorialStep;
+	}
+
+	void Player::setTutorialStep(size_t step) {
+		tutorialStep = step;
+	}
+
 	const std::vector<size_t>& Player::getSettlementIds() const {
 		return settlementIds;
 	}
@@ -172,6 +188,8 @@ namespace df {
 
 		j["playerId"] = playerId;
 		j["heroPoints"] = heroPoints;
+		j["name"] = name;
+		j["tutorialStep"] = tutorialStep;
 
 		j["settlementIds"] = settlementIds;
 		j["roadIds"] = roadIds;
@@ -205,6 +223,8 @@ namespace df {
 			this->setPlayerId(j.at("playerId").get<size_t>());
 		if (j.contains("heroPoints"))
 			this->setHeroPoints(j.at("heroPoints").get<int>());
+		this->setName(j.value("name", std::string{}));
+		this->setTutorialStep(j.value("tutorialStep", static_cast<size_t>(0)));
 
 		if (j.contains("settlementIds"))
 			settlementIds = j["settlementIds"].get<std::vector<size_t>>();

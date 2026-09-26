@@ -686,7 +686,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::buildSettlement(int so
 		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "You need more ressources to build this.\nPress 'C' to check for ressource cost."}};
 	}
 
-	gameState_->completeTutorialStep(TutorialStepId::BUILD_SETTLEMENT);
+	gameState_->completeTutorialStepFor(playerId, TutorialStepId::BUILD_SETTLEMENT);
 	return {true, std::nullopt};
 }
 
@@ -722,7 +722,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::buildRoad(int socket, 
 		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES, "You need more ressources to build this.\nPress 'C' to check for ressource cost."}};
 	}
 
-	gameState_->completeTutorialStep(TutorialStepId::BUILD_ROAD);
+	gameState_->completeTutorialStepFor(playerId, TutorialStepId::BUILD_ROAD);
 	return {true, std::nullopt};
 }
 
@@ -750,7 +750,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::moveHero(int socket, s
 		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "Cannot move hero to that tile this turn"}};
 	}
 
-	gameState_->completeTutorialStep(TutorialStepId::MOVE_HERO);
+	gameState_->completeTutorialStepFor(playerId, TutorialStepId::MOVE_HERO);
 	return {true, std::nullopt};
 }
 
@@ -868,12 +868,18 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::reportTutorialEvent(in
 		return {false, ErrorInfo{ErrorCode::PLAYER_NOT_FOUND, "Player not found"}};
 	}
 
-	const TutorialStep* before = gameState_->getCurrentTutorialStep();
-	const bool finishingTutorial = before && before->id == TutorialStepId::END &&
+	const size_t playerId = *playerIdOpt;
+	Player* player = gameState_->getPlayer(playerId);
+	const std::vector<TutorialStep> tutorialSteps = createDefaultTutorial();
+	const size_t index = player ? player->getTutorialStep() : tutorialSteps.size();
+	const bool finishingTutorial = index < tutorialSteps.size() &&
+		tutorialSteps[index].id == TutorialStepId::END &&
 		static_cast<TutorialStepId>(stepId) == TutorialStepId::END;
-	gameState_->completeTutorialStep(static_cast<TutorialStepId>(stepId));
+	if (!gameState_->completeTutorialStepFor(playerId, static_cast<TutorialStepId>(stepId))) {
+		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "Tutorial step is not current"}};
+	}
 	if (finishingTutorial && gameController_ && gameController_->getQuestsSystem()) {
-		gameController_->getQuestsSystem()->updateProgress(*playerIdOpt, types::QuestGoalType::TUTORIAL, 1);
+		gameController_->getQuestsSystem()->updateProgress(playerId, types::QuestGoalType::TUTORIAL, 1);
 	}
 	return {true, std::nullopt};
 }
@@ -1116,6 +1122,7 @@ void SessionManager::createPlayers() {
 
 	for (const auto& [playerId, name] : playerList) {
 		Player player(playerId);
+		player.setName(name);
 		player.addResources(types::TileType::FOREST, 7);
 		player.addResources(types::TileType::CLAY, 7);
 		player.addResources(types::TileType::GRASS, 7);

@@ -121,6 +121,7 @@ namespace df {
 		TutorialStep* getCurrentTutorialStep();
 		void completeCurrentTutorialStep();
 		void completeTutorialStep(TutorialStepId id);
+		bool completeTutorialStepFor(size_t playerId, TutorialStepId id);
 		void setTutorialReporter(std::function<void(TutorialStepId)> reporter) { tutorialReporter = std::move(reporter); }
 		bool isTutorialActive() const;
 		bool hasAuthoritativeMap() const { return authoritativeMap; }

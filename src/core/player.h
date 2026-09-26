@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "settlement.h"
@@ -30,6 +31,8 @@ namespace df {
 
 		size_t playerId;
 		int heroPoints;
+		std::string name;
+		size_t tutorialStep{0};
 		std::vector<size_t> settlementIds;
 		std::map<types::TileType, int> resources;
 		std::shared_ptr<Hero> heroReference;
@@ -47,6 +50,12 @@ namespace df {
 		int getHeroPoints() const;
 		void addHeroPoints(int);
 		void setHeroPoints(int);
+
+		const std::string& getName() const;
+		void setName(const std::string& newName);
+
+		size_t getTutorialStep() const;
+		void setTutorialStep(size_t step);
 
 		// Changed to return IDs
 		const std::vector<size_t>& getSettlementIds() const;

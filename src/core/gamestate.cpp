@@ -1,5 +1,6 @@
 #include "gamestate.h"
 #include "utils/worldNodeMapper.h"
+#include <algorithm>
 #include <fstream>
 #include <stdexcept>
 
@@ -284,6 +285,13 @@ namespace df {
 			}
 		}
 
+		if (Player* viewer = getPlayer(viewerPlayerId)) {
+			currentTutorialStep = std::min(viewer->getTutorialStep(), tutorialSteps.empty() ? size_t{0} : tutorialSteps.size());
+			for (size_t i = 0; i < currentTutorialStep && i < tutorialSteps.size(); ++i) {
+				tutorialSteps[i].completed = true;
+			}
+		}
+
 		this->map.setRenderUpdateRequested(true);
 	}
 
@@ -445,6 +453,22 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 		if (step && step->id == id) {
 			completeCurrentTutorialStep();
 		}
+	}
+
+	bool GameState::completeTutorialStepFor(size_t playerId, TutorialStepId id) {
+		if (tutorialSteps.empty()) {
+			initTutorial();
+		}
+		Player* player = getPlayer(playerId);
+		if (!player) {
+			return false;
+		}
+		const size_t index = player->getTutorialStep();
+		if (index >= tutorialSteps.size() || tutorialSteps[index].id != id) {
+			return false;
+		}
+		player->setTutorialStep(index + 1);
+		return true;
 	}
 
 	bool GameState::isTutorialActive() const {

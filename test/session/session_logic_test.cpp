@@ -453,6 +453,42 @@ int main() {
 		}
 	}
 
+	{
+		df::bifrost::SessionManager tutorial;
+		if (!tutorial.addClient(70, "TutorA") || !tutorial.addClient(71, "TutorB")) {
+			std::cerr << "tutorial players failed to join\n";
+			return EXIT_FAILURE;
+		}
+		tutorial.setPlayerReady(70, true);
+		tutorial.setPlayerReady(71, true);
+		if (!tutorial.startGame(70)) {
+			std::cerr << "tutorial session failed to start\n";
+			return EXIT_FAILURE;
+		}
+		if (!tutorial.reportTutorialEvent(70, static_cast<int>(df::TutorialStepId::WELCOME)).first) {
+			std::cerr << "player 0 tutorial report failed\n";
+			return EXIT_FAILURE;
+		}
+		const auto forA = tutorial.getSerializedGameStateForSocket(70);
+		const auto forB = tutorial.getSerializedGameStateForSocket(71);
+		int stepA = -1;
+		int stepB = -1;
+		for (const auto& playerJson : forA["players"]) {
+			if (playerJson.value("playerId", static_cast<size_t>(0)) == 0) {
+				stepA = playerJson.value("tutorialStep", -1);
+			}
+		}
+		for (const auto& playerJson : forB["players"]) {
+			if (playerJson.value("playerId", static_cast<size_t>(0)) == 1) {
+				stepB = playerJson.value("tutorialStep", -1);
+			}
+		}
+		if (stepA != 1 || stepB != 0) {
+			std::cerr << "tutorial step was shared or did not advance\n";
+			return EXIT_FAILURE;
+		}
+	}
+
 	std::cout << "session_logic_test: initializeGame, endTurn, serializeFor OK\n";
 	return EXIT_SUCCESS;
 }
