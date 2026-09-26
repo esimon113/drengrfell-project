@@ -107,6 +107,7 @@ namespace df {
 		bool readySent{false};
 		bool startSent{false};
 		bool joining{false};
+		bool soloRequested{false};
 		bool sessionMapReady{false};
 		bool heroPlaced{false};
 		bool tradingReady{false};

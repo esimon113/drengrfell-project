@@ -94,6 +94,7 @@ namespace df {
 		self.serverHost = options.getHost();
 		self.serverPort = options.getPort();
 		self.playerName = options.getPlayerName();
+		self.soloRequested = options.isSolo();
 		// for testing
 		// movement until we have a triggerpoint
 		self.movementSystem = std::make_unique<EntityMovementSystem>(self.registry, self.gameState, self.aiSystem, self.eventBus);
@@ -927,6 +928,7 @@ namespace df {
 			if (pendingHeight > 0) {
 				config.rows = static_cast<uint32_t>(pendingHeight);
 			}
+			config.solo = soloRequested;
 			midgard->updateConfig(config);
 			configSent = true;
 		}
@@ -936,10 +938,26 @@ namespace df {
 			readySent = true;
 		}
 
-		if (midgard->isHost() && allReady && readySent && !startSent) {
-			midgard->startGame();
-			startSent = true;
+		if (!midgard->isHost() || !allReady || !readySent || startSent) {
+			if (!sessionMapReady) {
+				if (soloRequested) {
+					configMenu.setStatus("");
+				} else if (midgard->isHost()) {
+					configMenu.setStatus("Waiting for players (" + std::to_string(lobby.players.size()) + "). At least 2 must join.");
+				} else {
+					configMenu.setStatus("Waiting for the host to start.");
+				}
+			}
+			return;
 		}
+		const size_t readyPlayers = lobby.players.size();
+		if (!soloRequested && readyPlayers < 2) {
+			configMenu.setStatus("Waiting for players (" + std::to_string(readyPlayers) + "). At least 2 must join.");
+			return;
+		}
+		configMenu.setStatus("");
+		midgard->startGame();
+		startSent = true;
 	}
 
 	void Application::placeHeroFromServer(bool force) noexcept {

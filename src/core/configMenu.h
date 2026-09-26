@@ -38,6 +38,10 @@ namespace df {
 			viewport.size = size;
 		}
 
+		void setStatus(std::string text) {
+			statusText = std::move(text);
+		}
+
 		// void setInsularCallback(std::function<void()> callback) { onInsular = std::move(callback); }
 		// void setPerlinCallback(std::function<void()> callback) { onPerlin = std::move(callback); }
 
@@ -64,6 +68,7 @@ namespace df {
 		int worldGenerationMode = -1;
 		float warningTimer = 0;
 		std::string warningMessage = "";
+		std::string statusText;
 		glm::vec2 infoPos;
 		glm::vec2 warningPos;
 		glm::vec3 perlinButtonColor = glm::vec3(1.0f);

@@ -1,6 +1,7 @@
 #include "constructionCosts.h"
 #include "multiplayer/sessionManager.h"
 #include "player.h"
+#include "utils/commandLineOptions.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -386,6 +387,24 @@ int main() {
 		}
 		if (!alone.startGame(50)) {
 			std::cerr << "solo start failed\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		char soloProgram[] = "drengrfell";
+		char soloFlag[] = "--solo";
+		char* withSolo[] = {soloProgram, soloFlag};
+		const df::CommandLineOptions parsed = df::CommandLineOptions::parse(2, withSolo);
+		if (!parsed.isSolo()) {
+			std::cerr << "--solo was not recognized\n";
+			return EXIT_FAILURE;
+		}
+		char plainProgram[] = "drengrfell";
+		char* without[] = {plainProgram};
+		const df::CommandLineOptions plain = df::CommandLineOptions::parse(1, without);
+		if (plain.isSolo()) {
+			std::cerr << "solo defaulted on\n";
 			return EXIT_FAILURE;
 		}
 	}

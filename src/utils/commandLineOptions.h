@@ -72,6 +72,10 @@ namespace df {
 					options.playerName = argv[++i];
 					continue;
 				}
+				if (arg == "--solo") {
+					options.solo = true;
+					continue;
+				}
 
 				for (size_t j = 0; j < static_cast<size_t>(Flags::count); ++j) {
 					if (!FLAGS[j].match(argv[i]))
@@ -90,6 +94,7 @@ namespace df {
 						fmt::println(stderr, "\t--host <address>\tServer address. Default 127.0.0.1.");
 						fmt::println(stderr, "\t--port <port>\t\tServer port. Default 7777.");
 						fmt::println(stderr, "\t--name <name>\t\tPlayer name. Default Player.");
+						fmt::println(stderr, "\t--solo\t\t\tStart alone. Without this flag the host waits for a second player.");
 						options.help = true;
 						break;
 
@@ -116,6 +121,7 @@ namespace df {
 
 		inline bool hasHelp() const noexcept { return help; }
 		inline bool hasX11() const noexcept { return x11; }
+		inline bool isSolo() const noexcept { return solo; }
 		inline const std::string& getHost() const noexcept { return host; }
 		inline uint16_t getPort() const noexcept { return port; }
 		inline const std::string& getPlayerName() const noexcept { return playerName; }
@@ -124,6 +130,7 @@ namespace df {
 	  private:
 		bool help = false;
 		bool x11 = false;
+		bool solo = false;
 		std::string host{"127.0.0.1"};
 		uint16_t port{7777};
 		std::string playerName{"Player"};
