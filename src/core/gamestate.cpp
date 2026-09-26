@@ -455,7 +455,7 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 	std::vector<glm::vec3> GameState::computeHudResourceColor(std::string mode) {
 		// order: forest, mountain, clay, grass (wool), field
 		std::vector<glm::vec3> colors = {{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}};
-		std::map<types::TileType, int> playerResources = getPlayer(getCurrentPlayerId())->getResources();
+		std::map<types::TileType, int> playerResources = getPlayer(getViewerPlayerId())->getResources();
 
 		if (mode == "settlement") {
 			// settlements

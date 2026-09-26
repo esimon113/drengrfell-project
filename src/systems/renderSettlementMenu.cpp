@@ -306,7 +306,9 @@ namespace df {
 		for (const auto& btn : buttons) {
 			if (mouse.x >= btn.x && mouse.x <= btn.x + btn.w &&
 				mouse.y >= btn.y && mouse.y <= btn.y + btn.h) {
-				const size_t playerId = gameState ? gameState->getCurrentPlayerId() : 0;
+				const size_t playerId = gameState ? gameState->getViewerPlayerId() : 0;
+				const bool viewerTurn = gameState &&
+					gameState->getViewerPlayerId() == gameState->getCurrentPlayerId();
 				bool success = false;
 				auto* notification = registry ? registry->getSystem<RenderNotificationSystem>() : nullptr;
 				switch (btn.action) {
@@ -319,9 +321,11 @@ namespace df {
 						}
 						break;
 					}
-					if (midgard && midgard->isConnected() &&
-						gameController->canUpgradeSettlement(playerId, selectedSettlementId, types::SettlementType::STONE)) {
-						midgard->upgradeSettlement(selectedSettlementId, types::SettlementType::STONE);
+					if (midgard && midgard->isConnected()) {
+						if (viewerTurn &&
+							gameController->canUpgradeSettlement(playerId, selectedSettlementId, types::SettlementType::STONE)) {
+							midgard->upgradeSettlement(selectedSettlementId, types::SettlementType::STONE);
+						}
 						break;
 					}
 					success = gameController->upgradeSettlement(playerId, selectedSettlementId, types::SettlementType::STONE, cost);
@@ -336,9 +340,11 @@ namespace df {
 						}
 						break;
 					}
-					if (midgard && midgard->isConnected() &&
-						gameController->canUpgradeSettlement(playerId, selectedSettlementId, types::SettlementType::CASTLE)) {
-						midgard->upgradeSettlement(selectedSettlementId, types::SettlementType::CASTLE);
+					if (midgard && midgard->isConnected()) {
+						if (viewerTurn &&
+							gameController->canUpgradeSettlement(playerId, selectedSettlementId, types::SettlementType::CASTLE)) {
+							midgard->upgradeSettlement(selectedSettlementId, types::SettlementType::CASTLE);
+						}
 						break;
 					}
 					success = gameController->upgradeSettlement(playerId, selectedSettlementId, types::SettlementType::CASTLE, cost);
@@ -353,7 +359,9 @@ namespace df {
 						break;
 					}
 					if (midgard && midgard->isConnected()) {
-						midgard->buildProductivityBuilding(btn.tileId, btn.tileType);
+						if (viewerTurn) {
+							midgard->buildProductivityBuilding(btn.tileId, btn.tileType);
+						}
 						break;
 					}
 					success = gameController->buildProductivityBuilding(playerId, btn.tileId, btn.tileType, cost);

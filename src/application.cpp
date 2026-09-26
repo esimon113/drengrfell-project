@@ -795,8 +795,11 @@ namespace df {
 
 						const Graph& map = this->gameState->getMap();
 
-						size_t currentPlayerId = this->gameState->getCurrentPlayerId();
-						fmt::println("Current player ID: {}", currentPlayerId);
+						const size_t playerId = gameState->getViewerPlayerId();
+						if (!isViewerTurn()) {
+							return;
+						}
+						fmt::println("Current player ID: {}", playerId);
 
 						if (this->world.isSettlementPreviewActive) {
 							fmt::println("Checking if player can build settlement at world position {},{}", worldPos.x, worldPos.y);
@@ -805,10 +808,10 @@ namespace df {
 							if (vertexIdOpt.has_value()) {
 								fmt::println("Closest vertex found at {}", vertexIdOpt.value());
 								size_t vertexId = vertexIdOpt.value();
-								if (this->gameController->canBuildSettlement(currentPlayerId, vertexId)) { // validate player can build settlement
+								if (this->gameController->canBuildSettlement(playerId, vertexId)) { // validate player can build settlement
 									fmt::println("Player can build settlement at vertex {}", vertexId);
 									const auto settlementCost = this->gameState->getCurrentSettlementCost();
-									if (!this->gameController->canAfford(currentPlayerId, settlementCost)) {
+									if (!this->gameController->canAfford(playerId, settlementCost)) {
 										render.renderNotificationSystem.showNotification(
 											"You don't have enough ressources!",
 											"You need more ressources to build this.\nPress 'C' to check for ressource cost.",
@@ -832,10 +835,10 @@ namespace df {
 								fmt::println("Closest edge found at {}", edgeIdOpt.value());
 								size_t edgeId = edgeIdOpt.value();
 
-								if (gameController->canBuildRoad(currentPlayerId, edgeId)) { // validate player can build road
+								if (gameController->canBuildRoad(playerId, edgeId)) { // validate player can build road
 									fmt::println("Player can build road at edge {}", edgeId);
 									const auto roadCost = this->gameState->getCurrentRoadCost();
-									if (!gameController->canAfford(currentPlayerId, roadCost)) {
+									if (!gameController->canAfford(playerId, roadCost)) {
 										render.renderNotificationSystem.showNotification(
 											"You don't have enough ressources!",
 											"You need more ressources to build this.\nPress 'C' to check for ressource cost.",
@@ -866,6 +869,9 @@ namespace df {
 					fmt::println("Picked: TileId {} / MapId {} at mouse ({}, {})", tileId, mapId, mouseCoords.x, mouseCoords.y);
 
 					if (mapId >= 0 && !movementSystem->isEntityMoving()) {
+						if (!isViewerTurn()) {
+							return;
+						}
 						//  TODO: For multiplayer use hero of active player
 						Entity hero = registry->animations.entities.front();
 						Player* player = this->gameState->getPlayer(this->gameState->getViewerPlayerId());
@@ -1089,6 +1095,10 @@ namespace df {
 		}
 	}
 
+	bool Application::isViewerTurn() const noexcept {
+		return gameState->getViewerPlayerId() == gameState->getCurrentPlayerId();
+	}
+
 	void Application::requestEndTurn() noexcept {
 		if (!midgard || !midgard->isConnected() || !sessionMapReady) {
 			return;
@@ -1097,6 +1107,9 @@ namespace df {
 			return;
 		}
 		if (render.eventPresentationSystem.currentEvent) {
+			return;
+		}
+		if (!isViewerTurn()) {
 			return;
 		}
 

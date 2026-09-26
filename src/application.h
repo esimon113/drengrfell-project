@@ -84,6 +84,7 @@ namespace df {
 		void onAuthoritativeState(const nlohmann::json& state) noexcept;
 		void onActionResult(bool success, const std::optional<df::bifrost::ErrorInfo>& error) noexcept;
 		void requestEndTurn() noexcept;
+		bool isViewerTurn() const noexcept;
 		void placeHeroFromServer(bool force) noexcept;
 
 

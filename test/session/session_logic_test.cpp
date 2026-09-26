@@ -72,9 +72,19 @@ int main() {
 		return EXIT_FAILURE;
 	}
 
+	if (session.endTurn(10)) {
+		std::cerr << "player 0 ended player 1's turn\n";
+		return EXIT_FAILURE;
+	}
+
 	const auto state = session.getSerializedGameState();
 	if (!state.contains("currentPlayerId") || state["currentPlayerId"].get<size_t>() != 1) {
 		std::cerr << "currentPlayerId not advanced\n";
+		return EXIT_FAILURE;
+	}
+
+	if (!session.endTurn(11)) {
+		std::cerr << "player 1 could not end their own turn\n";
 		return EXIT_FAILURE;
 	}
 
