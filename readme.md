@@ -76,6 +76,38 @@ cmake ..
 cmake --build .
 ```
 
+That build produces two programs: `drengrfell_server` and `drengrfell`. Every match, including a game with one player, is a server plus one window per player. The window does not start a server of its own.
+
+### Playing on one network
+
+Start the server on the machine that should host the match. It listens on every network interface, port **7777**:
+
+```bash
+./build/drengrfell_server
+```
+
+On Windows, run `build\drengrfell_server.exe`. An optional port argument changes the port: `./build/drengrfell_server 7777`.
+
+A window connects to `127.0.0.1` unless you pass `--host`. On the server machine, and on every other device on the same network, start a window with that machine's LAN address and a distinct player name:
+
+```bash
+./build/drengrfell --host 192.168.1.20 --name Alice
+./build/drengrfell --host 192.168.1.20 --name Bob
+```
+
+Replace `192.168.1.20` with the server machine's address. Each device needs its own build of the game and a copy of `assets/`. The server shares the match, not the program.
+
+The first player to join is the host. Without `--solo`, the lobby stays open until at least two players are ready, and the host then starts the match. `--solo` starts with one player. Names must be unique. Up to six players can join.
+
+| Flag | Meaning |
+|------|---------|
+| `--host <address>` | Server address. Default `127.0.0.1`. |
+| `--port <port>` | Server port. Default `7777`. |
+| `--name <name>` | Player name. Default `Player`. |
+| `--solo` | Allow the host to start alone. |
+
+If a firewall is enabled on the server machine, allow inbound TCP **7777**. A player who disconnects during a match pauses the game. This build does not reconnect them.
+
 ---
 
 ## Keybindings
