@@ -80,6 +80,8 @@ namespace df {
 		j["currentTutorialStep"] = this->currentTutorialStep;
 		j["weather"] = static_cast<int>(this->weather);
 		j["weatherIntensity"] = this->weatherIntensity;
+		const auto winnerId = computeWinnerId();
+		j["winnerId"] = winnerId ? json(*winnerId) : json(nullptr);
 
 		return j;
 	}
@@ -249,6 +251,11 @@ namespace df {
 		}
 		if (j.contains("phase")) {
 			this->phase = static_cast<types::GamePhase>(j["phase"].get<int>());
+		}
+		if (j.contains("winnerId") && !j["winnerId"].is_null()) {
+			this->authoritativeWinnerId = j["winnerId"].get<size_t>();
+		} else {
+			this->authoritativeWinnerId = std::nullopt;
 		}
 
 		if (this->tutorialSteps.empty()) {
@@ -542,11 +549,10 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 		return colors;
 	}
 
-	std::optional<size_t> GameState::getWinnerId() const {
-		for (size_t i = 0; i < this->players.size(); ++i) {
-			const auto& player = this->players[i];
+	std::optional<size_t> GameState::computeWinnerId() const {
+		for (const auto& player : this->players) {
 			if (player.getHeroPoints() >= WINNING_POINTS) {
-				return i;
+				return player.getId();
 			}
 
 			int castleCount = 0;
@@ -562,10 +568,17 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 			}
 
 			if (castleCount >= WINNING_CASTLES) {
-				return i;
+				return player.getId();
 			}
 		}
 		return std::nullopt;
+	}
+
+	std::optional<size_t> GameState::getWinnerId() const {
+		if (authoritativeMap) {
+			return authoritativeWinnerId;
+		}
+		return computeWinnerId();
 	}
 
 	bool GameState::isGameOver() const {

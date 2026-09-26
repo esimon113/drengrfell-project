@@ -198,17 +198,12 @@ void SessionManager::removeClient(int socket) {
 	}
 
 	std::string playerName = it->second.playerName;
-	bool wasHost = it->second.isHost;
 	clients_.erase(it);
 
 	fmt::println("[SessionManager] Player '{}' removed", playerName);
 
-	// If host left and we're in lobby, assign new host
-	if (wasHost && state_ == SessionState::LOBBY && !clients_.empty()) {
-		auto& newHost = clients_.begin()->second;
-		newHost.isHost = true;
-		hostSocket_ = clients_.begin()->first;
-		fmt::println("[SessionManager] New host: '{}'", newHost.playerName);
+	if (state_ == SessionState::LOBBY) {
+		compactLobbyClients();
 	}
 
 	// If in game and player left, we might need to handle this
@@ -228,15 +223,47 @@ void SessionManager::markClientDisconnected(int socket) {
 		return;
 	}
 
+	const std::string playerName = it->second.playerName;
+	fmt::println("[SessionManager] Player '{}' disconnected", playerName);
+
+	if (state_ == SessionState::LOBBY) {
+		clients_.erase(it);
+		compactLobbyClients();
+		return;
+	}
+
 	it->second.connected = false;
 	it->second.disconnectTime = std::chrono::steady_clock::now();
-
-	fmt::println("[SessionManager] Player '{}' disconnected", it->second.playerName);
 
 	// If in game, transition to paused
 	if (state_ == SessionState::PLAYING) {
 		state_ = SessionState::PAUSED;
 		fmt::println("[SessionManager] Game PAUSED due to disconnect");
+	}
+}
+
+void SessionManager::compactLobbyClients() {
+	std::vector<std::pair<size_t, int>> clientsById;
+	clientsById.reserve(clients_.size());
+	for (const auto& [socket, client] : clients_) {
+		clientsById.emplace_back(client.playerId, socket);
+	}
+	std::sort(clientsById.begin(), clientsById.end());
+
+	const bool hostRemains = hostSocket_ && clients_.contains(*hostSocket_);
+	if (!hostRemains) {
+		hostSocket_ = clientsById.empty() ? std::nullopt : std::optional<int>(clientsById.front().second);
+	}
+
+	for (size_t id = 0; id < clientsById.size(); ++id) {
+		auto& client = clients_.at(clientsById[id].second);
+		client.playerId = id;
+		client.isHost = hostSocket_ && clientsById[id].second == *hostSocket_;
+	}
+	nextPlayerId_ = clientsById.size();
+
+	if (hostSocket_) {
+		fmt::println("[SessionManager] Host: '{}'", clients_.at(*hostSocket_).playerName);
 	}
 }
 

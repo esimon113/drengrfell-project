@@ -923,6 +923,13 @@ namespace df {
 			return;
 		}
 
+		for (const auto& player : lobby.players) {
+			if (player.name == midgard->getPlayerName()) {
+				midgard->setLobbyIdentity(player.playerId, player.isHost);
+				break;
+			}
+		}
+
 		bool allReady = !lobby.players.empty();
 		for (const auto& player : lobby.players) {
 			if (!player.ready) {

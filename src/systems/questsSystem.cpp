@@ -200,11 +200,8 @@ namespace {
             if (quest.id != questId) {
                 continue;
             }
-            if (quest.state == QuestState::Claimed || quest.state == QuestState::Locked) {
-                return false;
-            }
             if (quest.state != QuestState::Completed) {
-                quest.state = QuestState::Completed;
+                return false;
             }
             displayedPlayerId = playerId;
             m_quests = it->second;

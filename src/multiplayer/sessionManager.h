@@ -331,6 +331,7 @@ namespace df::bifrost {
 		 * Create Player objects in GameState for all connected clients.
 		 */
 		void createPlayers();
+		void compactLobbyClients();
 
 		/**
 		 * Validate that an action can be performed in current state.

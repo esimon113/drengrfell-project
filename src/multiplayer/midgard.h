@@ -247,6 +247,7 @@ namespace df::bifrost {
 		 * Get assigned player ID.
 		 */
 		[[nodiscard]] std::optional<size_t> getPlayerId() const;
+		void setLobbyIdentity(size_t playerId, bool isHost);
 
 		/**
 		 * Get current player name.

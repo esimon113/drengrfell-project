@@ -164,11 +164,13 @@ namespace df {
 		size_t viewerPlayerId = 0;
 		types::WeatherType weather = types::WeatherType::SUNNY;
 		float weatherIntensity = 0.f;
+		std::optional<size_t> authoritativeWinnerId;
 
 		std::vector<int> roadCosts;
 		std::vector<int> settlementCosts;
 		WorldGeneratorConfig worldConfig;
 
+		std::optional<size_t> computeWinnerId() const;
 		bool isTileVisibleTo(size_t playerId, size_t tileId) const;
 		bool isVertexVisibleTo(size_t playerId, size_t vertexId) const;
 		bool isEdgeVisibleTo(size_t playerId, size_t edgeId) const;

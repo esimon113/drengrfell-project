@@ -47,6 +47,15 @@ bool resourcesUnchanged(const nlohmann::json& before, const nlohmann::json& afte
 	return true;
 }
 
+bool finishTutorial(df::bifrost::SessionManager& session, int socket) {
+	for (const auto& step : df::createDefaultTutorial()) {
+		if (!session.reportTutorialEvent(socket, static_cast<int>(step.id)).first) {
+			return false;
+		}
+	}
+	return true;
+}
+
 }
 
 int main() {
@@ -167,8 +176,12 @@ int main() {
 			}
 		}
 		const auto claimed = solo.claimQuest(20, 0);
-		if (!claimed.first) {
-			std::cerr << "claim quest failed\n";
+		if (claimed.first) {
+			std::cerr << "unfinished tutorial quest was claimed\n";
+			return EXIT_FAILURE;
+		}
+		if (!finishTutorial(solo, 20) || !solo.claimQuest(20, 0).first) {
+			std::cerr << "finished tutorial quest could not be claimed\n";
 			return EXIT_FAILURE;
 		}
 		const auto afterClaim = solo.getSerializedGameState();
@@ -331,7 +344,7 @@ int main() {
 			std::cerr << "quest session failed to start\n";
 			return EXIT_FAILURE;
 		}
-		if (!quests.claimQuest(40, 0).first) {
+		if (!finishTutorial(quests, 40) || !quests.claimQuest(40, 0).first) {
 			std::cerr << "could not claim the tutorial quest\n";
 			return EXIT_FAILURE;
 		}
@@ -441,6 +454,14 @@ int main() {
 			std::cerr << "two-player quest session failed to start\n";
 			return EXIT_FAILURE;
 		}
+		if (quests.claimQuest(60, 0).first) {
+			std::cerr << "player claimed the tutorial quest before finishing it\n";
+			return EXIT_FAILURE;
+		}
+		if (!finishTutorial(quests, 60) || !finishTutorial(quests, 61)) {
+			std::cerr << "players could not finish their tutorials\n";
+			return EXIT_FAILURE;
+		}
 		if (!quests.claimQuest(60, 0).first || !quests.claimQuest(61, 0).first) {
 			std::cerr << "both players should claim their own tutorial quest\n";
 			return EXIT_FAILURE;
@@ -534,6 +555,71 @@ int main() {
 		}
 		if (!state.isGameOver()) {
 			std::cerr << "20 points was not game over\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::GameState state;
+		df::Player viewer(0);
+		df::Player winner(1);
+		for (size_t id = 0; id < 3; ++id) {
+			winner.addSettlement(id);
+			auto castle = std::make_shared<df::Settlement>(id, 1, id, std::vector<int>{});
+			castle->setSettlementType(df::types::SettlementType::CASTLE);
+			state.addSettlement(castle);
+		}
+		state.addPlayer(viewer);
+		state.addPlayer(winner);
+
+		const auto filtered = state.serializeFor(0);
+		if (!filtered["settlements"].empty()) {
+			std::cerr << "fogged castles were visible in the snapshot\n";
+			return EXIT_FAILURE;
+		}
+		df::GameState client;
+		client.setViewerPlayerId(0);
+		client.applyAuthoritativeSnapshot(filtered);
+		const auto fogWinner = client.getWinnerId();
+		if (!fogWinner || *fogWinner != 1) {
+			std::cerr << "fogged castle winner was lost from the snapshot\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::SessionManager lobby;
+		if (!lobby.addClient(80, "Host") || !lobby.addClient(81, "Middle") || !lobby.addClient(82, "Last")) {
+			std::cerr << "lobby clients failed to join\n";
+			return EXIT_FAILURE;
+		}
+		lobby.setPlayerReady(80, true);
+		lobby.setPlayerReady(81, true);
+		lobby.setPlayerReady(82, true);
+		df::bifrost::LobbyConfig config;
+		if (!lobby.updateConfig(80, config)) {
+			std::cerr << "lobby config failed\n";
+			return EXIT_FAILURE;
+		}
+		lobby.markClientDisconnected(81);
+		const auto compacted = lobby.getLobbyState();
+		if (compacted.players.size() != 2) {
+			std::cerr << "disconnected lobby client was retained\n";
+			return EXIT_FAILURE;
+		}
+		for (const auto& player : compacted.players) {
+			if ((player.name == "Host" && player.playerId != 0) ||
+				(player.name == "Last" && player.playerId != 1)) {
+				std::cerr << "lobby player ids were not compacted\n";
+				return EXIT_FAILURE;
+			}
+		}
+		if (!lobby.startGame(80)) {
+			std::cerr << "compacted lobby could not start\n";
+			return EXIT_FAILURE;
+		}
+		if (!lobby.endTurn(80) || !lobby.endTurn(82)) {
+			std::cerr << "survivors could not each end a turn\n";
 			return EXIT_FAILURE;
 		}
 	}

@@ -413,6 +413,12 @@ namespace df::bifrost {
 		return playerId_;
 	}
 
+	void Midgard::setLobbyIdentity(size_t playerId, bool isHost) {
+		std::lock_guard<std::mutex> lock(mutex_);
+		playerId_ = playerId;
+		isHost_ = isHost;
+	}
+
 
 	const std::string& Midgard::getPlayerName() const {
 		std::lock_guard<std::mutex> lock(mutex_);
