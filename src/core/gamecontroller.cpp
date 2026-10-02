@@ -131,17 +131,16 @@ namespace df {
 	}
 
 	void GameController::updateHazards() {
-		for (Player& player : this->gameState.getPlayers()) {
-			if (!player.hasActiveHazard()) {
-				continue;
-			}
-			auto hazard = *player.getActiveHazard();
-			hazard.turnsLeft--;
-			if (hazard.turnsLeft <= 0) {
-				player.clearActiveHazard();
-			} else {
-				player.setActiveHazard(hazard);
-			}
+		Player* player = this->getCurrentPlayer();
+		if (!player || !player->hasActiveHazard()) {
+			return;
+		}
+		auto hazard = *player->getActiveHazard();
+		hazard.turnsLeft--;
+		if (hazard.turnsLeft <= 0) {
+			player->clearActiveHazard();
+		} else {
+			player->setActiveHazard(hazard);
 		}
 	}
 

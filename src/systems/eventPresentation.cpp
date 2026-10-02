@@ -113,6 +113,9 @@ namespace df {
 			event.stage = 7;
 			break;
 		case 7: // notification stays on screen until event ends
+			if (!notification->isActive()) {
+				notification->showNotification(event.title, event.message, event.buttonTexts);
+			}
 			break;
 		case 8:	// starting event end by stopping event music, resetting screen dimming and stopping event image rendering
 			eventBus->stopBackgroundMusicRequested.emit(true);

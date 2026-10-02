@@ -511,6 +511,9 @@ namespace df {
 		};
 
 		if (hasHazard) {
+			if (render.eventPresentationSystem.currentEvent) {
+				return;
+			}
 			const auto hazard = *player->getActiveHazard();
 			const auto& hazardDefinition = HazardDB::getDefinition(hazard.type);
 			if (hazard.turnsLeft == hazardDefinition.defaultRoundDuration) {
@@ -547,6 +550,7 @@ namespace df {
 
 		if (hadHazardBefore) {
 			fmt::println("[Hazard] {} encounter ended", previousHazardName);
+			render.eventPresentationSystem.endEvent();
 			render.renderNotificationSystem.showNotification(
 				"You overcame the hazard",
 				fmt::format("Your encounter with the {} ended", previousHazardName),
@@ -636,6 +640,9 @@ namespace df {
 			// If any button was pressed continue
 			if (!pressedButton.empty()) {
 				std::cout << "Button: " << pressedButton << " was pressed" << std::endl;
+				if (render.eventPresentationSystem.currentEvent) {
+					render.eventPresentationSystem.endEvent();
+				}
 
 				// finish quest once requirements met
 				if (pressedButton == "Claim") {
