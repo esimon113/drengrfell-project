@@ -1,5 +1,6 @@
 #include "gamestate.h"
 #include "utils/worldNodeMapper.h"
+#include <algorithm>
 #include <fstream>
 #include <stdexcept>
 
@@ -36,27 +37,11 @@ namespace df {
 	json GameState::serialize() const {
 		json j;
 
-		fmt::println("Serializing Game state");
-		fmt::println("---------");
-		fmt::println("Map: {}", this->map.serialize().dump());
-		fmt::println("---------");
-		fmt::println("Players: {}", this->players.size());
-		fmt::println("---------");
-		fmt::println("Settlements: {}", this->settlements.size());
-		fmt::println("---------");
-		fmt::println("Roads: {}", this->roads.size());
-		fmt::println("---------");
-		fmt::println("Current player id: {}", this->currentPlayerId);
-		fmt::println("---------");
+		j["world"] = this->worldConfig.serialize();
 
-		// map
-		j["map"] = this->map.serialize();
-
-		// players
 		json playersJson = json::array();
-		for (const auto& player : this->players) { // TODO
-			// playersJson.push_back(player.serialize());
-			playersJson.push_back(player.getId());
+		for (const auto& player : this->players) {
+			playersJson.push_back(player.serialize());
 		}
 		j["players"] = playersJson;
 
@@ -92,6 +77,11 @@ namespace df {
 		j["turnCount"] = this->turnCount;
 		j["roundNumber"] = this->roundNumber;
 		j["phase"] = static_cast<int>(this->phase);
+		j["currentTutorialStep"] = this->currentTutorialStep;
+		j["weather"] = static_cast<int>(this->weather);
+		j["weatherIntensity"] = this->weatherIntensity;
+		const auto winnerId = computeWinnerId();
+		j["winnerId"] = winnerId ? json(*winnerId) : json(nullptr);
 
 		return j;
 	}
@@ -104,22 +94,22 @@ namespace df {
 		// clear current state
 		this->players.clear();
 
-		// map
-		if (j.contains("map") && j["map"].is_object() && !j["map"].empty()) {
+		if (j.contains("world") && j["world"].is_object()) {
+			this->worldConfig = WorldGeneratorConfig::deserialize(j["world"]);
+			this->map.regenerate(this->worldConfig);
+		} else if (j.contains("map") && j["map"].is_object() && !j["map"].empty()) {
 			std::string mapData = j["map"].dump();
 			this->map.deserialize(mapData);
 		}
 
-		// players
 		if (j.contains("players") && j["players"].is_array()) {
 			for (const auto& playerJson : j["players"]) {
-				size_t playerId = 0;
-				if (playerJson.contains("id") && playerJson["id"].is_number()) {
-					playerId = playerJson["id"].get<size_t>();
+				Player player;
+				if (playerJson.is_object()) {
+					player.deserialize(playerJson);
+				} else if (playerJson.is_number()) {
+					player = Player(playerJson.get<size_t>());
 				}
-
-				Player player(playerId); // TODO
-				// player.deserialize(playerJson);
 				this->players.push_back(player);
 			}
 		}
@@ -166,6 +156,152 @@ namespace df {
 		}
 	}
 
+	void GameState::applyAuthoritativeSnapshot(const json& j) {
+		WorldGeneratorConfig incoming;
+		const bool haveWorld = j.contains("world") && j["world"].is_object();
+		if (haveWorld) {
+			incoming = WorldGeneratorConfig::deserialize(j["world"]);
+		}
+
+		const bool needsMap = this->map.getTileCount() == 0;
+		const bool mapChanged = !haveWorld || needsMap || incoming.seed != this->worldConfig.seed ||
+			incoming.columns != this->worldConfig.columns || incoming.rows != this->worldConfig.rows;
+		if (haveWorld && (needsMap || mapChanged)) {
+			this->worldConfig = incoming;
+			this->map.regenerate(this->worldConfig);
+		} else {
+			for (const auto& vertex : this->map.getVertices()) {
+				if (vertex) {
+					vertex->setSettlementId(std::nullopt);
+				}
+			}
+			for (const auto& edge : this->map.getEdges()) {
+				if (edge) {
+					edge->setRoadId(std::nullopt);
+				}
+			}
+			for (const auto& tile : this->map.getTiles()) {
+				if (tile) {
+					tile->setBuildingId(std::nullopt);
+					tile->setVisibleForPlayers({});
+				}
+			}
+		}
+
+		this->clearSettlements();
+		this->clearRoads();
+		this->clearProductivityBuildings();
+		this->players.clear();
+
+		if (j.contains("players") && j["players"].is_array()) {
+			for (const auto& playerJson : j["players"]) {
+				Player player;
+				if (playerJson.is_object()) {
+					player.deserialize(playerJson);
+				} else if (playerJson.is_number()) {
+					player = Player(playerJson.get<size_t>());
+				}
+				this->players.push_back(player);
+			}
+		}
+
+		if (j.contains("settlements") && j["settlements"].is_array()) {
+			for (const auto& settlementJson : j["settlements"]) {
+				auto settlement = std::make_shared<Settlement>();
+				settlement->deserialize(settlementJson);
+				if (VertexHandle vertex = this->map.findVertexById(settlement->getVertexId())) {
+					vertex->setSettlementId(settlement->getId());
+				}
+				this->addSettlement(settlement);
+			}
+		}
+
+		if (j.contains("roads") && j["roads"].is_array()) {
+			for (const auto& roadJson : j["roads"]) {
+				auto road = std::make_shared<Road>();
+				road->deserialize(roadJson);
+				if (EdgeHandle edge = this->map.findEdgeById(road->getEdgeId())) {
+					edge->setRoadId(road->getId());
+				}
+				this->addRoad(road);
+			}
+		}
+
+		if (j.contains("productivityBuildings") && j["productivityBuildings"].is_array()) {
+			for (const auto& buildingJson : j["productivityBuildings"]) {
+				auto building = std::make_shared<ProductivityBuilding>();
+				building->deserialize(buildingJson);
+				if (building->getTileId() < this->map.getTileCount()) {
+					if (TileHandle tile = this->map.getTile(building->getTileId())) {
+						tile->setBuildingId(building->getPlayerId());
+					}
+				}
+				this->addProductivityBuilding(building);
+			}
+		}
+
+		if (j.contains("currentPlayerId")) {
+			this->currentPlayerId = j["currentPlayerId"].get<size_t>();
+		}
+		if (j.contains("turnCount")) {
+			this->turnCount = j["turnCount"].get<size_t>();
+		}
+		if (j.contains("roundNumber")) {
+			this->roundNumber = j["roundNumber"].get<size_t>();
+		}
+		if (j.contains("phase")) {
+			this->phase = static_cast<types::GamePhase>(j["phase"].get<int>());
+		}
+		if (j.contains("winnerId") && !j["winnerId"].is_null()) {
+			this->authoritativeWinnerId = j["winnerId"].get<size_t>();
+		} else {
+			this->authoritativeWinnerId = std::nullopt;
+		}
+
+		if (this->tutorialSteps.empty()) {
+			this->initTutorial();
+		}
+		if (j.contains("currentTutorialStep")) {
+			this->currentTutorialStep = j["currentTutorialStep"].get<size_t>();
+			for (size_t i = 0; i < this->tutorialSteps.size(); ++i) {
+				this->tutorialSteps[i].completed = i < this->currentTutorialStep;
+			}
+		}
+		this->tutorialReportSentFor = static_cast<size_t>(-1);
+		this->authoritativeMap = true;
+
+		if (j.contains("weather")) {
+			this->weather = static_cast<types::WeatherType>(j["weather"].get<int>());
+		}
+		if (j.contains("weatherIntensity")) {
+			this->weatherIntensity = j["weatherIntensity"].get<float>();
+		}
+		for (const auto& tile : this->map.getTiles()) {
+			if (tile) {
+				tile->updateEffect(this->weather);
+			}
+		}
+
+		for (const Player& player : this->players) {
+			for (size_t tileId : player.getExploredTileIds()) {
+				if (tileId < this->map.getTileCount()) {
+					if (TileHandle tile = this->map.getTile(tileId)) {
+						tile->addVisibleForPlayers(player.getId());
+					}
+				}
+			}
+		}
+
+		if (Player* viewer = getPlayer(viewerPlayerId)) {
+			currentTutorialStep = std::min(viewer->getTutorialStep(), tutorialSteps.empty() ? size_t{0} : tutorialSteps.size());
+			for (size_t i = 0; i < currentTutorialStep && i < tutorialSteps.size(); ++i) {
+				tutorialSteps[i].completed = true;
+			}
+		}
+
+		this->map.setRenderUpdateRequested(true);
+	}
+
 
 	/**
 	 * Serialize the game state and store in the passed filepaht.
@@ -205,18 +341,17 @@ namespace df {
 	}
 
 	void GameState::addSettlement(std::shared_ptr<Settlement> settlement) {
-		if (!settlement || !registry) {
+		if (!settlement) {
 			return;
 		}
 
-		// Also add to ECS registry for rendering/systems
-		Entity e;
-		Settlement& s = registry->settlements.emplace(e);
-		s = *settlement; // Copy data to ECS
-
-		// Add position and scale components for rendering
-		registry->positions.emplace(e) = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), this->map);
-		registry->scales.emplace(e) = glm::vec2(0.45f, 0.45f); // Scale to match hexagon size -> 1/2 hex radius
+		if (registry) {
+			Entity e;
+			Settlement& s = registry->settlements.emplace(e);
+			s = *settlement;
+			registry->positions.emplace(e) = WorldNodeMapper::getWorldPositionForVertex(settlement->getVertexId(), this->map);
+			registry->scales.emplace(e) = glm::vec2(0.45f, 0.45f);
+		}
 
 		settlements.push_back(settlement);
 	}
@@ -224,22 +359,19 @@ namespace df {
 
 	// roads
 	void GameState::addRoad(std::shared_ptr<Road> road) {
-		if (!road || !registry) {
+		if (!road) {
 			return;
 		}
 
-		// Also add to ECS registry for rendering/systems
-		Entity e;
-		Road& r = registry->roads.emplace(e);
-		r = *road; // Copy data to ECS
-
-		// Add position and scale components for rendering
-		registry->positions.emplace(e) = WorldNodeMapper::getWorldPositionForEdge(road->getEdgeId(), this->map);
-		registry->scales.emplace(e) = glm::vec2(1.0f, 1.0f);
-
-		// edge index is required for selecting the correcxt texture
-		int edgeIndex = this->map.getEdgeIndex(road->getEdgeId());
-		registry->roadEdgeIndices.emplace(e) = edgeIndex;
+		if (registry) {
+			Entity e;
+			Road& r = registry->roads.emplace(e);
+			r = *road;
+			registry->positions.emplace(e) = WorldNodeMapper::getWorldPositionForEdge(road->getEdgeId(), this->map);
+			registry->scales.emplace(e) = glm::vec2(1.0f, 1.0f);
+			int edgeIndex = this->map.getEdgeIndex(road->getEdgeId());
+			registry->roadEdgeIndices.emplace(e) = edgeIndex;
+		}
 
 		roads.push_back(road);
 	}
@@ -253,22 +385,24 @@ std::vector<std::shared_ptr<ProductivityBuilding>> GameState::getProductivityBui
 }
 
 void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> building) {
-	if (!building || !registry) {
+	if (!building) {
 		return;
 	}
 
-	Entity e;
-	ProductivityBuilding& pb = registry->productivityBuildings.emplace(e);
-	pb = *building;
+	if (registry) {
+		Entity e;
+		ProductivityBuilding& pb = registry->productivityBuildings.emplace(e);
+		pb = *building;
 
-	const uint32_t columns = map.getMapWidth();
-	const size_t tileId = building->getTileId();
-	uint32_t row = static_cast<uint32_t>(tileId / columns);
-	uint32_t col = static_cast<uint32_t>(tileId % columns);
-	glm::vec2 tileCenterPos = WorldNodeMapper::getTilePosition(row, col);
+		const uint32_t columns = map.getMapWidth();
+		const size_t tileId = building->getTileId();
+		uint32_t row = static_cast<uint32_t>(tileId / columns);
+		uint32_t col = static_cast<uint32_t>(tileId % columns);
+		glm::vec2 tileCenterPos = WorldNodeMapper::getTilePosition(row, col);
 
-	registry->positions.emplace(e) = tileCenterPos;
-	registry->scales.emplace(e) = glm::vec2(0.4f, 0.4f);
+		registry->positions.emplace(e) = tileCenterPos;
+		registry->scales.emplace(e) = glm::vec2(0.4f, 0.4f);
+	}
 
 	productivityBuildings.push_back(building);
 }
@@ -303,10 +437,45 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 	}
 
 	void GameState::completeCurrentTutorialStep() {
-		if (currentTutorialStep < tutorialSteps.size()) {
-			tutorialSteps[currentTutorialStep].completed = true;
-			currentTutorialStep++;
+		if (currentTutorialStep >= tutorialSteps.size()) {
+			return;
 		}
+		if (tutorialReporter) {
+			if (tutorialReportSentFor == currentTutorialStep) {
+				return;
+			}
+			tutorialReportSentFor = currentTutorialStep;
+			tutorialReporter(tutorialSteps[currentTutorialStep].id);
+			return;
+		}
+		tutorialSteps[currentTutorialStep].completed = true;
+		currentTutorialStep++;
+	}
+
+	void GameState::completeTutorialStep(TutorialStepId id) {
+		if (tutorialSteps.empty()) {
+			initTutorial();
+		}
+		const TutorialStep* step = getCurrentTutorialStep();
+		if (step && step->id == id) {
+			completeCurrentTutorialStep();
+		}
+	}
+
+	bool GameState::completeTutorialStepFor(size_t playerId, TutorialStepId id) {
+		if (tutorialSteps.empty()) {
+			initTutorial();
+		}
+		Player* player = getPlayer(playerId);
+		if (!player) {
+			return false;
+		}
+		const size_t index = player->getTutorialStep();
+		if (index >= tutorialSteps.size() || tutorialSteps[index].id != id) {
+			return false;
+		}
+		player->setTutorialStep(index + 1);
+		return true;
 	}
 
 	bool GameState::isTutorialActive() const {
@@ -317,7 +486,7 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 	std::vector<glm::vec3> GameState::computeHudResourceColor(std::string mode) {
 		// order: forest, mountain, clay, grass (wool), field
 		std::vector<glm::vec3> colors = {{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}};
-		std::map<types::TileType, int> playerResources = getPlayer(getCurrentPlayerId())->getResources();
+		std::map<types::TileType, int> playerResources = getPlayer(getViewerPlayerId())->getResources();
 
 		if (mode == "settlement") {
 			// settlements
@@ -380,15 +549,11 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 		return colors;
 	}
 
-	bool GameState::isGameOver() const {
-		const int WINNING_POINTS = 20; 
-
+	std::optional<size_t> GameState::computeWinnerId() const {
 		for (const auto& player : this->players) {
 			if (player.getHeroPoints() >= WINNING_POINTS) {
-				fmt::println("[GameState] Player {} has reached {} points! Game Over.", 
-							player.getId(), player.getHeroPoints());
-				return true;
-			} 
+				return player.getId();
+			}
 
 			int castleCount = 0;
 			for (size_t sId : player.getSettlementIds()) {
@@ -402,12 +567,166 @@ void GameState::addProductivityBuilding(std::shared_ptr<ProductivityBuilding> bu
 				}
 			}
 
-			if (castleCount >= 3) {
-				fmt::println("[GameState] Player {} built 3 Castles!", player.getId());
+			if (castleCount >= WINNING_CASTLES) {
+				return player.getId();
+			}
+		}
+		return std::nullopt;
+	}
+
+	std::optional<size_t> GameState::getWinnerId() const {
+		if (authoritativeMap) {
+			return authoritativeWinnerId;
+		}
+		return computeWinnerId();
+	}
+
+	bool GameState::isGameOver() const {
+		const auto winnerId = getWinnerId();
+		if (!winnerId) {
+			return false;
+		}
+
+		const auto& player = this->players[*winnerId];
+		if (player.getHeroPoints() >= WINNING_POINTS) {
+			fmt::println("[GameState] Player {} has reached {} points! Game Over.",
+						player.getId(), player.getHeroPoints());
+		} else {
+			fmt::println("[GameState] Player {} built 3 Castles!", player.getId());
+		}
+		return true;
+	}
+
+	bool GameState::isTileVisibleTo(size_t playerId, size_t tileId) const {
+		const Player* player = getPlayer(playerId);
+		if (!player) {
+			return false;
+		}
+		return player->isTileExplored(tileId);
+	}
+
+	bool GameState::isVertexVisibleTo(size_t playerId, size_t vertexId) const {
+		VertexHandle vertex = map.findVertexById(vertexId);
+		if (!vertex) {
+			return false;
+		}
+		const auto tiles = map.getVertexTiles(vertex);
+		if (!tiles) {
+			return false;
+		}
+		for (const auto& tile : *tiles) {
+			if (tile && isTileVisibleTo(playerId, tile->getId())) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	bool GameState::isEdgeVisibleTo(size_t playerId, size_t edgeId) const {
+		EdgeHandle edge = map.findEdgeById(edgeId);
+		if (!edge) {
+			return false;
+		}
+		const auto vertices = map.getEdgeVertices(edge);
+		if (!vertices) {
+			return false;
+		}
+		for (const auto& vertex : *vertices) {
+			if (vertex && isVertexVisibleTo(playerId, vertex->getId())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void GameState::syncSettlementType(size_t settlementId, types::SettlementType type) {
+		if (!registry) {
+			return;
+		}
+		for (Entity e : registry->settlements.entities) {
+			if (!registry->settlements.has(e)) {
+				continue;
+			}
+			Settlement& registrySettlement = registry->settlements.get(e);
+			if (registrySettlement.getId() == settlementId) {
+				registrySettlement.setSettlementType(type);
+				break;
+			}
+		}
+	}
+
+	json GameState::serializeFor(size_t viewerPlayerId) const {
+		json j = serialize();
+		if (!j.contains("players") || !j["players"].is_array()) {
+			return j;
+		}
+
+		json filteredPlayers = json::array();
+		for (auto playerJson : j["players"]) {
+			if (!playerJson.is_object()) {
+				continue;
+			}
+			const size_t id = playerJson.value("playerId", static_cast<size_t>(0));
+			if (id == viewerPlayerId) {
+				filteredPlayers.push_back(std::move(playerJson));
+				continue;
+			}
+
+			playerJson.erase("resources");
+			playerJson.erase("exploredTileIds");
+			if (playerJson.contains("hero") && playerJson["hero"].contains("tileID")) {
+				const size_t heroTile = playerJson["hero"]["tileID"].get<size_t>();
+				if (!isTileVisibleTo(viewerPlayerId, heroTile)) {
+					playerJson.erase("hero");
+				}
+			}
+			filteredPlayers.push_back(std::move(playerJson));
+		}
+		j["players"] = std::move(filteredPlayers);
+
+		json filteredSettlements = json::array();
+		if (j.contains("settlements") && j["settlements"].is_array()) {
+			for (const auto& settlementJson : j["settlements"]) {
+				if (!settlementJson.contains("vertexId")) {
+					continue;
+				}
+				const size_t ownerId = settlementJson.value("playerId", static_cast<size_t>(-1));
+				if (ownerId == viewerPlayerId || isVertexVisibleTo(viewerPlayerId, settlementJson["vertexId"].get<size_t>())) {
+					filteredSettlements.push_back(settlementJson);
+				}
+			}
+		}
+		j["settlements"] = std::move(filteredSettlements);
+
+		json filteredRoads = json::array();
+		if (j.contains("roads") && j["roads"].is_array()) {
+			for (const auto& roadJson : j["roads"]) {
+				if (!roadJson.contains("edgeId")) {
+					continue;
+				}
+				const size_t ownerId = roadJson.value("playerId", static_cast<size_t>(-1));
+				if (ownerId == viewerPlayerId || isEdgeVisibleTo(viewerPlayerId, roadJson["edgeId"].get<size_t>())) {
+					filteredRoads.push_back(roadJson);
+				}
+			}
+		}
+		j["roads"] = std::move(filteredRoads);
+
+		json filteredBuildings = json::array();
+		if (j.contains("productivityBuildings") && j["productivityBuildings"].is_array()) {
+			for (const auto& buildingJson : j["productivityBuildings"]) {
+				if (!buildingJson.contains("tileId")) {
+					continue;
+				}
+				const size_t ownerId = buildingJson.value("playerId", static_cast<size_t>(-1));
+				if (ownerId == viewerPlayerId || isTileVisibleTo(viewerPlayerId, buildingJson["tileId"].get<size_t>())) {
+					filteredBuildings.push_back(buildingJson);
+				}
+			}
+		}
+		j["productivityBuildings"] = std::move(filteredBuildings);
+
+		return j;
 	}
 
 

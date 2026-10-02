@@ -957,6 +957,42 @@ namespace df {
 	template size_t Graph::getDistanceBetween<Tile>(const Tile& start, const Tile& end) const;
 	template size_t Graph::getDistanceBetween<TileHandle>(const TileHandle& start, const TileHandle& end) const;
 
+	size_t Graph::getTileStepDistance(size_t fromTileId, size_t toTileId) const {
+		if (!this->doesTileExist(fromTileId) || !this->doesTileExist(toTileId)) {
+			return SIZE_MAX;
+		}
+		if (fromTileId == toTileId) {
+			return 0;
+		}
+
+		std::queue<size_t> q;
+		std::unordered_map<size_t, size_t> distances;
+		std::unordered_set<size_t> visited;
+
+		q.push(fromTileId);
+		visited.insert(fromTileId);
+		distances[fromTileId] = 0;
+
+		while (!q.empty()) {
+			const size_t currentId = q.front();
+			q.pop();
+
+			for (size_t neighborId : this->getTileNeighbors(currentId)) {
+				if (visited.find(neighborId) != visited.end()) {
+					continue;
+				}
+				visited.insert(neighborId);
+				distances[neighborId] = distances[currentId] + 1;
+				if (neighborId == toTileId) {
+					return distances[neighborId];
+				}
+				q.push(neighborId);
+			}
+		}
+
+		return SIZE_MAX;
+	}
+
 
 	// Map methods
 	void Graph::regenerate(const WorldGeneratorConfig& worldGeneratorConfig) {

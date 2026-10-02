@@ -7,20 +7,16 @@
 #include <stdexcept>
 #include <unordered_set>
 
-#include "../systems/renderWeather.h"
-#include "../systems/renderTiles.h"
+#include "constructionCosts.h"
 #include "gamecontroller.h"
+#include "hazards.h"
 #include "hero.h"
 #include "player.h"
-#include "renderNotification.h"
 #include "road.h"
 #include "tile.h"
-#include "tiny_ecs.hpp"
 #include "types.h"
-#include "utils/worldNodeMapper.h"
 #include "vertex.h"
-#include "eventPresentation.h"
-#include "ai/aiSystem.h"
+#include "utils/worldNodeMapper.h"
 
 
 namespace df {
@@ -42,13 +38,7 @@ namespace df {
 
 		this->giveResourcesTo(*player);
 		this->resetHeroMovement(*player);
-
-		// Check hazards
-		// TODO: For multiplayer only update hazards for current player/hero
-		if (this->gameState.getTurnCount() > 0) {
-			// Entity hero = registry.animations.entities.front();
-			showHazards();
-		}
+		this->showHazards();
 	}
 
 
@@ -56,170 +46,146 @@ namespace df {
 		const size_t playerCount = this->gameState.getPlayerCount();
 		if (playerCount == 0) {
 			return;
-		} // should not happen
+		}
+		const size_t endingPlayer = this->gameState.getCurrentPlayerId();
 
-		updateHazards();
+		this->updateHazards();
 
-		// TODO: maybe add some "setNextTurn()" etc. functions
 		size_t nextPlayerId = (this->gameState.getCurrentPlayerId() + 1) % playerCount;
 		this->gameState.setCurrentPlayerId(nextPlayerId);
 		this->gameState.setTurnCount(this->gameState.getTurnCount() + 1);
 
-
-		// Changed in snow and rain
-		auto* WeatherSystem = this->registry->getSystem<df::RenderWeatherSystem>();
-		//auto* tileSystem = this->registry->getSystem<RenderTilesSystem>();
-
-		WeatherSystem->randomizeWeather();
-
-		this->m_questsSystem->updateProgress(df::types::QuestGoalType::ROUNDS, 1);
-
-		auto* aiSystem = this->registry->getSystem<AiSystem>();
-		if (aiSystem && aiSystem->isAiActive()) {
-			const auto hero = registry->animations.entities.front();
-			aiSystem->processHero(hero);
+		if (this->m_questsSystem) {
+			this->m_questsSystem->updateProgress(endingPlayer, df::types::QuestGoalType::ROUNDS, 1);
 		}
 
 		if (nextPlayerId == 0) {
 			this->gameState.setRoundNumber(this->gameState.getRoundNumber() + 1);
 		}
-
-
 	}
 
-	// This function checks if the hero encounters a hazard at the destination (in world coordinates)
-	void GameController::applyHazard(Entity hero, glm::vec2 destination) {
-		// Hero is already caught in a hazard
-		if (this->registry->hazards.has(hero)) {
-			fmt::println("Hazard can not be applied, as hero already has hazard");
+	void GameController::rollWeather() {
+		const types::WeatherType previous = this->gameState.getWeather();
+		static constexpr float transition[3][3] = {
+			{0.70f, 0.20f, 0.10f},
+			{0.25f, 0.60f, 0.15f},
+			{0.20f, 0.20f, 0.60f},
+		};
+
+		std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+		const float roll = dist(this->rng);
+		const int row = static_cast<int>(previous);
+		float cumulative = 0.0f;
+		types::WeatherType next = previous;
+		for (int col = 0; col < 3; ++col) {
+			cumulative += transition[row][col];
+			if (roll <= cumulative) {
+				next = static_cast<types::WeatherType>(col);
+				break;
+			}
+		}
+
+		float intensity = this->gameState.getWeatherIntensity();
+		if (next == types::WeatherType::SUNNY) {
+			intensity = 0.0f;
+		} else if (next == types::WeatherType::RAIN) {
+			intensity = previous == types::WeatherType::RAIN ? intensity - 0.2f : -0.6f;
+		} else if (next == types::WeatherType::SNOW) {
+			intensity = previous == types::WeatherType::SNOW ? intensity + 0.2f : 0.6f;
+		}
+
+		this->gameState.setWeather(next);
+		this->gameState.setWeatherIntensity(intensity);
+		if (next != previous) {
+			for (const auto& tile : this->gameState.getMap().getTiles()) {
+				if (tile) {
+					tile->updateEffect(next);
+				}
+			}
+		}
+	}
+
+	void GameController::applyHazard(size_t playerId, size_t tileId) {
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player || player->hasActiveHazard()) {
 			return;
 		}
 
-		glm::vec2 pos = destination;
-		fmt::println("Hero Position: ({},{})", pos.x, pos.y);
-
-		TileHandle tile = this->gameState.getMap().getTileFromWorldPosition(pos.x, pos.y);
+		TileHandle tile = this->gameState.getMap().getTile(tileId);
 		if (!tile) {
-			fmt::println("No tile for hazard checking found");
 			return;
 		}
 
 		const auto& profileOpt = tile->getHazardProfile();
 		if (!profileOpt) {
-			fmt::println("No profile for hazard checking found");
 			return;
 		}
 
 		const auto& profile = *profileOpt;
-
 		std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-		bool encounteredHazard = dist(rng) <= profile.probability;
-
-		if (!encounteredHazard) {
-			fmt::println("No hazard encountered");
+		if (dist(rng) > profile.probability) {
 			return;
 		}
 
 		const auto& def = HazardDB::getDefinition(profile.hazardType);
-
-		this->registry->hazards.emplace(hero) = {profile.hazardType, def.defaultRoundDuration};
-		auto& animComp = registry->animations.get(hero);
-		if (animComp.currentType != Hero::AnimationType::Attack) {
-			animComp.currentType = Hero::AnimationType::Attack;
-			animComp.anim.setCurrentFrameIndex(0);
-		}
-		fmt::println("[Hazard] You encountered a {}, which will stop your movement for {} turns", def.name, def.defaultRoundDuration);
+		player->setActiveHazard({profile.hazardType, def.defaultRoundDuration});
 	}
 
-	// TODO: Only update hazards for active player in multiplayer
 	void GameController::updateHazards() {
-		for (Entity e : this->registry->hazards.entities) {
-			auto& hazard = this->registry->hazards.get(e);
-			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
-
-			hazard.turnsLeft--;
+		Player* player = this->getCurrentPlayer();
+		if (!player || !player->hasActiveHazard()) {
+			return;
+		}
+		auto hazard = *player->getActiveHazard();
+		hazard.turnsLeft--;
+		if (hazard.turnsLeft <= 0) {
+			player->clearActiveHazard();
+		} else {
+			player->setActiveHazard(hazard);
 		}
 	}
 
 	void GameController::showHazards() {
-		for (Entity e : this->registry->hazards.entities) {
-			auto& hazard = this->registry->hazards.get(e);
-			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
-			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
-			EventPresentationSystem* event = this->registry->getSystem<EventPresentationSystem>();
-
-			if (hazard.turnsLeft <= 0) {
-				fmt::println("[Hazard] {} encounter ended", hazardDefinition.name);
-				notification->showNotification("You overcame the hazard",
-											   fmt::format(
-												   "Your encounter with the {} ended",
-												   hazardDefinition.name),
-											   {"Continue"});
-				this->registry->hazards.remove(e);
-				Entity hero = registry->animations.entities.front();
-				auto& animComp = registry->animations.get(hero);
-				if (animComp.currentType != Hero::AnimationType::Idle) {
-					animComp.currentType = Hero::AnimationType::Idle;
-					animComp.anim.setCurrentFrameIndex(0);
-				}
-			} else if (hazard.turnsLeft == hazardDefinition.defaultRoundDuration) {
-				fmt::println("[Hazard] {} encountered. It is active for {} turns", hazardDefinition.name, hazard.turnsLeft);
-				event->presentEvent("You encountered a hazard",
-									fmt::format(
-										"A {} is preventing you\n"
-										"from moving for {} turns.\n"
-										"Would you like to overcome the\n"
-										"encounter by paying {} {} or wait?",
-										hazardDefinition.name,
-										hazard.turnsLeft,
-										hazardDefinition.skipCost * hazard.turnsLeft,
-										hazardDefinition.skipRessourceStr),
-										{"Pay ressources","Wait"},
-									HazardDB::getEvent(hazardDefinition.hazardType));
-			} else {
-				fmt::println("[Hazard] {} encounter ongoing. It is still active for {} turns", hazardDefinition.name, hazard.turnsLeft);
-				notification->showNotification("Ongoing hazard",
-											   fmt::format(
-												   "A {} is still preventing you from moving for {} turns\n"
-												   "Would you like to overcome the encounter by paying {} {} or wait?",
-												   hazardDefinition.name,
-												   hazard.turnsLeft,
-												   hazardDefinition.skipCost * hazard.turnsLeft,
-												   hazardDefinition.skipRessourceStr),
-											   {"Pay ressources",
-												"Wait"});
-			}
+		Player* player = this->getCurrentPlayer();
+		if (!player || !player->hasActiveHazard()) {
+			return;
+		}
+		if (player->getActiveHazard()->turnsLeft <= 0) {
+			player->clearActiveHazard();
 		}
 	}
 
-	void GameController::payForHazard() {
-		for (Entity e : this->registry->hazards.entities) {
-			auto& hazard = this->registry->hazards.get(e);
-			auto hazardDefinition = HazardDB::getDefinition(hazard.type);
-			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
-
-			Player* player = this->getCurrentPlayer();
-
-			if (player->getResources(hazardDefinition.skipRessource) < hazard.turnsLeft * hazardDefinition.skipCost) {
-				notification->showNotification("Not enough ressources",
-											   fmt::format(
-												   "You have {} {}, but need {} to overcome the hazard",
-												   player->getResources(hazardDefinition.skipRessource),
-												   hazardDefinition.skipRessourceStr,
-												   hazard.turnsLeft * hazardDefinition.skipCost),
-											   {"Continue"});
-				return;
-			}
-			player->removeResources(hazardDefinition.skipRessource, hazard.turnsLeft * hazardDefinition.skipCost);
-			this->registry->hazards.remove(e);
-
-			Entity hero = registry->animations.entities.front();
-			auto& animComp = registry->animations.get(hero);
-			if (animComp.currentType != Hero::AnimationType::Idle) {
-				animComp.currentType = Hero::AnimationType::Idle;
-				animComp.anim.setCurrentFrameIndex(0);
-			}
+	void GameController::payForHazard(size_t playerId) {
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player || !player->hasActiveHazard()) {
+			return;
 		}
+
+		const auto hazard = *player->getActiveHazard();
+		const auto& hazardDefinition = HazardDB::getDefinition(hazard.type);
+		const int cost = hazard.turnsLeft * hazardDefinition.skipCost;
+		if (player->getResources(hazardDefinition.skipRessource) < cost) {
+			return;
+		}
+		player->removeResources(hazardDefinition.skipRessource, cost);
+		player->clearActiveHazard();
+	}
+
+	bool GameController::tradeWithBank(size_t playerId, types::TileType give, types::TileType receive) {
+		const auto isResource = [](types::TileType type) {
+			return type == types::TileType::FOREST || type == types::TileType::GRASS || type == types::TileType::MOUNTAIN ||
+				type == types::TileType::FIELD || type == types::TileType::CLAY;
+		};
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player || give == receive || !isResource(give) || !isResource(receive)) {
+			return false;
+		}
+		if (player->getResources(give) < BANK_TRADE_GIVE) {
+			return false;
+		}
+		player->removeResources(give, BANK_TRADE_GIVE);
+		player->addResources(receive, BANK_TRADE_RECEIVE);
+		return true;
 	}
 
 
@@ -250,30 +216,27 @@ namespace df {
 					// std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
 					auto goalType = types::tileToQuestGoal(tile->getType());
 					if (goalType != types::QuestGoalType::NONE) {
-						this->m_questsSystem->updateProgress(goalType, 1);
+						this->m_questsSystem->updateProgress(player.getId(), goalType, 1);
 					}
 				}
 			}
 		}
 
 		// Also grant resources from the tile the hero is currently on.
-		if (this->registry && !this->registry->animations.entities.empty()) {
-			Entity hero = this->registry->animations.entities.front();
-			if (this->registry->tileID.has(hero)) {
-				const size_t heroTileId = this->registry->tileID.get(hero);
-				const TileHandle heroTile = this->gameState.getMap().getTile(heroTileId);
-				if (heroTile && heroTile->givesResourceThisTurn(this->rng)) {
-					int resourceAmount = 1;
-					if (heroTile->hasBuilding() && heroTile->getBuildingId().has_value()) {
-						if (heroTile->getBuildingId().value() == player.getId()) {
-							resourceAmount = 2;
-						}
+		if (player.getHero()) {
+			const size_t heroTileId = player.getHero()->getTileID();
+			const TileHandle heroTile = this->gameState.getMap().getTile(heroTileId);
+			if (heroTile && heroTile->givesResourceThisTurn(this->rng)) {
+				int resourceAmount = 1;
+				if (heroTile->hasBuilding() && heroTile->getBuildingId().has_value()) {
+					if (heroTile->getBuildingId().value() == player.getId()) {
+						resourceAmount = 2;
 					}
-					player.addResources(heroTile->getType(), resourceAmount);
-					auto goalType = types::tileToQuestGoal(heroTile->getType());
-					if (goalType != types::QuestGoalType::NONE) {
-						this->m_questsSystem->updateProgress(goalType, 1);
-					}
+				}
+				player.addResources(heroTile->getType(), resourceAmount);
+				auto goalType = types::tileToQuestGoal(heroTile->getType());
+				if (goalType != types::QuestGoalType::NONE && this->m_questsSystem) {
+					this->m_questsSystem->updateProgress(player.getId(), goalType, 1);
 				}
 			}
 		}
@@ -281,12 +244,8 @@ namespace df {
 
 
 	void GameController::resetHeroMovement(Player& player) {
-		std::shared_ptr<Hero> hero = player.getHero();
-		if (hero) {
-			// TODO: something like this needs to be implemented in hero class:
-			// reset the available movement points, hero also needs to keep track of used range per turn
-			// hero->resetMovementPoints();
-			// hero->startIdleAnimation();
+		if (player.getHero()) {
+			player.getHero()->setMovedThisTurn(false);
 		}
 	}
 
@@ -300,61 +259,80 @@ namespace df {
 			if (!player.isTileExplored(tileId)) {
 				tile->addVisibleForPlayers(player.getId());
 				player.exploreTile(tileId);
+				if (this->m_questsSystem && tile->getType() != types::TileType::WATER) {
+					this->m_questsSystem->updateProgress(player.getId(), types::QuestGoalType::DISCOVER, 1);
+				}
+				if (this->m_questsSystem && tile->getType() == types::TileType::ICE) {
+					this->m_questsSystem->updateProgress(player.getId(), types::QuestGoalType::ICE, 1);
+				}
 			}
 		} catch (const std::exception&) {
 		} // invalid tile -> ignore
 	}
 
 
+	bool GameController::canMoveHeroToTile(size_t playerId, size_t targetTileId) const {
+		const Player* player = this->getPlayerById(playerId);
+		if (!player || player->hasActiveHazard()) {
+			return false;
+		}
+
+		const std::shared_ptr<Hero> hero = player->getHero();
+		if (!hero || hero->hasMovedThisTurn()) {
+			return false;
+		}
+
+		const size_t distance = this->gameState.getMap().getTileStepDistance(hero->getTileID(), targetTileId);
+		if (distance == SIZE_MAX) {
+			return false;
+		}
+
+		return static_cast<int>(distance) <= hero->getBaseRange();
+	}
+
+
 	bool GameController::moveHeroToTile(size_t playerId, size_t targetTileId) {
+		if (!this->canMoveHeroToTile(playerId, targetTileId)) {
+			return false;
+		}
+
 		Player* player = this->getPlayerbyId(playerId);
-		if (!player) {
-			return false;
-		}
-
 		std::shared_ptr<Hero> hero = player->getHero();
-		if (!hero) {
-			return false;
+		const size_t startTile = hero->getTileID();
+		std::vector<size_t> path = this->gameState.getMap().dijkstraPath(startTile, targetTileId, player);
+		const int range = hero->getBaseRange();
+		const size_t maxTiles = static_cast<size_t>(range > 0 ? range : 0) + 1;
+		if (path.size() > maxTiles) {
+			path.resize(maxTiles);
 		}
-
-		const int currentTileId = hero->getTileID(); // TODO: use size_t in hero
-		size_t distance = 0;
-		if (currentTileId >= 0) {
-			const Graph& map = this->gameState.getMap();
-			const TileHandle currentTile = map.getTile(currentTileId);
-			const TileHandle targetTile = map.getTile(targetTileId);
-			distance = map.getDistanceBetween(currentTile, targetTile);
-
-			if (distance == SIZE_MAX) {
-				return false;
+		const size_t landedTile = path.empty() ? targetTileId : path.back();
+		const bool landedAlreadyExplored = player->isTileExplored(landedTile);
+		const TileHandle landed = this->gameState.getMap().getTile(landedTile);
+		const bool landedOnIce = landed && landed->getType() == types::TileType::ICE;
+		if (path.empty()) {
+			this->exploreTile(*player, targetTileId);
+			hero->setTileID(targetTileId);
+		} else {
+			for (size_t tileId : path) {
+				this->exploreTile(*player, tileId);
 			}
+			hero->setTileID(path.back());
 		}
-
-		// TODO: hero class should implement moving the hero to a specified tile.
-		// TODO: use size_t in hero -> id and distance cannot be negative -> make this information explicit by used datatype
-		// if (!hero->moveToTile(targetTileId, distance)) { return false; }
-
-		auto range = hero->getBaseRange();
-		auto remainingRange = range - static_cast<int>(distance);
-		// TODO: set remaining range for the hero for the current turn
-		// otherwise we need to specify that the hero can be moved only once per turn
-		// something like this:
-		// hero->setRemainingRange(remainingRange);
-
-		// TODO: this is only a temporary workaround:
-		if (remainingRange < 0) {
-			return false;
+		if (landedOnIce && landedAlreadyExplored && this->m_questsSystem) {
+			this->m_questsSystem->updateProgress(playerId, types::QuestGoalType::ICE, 1);
 		}
+		hero->setMovedThisTurn(true);
 
-		this->exploreTile(*player, targetTileId);
-
-		return true; // success
+		return true;
 	}
 
 
 	bool GameController::canBuildSettlement(size_t playerId, size_t vertexId) const {
-		(void)playerId; // unused for now - simplified building rules
 		const Graph& map = this->gameState.getMap();
+		const Player* player = this->gameState.getPlayer(playerId);
+		if (!player || !player->getHero()) {
+			return false;
+		}
 		try {
 			// Find vertex by ID (not index)
 			VertexHandle vertex = map.findVertexById(vertexId);
@@ -405,17 +383,7 @@ namespace df {
 			}
 
 
-			if (!registry || registry->animations.entities.empty()) {
-				fmt::println("[GameController] canBuildSettlement: no hero animation entity found");
-				return false;
-			}
-
-			Entity hero = this->registry->animations.entities.front();
-			if (!registry->tileID.has(hero)) {
-				fmt::println("No hero found.");
-				return false;
-			}
-			auto heroTileId = this->registry->tileID.get(hero);
+			const auto heroTileId = player->getHero()->getTileID();
 			fmt::println("[GameController] Hero tile id {}", heroTileId);
 			fmt::println("[GameController] Check Hero tile {}", heroTileId);
 			for (const auto& t : *vertexTiles) {
@@ -488,15 +456,11 @@ namespace df {
 			return false;
 		}
 		if (!this->hasEnoughResources(*player, buildingCost)) {
-			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
-			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
 			fmt::println("[GameController] buildSettlement failed: player {} does not have enough resources", playerId);
 			return false;
 		}
 
 		Graph& map = this->gameState.getMap();
-		// Tutorial
-		auto* step = this->gameState.getCurrentTutorialStep();
 
 		try {
 			fmt::println("[GameController] buildSettlement: requested at vertex {}", vertexId);
@@ -537,14 +501,10 @@ namespace df {
 			// this->chargeResourceCost(*player, newSettlement->getBuildingCost());
 			this->chargeResourceCost(*player, buildingCost);
 
-			m_questsSystem->updateProgress(types::QuestGoalType::SETTLEMENT, 1);
+			m_questsSystem->updateProgress(playerId, types::QuestGoalType::SETTLEMENT, 1);
 
 
 			fmt::println("[GameController] buildSettlement succeeded: settlement {} built at vertex {} for player {}", newSettlementId, vertexId, playerId);
-			// Finish Tutorial if step is BUILD_SETTLEMENT
-			if (step && step->id == TutorialStepId::BUILD_SETTLEMENT) {
-				this->gameState.completeCurrentTutorialStep();
-			}
 
 			return true;
 
@@ -645,15 +605,11 @@ namespace df {
 		}
 
 		if (!this->hasEnoughResources(*player, buildingCost)) {
-			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
-			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\nPress 'C' to check for ressource cost.", {"Okay"});
 			fmt::println("[GameController] buildRoad failed: player {} does not have enough resources", playerId);
 			return false;
 		}
 
 		Graph& map = this->gameState.getMap();
-		// Tutorial
-		auto* step = this->gameState.getCurrentTutorialStep();
 		try {
 			// Find edge by ID (not index)
 			EdgeHandle edge = map.findEdgeById(edgeId);
@@ -741,13 +697,9 @@ namespace df {
 
 			this->chargeResourceCost(*player, buildingCost);
 
-			m_questsSystem->updateProgress(types::QuestGoalType::ROAD, 1);
+			m_questsSystem->updateProgress(playerId, types::QuestGoalType::ROAD, 1);
 
 			fmt::println("[GameController] buildRoad succeeded: road {} built at edge {} for player {}", roadId, edgeId, playerId);
-			// Finish Tutorial if step is BUILD_ROAD
-			if (step && step->id == TutorialStepId::BUILD_ROAD) {
-				this->gameState.completeCurrentTutorialStep();
-			}
 
 			return true;
 
@@ -793,8 +745,6 @@ namespace df {
 			return false;
 		}
 		if (!this->hasEnoughResources(*player, buildingCost)) {
-			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
-			notification->showNotification("You don't have enough ressources!", "You need more ressources to build this.\n", {"Okay"});
 			return false;
 		}
 		if (!this->canBuildProductivityBuilding(playerId, tileId, tileType)) {
@@ -862,8 +812,6 @@ namespace df {
 			return false;
 		}
 		if (!this->hasEnoughResources(*player, buildingCost)) {
-			RenderNotificationSystem* notification = this->registry->getSystem<RenderNotificationSystem>();
-			notification->showNotification("You don't have enough ressources!", "You need more ressources to upgrade this settlement.\n", {"Okay"});
 			return false;
 		}
 
@@ -875,16 +823,7 @@ namespace df {
 			}
 		}
 
-		for (Entity e : this->registry->settlements.entities) {
-			if (!this->registry->settlements.has(e)) {
-				continue;
-			}
-			Settlement& registrySettlement = this->registry->settlements.get(e);
-			if (registrySettlement.getId() == settlementId) {
-				registrySettlement.setSettlementType(targetType);
-				break;
-			}
-		}
+		this->gameState.syncSettlementType(settlementId, targetType);
 
 		this->chargeResourceCost(*player, buildingCost);
 		if( targetType == types::SettlementType::STONE){
@@ -925,6 +864,9 @@ namespace df {
 		try {
 			size_t vertexId = settlement.getVertexId();
 			auto vertex = map.findVertexById(vertexId);
+			if (!vertex) {
+				return tileIds;
+			}
 			auto vertexTiles = map.getVertexTiles(vertex);
 
 			if (!vertexTiles) {
@@ -932,6 +874,9 @@ namespace df {
 			}
 
 			for (const auto& tile : *vertexTiles) {
+				if (!tile) {
+					continue;
+				}
 				tileIds.push_back(tile->getId());
 			}
 		} catch (const std::exception&) {
@@ -1077,6 +1022,24 @@ namespace df {
 	}
 
 
+	bool GameController::canAfford(size_t playerId, const std::vector<int>& cost) const {
+		const Player* player = this->getPlayerById(playerId);
+		if (!player) {
+			return false;
+		}
+		if (cost.empty()) {
+			return true;
+		}
+
+		for (size_t i = 0; i < cost.size() && i < static_cast<size_t>(types::TileType::COUNT); ++i) {
+			if (cost[i] > 0 && player->getResources(static_cast<types::TileType>(i)) < cost[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+
 	// TODO: changing buildingCost to a map (as is planned), would make this function rather obsolete
 	bool GameController::hasEnoughResources(Player& player, const std::vector<int>& buildingCost) {
 		if (buildingCost.empty()) {
@@ -1172,6 +1135,23 @@ namespace df {
 			player->addResources(q->reward_resource, q->reward_amount);
 			quests->claimQuest(questId, player, &gameState);
 		}
+	}
+
+	bool GameController::claimQuestRewardFor(size_t playerId, int questId) {
+		Player* player = this->getPlayerbyId(playerId);
+		QuestsSystem* quests = this->getQuestsSystem();
+		if (!player || !quests || !quests->prepareClaim(playerId, questId)) {
+			return false;
+		}
+
+		const Quest* quest = quests->getQuestById(questId);
+		if (!quest || quest->state != QuestState::Completed) {
+			return false;
+		}
+
+		player->addResources(quest->reward_resource, quest->reward_amount);
+		quests->claimQuest(questId, player, &gameState);
+		return true;
 	}
 
 } // namespace df

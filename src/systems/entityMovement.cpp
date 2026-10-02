@@ -25,9 +25,14 @@ namespace df {
 		eventBus->aiActiveToggled.connect(
 			[this, registry](const bool aiActive) {
 				if (aiActive) {
-					const auto hero = registry->animations.entities.front();
-					size_t& currentPosTileId = registry->tileID.get(hero);
-					this->setTarget(currentPosTileId, hero, this->gameState->getPlayer(1));
+					for (Entity hero : registry->animations.entities) {
+						if (registry->animations.get(hero).playerId != this->gameState->getViewerPlayerId()) {
+							continue;
+						}
+						size_t& currentPosTileId = registry->tileID.get(hero);
+						this->setTarget(currentPosTileId, hero, this->gameState->getPlayer(1));
+						break;
+					}
 					movementState = true;
 					targetSet = true;
 				}
@@ -120,7 +125,7 @@ namespace df {
 		auto& animComp = registry->animations.get(entity);
 
 		if (gameState) {
-			Player* playerPtr = gameState->getPlayer(0);
+			Player* playerPtr = gameState->getPlayer(gameState->getViewerPlayerId());
 			auto* quests = registry->getSystem<QuestsSystem>();
 			if (playerPtr && quests) {
 				auto tile = gameState->getMap().getTile(tileID); 
@@ -130,7 +135,7 @@ namespace df {
 					if (playerPtr->exploreTile(tileID) && currentType != types::TileType::WATER) {
 						gameState->getMap().setRenderUpdateRequested(true);
 						fmt::println("New Tile {} discovered!", tileID);
-						quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+						quests->updateProgress(gameState->getViewerPlayerId(), types::QuestGoalType::DISCOVER, 1);
 					}
 					if (currentType == types::TileType::WATER) {
 						if (animComp.currentType != Hero::AnimationType::Swim) {
@@ -227,7 +232,7 @@ namespace df {
 				currentPathIndex = 0;
 
 				if (gameState) {
-					Player* playerPtr = gameState->getPlayer(0);
+					Player* playerPtr = gameState->getPlayer(gameState->getViewerPlayerId());
 					auto* quests = registry->getSystem<QuestsSystem>();
 					if (playerPtr && quests) {
 						auto questCheckTile = gameState->getMap().getTile(targetPositionTileID);
@@ -236,11 +241,11 @@ namespace df {
 							if (playerPtr->exploreTile(targetPositionTileID) && currentType != types::TileType::WATER) { 
 								gameState->getMap().setRenderUpdateRequested(true);
 								fmt::println("New Tile {} discovered!", targetPositionTileID);
-								quests->updateProgress(types::QuestGoalType::DISCOVER, 1);
+								quests->updateProgress(gameState->getViewerPlayerId(), types::QuestGoalType::DISCOVER, 1);
 							}
 							
 							if (currentType == types::TileType::ICE) {
-								quests->updateProgress(types::QuestGoalType::ICE, 1);
+								quests->updateProgress(gameState->getViewerPlayerId(), types::QuestGoalType::ICE, 1);
 							}
 						}
 					}
@@ -286,6 +291,15 @@ namespace df {
 		targetSet = !targetSet;
 	}
 
+	void EntityMovementSystem::cancelMovement() noexcept {
+		movementState = false;
+		moving = false;
+		targetSet = false;
+		currentPath.clear();
+		currentPathIndex = 0;
+		pathT = 0.0f;
+	}
+
 	void EntityMovementSystem::setTarget(const size_t id, Entity entity, Player* player) noexcept {
 		glm::vec2& currentPos = registry->positions.get(entity);
 		size_t& currentPosTileId = registry->tileID.get(entity);
@@ -309,6 +323,16 @@ namespace df {
 		currentPathIndex = 0;
 
 		if (!currentPath.empty()) {
+			if (gameState) {
+				Player* current = gameState->getPlayer(gameState->getCurrentPlayerId());
+				if (current && current->getHero()) {
+					const int range = current->getHero()->getBaseRange();
+					const size_t maxTiles = static_cast<size_t>(range > 0 ? range : 0) + 1;
+					if (currentPath.size() > maxTiles) {
+						currentPath.resize(maxTiles);
+					}
+				}
+			}
 			size_t lastTile = currentPath.back();
 			targetPositionTileID = lastTile;
 			targetPosition = getTileWorldPosition(lastTile);

@@ -23,6 +23,15 @@
 
 #include <registry.h>
 #include <window.h>
+#include <optional>
+#include <cstdint>
+#include <functional>
+#include <mutex>
+#include <string>
+#include <vector>
+
+#include "multiplayer/asgard.h"
+#include "multiplayer/midgard.h"
 
 
 
@@ -69,14 +78,47 @@ namespace df {
 		void onScrollCallback(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 		void onResizeCallback(GLFWwindow* window, int width, int height) noexcept;
 		void spawnHero() noexcept;
+		void presentHazardState(size_t playerId, bool hadHazardBefore, const std::string& previousHazardName) noexcept;
+		void enqueueNet(std::function<void()> fn) noexcept;
+		void drainNet() noexcept;
+		void onLobby(const df::bifrost::LobbyState& lobby) noexcept;
+		void onAuthoritativeState(const nlohmann::json& state) noexcept;
+		void onActionResult(bool success, const std::optional<df::bifrost::ErrorInfo>& error) noexcept;
+		void requestEndTurn() noexcept;
+		bool isViewerTurn() const noexcept;
+		void placeHeroFromServer(bool force) noexcept;
 
 
 		bool test = false;
 
 		bool victoryScreenClosed = false;
 		bool victoryScreenShown = false;
-		bool awaitingTurnEnd = false;
 		size_t selectedSettlementId = SIZE_MAX;
+
+		// Declared before midgard so the client disconnects before this server stops.
+		std::unique_ptr<df::bifrost::Asgard> localServer;
+		std::unique_ptr<df::bifrost::Midgard> midgard;
+		std::unique_ptr<std::mutex> netMutex;
+		std::vector<std::function<void()>> netQueue;
+		std::string serverHost{"127.0.0.1"};
+		uint16_t serverPort{7777};
+		std::string playerName{"Player"};
+		int pendingSeed{-1};
+		int pendingWidth{-1};
+		int pendingHeight{-1};
+		int pendingMode{-1};
+		bool configSent{false};
+		bool readySent{false};
+		bool startSent{false};
+		bool joining{false};
+		bool soloRequested{false};
+		bool sessionMapReady{false};
+		bool heroPlaced{false};
+		bool tradingReady{false};
+		bool hazardPresentationPending{false};
+		bool hazardHadBefore{false};
+		std::string hazardPreviousName;
+		size_t hazardPlayerId{0};
 
 		// GameState
 		std::shared_ptr<GameState> gameState;

@@ -96,7 +96,7 @@ namespace df {
 
 
 	Result<void, ResultError> RenderTilesSystem::updateMap() noexcept {
-		const Player* player = this->gameState->getPlayer(0);
+		const Player* player = this->gameState->getPlayer(this->gameState->getViewerPlayerId());
 		const Graph& map = this->gameState->getMap();
 
 		const unsigned width = map.getMapWidth();

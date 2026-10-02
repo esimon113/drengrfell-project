@@ -1,0 +1,755 @@
+#include "constructionCosts.h"
+#include "gamecontroller.h"
+#include "multiplayer/sessionManager.h"
+#include "player.h"
+#include "utils/commandLineOptions.h"
+#include "visibleHeroes.h"
+
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <variant>
+
+namespace {
+
+int resourceAmount(const nlohmann::json& state, size_t playerId, df::types::TileType type) {
+	if (!state.contains("players")) {
+		return 0;
+	}
+	const std::string key = std::to_string(static_cast<int>(type));
+	for (const auto& playerJson : state["players"]) {
+		if (playerJson.value("playerId", static_cast<size_t>(0)) != playerId || !playerJson.contains("resources")) {
+			continue;
+		}
+		return playerJson["resources"].value(key, 0);
+	}
+	return 0;
+}
+
+int questProgress(const nlohmann::json& state, int questId) {
+	if (!state.contains("quests") || !state["quests"].is_array()) {
+		return -999;
+	}
+	for (const auto& quest : state["quests"]) {
+		if (quest.value("id", -1) == questId) {
+			return quest.value("progress", -999);
+		}
+	}
+	return -999;
+}
+
+bool resourcesUnchanged(const nlohmann::json& before, const nlohmann::json& after, size_t playerId) {
+	using df::types::TileType;
+	for (TileType type : {TileType::FOREST, TileType::GRASS, TileType::MOUNTAIN, TileType::FIELD, TileType::CLAY}) {
+		if (resourceAmount(before, playerId, type) != resourceAmount(after, playerId, type)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool finishTutorial(df::bifrost::SessionManager& session, int socket) {
+	for (const auto& step : df::createDefaultTutorial()) {
+		if (!session.reportTutorialEvent(socket, static_cast<int>(step.id)).first) {
+			return false;
+		}
+	}
+	return true;
+}
+
+}
+
+int main() {
+	df::bifrost::SessionManager session;
+	if (!session.addClient(10, "VikingA") || !session.addClient(11, "VikingB")) {
+		std::cerr << "addClient failed\n";
+		return EXIT_FAILURE;
+	}
+
+	session.setPlayerReady(10, true);
+	session.setPlayerReady(11, true);
+	if (!session.startGame(10)) {
+		std::cerr << "startGame failed\n";
+		return EXIT_FAILURE;
+	}
+
+	if (session.getState() != df::bifrost::SessionState::PLAYING) {
+		std::cerr << "session not PLAYING\n";
+		return EXIT_FAILURE;
+	}
+
+	if (!session.endTurn(10)) {
+		std::cerr << "endTurn failed\n";
+		return EXIT_FAILURE;
+	}
+
+	if (session.endTurn(10)) {
+		std::cerr << "player 0 ended player 1's turn\n";
+		return EXIT_FAILURE;
+	}
+
+	const auto state = session.getSerializedGameState();
+	if (!state.contains("currentPlayerId") || state["currentPlayerId"].get<size_t>() != 1) {
+		std::cerr << "currentPlayerId not advanced\n";
+		return EXIT_FAILURE;
+	}
+
+	if (!session.endTurn(11)) {
+		std::cerr << "player 1 could not end their own turn\n";
+		return EXIT_FAILURE;
+	}
+
+	if (!state.contains("world") || !state["world"].contains("seed") || state["world"]["seed"].get<unsigned>() == 0) {
+		std::cerr << "resolved world seed missing\n";
+		return EXIT_FAILURE;
+	}
+
+	const auto build = session.buildSettlement(11, 0);
+	if (!build.first && !build.second) {
+		std::cerr << "buildSettlement returned malformed error\n";
+		return EXIT_FAILURE;
+	}
+
+	{
+		df::bifrost::Message upgrade;
+		upgrade.type = df::bifrost::MessageType::UPGRADE_SETTLEMENT;
+		upgrade.seq = 7;
+		upgrade.payload = df::bifrost::UpgradeSettlementPayload{3, df::types::SettlementType::STONE};
+		const auto decoded = df::bifrost::Message::deserialize(upgrade.serialize());
+		if (decoded.type != df::bifrost::MessageType::UPGRADE_SETTLEMENT) {
+			std::cerr << "UpgradeSettlement roundtrip type failed\n";
+			return EXIT_FAILURE;
+		}
+		const auto& payload = std::get<df::bifrost::UpgradeSettlementPayload>(decoded.payload);
+		if (payload.settlementId != 3 || payload.targetType != df::types::SettlementType::STONE) {
+			std::cerr << "UpgradeSettlement roundtrip payload failed\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	const auto filtered = session.getSerializedGameStateForSocket(10);
+	if (filtered.contains("players") && filtered["players"].is_array()) {
+		for (const auto& playerJson : filtered["players"]) {
+			if (!playerJson.is_object()) {
+				continue;
+			}
+			if (playerJson.value("playerId", static_cast<size_t>(0)) == 1 && playerJson.contains("resources")) {
+				std::cerr << "other player resources leaked to viewer 0\n";
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	{
+		df::bifrost::SessionManager solo;
+		if (!solo.addClient(20, "Solo")) {
+			std::cerr << "solo addClient failed\n";
+			return EXIT_FAILURE;
+		}
+		solo.setPlayerReady(20, true);
+		df::bifrost::LobbyConfig soloConfig;
+		soloConfig.solo = true;
+		if (!solo.updateConfig(20, soloConfig)) {
+			std::cerr << "solo config failed\n";
+			return EXIT_FAILURE;
+		}
+		if (!solo.startGame(20)) {
+			std::cerr << "one player could not start\n";
+			return EXIT_FAILURE;
+		}
+		const auto soloState = solo.getSerializedGameState();
+		if (!soloState.contains("currentTutorialStep") || !soloState.contains("weather") || !soloState.contains("weatherIntensity")) {
+			std::cerr << "snapshot missing tutorial or weather\n";
+			return EXIT_FAILURE;
+		}
+		if (!solo.endTurn(20)) {
+			std::cerr << "solo endTurn failed\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto beforeClaim = solo.getSerializedGameState();
+		int forestBefore = 0;
+		if (beforeClaim.contains("players")) {
+			for (const auto& playerJson : beforeClaim["players"]) {
+				if (playerJson.value("playerId", static_cast<size_t>(0)) == 0 && playerJson.contains("resources")) {
+					forestBefore = playerJson["resources"].value("2", 0);
+				}
+			}
+		}
+		const auto claimed = solo.claimQuest(20, 0);
+		if (claimed.first) {
+			std::cerr << "unfinished tutorial quest was claimed\n";
+			return EXIT_FAILURE;
+		}
+		if (!finishTutorial(solo, 20) || !solo.claimQuest(20, 0).first) {
+			std::cerr << "finished tutorial quest could not be claimed\n";
+			return EXIT_FAILURE;
+		}
+		const auto afterClaim = solo.getSerializedGameState();
+		int forestAfter = 0;
+		if (afterClaim.contains("players")) {
+			for (const auto& playerJson : afterClaim["players"]) {
+				if (playerJson.value("playerId", static_cast<size_t>(0)) == 0 && playerJson.contains("resources")) {
+					forestAfter = playerJson["resources"].value("2", 0);
+				}
+			}
+		}
+		if (forestAfter != forestBefore + 5) {
+			std::cerr << "quest reward was not granted\n";
+			return EXIT_FAILURE;
+		}
+		if (solo.claimQuest(20, 0).first) {
+			std::cerr << "quest was claimed twice\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::Player player(4);
+		df::Player::ActiveHazard hazard;
+		hazard.type = df::types::HazardType::BEAR;
+		hazard.turnsLeft = 2;
+		player.setActiveHazard(hazard);
+		const auto hazardJson = player.serialize();
+		if (!hazardJson.contains("activeHazard") || hazardJson["activeHazard"].value("turnsLeft", 0) != 2) {
+			std::cerr << "active hazard was not serialized\n";
+			return EXIT_FAILURE;
+		}
+		df::Player restored;
+		restored.deserialize(hazardJson);
+		if (!restored.hasActiveHazard() || restored.getActiveHazard()->type != df::types::HazardType::BEAR ||
+			restored.getActiveHazard()->turnsLeft != 2) {
+			std::cerr << "active hazard did not roundtrip\n";
+			return EXIT_FAILURE;
+		}
+		df::Player clearPlayer(5);
+		if (clearPlayer.serialize().contains("activeHazard")) {
+			std::cerr << "missing hazard should be omitted\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::GameState state;
+		for (size_t tileId = 0; tileId < 4; ++tileId) {
+			state.getMap().addTile(std::make_unique<df::Tile>(tileId, df::types::TileType::GRASS, df::types::TilePotency::MEDIUM));
+		}
+		df::Player waiting(0);
+		df::Player moving(1);
+		waiting.setHero(std::make_shared<df::Hero>(3, glm::vec2(0.f), "", 3));
+		waiting.addResources(df::types::TileType::FOREST, 20);
+		waiting.addResources(df::types::TileType::MOUNTAIN, 20);
+		waiting.addResources(df::types::TileType::GRASS, 20);
+		waiting.addResources(df::types::TileType::FIELD, 20);
+		waiting.addResources(df::types::TileType::CLAY, 20);
+		waiting.setActiveHazard({df::types::HazardType::BEAR, 1});
+		state.addPlayer(waiting);
+		state.addPlayer(moving);
+		state.setCurrentPlayerId(1);
+
+		df::GameController controller(state);
+		if (controller.canMoveHeroToTile(0, 3)) {
+			std::cerr << "hero could move while a hazard was active\n";
+			return EXIT_FAILURE;
+		}
+		controller.payForHazard(0);
+		if (state.getPlayer(0)->hasActiveHazard()) {
+			std::cerr << "hazard could not be paid during another player's turn\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::Message pay;
+		pay.type = df::bifrost::MessageType::PAY_HAZARD;
+		pay.seq = 3;
+		pay.payload = df::bifrost::PayHazardPayload{};
+		const auto decodedPay = df::bifrost::Message::deserialize(pay.serialize());
+		if (decodedPay.type != df::bifrost::MessageType::PAY_HAZARD) {
+			std::cerr << "PayHazard roundtrip failed\n";
+			return EXIT_FAILURE;
+		}
+
+		df::bifrost::Message tutorial;
+		tutorial.type = df::bifrost::MessageType::TUTORIAL_EVENT;
+		tutorial.seq = 4;
+		tutorial.payload = df::bifrost::TutorialEventPayload{static_cast<int>(df::TutorialStepId::MOVE_CAMERA)};
+		const auto decodedTutorial = df::bifrost::Message::deserialize(tutorial.serialize());
+		if (decodedTutorial.type != df::bifrost::MessageType::TUTORIAL_EVENT) {
+			std::cerr << "TutorialEvent roundtrip type failed\n";
+			return EXIT_FAILURE;
+		}
+		const auto& tutorialPayload = std::get<df::bifrost::TutorialEventPayload>(decodedTutorial.payload);
+		if (tutorialPayload.stepId != static_cast<int>(df::TutorialStepId::MOVE_CAMERA)) {
+			std::cerr << "TutorialEvent roundtrip payload failed\n";
+			return EXIT_FAILURE;
+		}
+
+		df::bifrost::Message trade;
+		trade.type = df::bifrost::MessageType::TRADE_BANK;
+		trade.seq = 5;
+		trade.payload = df::bifrost::TradeBankPayload{df::types::TileType::FOREST, df::types::TileType::CLAY};
+		const auto decodedTrade = df::bifrost::Message::deserialize(trade.serialize());
+		if (decodedTrade.type != df::bifrost::MessageType::TRADE_BANK) {
+			std::cerr << "TradeBank roundtrip type failed\n";
+			return EXIT_FAILURE;
+		}
+		const auto& tradePayload = std::get<df::bifrost::TradeBankPayload>(decodedTrade.payload);
+		if (tradePayload.give != df::types::TileType::FOREST || tradePayload.receive != df::types::TileType::CLAY) {
+			std::cerr << "TradeBank roundtrip payload failed\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		using df::types::TileType;
+		df::bifrost::SessionManager bank;
+		if (!bank.addClient(80, "TraderA") || !bank.addClient(81, "TraderB")) {
+			std::cerr << "bank session addClient failed\n";
+			return EXIT_FAILURE;
+		}
+		bank.setPlayerReady(80, true);
+		bank.setPlayerReady(81, true);
+		if (!bank.startGame(80)) {
+			std::cerr << "bank session startGame failed\n";
+			return EXIT_FAILURE;
+		}
+		const auto before = bank.getSerializedGameState();
+		if (before.value("currentPlayerId", static_cast<size_t>(99)) != 0) {
+			std::cerr << "bank session did not start with player 0\n";
+			return EXIT_FAILURE;
+		}
+		const int forestBefore = resourceAmount(before, 0, TileType::FOREST);
+		const int clayBefore = resourceAmount(before, 0, TileType::CLAY);
+		if (forestBefore < df::BANK_TRADE_GIVE) {
+			std::cerr << "bank test needs at least 4 starting forest\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto offTurn = bank.tradeWithBank(81, TileType::FOREST, TileType::CLAY);
+		if (offTurn.first || !offTurn.second || offTurn.second->code != df::bifrost::ErrorCode::NOT_YOUR_TURN) {
+			std::cerr << "trade on another player's turn was not rejected with NOT_YOUR_TURN\n";
+			return EXIT_FAILURE;
+		}
+		if (!resourcesUnchanged(before, bank.getSerializedGameState(), 1)) {
+			std::cerr << "rejected off-turn trade changed resources\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto sameType = bank.tradeWithBank(80, TileType::FOREST, TileType::FOREST);
+		if (sameType.first) {
+			std::cerr << "trade of a resource for itself was accepted\n";
+			return EXIT_FAILURE;
+		}
+		if (!resourcesUnchanged(before, bank.getSerializedGameState(), 0)) {
+			std::cerr << "rejected same-type trade changed resources\n";
+			return EXIT_FAILURE;
+		}
+
+		if (!bank.tradeWithBank(80, TileType::FOREST, TileType::CLAY).first) {
+			std::cerr << "own-turn bank trade failed\n";
+			return EXIT_FAILURE;
+		}
+		auto traded = bank.getSerializedGameState();
+		if (resourceAmount(traded, 0, TileType::FOREST) != forestBefore - df::BANK_TRADE_GIVE ||
+			resourceAmount(traded, 0, TileType::CLAY) != clayBefore + df::BANK_TRADE_RECEIVE) {
+			std::cerr << "bank trade did not pay 4 forest for 1 clay\n";
+			return EXIT_FAILURE;
+		}
+
+		while (resourceAmount(traded, 0, TileType::FOREST) >= df::BANK_TRADE_GIVE) {
+			if (!bank.tradeWithBank(80, TileType::FOREST, TileType::CLAY).first) {
+				std::cerr << "bank trade with enough forest failed\n";
+				return EXIT_FAILURE;
+			}
+			traded = bank.getSerializedGameState();
+		}
+
+		const auto tooFew = bank.tradeWithBank(80, TileType::FOREST, TileType::CLAY);
+		if (tooFew.first || !tooFew.second || tooFew.second->code != df::bifrost::ErrorCode::INSUFFICIENT_RESOURCES) {
+			std::cerr << "trade with fewer than 4 was not rejected with INSUFFICIENT_RESOURCES\n";
+			return EXIT_FAILURE;
+		}
+		if (!resourcesUnchanged(traded, bank.getSerializedGameState(), 0)) {
+			std::cerr << "rejected short trade changed resources\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::SessionManager costs;
+		if (!costs.addClient(30, "Builder")) {
+			std::cerr << "cost session failed to start\n";
+			return EXIT_FAILURE;
+		}
+		costs.setPlayerReady(30, true);
+		df::bifrost::LobbyConfig soloConfig;
+		soloConfig.solo = true;
+		if (!costs.updateConfig(30, soloConfig)) {
+			std::cerr << "solo config failed\n";
+			return EXIT_FAILURE;
+		}
+		if (!costs.startGame(30)) {
+			std::cerr << "cost session failed to start\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto before = costs.getSerializedGameState();
+		const unsigned entityBefore = Entity();
+		bool built = false;
+		for (size_t vertexId = 576; vertexId < 2500; ++vertexId) {
+			if (costs.buildSettlement(30, vertexId).first) {
+				built = true;
+				break;
+			}
+		}
+		if (!built) {
+			std::cerr << "could not place a settlement to check costs\n";
+			return EXIT_FAILURE;
+		}
+		if (Entity() != entityBefore + 1) {
+			std::cerr << "server created ECS entities, which races with a window in the same process\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto placed = costs.getSerializedGameState();
+		if (!placed.contains("settlements") || !placed["settlements"].is_array() || placed["settlements"].empty()) {
+			std::cerr << "settlement was not recorded\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto& expectedSettlement = df::settlementPlacementCost();
+		using df::types::TileType;
+		for (TileType type : {TileType::FOREST, TileType::GRASS, TileType::MOUNTAIN, TileType::FIELD, TileType::CLAY}) {
+			const size_t index = static_cast<size_t>(type);
+			const int delta = resourceAmount(before, 0, type) - resourceAmount(placed, 0, type);
+			if (index >= expectedSettlement.size() || delta != expectedSettlement[index]) {
+				std::cerr << "settlement cost was not charged\n";
+				return EXIT_FAILURE;
+			}
+		}
+
+		const size_t settlementId = placed["settlements"][0].value("id", static_cast<size_t>(0));
+		const auto upgrade = costs.upgradeSettlement(30, settlementId, df::types::SettlementType::STONE);
+		const auto afterUpgrade = costs.getSerializedGameState();
+		if (upgrade.first || !resourcesUnchanged(placed, afterUpgrade, 0)) {
+			std::cerr << "stone upgrade charged the wrong cost\n";
+			return EXIT_FAILURE;
+		}
+
+		bool productivityBuilt = false;
+		for (size_t tileId = 0; tileId < 576 && !productivityBuilt; ++tileId) {
+			for (TileType type : {TileType::FOREST, TileType::MOUNTAIN, TileType::GRASS, TileType::FIELD, TileType::CLAY}) {
+				if (costs.buildProductivityBuilding(30, tileId, type).first) {
+					productivityBuilt = true;
+					break;
+				}
+			}
+		}
+		const auto afterProductivity = costs.getSerializedGameState();
+		if (productivityBuilt || !resourcesUnchanged(placed, afterProductivity, 0)) {
+			std::cerr << "productivity building charged the wrong cost\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::SessionManager quests;
+		if (!quests.addClient(40, "Quester")) {
+			std::cerr << "quest session failed to start\n";
+			return EXIT_FAILURE;
+		}
+		quests.setPlayerReady(40, true);
+		df::bifrost::LobbyConfig soloConfig;
+		soloConfig.solo = true;
+		if (!quests.updateConfig(40, soloConfig)) {
+			std::cerr << "solo config failed\n";
+			return EXIT_FAILURE;
+		}
+		if (!quests.startGame(40)) {
+			std::cerr << "quest session failed to start\n";
+			return EXIT_FAILURE;
+		}
+		if (!finishTutorial(quests, 40) || !quests.claimQuest(40, 0).first) {
+			std::cerr << "could not claim the tutorial quest\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto afterClaim = quests.getSerializedGameState();
+		const int settlementsBefore = questProgress(afterClaim, 1);
+		if (settlementsBefore < 0) {
+			std::cerr << "settlement quest was not in the snapshot\n";
+			return EXIT_FAILURE;
+		}
+
+		bool built = false;
+		for (size_t vertexId = 576; vertexId < 2500; ++vertexId) {
+			if (quests.buildSettlement(40, vertexId).first) {
+				built = true;
+				break;
+			}
+		}
+		if (!built) {
+			std::cerr << "could not build a settlement for quest progress\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto afterBuild = quests.getSerializedGameState();
+		const int settlementsAfter = questProgress(afterBuild, 1);
+		if (settlementsAfter != settlementsBefore + 1) {
+			std::cerr << "settlement quest progress did not advance\n";
+			return EXIT_FAILURE;
+		}
+
+		df::QuestsSystem shown;
+		shown.init(nullptr);
+		shown.bindPlayer(0);
+		shown.applyAuthoritative(afterClaim["quests"]);
+		const df::Quest* shownQuest = shown.getQuestById(1);
+		if (!shownQuest || shownQuest->progress != settlementsBefore) {
+			std::cerr << "quest window did not take the first snapshot\n";
+			return EXIT_FAILURE;
+		}
+		shown.applyAuthoritative(afterBuild["quests"]);
+		shownQuest = shown.getQuestById(1);
+		if (!shownQuest || shownQuest->progress != settlementsAfter) {
+			std::cerr << "quest window did not take the updated snapshot\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::SessionManager alone;
+		if (!alone.addClient(50, "Only")) {
+			std::cerr << "alone addClient failed\n";
+			return EXIT_FAILURE;
+		}
+		alone.setPlayerReady(50, true);
+		if (alone.startGame(50)) {
+			std::cerr << "one player started a multiplayer match\n";
+			return EXIT_FAILURE;
+		}
+
+		df::bifrost::LobbyConfig soloConfig;
+		soloConfig.solo = true;
+		if (!alone.updateConfig(50, soloConfig)) {
+			std::cerr << "host could not set solo\n";
+			return EXIT_FAILURE;
+		}
+		if (!alone.startGame(50)) {
+			std::cerr << "solo start failed\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::GameState state;
+		df::Player self(0);
+		df::Player other(1);
+		self.setHero(std::make_shared<df::Hero>(3, glm::vec2(0.f), "", 3));
+		other.setHero(std::make_shared<df::Hero>(9, glm::vec2(0.f), "", 3));
+		self.exploreTile(3);
+		state.addPlayer(self);
+		state.addPlayer(other);
+		state.setViewerPlayerId(0);
+		const auto hidden = df::visibleHeroOwners(state, 0);
+		if (hidden.size() != 1 || hidden[0] != 0) {
+			std::cerr << "fogged hero was visible\n";
+			return EXIT_FAILURE;
+		}
+		self.exploreTile(9);
+		state.clearPlayers();
+		state.addPlayer(self);
+		state.addPlayer(other);
+		const auto shown = df::visibleHeroOwners(state, 0);
+		if (shown.size() != 2) {
+			std::cerr << "explored hero was hidden\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::SessionManager quests;
+		if (!quests.addClient(60, "Q0") || !quests.addClient(61, "Q1")) {
+			std::cerr << "quest players failed to join\n";
+			return EXIT_FAILURE;
+		}
+		quests.setPlayerReady(60, true);
+		quests.setPlayerReady(61, true);
+		if (!quests.startGame(60)) {
+			std::cerr << "two-player quest session failed to start\n";
+			return EXIT_FAILURE;
+		}
+		if (quests.claimQuest(60, 0).first) {
+			std::cerr << "player claimed the tutorial quest before finishing it\n";
+			return EXIT_FAILURE;
+		}
+		if (!finishTutorial(quests, 60) || !finishTutorial(quests, 61)) {
+			std::cerr << "players could not finish their tutorials\n";
+			return EXIT_FAILURE;
+		}
+		if (!quests.claimQuest(60, 0).first || !quests.claimQuest(61, 0).first) {
+			std::cerr << "both players should claim their own tutorial quest\n";
+			return EXIT_FAILURE;
+		}
+		const int before = questProgress(quests.getSerializedGameStateForSocket(60), 1);
+		bool built = false;
+		for (size_t vertexId = 576; vertexId < 2500 && !built; ++vertexId) {
+			built = quests.buildSettlement(60, vertexId).first;
+		}
+		if (!built) {
+			std::cerr << "player 0 could not build for a private quest\n";
+			return EXIT_FAILURE;
+		}
+		const int afterBuilder = questProgress(quests.getSerializedGameStateForSocket(60), 1);
+		const int afterOther = questProgress(quests.getSerializedGameStateForSocket(61), 1);
+		if (afterBuilder != before + 1 || afterOther != before) {
+			std::cerr << "settlement quest progress leaked to the other player\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		char soloProgram[] = "drengrfell";
+		char soloFlag[] = "--solo";
+		char* withSolo[] = {soloProgram, soloFlag};
+		const df::CommandLineOptions parsed = df::CommandLineOptions::parse(2, withSolo);
+		if (!parsed.isSolo()) {
+			std::cerr << "--solo was not recognized\n";
+			return EXIT_FAILURE;
+		}
+		char plainProgram[] = "drengrfell";
+		char* without[] = {plainProgram};
+		const df::CommandLineOptions plain = df::CommandLineOptions::parse(1, without);
+		if (plain.isSolo()) {
+			std::cerr << "solo defaulted on\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::SessionManager tutorial;
+		if (!tutorial.addClient(70, "TutorA") || !tutorial.addClient(71, "TutorB")) {
+			std::cerr << "tutorial players failed to join\n";
+			return EXIT_FAILURE;
+		}
+		tutorial.setPlayerReady(70, true);
+		tutorial.setPlayerReady(71, true);
+		if (!tutorial.startGame(70)) {
+			std::cerr << "tutorial session failed to start\n";
+			return EXIT_FAILURE;
+		}
+		if (!tutorial.reportTutorialEvent(70, static_cast<int>(df::TutorialStepId::WELCOME)).first) {
+			std::cerr << "player 0 tutorial report failed\n";
+			return EXIT_FAILURE;
+		}
+		const auto forA = tutorial.getSerializedGameStateForSocket(70);
+		const auto forB = tutorial.getSerializedGameStateForSocket(71);
+		int stepA = -1;
+		int stepB = -1;
+		for (const auto& playerJson : forA["players"]) {
+			if (playerJson.value("playerId", static_cast<size_t>(0)) == 0) {
+				stepA = playerJson.value("tutorialStep", -1);
+			}
+		}
+		for (const auto& playerJson : forB["players"]) {
+			if (playerJson.value("playerId", static_cast<size_t>(0)) == 1) {
+				stepB = playerJson.value("tutorialStep", -1);
+			}
+		}
+		if (stepA != 1 || stepB != 0) {
+			std::cerr << "tutorial step was shared or did not advance\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::GameState state;
+		df::Player trailing(0);
+		df::Player leading(1);
+		trailing.setName("Trailing");
+		leading.setName("Leading");
+		trailing.setHeroPoints(4);
+		leading.setHeroPoints(20);
+		state.addPlayer(trailing);
+		state.addPlayer(leading);
+		state.setCurrentPlayerId(0);
+		const auto winner = state.getWinnerId();
+		if (!winner || *winner != 1) {
+			std::cerr << "winner followed the current turn instead of the score\n";
+			return EXIT_FAILURE;
+		}
+		if (!state.isGameOver()) {
+			std::cerr << "20 points was not game over\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::GameState state;
+		df::Player viewer(0);
+		df::Player winner(1);
+		for (size_t id = 0; id < 3; ++id) {
+			winner.addSettlement(id);
+			auto castle = std::make_shared<df::Settlement>(id, 1, id, std::vector<int>{});
+			castle->setSettlementType(df::types::SettlementType::CASTLE);
+			state.addSettlement(castle);
+		}
+		state.addPlayer(viewer);
+		state.addPlayer(winner);
+
+		const auto filtered = state.serializeFor(0);
+		if (!filtered["settlements"].empty()) {
+			std::cerr << "fogged castles were visible in the snapshot\n";
+			return EXIT_FAILURE;
+		}
+		df::GameState client;
+		client.setViewerPlayerId(0);
+		client.applyAuthoritativeSnapshot(filtered);
+		const auto fogWinner = client.getWinnerId();
+		if (!fogWinner || *fogWinner != 1) {
+			std::cerr << "fogged castle winner was lost from the snapshot\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::bifrost::SessionManager lobby;
+		if (!lobby.addClient(80, "Host") || !lobby.addClient(81, "Middle") || !lobby.addClient(82, "Last")) {
+			std::cerr << "lobby clients failed to join\n";
+			return EXIT_FAILURE;
+		}
+		lobby.setPlayerReady(80, true);
+		lobby.setPlayerReady(81, true);
+		lobby.setPlayerReady(82, true);
+		df::bifrost::LobbyConfig config;
+		if (!lobby.updateConfig(80, config)) {
+			std::cerr << "lobby config failed\n";
+			return EXIT_FAILURE;
+		}
+		lobby.markClientDisconnected(81);
+		const auto compacted = lobby.getLobbyState();
+		if (compacted.players.size() != 2) {
+			std::cerr << "disconnected lobby client was retained\n";
+			return EXIT_FAILURE;
+		}
+		for (const auto& player : compacted.players) {
+			if ((player.name == "Host" && player.playerId != 0) ||
+				(player.name == "Last" && player.playerId != 1)) {
+				std::cerr << "lobby player ids were not compacted\n";
+				return EXIT_FAILURE;
+			}
+		}
+		if (!lobby.startGame(80)) {
+			std::cerr << "compacted lobby could not start\n";
+			return EXIT_FAILURE;
+		}
+		if (!lobby.endTurn(80) || !lobby.endTurn(82)) {
+			std::cerr << "survivors could not each end a turn\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	std::cout << "session_logic_test: initializeGame, endTurn, serializeFor OK\n";
+	return EXIT_SUCCESS;
+}

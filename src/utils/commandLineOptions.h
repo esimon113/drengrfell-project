@@ -1,6 +1,8 @@
 #pragma once
 
 #include <common.h>
+#include <cstdint>
+#include <string>
 
 
 
@@ -35,6 +37,46 @@ namespace df {
 			CommandLineOptions options{};
 
 			for (size_t i = 1; i < argc; ++i) {
+				const std::string_view arg{argv[i]};
+				if ((arg == "--host" || arg == "--port" || arg == "--name") && i + 1 >= argc) {
+					fmt::println(stderr, "The \"{}\" option needs a value. See --help.", arg);
+					continue;
+				}
+				if (arg == "--host") {
+					options.host = argv[++i];
+					continue;
+				}
+				if (arg == "--port") {
+					const std::string_view text{argv[++i]};
+					unsigned value = 0;
+					bool ok = !text.empty();
+					for (const char digit : text) {
+						if (digit < '0' || digit > '9') {
+							ok = false;
+							break;
+						}
+						value = value * 10u + static_cast<unsigned>(digit - '0');
+						if (value > 65535u) {
+							ok = false;
+							break;
+						}
+					}
+					if (!ok || value == 0) {
+						fmt::println(stderr, "Invalid port \"{}\". See --help.", text);
+					} else {
+						options.port = static_cast<uint16_t>(value);
+					}
+					continue;
+				}
+				if (arg == "--name") {
+					options.playerName = argv[++i];
+					continue;
+				}
+				if (arg == "--solo") {
+					options.solo = true;
+					continue;
+				}
+
 				for (size_t j = 0; j < static_cast<size_t>(Flags::count); ++j) {
 					if (!FLAGS[j].match(argv[i]))
 						continue;
@@ -49,6 +91,10 @@ namespace df {
 							else
 								fmt::println(stderr, "\t{}\t\t{}", f.longName, f.help);
 						}
+						fmt::println(stderr, "\t--host <address>\tServer address. Default 127.0.0.1.");
+						fmt::println(stderr, "\t--port <port>\t\tServer port. Default 7777.");
+						fmt::println(stderr, "\t--name <name>\t\tPlayer name. Default Player.");
+						fmt::println(stderr, "\t--solo\t\t\tStart alone. Without this flag the host waits for a second player.");
 						options.help = true;
 						break;
 
@@ -75,10 +121,18 @@ namespace df {
 
 		inline bool hasHelp() const noexcept { return help; }
 		inline bool hasX11() const noexcept { return x11; }
+		inline bool isSolo() const noexcept { return solo; }
+		inline const std::string& getHost() const noexcept { return host; }
+		inline uint16_t getPort() const noexcept { return port; }
+		inline const std::string& getPlayerName() const noexcept { return playerName; }
 
 
 	  private:
 		bool help = false;
 		bool x11 = false;
+		bool solo = false;
+		std::string host{"127.0.0.1"};
+		uint16_t port{7777};
+		std::string playerName{"Player"};
 	};
 } // namespace df

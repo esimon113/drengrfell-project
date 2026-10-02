@@ -1,30 +1,21 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 #include <random>
 #include <vector>
 
 #include "gamestate.h"
-#include "registry.h"
 #include "road.h"
 #include "systems/questsSystem.h"
 
 
-
-
 namespace df {
 
-	/*
-	 * The GameController manages the high-level game flwo / mechanics.
-	 * Component specific responsibilities are handled by the corresponding classes (Tile, Hero, ...).
-	 */
 	class GameController {
 	  public:
-		GameController() = default;
-		~GameController() = default;
-
-		explicit GameController(GameState& state, Registry* newRegistry)
-			: gameState(state), rng(std::random_device{}()), m_questsSystem(std::make_unique<QuestsSystem>()), registry(newRegistry) {}
+		explicit GameController(GameState& state)
+			: gameState(state), rng(std::random_device{}()), m_questsSystem(std::make_unique<QuestsSystem>()) {}
 
 		GameState& getState() { return this->gameState; }
 		const GameState& getState() const { return this->gameState; }
@@ -35,14 +26,18 @@ namespace df {
 		void startTurn();
 		void endTurn();
 
-		void applyHazard(Entity hero, glm::vec2 destination);
+		void applyHazard(size_t playerId, size_t tileId);
+		void rollWeather();
 		void updateHazards();
 		void showHazards();
-		void payForHazard();
+		void payForHazard(size_t playerId);
+		bool tradeWithBank(size_t playerId, types::TileType give, types::TileType receive);
 
 		void giveResourcesTo(Player& player);
 
+		bool canMoveHeroToTile(size_t playerId, size_t targetTileId) const;
 		bool moveHeroToTile(size_t playerId, size_t targetTileId);
+		bool canAfford(size_t playerId, const std::vector<int>& cost) const;
 
 		bool canBuildSettlement(size_t playerId, size_t vertexId) const;
 		bool buildSettlement(size_t playerId, size_t vertexId, const std::vector<int>& buildingCost);
@@ -58,6 +53,7 @@ namespace df {
 
 		QuestsSystem* getQuestsSystem() const { return m_questsSystem.get(); }
 		void claimQuestReward(int questId);
+		bool claimQuestRewardFor(size_t playerId, int questId);
 
 		Player* getPlayerbyId(size_t playerId);
 		const Player* getPlayerById(size_t playerId) const;
@@ -68,9 +64,6 @@ namespace df {
 		GameState& gameState;
 		std::mt19937 rng;
 		std::unique_ptr<QuestsSystem> m_questsSystem;
-		Registry* registry;
-
-		
 
 		void resetHeroMovement(Player& player);
 		void exploreTile(Player& player, size_t tileId);
@@ -78,7 +71,6 @@ namespace df {
 		bool doesVertexHaveNeighborSettlements(size_t vertexId) const;
 		bool doesEdgeConnectToPlayer(size_t playerId, size_t edgeId) const;
 
-		// returns ids of tiles touching the settlement -> TODO: move to settlement class
 		std::vector<size_t> getSettlementTiles(const Settlement& settlement) const;
 
 		bool hasEnoughResources(Player& player, const std::vector<int>& buildingCost);

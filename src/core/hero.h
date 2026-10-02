@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/vec2.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
 
@@ -34,6 +35,12 @@ namespace df {
 		void setTileID(size_t id);
 		size_t getTileID() const;
 
+		void setMovedThisTurn(bool moved);
+		bool hasMovedThisTurn() const;
+
+		nlohmann::json serialize() const;
+		void deserialize(const nlohmann::json& j);
+
 		enum class AnimationType {
 			Idle,
 			Jump,
@@ -51,7 +58,8 @@ namespace df {
 		};
 
 	  private:
-		size_t tileID;
+		size_t tileID{0};
+		bool movedThisTurn{false};
 		glm::vec2 coords{0.f, 0.f};
 		std::string textureRef;
 		int baseRange = 3;

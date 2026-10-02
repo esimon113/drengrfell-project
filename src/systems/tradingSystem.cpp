@@ -1,15 +1,17 @@
 #include "tradingSystem.h"
-#include "player.h"
+#include "constructionCosts.h"
 #include "renderNotification.h"
 
+#include <utility>
+
 namespace df {
-	void TradingSystem::init(RenderNotificationSystem* notif, Player* player) {
+	void TradingSystem::init(RenderNotificationSystem* notif, TradeCallback callback) {
 		notificationSystem = notif;
-		currentPlayer = player;
+		onTrade = std::move(callback);
 	}
 
 	void TradingSystem::startTrading() {
-		if (!notificationSystem || !currentPlayer)
+		if (!notificationSystem || !onTrade)
 			return;
 
 		isTradingActive = true;
@@ -38,77 +40,41 @@ namespace df {
 			fmt::format(
 				"Which resource do you want to pay with?\n"
 				"Pay {} to receive {} {}.",
-				payAmount, gainAmount, selectedResource),
+				BANK_TRADE_GIVE, BANK_TRADE_RECEIVE, selectedResource),
 			payOptions);
 	}
 
 	void TradingSystem::handleOptionClicked(const std::string& resource) {
-		if (!isTradingActive || !currentPlayer)
+		if (!isTradingActive || !onTrade)
 			return;
 
 		if (selectedResource.empty()) {
 			selectedResource = resource;
 			showPayResourcePopup();
-		} else {
-			executeTrade(resource);
-			isTradingActive = false;
-			selectedResource.clear();
-		}
-	}
-
-
-	void TradingSystem::executeTrade(const std::string& payResource) {
-		bool success = false;
-
-		if (payResource == "Wood") {
-			if (currentPlayer->getResources(types::TileType::FOREST) >= payAmount) {
-				currentPlayer->removeResources(types::TileType::FOREST, payAmount);
-				success = true;
-			}
-		} else if (payResource == "Stone") {
-			if (currentPlayer->getResources(types::TileType::MOUNTAIN) >= payAmount) {
-				currentPlayer->removeResources(types::TileType::MOUNTAIN, payAmount);
-				success = true;
-			}
-		} else if (payResource == "Clay") {
-			if (currentPlayer->getResources(types::TileType::CLAY) >= payAmount) {
-				currentPlayer->removeResources(types::TileType::CLAY, payAmount);
-				success = true;
-			}
-		} else if (payResource == "Wool") {
-			if (currentPlayer->getResources(types::TileType::GRASS) >= payAmount) {
-				currentPlayer->removeResources(types::TileType::GRASS, payAmount);
-				success = true;
-			}
-		} else if (payResource == "Grain") {
-			if (currentPlayer->getResources(types::TileType::FIELD) >= payAmount) {
-				currentPlayer->removeResources(types::TileType::FIELD, payAmount);
-				success = true;
-			}
-		}
-
-		if (!success) {
-			fmt::println("Not enough {} to trade!", payResource);
-			selectedResource.clear();
-			notificationSystem->showNotification(
-				"Trade failed",
-				fmt::format("You do not have enough {}.", payResource),
-				{"OK"});
 			return;
 		}
 
-		if (selectedResource == "Wood")
-			currentPlayer->addResources(types::TileType::FOREST, gainAmount);
-		else if (selectedResource == "Stone")
-			currentPlayer->addResources(types::TileType::MOUNTAIN, gainAmount);
-		else if (selectedResource == "Clay")
-			currentPlayer->addResources(types::TileType::CLAY, gainAmount);
-		else if (selectedResource == "Wool")
-			currentPlayer->addResources(types::TileType::GRASS, gainAmount);
-		else if (selectedResource == "Grain")
-			currentPlayer->addResources(types::TileType::FIELD, gainAmount);
+		const auto give = resourceType(resource);
+		const auto receive = resourceType(selectedResource);
+		isTradingActive = false;
+		selectedResource.clear();
+		if (give && receive) {
+			onTrade(*give, *receive);
+		}
+	}
 
-		fmt::println("Traded {} {} for {} {}", payAmount, payResource, gainAmount, selectedResource);
+	std::optional<types::TileType> TradingSystem::resourceType(const std::string& resource) {
+		if (resource == "Wood")
+			return types::TileType::FOREST;
+		if (resource == "Stone")
+			return types::TileType::MOUNTAIN;
+		if (resource == "Clay")
+			return types::TileType::CLAY;
+		if (resource == "Wool")
+			return types::TileType::GRASS;
+		if (resource == "Grain")
+			return types::TileType::FIELD;
+		return std::nullopt;
 	}
 
 } // namespace df

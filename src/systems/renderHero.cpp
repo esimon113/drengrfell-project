@@ -210,9 +210,8 @@ namespace df {
 				.setMat4("view", view)
 				.setMat4("projection", projection)
 				.setVec3("fcolor", glm::vec3(1.0f));
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		}
-
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	}
 	void RenderHeroSystem::reset() noexcept {}
 

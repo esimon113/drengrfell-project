@@ -28,7 +28,7 @@ namespace df {
 		const int columns = static_cast<int>(config.columns);
 		const int rows = static_cast<int>(config.rows);
 
-		auto randomEngine = std::default_random_engine(std::random_device()());
+		auto randomEngine = std::default_random_engine(config.seed);
 		auto uniformTileTypeDistribution = std::uniform_int_distribution(2, static_cast<int>(types::TileType::COUNT) - 1);
 
 		// Only one ice-desert tile -> like in catan game

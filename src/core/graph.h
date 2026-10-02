@@ -112,6 +112,7 @@ namespace df {
 
 		template <HasIdProperty T>
 		size_t getDistanceBetween(const T& start, const T& end) const;
+		size_t getTileStepDistance(size_t fromTileId, size_t toTileId) const;
 
 		// Methods for using the graph as a rectangular map
 		void regenerate(const WorldGeneratorConfig& worldGeneratorConfig = WorldGeneratorConfig());

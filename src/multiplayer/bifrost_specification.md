@@ -39,7 +39,7 @@ This protocol does not provide sophisticated quality of services mechanisms. For
 
 - **Server Authority:** Server owns the authoritative gamestate *("single source of truth")*
 - **Intention based commands:** Clients send what they want to do *(intention)*, not what happened
-- **Full State Sync:** Complete GameState broadcast after every action. In future versions this might be changed to patrial state sync.
+- **Per-player State Sync:** After every accepted action the server sends each client a `GameState` snapshot produced by `serializeFor(playerId)`. Other players' resources, unexplored tiles, and hidden map objects are omitted. The map itself is reconstructed from `world` seed/config — never from `Graph::deserialize`.
 - **No Client Prediction:** Clients wait for server confirmation before updating the UI. This also might change in future versions, so that the client predicts the state (based on sent command) and preemtively updates the GUI, which might be revoked on decline of the command.
 
 
@@ -83,13 +83,18 @@ All messages must contain these fields in the json payload.
 
 #### 3.2.2 Game Phase
 
-| Type            | Description                  | Payload                      |
-| --------------- | ---------------------------- | ---------------------------- |
-| EndTurn         | End current turn             | `{ }`                          |
-| BuildSettlement | Request to build settlement  | `{ "vertexId": 42 }`           |
-| BuildRoad       | Request to build road        | `{ "edgeId": 17, "level": 1 }` |
-| MoveHero        | Request hero movement        | `{ "targetTileId": 5 }`        |
-| ...             | Future commands (trading...) | `{ ... }`                      |
+| Type                       | Description                                      | Payload                                              |
+| -------------------------- | ------------------------------------------------ | ---------------------------------------------------- |
+| EndTurn                    | End current turn                                 | `{ }`                                                |
+| BuildSettlement            | Request to build settlement                      | `{ "vertexId": 42 }`                                 |
+| BuildRoad                  | Request to build road                            | `{ "edgeId": 17, "level": "Path" }`                  |
+| MoveHero                   | Move hero (at most one successful move per turn) | `{ "targetTileId": 5 }`                              |
+| UpgradeSettlement          | Upgrade WOOD → STONE → CASTLE                    | `{ "settlementId": 3, "targetType": "STONE" }`       |
+| BuildProductivityBuilding  | Place a productivity building on a tile          | `{ "tileId": 12, "tileType": "FOREST" }`             |
+| PayHazard                  | Pay to clear the current hazard                  | `{ }`                                                |
+| TutorialEvent              | Report a tutorial step the server cannot see     | `{ "stepId": 0 }`                                    |
+| ClaimQuest                 | Claim a completed quest reward                   | `{ "questId": 0 }`                                   |
+| TradeBank                  | Pay 4 of one resource for 1 of another, own turn | `{ "give": "FOREST", "receive": "CLAY" }`            |
 
 #### 3.2.3 Connection management
 
@@ -114,8 +119,8 @@ All messages must contain these fields in the json payload.
 
 | Type         | Description                  | Payload                                                     |
 | ------------ | ---------------------------- | ----------------------------------------------------------- |
-| GameStarted  | Game has begun               | `{ "initialState": { GameState JSON } }`                    |
-| GameState    | Full state sync              | `{ "state": { GameState JSON } }`                           |
+| GameStarted  | Game has begun               | `{ "initialState": { per-player GameState JSON } }` |
+| GameState    | Per-player fogged snapshot   | `{ "state": { per-player GameState JSON } }`        |
 | ActionResult | Response to a game action    | `{ "seq": 123, "success": true, "error": null }`            |
 | GamePaused   | A player disconnected        | `{ "disconnectedPlayer": "Viking2", "timeoutSeconds": 60 }` |
 | GameResumed  | Disconnected player returned | `{ "reconnectedPlayer": "Viking2" }`                        |
@@ -149,12 +154,15 @@ All messages must contain these fields in the json payload.
 		"rows": 24,
 		"generationMode": "PERLIN",
 		"seed": 0,
-		"reconnectTimeoutSeconds": 60
+		"reconnectTimeoutSeconds": 60,
+		"solo": false
 	},
-	"minPlayers": 2,
+	"minPlayers": 1,
 	"maxPlayers": 6
 }
 ```
+
+In `config`, `solo` is `false` by default; `true` allows the host to start with one ready player.
 
 #### 3.4.2 ActionResult
 ```json
@@ -220,10 +228,10 @@ The server defines building costs in a configuration structure:
 ```json
 {
 	"settlementCost": {
-		"FOREST": 1,
-		"CLAY": 1,
-		"GRASS": 1,
-		"FIELD": 1
+		"FOREST": 5,
+		"CLAY": 5,
+		"GRASS": 3,
+		"FIELD": 3
 	},
 	"roadCost": {
 		"level1": {

@@ -110,7 +110,18 @@ namespace df {
 
 	void WorldSystem::onKeyCallback(GLFWwindow* /* window */, int key, int /* scancode */, int action, int /* mods */) noexcept {
 		CameraInput& input = registry->cameraInputs.get(registry->getCamera());
-		Entity hero = registry->animations.entities.front();
+		Entity hero = registry->getPlayer();
+		bool foundHero = false;
+		for (Entity entity : registry->animations.entities) {
+			if (registry->animations.get(entity).playerId == gameState->getViewerPlayerId()) {
+				hero = entity;
+				foundHero = true;
+				break;
+			}
+		}
+		if (!foundHero) {
+			return;
+		}
 		auto& animComp = registry->animations.get(hero);
 		auto* step = this->gameState->getCurrentTutorialStep();
 		auto* quests = registry->getSystem<QuestsSystem>();
@@ -196,7 +207,7 @@ namespace df {
 				showCosts	= false;
 				showTrade = false;
 				if (quests) {
-					quests->notifyNextActiveQuest(player); 
+					quests->notifyNextActiveQuest(player, this->gameState); 
 				}
 				if (step && step->id == TutorialStepId::OPEN_QUEST_MENU) {
 					this->gameState->completeCurrentTutorialStep();
@@ -310,6 +321,9 @@ namespace df {
 			}
 				break;
 			case GLFW_KEY_G: {
+				if (this->gameState->hasAuthoritativeMap()) {
+					break;
+				}
 				Graph& map = this->gameState->getMap();
 				if (const auto worldGenConfResult = WorldGeneratorConfig::deserialize(); worldGenConfResult.isErr()) {
 					std::cerr << worldGenConfResult.unwrapErr() << std::endl;
@@ -366,9 +380,7 @@ namespace df {
 				break;
 			
 			case GLFW_KEY_SPACE: {
-				// TODO: for multiplayer get the hero of the current player
-				Entity e = registry->animations.entities.front();
-				auto pos = registry->positions.get(e);
+				auto pos = registry->positions.get(hero);
 				centerCameraOnPoint(pos);
 				if (step && step->id == TutorialStepId::CENTER_CAMERA) {
 					this->gameState->completeCurrentTutorialStep();
@@ -450,7 +462,7 @@ namespace df {
 				this->gameState->completeCurrentTutorialStep();
 				auto* quests = registry->getSystem<QuestsSystem>();
 				if (quests) {
-					quests->updateProgress(types::QuestGoalType::TUTORIAL, 1);
+					quests->updateProgress(gameState->getViewerPlayerId(), types::QuestGoalType::TUTORIAL, 1);
 				}
 			}
 		} else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {

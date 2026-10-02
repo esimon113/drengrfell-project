@@ -356,6 +356,24 @@ namespace df {
 		if (warningTimer > 0.0f) {
 			renderWarning();
 		}
+		if (!statusText.empty()) {
+			RenderTextSystem* textSystem = registry->getSystem<RenderTextSystem>();
+			if (textSystem) {
+				glm::vec2 textSize = textSystem->measureText(statusText, scale);
+				glm::vec2 boxSize = {textSize.x + paddingX, textSize.y + paddingY};
+				glm::vec2 boxPos = {(window->getWindowExtent().x - textSize.x) / 2.0f, window->getWindowExtent().y * 0.92f};
+				renderBox(boxPos, boxSize);
+
+				glm::vec2 textPos = {
+					boxPos.x + (boxSize.x - textSize.x) / 2.0f,
+					boxPos.y + (boxSize.y - textSize.y) / 2.0f + textSize.y * 0.15f};
+				textSystem->renderText(
+					statusText,
+					textPos,
+					scale,
+					{1.0f, 0.0f, 0.0f});
+			}
+		}
 	}
 
 	void ConfigMenu::onMouseButtonCallback(GLFWwindow* /*windowParam*/, int button, int action, int /* mods */) noexcept {

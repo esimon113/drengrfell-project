@@ -3,6 +3,7 @@
 #include "registry.h"
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -13,8 +14,11 @@ using json = nlohmann::json;
 #include "productivityBuilding.h"
 #include "road.h"
 #include "settlement.h"
+#include "constructionCosts.h"
 #include "tutorial.h"
 #include "types.h"
+#include "worldGeneratorConfig.h"
+#include <functional>
 
 
 
@@ -30,26 +34,8 @@ namespace df {
 		GameState() = default;
 		GameState(Registry* reg)
 			: registry(reg),
-			  roadCosts{
-				  0, // EMPTY
-				  0, // WATER
-				  1, // FOREST (wood)
-				  0, // GRASS
-				  0, // MOUNTAIN
-				  0, // FIELD
-				  1, // CLAY
-				  0	 // ICE
-			  },
-			  settlementCosts{
-				  0, // EMPTY
-				  0, // WATER
-				  5, // FOREST (wood)
-				  3, // GRASS
-				  0, // MOUNTAIN
-				  3, // FIELD
-				  5, // CLAY
-				  0	 // ICE
-			  } {};
+			  roadCosts(roadPlacementCost()),
+			  settlementCosts(settlementPlacementCost()) {}
 
 
 		Graph& getMap() { return this->map; }
@@ -72,7 +58,9 @@ namespace df {
 		void addSettlement(std::shared_ptr<Settlement> settlement);
 		void clearSettlements() {
 			settlements.clear();
-			registry->settlements.clear();
+			if (registry) {
+				registry->settlements.clear();
+			}
 		}
 		const std::vector<int>& getCurrentSettlementCost() const;
 
@@ -82,7 +70,9 @@ namespace df {
 		void addRoad(std::shared_ptr<Road> road);
 		void clearRoads() {
 			roads.clear();
-			registry->roads.clear();
+			if (registry) {
+				registry->roads.clear();
+			}
 		}
 		const std::vector<int>& getCurrentRoadCost() const;
 
@@ -91,7 +81,9 @@ namespace df {
 		void addProductivityBuilding(std::shared_ptr<ProductivityBuilding> building);
 		void clearProductivityBuildings() {
 			productivityBuildings.clear();
-			registry->productivityBuildings.clear();
+			if (registry) {
+				registry->productivityBuildings.clear();
+			}
 		}
 
 
@@ -114,7 +106,13 @@ namespace df {
 
 		// persistence
 		json serialize() const;
+		json serializeFor(size_t viewerPlayerId) const;
 		void deserialize(const json& j);
+		void applyAuthoritativeSnapshot(const json& j);
+
+		void setWorldConfig(const WorldGeneratorConfig& config) { worldConfig = config; }
+		const WorldGeneratorConfig& getWorldConfig() const { return worldConfig; }
+		void syncSettlementType(size_t settlementId, types::SettlementType type);
 		void save(const std::filesystem::path& filepath) const;
 		void load(const std::filesystem::path& filepath);
 
@@ -123,8 +121,21 @@ namespace df {
 		void resetTutorial();
 		TutorialStep* getCurrentTutorialStep();
 		void completeCurrentTutorialStep();
+		void completeTutorialStep(TutorialStepId id);
+		bool completeTutorialStepFor(size_t playerId, TutorialStepId id);
+		void setTutorialReporter(std::function<void(TutorialStepId)> reporter) { tutorialReporter = std::move(reporter); }
 		bool isTutorialActive() const;
+		bool hasAuthoritativeMap() const { return authoritativeMap; }
+		size_t getViewerPlayerId() const { return viewerPlayerId; }
+		void setViewerPlayerId(size_t id) { viewerPlayerId = id; }
+		types::WeatherType getWeather() const { return weather; }
+		void setWeather(types::WeatherType type) { weather = type; }
+		float getWeatherIntensity() const { return weatherIntensity; }
+		void setWeatherIntensity(float intensity) { weatherIntensity = intensity; }
 		std::vector<glm::vec3> computeHudResourceColor(std::string mode);
+		static constexpr int WINNING_POINTS = 20;
+		static constexpr int WINNING_CASTLES = 3;
+		std::optional<size_t> getWinnerId() const;
 		bool isGameOver() const;
 
 	  private:
@@ -147,9 +158,22 @@ namespace df {
 		// Tutorial
 		std::vector<TutorialStep> tutorialSteps;
 		size_t currentTutorialStep = 0;
+		std::function<void(TutorialStepId)> tutorialReporter;
+		size_t tutorialReportSentFor = static_cast<size_t>(-1);
+		bool authoritativeMap = false;
+		size_t viewerPlayerId = 0;
+		types::WeatherType weather = types::WeatherType::SUNNY;
+		float weatherIntensity = 0.f;
+		std::optional<size_t> authoritativeWinnerId;
 
 		std::vector<int> roadCosts;
 		std::vector<int> settlementCosts;
+		WorldGeneratorConfig worldConfig;
+
+		std::optional<size_t> computeWinnerId() const;
+		bool isTileVisibleTo(size_t playerId, size_t tileId) const;
+		bool isVertexVisibleTo(size_t playerId, size_t vertexId) const;
+		bool isEdgeVisibleTo(size_t playerId, size_t edgeId) const;
 	};
 
 } // namespace df

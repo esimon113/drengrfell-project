@@ -6,6 +6,19 @@
 using json = nlohmann::json;
 
 namespace df {
+namespace {
+
+    int countOpenQuests(const std::vector<Quest>& quests) {
+        int count = 0;
+        for (const auto& quest : quests) {
+            if (quest.state == QuestState::Active || quest.state == QuestState::Completed) {
+                ++count;
+            }
+        }
+        return count;
+    }
+
+}
 
     //  TODO: In a future add the functions to update the json to reload a game
 
@@ -16,6 +29,8 @@ namespace df {
         // ID | Name | Description | Quest type (resources, building...) | Quantity | Initial progress (-1 if must be updated during gameplay) | unblock id | Reward type | Reward | Initial state
         auto path = assets::getAssetPath(assets::JsonFile::QUESTS);        
         loadQuests(path);
+        questTemplate = m_quests;
+        questsByPlayer.clear();
     }
    
     void QuestsSystem::loadQuests(const std::string& path) {
@@ -60,21 +75,43 @@ namespace df {
     }
 
 
-    void QuestsSystem::updateProgress(types::QuestGoalType type, int amount) {
-        for (auto& quest : m_quests) {
+    void QuestsSystem::bindPlayer(size_t playerId) {
+        if (!questsByPlayer.contains(playerId)) {
+            questsByPlayer.emplace(playerId, questTemplate);
+        }
+        displayedPlayerId = playerId;
+        m_quests = questsByPlayer[playerId];
+        activeQuests = countOpenQuests(m_quests);
+    }
+
+    void QuestsSystem::updateProgress(size_t playerId, types::QuestGoalType type, int amount) {
+        const auto it = questsByPlayer.find(playerId);
+        if (it == questsByPlayer.end()) {
+            return;
+        }
+        for (auto& quest : it->second) {
             if (quest.state == QuestState::Active && quest.goal_type == type) {
                 
                 quest.progress += amount;
 
                 if (quest.progress >= quest.goal_amount) {
                     quest.state = QuestState::Completed;
-                    notifyPlayer(quest.id); 
+                    if (playerId == displayedPlayerId) {
+                        m_quests = it->second;
+                        notifyPlayer(quest.id);
+                    }
                 }
             }
+        }
+        if (playerId == displayedPlayerId) {
+            m_quests = it->second;
         }
     }
 
     void QuestsSystem::notifyPlayer(int questId) {
+        if (!m_notificationSystem) {
+            return;
+        }
         if(questId == 100){
             m_notificationSystem->showNotification("CONGRATULATIONS", "You have been awarded with 5 points.\nNo more quests", {"Close"});
             return;
@@ -154,10 +191,36 @@ namespace df {
     }
 
 
+    bool QuestsSystem::prepareClaim(size_t playerId, int questId) {
+        const auto it = questsByPlayer.find(playerId);
+        if (it == questsByPlayer.end()) {
+            return false;
+        }
+        for (auto& quest : it->second) {
+            if (quest.id != questId) {
+                continue;
+            }
+            if (quest.state != QuestState::Completed) {
+                return false;
+            }
+            displayedPlayerId = playerId;
+            m_quests = it->second;
+            return true;
+        }
+        return false;
+    }
+
     void QuestsSystem::claimQuest(int questId, Player* player,GameState* gameState) {
-        for (auto& q : m_quests) {
+        if (!player) {
+            return;
+        }
+        const size_t playerId = player->getId();
+        const auto it = questsByPlayer.find(playerId);
+        if (it == questsByPlayer.end()) {
+            return;
+        }
+        for (auto& q : it->second) {
             if (q.id == questId && q.state == QuestState::Completed) {
-                activeQuests--;
                 q.state = QuestState::Claimed;
                 m_currentShowingQuestId = -1; 
                 for (int nextId : q.unlocksIds) {
@@ -168,12 +231,23 @@ namespace df {
                 break;
             }
         }
+        if (playerId == displayedPlayerId) {
+            m_quests = it->second;
+            activeQuests = countOpenQuests(it->second);
+        }
     }
 
     void QuestsSystem::activateQuest(int questId, Player* player, GameState* gameState) {
-        for (auto& q : m_quests) {
+        if (!player) {
+            return;
+        }
+        const size_t playerId = player->getId();
+        const auto it = questsByPlayer.find(playerId);
+        if (it == questsByPlayer.end()) {
+            return;
+        }
+        for (auto& q : it->second) {
             if (q.id == questId && q.state == QuestState::Locked) {
-                activeQuests++;
                 q.state = QuestState::Active;
                 if (q.progress == -1){
                     switch (q.goal_type) {
@@ -223,17 +297,41 @@ namespace df {
                 if (q.progress >= q.goal_amount) {
                     q.state = QuestState::Completed;
                 }
-                
-                notifyPlayer(q.id); 
+
+                if (playerId == displayedPlayerId) {
+                    m_quests = it->second;
+                    activeQuests = countOpenQuests(it->second);
+                    notifyPlayer(q.id);
+                }
             }
+        }
+        if (playerId == displayedPlayerId) {
+            m_quests = it->second;
+            activeQuests = countOpenQuests(it->second);
         }
     }
 
-    void QuestsSystem::notifyNextActiveQuest(Player* player) {
+    void QuestsSystem::notifyNextActiveQuest(Player* player, GameState* gameState) {
+        if (player) {
+            const auto playerId = player->getId();
+            if (playerId == displayedPlayerId) {
+                const auto syncIt = questsByPlayer.find(playerId);
+                if (syncIt != questsByPlayer.end()) {
+                    m_quests = syncIt->second;
+                }
+            }
+        }
         if (m_quests.empty()) return;
 
-        if(activeQuests == 0){
-            if (player) {
+        int openCount = countOpenQuests(m_quests);
+        if (player) {
+            const auto it = questsByPlayer.find(player->getId());
+            if (it != questsByPlayer.end()) {
+                openCount = countOpenQuests(it->second);
+            }
+        }
+        if (openCount == 0) {
+            if (player && !(gameState && gameState->hasAuthoritativeMap())) {
             const int COMPLETION_BONUS = 5;
             player->addHeroPoints(COMPLETION_BONUS);
             
@@ -263,12 +361,87 @@ namespace df {
             }
         }
         currentQuest = 1;
-        m_notificationSystem->close();
+        if (m_notificationSystem) {
+            m_notificationSystem->close();
+        }
         m_currentShowingQuestId = -1;
 
     }
 
     void QuestsSystem::reset(){
         init(m_notificationSystem);
+    }
+
+    nlohmann::json QuestsSystem::serialize() const {
+        nlohmann::json quests = nlohmann::json::array();
+        for (const auto& quest : m_quests) {
+            quests.push_back({
+                {"id", quest.id},
+                {"progress", quest.progress},
+                {"state", static_cast<int>(quest.state)},
+            });
+        }
+        return quests;
+    }
+
+    nlohmann::json QuestsSystem::serializeFor(size_t playerId) const {
+        nlohmann::json quests = nlohmann::json::array();
+        const auto it = questsByPlayer.find(playerId);
+        if (it == questsByPlayer.end()) {
+            return quests;
+        }
+        for (const auto& quest : it->second) {
+            quests.push_back({
+                {"id", quest.id},
+                {"progress", quest.progress},
+                {"state", static_cast<int>(quest.state)},
+            });
+        }
+        return quests;
+    }
+
+    void QuestsSystem::applyAuthoritative(const nlohmann::json& quests) {
+        if (!quests.is_array()) {
+            return;
+        }
+
+        bool refreshShowing = false;
+        for (const auto& item : quests) {
+            if (!item.is_object() || !item.contains("id")) {
+                continue;
+            }
+            const int id = item.value("id", -1);
+            for (auto& quest : m_quests) {
+                if (quest.id != id) {
+                    continue;
+                }
+                const QuestState previousState = quest.state;
+                const int previousProgress = quest.progress;
+                quest.progress = item.value("progress", quest.progress);
+                if (item.contains("state")) {
+                    quest.state = static_cast<QuestState>(item.value("state", static_cast<int>(quest.state)));
+                }
+                if (previousState != QuestState::Completed && previousState != QuestState::Claimed &&
+                    quest.state == QuestState::Completed) {
+                    notifyPlayer(quest.id);
+                    refreshShowing = false;
+                } else if (quest.id == m_currentShowingQuestId &&
+                    (quest.progress != previousProgress || quest.state != previousState)) {
+                    refreshShowing = true;
+                }
+                break;
+            }
+        }
+
+        activeQuests = 0;
+        for (const auto& quest : m_quests) {
+            if (quest.state == QuestState::Active || quest.state == QuestState::Completed) {
+                activeQuests++;
+            }
+        }
+        if (refreshShowing && m_currentShowingQuestId >= 0) {
+            notifyPlayer(m_currentShowingQuestId);
+        }
+        questsByPlayer[displayedPlayerId] = m_quests;
     }
 }

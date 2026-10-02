@@ -35,6 +35,39 @@ namespace df {
 		return tileID;
 	}
 
+	void Hero::setMovedThisTurn(bool moved) {
+		movedThisTurn = moved;
+	}
+
+	bool Hero::hasMovedThisTurn() const {
+		return movedThisTurn;
+	}
+
+	nlohmann::json Hero::serialize() const {
+		nlohmann::json j;
+		j["tileID"] = tileID;
+		j["coords"] = {coords.x, coords.y};
+		j["baseRange"] = baseRange;
+		j["movedThisTurn"] = movedThisTurn;
+		return j;
+	}
+
+	void Hero::deserialize(const nlohmann::json& j) {
+		if (j.contains("tileID")) {
+			tileID = j.at("tileID").get<size_t>();
+		}
+		if (j.contains("coords") && j["coords"].is_array() && j["coords"].size() >= 2) {
+			coords.x = j["coords"][0].get<float>();
+			coords.y = j["coords"][1].get<float>();
+		}
+		if (j.contains("baseRange")) {
+			baseRange = j.at("baseRange").get<int>();
+		}
+		if (j.contains("movedThisTurn")) {
+			movedThisTurn = j.at("movedThisTurn").get<bool>();
+		}
+	}
+
 	// Animationen verwalten
 	void Hero::setAnimation(const std::string& name, const std::vector<int>& frames, float frameDuration, bool loop = true) {
 		Animation anim(frames, frameDuration, loop);

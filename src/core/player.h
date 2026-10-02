@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "settlement.h"
@@ -13,23 +14,32 @@
 using json = nlohmann::json;
 #include "hero.h"
 #include "road.h"
+#include <optional>
 
 
 
 namespace df {
 	class Graph;
 	class Player {
+	  public:
+		struct ActiveHazard {
+			types::HazardType type{types::HazardType::NONE};
+			int turnsLeft{0};
+		};
+
 	  private:
-		// We store IDs instead of references to respect ECS principles and serialize easily
 
 		size_t playerId;
 		int heroPoints;
+		std::string name;
+		size_t tutorialStep{0};
 		std::vector<size_t> settlementIds;
 		std::map<types::TileType, int> resources;
 		std::shared_ptr<Hero> heroReference;
 		std::vector<size_t> roadIds;
 		std::vector<size_t> productivityBuildingIds;
 		std::vector<size_t> exploredTileIds;
+		std::optional<ActiveHazard> activeHazard;
 
 
 	  public:
@@ -40,6 +50,12 @@ namespace df {
 		int getHeroPoints() const;
 		void addHeroPoints(int);
 		void setHeroPoints(int);
+
+		const std::string& getName() const;
+		void setName(const std::string& newName);
+
+		size_t getTutorialStep() const;
+		void setTutorialStep(size_t step);
 
 		// Changed to return IDs
 		const std::vector<size_t>& getSettlementIds() const;
@@ -76,5 +92,10 @@ namespace df {
 		void deserialize(const json& j);
 
 		void reset();
+
+		bool hasActiveHazard() const;
+		const std::optional<ActiveHazard>& getActiveHazard() const;
+		void setActiveHazard(ActiveHazard hazard);
+		void clearActiveHazard();
 	};
 } // namespace df
