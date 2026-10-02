@@ -120,21 +120,19 @@ If a firewall is enabled on the server machine, allow inbound TCP **7777**. A pl
 
 ## Keybindings
 
-| Key     | Function                          |
-|---------|-----------------------------------|
-| K       | Toggle to see this table          |
-| F       | Toggle rendering of fog of war    |
-| G       | Regenerate map                    |
-| W A S D | Move map                          |
-| N       | Preview settlements               |
-| B       | Preview roads                     |
-| P       | Print tile ID at mouse to console |
-| Q       | See active quests                 |
-| + -     | Zoom                              |
-| H       | toggle movement                   |
-| F7      | set Idle animation                |
-| F8      | set Swim animation                |
-| F9      | set Attack animation              |
-| F10     | set Jump animation                |
-| F11     | set Run animation                 |
+Click a tile to choose where your hero walks. Enter, or the End Turn button, walks there (one move per turn) and ends your turn. You can act only on your own turn.
+
+| Key | Function |
+|-----|----------|
+| W A S D | Move the map |
+| N | Preview settlements |
+| B | Preview roads |
+| Q | Active quests |
+| C | Building costs |
+| V | How victory points are scored |
+| T | Trade menu. Trades are not sent to the server |
+| K | This list |
+| Esc | Close the open window |
+| + - | Zoom. On a German layout this is the key that types `+` or `-`, and the numpad keys |
+| Space | Center the camera on your hero |
 

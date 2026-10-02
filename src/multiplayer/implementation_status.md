@@ -1,81 +1,32 @@
 # Multiplayer implementation status
 
-Last updated: 13 September 2026.
+Last checked: 2 October 2026, against this branch.
 
-This is the working context for turning Drengrfell into a client–server multiplayer game. It is not a playable multiplayer client yet.
+A match is playable. Every window is a Midgard client. The authority is `drengrfell_server` (Asgard, bind `0.0.0.0:7777`), or an Asgard inside the window when `--solo` is used with host `127.0.0.1`. If that port is already taken, the window joins the server that has it.
 
-## How to verify (macOS)
+## Rules
 
-The OpenGL game does not run on macOS. You do **not** need that binary.
+- First joiner is host. Start needs every joined player ready: 2 unless the host set solo, then 1. `MIN_PLAYERS` stays 1. Max 6. Names must be unique. No join after start.
+- Server owns turns, one hero move per turn, buildings, upgrades, productivity buildings, weather, hazards, per-player tutorial, and per-player quests (including rewards). A hazard blocks movement and counts down only on that player's own end of turn. Pay works on any turn.
+- Win is 20 points or 3 castles. The snapshot carries `winnerId`, so fogged castles still decide it.
+- Snapshots use `serializeFor` / `applyAuthoritativeSnapshot`. The map is regenerated from the world seed. Other players' resources and explored tiles are omitted. Their hero is omitted unless the viewer has explored that tile.
+- The walk animation stays on the client. The server tile is not applied while that hero is walking.
+- While connected, the L-key AI does not run, and trade clicks do not change resources. Both still exist for a window that never connected.
+- Disconnect during play sets the session to paused and rejects game commands. The protocol can reconnect by player name (`Midgard::reconnect`); no window calls it. A disconnected player is removed after `reconnectTimeoutSeconds` (default 60).
 
-- `session_logic_test` and `network_tests` both pass on macOS (`build-mp`). They do **not** launch the game. The session test still links GLFW/gl3w plus a HUD stub (`test/session/render_notification_stub.cpp`).
-- A GL-free `drengrfell_core` target is still the right way to stop depending on that stack.
+## Layout
 
-## Locked architecture
+- `GameController(GameState&)` has no `Registry*` and no UI. `SessionManager` has no `Registry`; the server game state is constructed with a null one so it does not allocate ECS entities.
+- `QuestsSystem` still includes the notification header. `drengrfell_server`, `session_logic_test`, and `local_server_test` link a stub (`test/session/render_notification_stub.cpp`). There is no GL-free `drengrfell_core` target.
+- `GameState::deserialize` still falls back to `Graph::deserialize` when a payload has `map` and no `world`. The client path does not use that; it regenerates from `world`.
 
-- One authoritative server. Every player is a client, including the host (`Midgard` over localhost TCP).
-- Baseline is Bifrost / Asgard / Midgard / SessionManager from `feature/multiplayer`, **not** unused POSIX stubs.
-- Keep the real `src/main.cpp` (`Application`). Do not take that branch’s lobby-demo `main` or stripped CMake.
-- `GameController` takes `GameState&` only — no `Registry*`, no UI from the controller.
-- Map distribution by **seed/config**. Never use `Graph::deserialize` (undefined behavior: stack pointers; node vectors never filled).
-- Snapshots via `serializeFor(playerId)` (true hidden information).
-- Reconnect identity: `playerName`. Host process death ends the session. Player count: 2–6.
-- v1 network commands: build settlement, build road, **MoveHero (at most one successful move per turn)**, end turn, settlement upgrade, productivity buildings.
-- Out of MP v1: tutorial, AI, weather, and hazards/quests/trading as **networked** features. Neutralize hooks so a headless server does not crash. Single-player can keep some of this as a client of the same controller.
-- Weather on the server stays SUNNY / `weatherModifier` 0.
+## Tests
 
-## What is implemented (uncommitted on this branch)
+From the repo root: `./build/session_logic_test`, `./build/network_tests`, `./build/local_server_test`. They do not open a window. The OpenGL match has to be checked by playing it.
 
-- Protocol stack imported; game entry point kept.
-- Headless controller: heroes live on `Player` / `Hero`; `movedThisTurn`; `endTurn` does not call weather/HUD.
-- Seed written back into lobby/world config; insular generator uses `config.seed` after resolution; `Player` JSON includes hero.
-- `GameState::serialize` writes world config, not graph JSON. `serializeFor` strips other players’ resources and explored tiles, hides heroes on unexplored tiles, and filters settlements/roads/productivity buildings by viewer fog (`Player::exploredTileIds`).
-- SessionManager: land-tile hero spawn, `moveHero`, per-socket `serializeFor`, `GameStarted` / `GameState` / reconnect snapshots.
-- Asgard sends per-socket filtered state (not one global dump).
-- Bifrost + Midgard + SessionManager: `UpgradeSettlement`, `BuildProductivityBuilding`.
-- Spec (`bifrost_specification.md`) uses per-player sync, not “Full State Sync”.
-- Quest notifications are null-safe if there is no render system.
-- Socket-free test: `test/session/session_logic_test.cpp`.
+## Still open
 
-## Not done
-
-- GL-free `drengrfell_core` + `drengrfell_server` CMake (session test still pulls GLFW via quests/HUD headers).
-- Application driven by Midgard: apply **partial** snapshots to ECS (add **and remove** entities).
-- `localPlayerId` vs `currentPlayerId` (lots of `getPlayer(0)` / `animations.entities.front()` remain).
-- Two fog stores still exist: `Tile::visibleForPlayers` vs `Player::exploredTileIds` (snapshot path uses the player list).
-- Encode/send off the sim thread.
-- Client must not call `GameState::deserialize`’s `map` fallback (`Graph::deserialize`). Current `serialize()` omits `map` and prefers `world` + `regenerate`.
-
-## Verification results
-
-See the bottom of this file after the latest local check.
-
----
-
-## Verification log
-
-Date: 13 September 2026 (macOS AppleClang, `build-mp`). Did **not** run the OpenGL `drengrfell` binary.
-
-### Ran
-
-- `network_tests` — **pass** (TCP echo, lifecycle, max connections, rate limit).
-- `session_logic_test` — **pass** after two compile fixes and a test-only HUD stub:
-  - `GameController` missing `#include "utils/worldNodeMapper.h"`
-  - `UpgradeSettlement` / productivity payload used an ambiguous `tileTypeToString`
-  - `test/session/render_notification_stub.cpp` supplies empty `showNotification` so quests can link without the real GL HUD
-- Two clients join, both ready, host `startGame`, world seed is non-zero (`1955403660` this run), `endTurn` advances `currentPlayerId` to 1, `UpgradeSettlement` JSON roundtrips, viewer 0 does not receive player 1 `resources`.
-
-### Static review (code, not the game)
-
-- `GameController` has no `Registry*`. `endTurn` does not call weather/HUD.
-- `moveHeroToTile` rejects a second move via `hasMovedThisTurn()`.
-- `GameState::serialize()` writes `world` config, not graph JSON. Asgard uses `getSerializedGameStateForSocket` → `serializeFor`.
-- Fog for snapshots uses `Player::exploredTileIds` (`isTileVisibleTo`).
-- `Graph::deserialize` is **not** used on the serialize path. `GameState::deserialize` still **falls back** to it if a payload has `map` and no `world`. Clients must not send that.
-- `serializeFor` does **not** strip other players’ `settlementIds` / `roadIds` / `productivityBuildingIds` / `heroPoints`. Object lists are fog-filtered; id lists on the player object can still leak existence.
-- `session_logic_test` does **not** require a successful `buildSettlement`. This run logged `vertex 0 not found` and still passed (it only rejects a missing error object).
-- SessionManager still owns a `Registry` and `GameController` still constructs `QuestsSystem` (render header). Headless core is not fully cut yet.
-
-### Not verified
-
-- OpenGL client, Midgard applying snapshots to ECS, localhost host client path, reconnect, upgrade/productivity **game** success (only protocol encode for upgrade).
+- The window never reconnects, and it does not resume a paused match.
+- Trading is not a server command.
+- Turns stay sequential.
+- After a finished match, "Back to Menu" returns to the menu; Start does not begin another match in the same process.
