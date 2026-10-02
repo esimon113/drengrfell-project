@@ -37,10 +37,12 @@ namespace df::mp {
 		}
 
 		const auto serverEndpoint = net::makeIpv4Address(this->serverAddress, this->serverPort);
+		fmt::println("[TcpClient] connecting to {}:{}", this->serverAddress, this->serverPort);
 		if (!net::connect(this->tcpSocket, serverEndpoint)) {
+			const std::string reason = net::errorMessage(net::lastError());
 			net::close(this->tcpSocket);
 			this->tcpSocket = net::INVALID_SOCKET_HANDLE;
-			throw std::runtime_error("[TcpClient] Failed to connect to " + this->serverAddress + ":" + std::to_string(this->serverPort));
+			throw std::runtime_error("[TcpClient] Failed to connect to " + this->serverAddress + ":" + std::to_string(this->serverPort) + ": " + reason);
 		}
 
 		this->connected = true;

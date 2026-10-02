@@ -5,6 +5,13 @@
 #include <limits>
 #include <stdexcept>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#else
+#include <fcntl.h>
+#include <sys/select.h>
+#endif
+
 namespace {
 	int toSocketLen(size_t size) {
 		if (size > static_cast<size_t>(std::numeric_limits<int>::max())) {
@@ -56,8 +63,77 @@ namespace df::mp::net {
 		return ::listen(socket, backlog) != SOCKET_ERROR_CODE;
 	}
 
+	bool setNonBlocking(SocketHandle socket, bool enabled) {
+#ifdef _WIN32
+		u_long mode = enabled ? 1 : 0;
+		return ioctlsocket(socket, FIONBIO, &mode) == 0;
+#else
+		const int flags = fcntl(socket, F_GETFL, 0);
+		if (flags < 0) {
+			return false;
+		}
+		const int next = enabled ? (flags | O_NONBLOCK) : (flags & ~O_NONBLOCK);
+		return fcntl(socket, F_SETFL, next) == 0;
+#endif
+	}
+
 	bool connect(SocketHandle socket, const SocketAddress& address) {
-		return ::connect(socket, reinterpret_cast<const sockaddr*>(&address.addr), sizeof(address.addr)) != SOCKET_ERROR_CODE;
+		if (!setNonBlocking(socket, true)) {
+			return false;
+		}
+
+		const int started = ::connect(socket, reinterpret_cast<const sockaddr*>(&address.addr), sizeof(address.addr));
+		if (started == 0) {
+			setNonBlocking(socket, false);
+			return true;
+		}
+
+		const int err = lastError();
+#ifdef _WIN32
+		const bool inProgress = err == WSAEWOULDBLOCK;
+#else
+		const bool inProgress = err == EINPROGRESS;
+#endif
+		if (!inProgress) {
+			setNonBlocking(socket, false);
+			return false;
+		}
+
+		fd_set writeSet;
+		FD_ZERO(&writeSet);
+		FD_SET(socket, &writeSet);
+		timeval wait{};
+		wait.tv_sec = 5;
+		const int ready = ::select(static_cast<int>(socket) + 1, nullptr, &writeSet, nullptr, &wait);
+		int soError = 0;
+		if (ready > 0) {
+#ifdef _WIN32
+			int length = sizeof(soError);
+			getsockopt(socket, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&soError), &length);
+#else
+			socklen_t length = sizeof(soError);
+			getsockopt(socket, SOL_SOCKET, SO_ERROR, &soError, &length);
+#endif
+		} else if (ready == 0) {
+#ifdef _WIN32
+			soError = WSAETIMEDOUT;
+#else
+			soError = ETIMEDOUT;
+#endif
+		} else {
+			soError = lastError();
+		}
+
+		setNonBlocking(socket, false);
+		if (soError != 0) {
+#ifdef _WIN32
+			WSASetLastError(soError);
+#else
+			errno = soError;
+#endif
+			return false;
+		}
+		return true;
 	}
 
 	SocketHandle accept(SocketHandle socket, SocketAddress& outAddress) {

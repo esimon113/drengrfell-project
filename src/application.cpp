@@ -424,8 +424,9 @@ namespace df {
 		});
 
 		if (!midgard->isConnected() && !midgard->connect(serverHost, serverPort)) {
-			fmt::println(stderr, "Could not connect to {}:{}", serverHost, serverPort);
-			fmt::println(stderr, "Start drengrfell_server first, then start the game.");
+			const std::string message = "Cannot reach " + serverHost + ":" + std::to_string(serverPort) + ". No TCP answer from that machine.";
+			fmt::println(stderr, "{}", message);
+			configMenu.setStatus(message);
 			return;
 		}
 
