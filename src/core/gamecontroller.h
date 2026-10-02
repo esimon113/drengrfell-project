@@ -30,7 +30,7 @@ namespace df {
 		void rollWeather();
 		void updateHazards();
 		void showHazards();
-		void payForHazard();
+		void payForHazard(size_t playerId);
 
 		void giveResourcesTo(Player& player);
 

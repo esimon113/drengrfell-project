@@ -858,10 +858,6 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::payHazard(int socket) 
 		return {false, ErrorInfo{ErrorCode::PLAYER_NOT_FOUND, "Player not found"}};
 	}
 
-	if (gameState_->getCurrentPlayerId() != *playerIdOpt) {
-		return {false, ErrorInfo{ErrorCode::NOT_YOUR_TURN, "Not your turn"}};
-	}
-
 	Player* player = gameState_->getPlayer(*playerIdOpt);
 	if (!player || !player->hasActiveHazard()) {
 		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "No active hazard"}};
@@ -878,7 +874,7 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::payHazard(int socket) 
 				cost)}};
 	}
 
-	gameController_->payForHazard();
+	gameController_->payForHazard(*playerIdOpt);
 	return {true, std::nullopt};
 }
 

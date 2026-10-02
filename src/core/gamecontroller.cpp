@@ -154,8 +154,8 @@ namespace df {
 		}
 	}
 
-	void GameController::payForHazard() {
-		Player* player = this->getCurrentPlayer();
+	void GameController::payForHazard(size_t playerId) {
+		Player* player = this->getPlayerbyId(playerId);
 		if (!player || !player->hasActiveHazard()) {
 			return;
 		}
@@ -255,7 +255,7 @@ namespace df {
 
 	bool GameController::canMoveHeroToTile(size_t playerId, size_t targetTileId) const {
 		const Player* player = this->getPlayerById(playerId);
-		if (!player) {
+		if (!player || player->hasActiveHazard()) {
 			return false;
 		}
 

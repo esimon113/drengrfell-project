@@ -1,4 +1,5 @@
 #include "constructionCosts.h"
+#include "gamecontroller.h"
 #include "multiplayer/sessionManager.h"
 #include "player.h"
 #include "utils/commandLineOptions.h"
@@ -224,6 +225,36 @@ int main() {
 		df::Player clearPlayer(5);
 		if (clearPlayer.serialize().contains("activeHazard")) {
 			std::cerr << "missing hazard should be omitted\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		df::GameState state;
+		for (size_t tileId = 0; tileId < 4; ++tileId) {
+			state.getMap().addTile(std::make_unique<df::Tile>(tileId, df::types::TileType::GRASS, df::types::TilePotency::MEDIUM));
+		}
+		df::Player waiting(0);
+		df::Player moving(1);
+		waiting.setHero(std::make_shared<df::Hero>(3, glm::vec2(0.f), "", 3));
+		waiting.addResources(df::types::TileType::FOREST, 20);
+		waiting.addResources(df::types::TileType::MOUNTAIN, 20);
+		waiting.addResources(df::types::TileType::GRASS, 20);
+		waiting.addResources(df::types::TileType::FIELD, 20);
+		waiting.addResources(df::types::TileType::CLAY, 20);
+		waiting.setActiveHazard({df::types::HazardType::BEAR, 1});
+		state.addPlayer(waiting);
+		state.addPlayer(moving);
+		state.setCurrentPlayerId(1);
+
+		df::GameController controller(state);
+		if (controller.canMoveHeroToTile(0, 3)) {
+			std::cerr << "hero could move while a hazard was active\n";
+			return EXIT_FAILURE;
+		}
+		controller.payForHazard(0);
+		if (state.getPlayer(0)->hasActiveHazard()) {
+			std::cerr << "hazard could not be paid during another player's turn\n";
 			return EXIT_FAILURE;
 		}
 	}

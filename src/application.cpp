@@ -1071,6 +1071,28 @@ namespace df {
 			registry->tileID.get(*heroEntity) = tileId;
 		}
 
+		for (size_t ownerId : visibleOwners) {
+			if (ownerId == viewerId && movementSystem->getMovementState()) {
+				continue;
+			}
+			const Player* player = gameState->getPlayer(ownerId);
+			const auto heroEntity = findHeroEntity(registry, ownerId);
+			if (!player || !heroEntity) {
+				continue;
+			}
+			auto& animComp = registry->animations.get(*heroEntity);
+			Hero::AnimationType type = animComp.currentType;
+			if (player->hasActiveHazard()) {
+				type = Hero::AnimationType::Attack;
+			} else if (type == Hero::AnimationType::Attack) {
+				type = Hero::AnimationType::Idle;
+			}
+			if (animComp.currentType != type) {
+				animComp.currentType = type;
+				animComp.anim.setCurrentFrameIndex(0);
+			}
+		}
+
 		const std::vector<Entity> animationEntities = registry->animations.entities;
 		for (Entity entity : animationEntities) {
 			const size_t ownerId = registry->animations.get(entity).playerId;
