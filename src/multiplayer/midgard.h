@@ -234,6 +234,8 @@ namespace df::bifrost {
 
 		void claimQuest(int questId);
 
+		void tradeWithBank(types::TileType give, types::TileType receive);
+
 		/**
 		 * Send a ping to measure latency.
 		 */

@@ -672,9 +672,7 @@ namespace df {
 				// TODO: add actions for button pressed in notifications
 				if (pressedButton == "Wood" || pressedButton == "Stone" ||
 					pressedButton == "Clay" || pressedButton == "Wool" || pressedButton == "Grain") {
-					if (!midgard || !midgard->isConnected()) {
-						tradingSystem.handleOptionClicked(pressedButton);
-					}
+					tradingSystem.handleOptionClicked(pressedButton);
 					if(world.getShowTrade()){
 						world.setShowTrade(false);
 					}
@@ -1157,10 +1155,17 @@ namespace df {
 		render.renderWeatherSystem.syncFromGameState();
 
 		if (!tradingReady) {
-			if (Player* player = gameState->getPlayer(playerId)) {
-				tradingSystem.init(&render.getRenderNotificationSystem(), player);
-			}
+			tradingSystem.init(&render.getRenderNotificationSystem(), [this](types::TileType give, types::TileType receive) {
+				if (midgard && midgard->isConnected()) {
+					midgard->tradeWithBank(give, receive);
+				}
+			});
 			world.setTradeCallback([this]() {
+				if (!isViewerTurn()) {
+					render.renderNotificationSystem.showNotification("Trade", "You can trade on your turn.", {"Okay"});
+					world.setShowTrade(false);
+					return;
+				}
 				tradingSystem.startTrading();
 			});
 			tradingReady = true;
@@ -1207,6 +1212,10 @@ namespace df {
 				hazard ? "Not enough ressources" : "You don't have enough ressources!",
 				error->message,
 				{hazard ? "Continue" : "Okay"});
+			return;
+		}
+		if (error->code == df::bifrost::ErrorCode::NOT_YOUR_TURN) {
+			render.renderNotificationSystem.showNotification("Not your turn", error->message, {"Okay"});
 			return;
 		}
 		if (error->code == df::bifrost::ErrorCode::INVALID_ACTION &&

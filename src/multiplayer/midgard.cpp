@@ -374,6 +374,20 @@ namespace df::bifrost {
 	}
 
 
+	void Midgard::tradeWithBank(types::TileType give, types::TileType receive) {
+		if (!connected_) {
+			return;
+		}
+
+		Message msg;
+		msg.type = MessageType::TRADE_BANK;
+		msg.seq = getNextSeq();
+		msg.payload = TradeBankPayload{give, receive};
+
+		sendMessage(msg);
+	}
+
+
 	void Midgard::reportTutorialEvent(int stepId) {
 		if (!connected_) {
 			return;

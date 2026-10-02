@@ -122,6 +122,7 @@ namespace df::bifrost {
 		PAY_HAZARD,
 		TUTORIAL_EVENT,
 		CLAIM_QUEST,
+		TRADE_BANK,
 
 		// Client -> Server: Connection
 		PING,
@@ -326,6 +327,11 @@ namespace df::bifrost {
 		int questId{0};
 	};
 
+	struct TradeBankPayload {
+		types::TileType give{types::TileType::FOREST};
+		types::TileType receive{types::TileType::FOREST};
+	};
+
 	struct PingPayload {
 		int64_t timestamp{0};
 	};
@@ -422,6 +428,7 @@ namespace df::bifrost {
 		PayHazardPayload,
 		TutorialEventPayload,
 		ClaimQuestPayload,
+		TradeBankPayload,
 		PingPayload,
 		ReconnectPayload,
 		// Server -> Client

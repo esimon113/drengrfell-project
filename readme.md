@@ -130,7 +130,7 @@ Click a tile to choose where your hero walks. Enter, or the End Turn button, wal
 | Q | Active quests |
 | C | Building costs |
 | V | How victory points are scored |
-| T | Trade menu. Trades are not sent to the server |
+| T | Trade 4 of one resource for 1 of another with the bank, on your turn |
 | K | This list |
 | Esc | Close the open window |
 | + - | Zoom. On a German layout this is the key that types `+` or `-`, and the numpad keys |

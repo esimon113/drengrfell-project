@@ -132,6 +132,8 @@ namespace df::bifrost {
 			return "TutorialEvent";
 		case MessageType::CLAIM_QUEST:
 			return "ClaimQuest";
+		case MessageType::TRADE_BANK:
+			return "TradeBank";
 		case MessageType::PING:
 			return "Ping";
 		case MessageType::RECONNECT:
@@ -199,6 +201,8 @@ namespace df::bifrost {
 			return MessageType::TUTORIAL_EVENT;
 		if (str == "ClaimQuest")
 			return MessageType::CLAIM_QUEST;
+		if (str == "TradeBank")
+			return MessageType::TRADE_BANK;
 		if (str == "Ping")
 			return MessageType::PING;
 		if (str == "Reconnect")
@@ -403,6 +407,12 @@ namespace df::bifrost {
 				j["questId"] = p.questId;
 				break;
 			}
+			case MessageType::TRADE_BANK: {
+				const auto& p = std::get<TradeBankPayload>(payload);
+				j["give"] = types::tileTypeToString(p.give);
+				j["receive"] = types::tileTypeToString(p.receive);
+				break;
+			}
 			case MessageType::PING: {
 				const auto& p = std::get<PingPayload>(payload);
 				j["timestamp"] = p.timestamp;
@@ -583,6 +593,12 @@ namespace df::bifrost {
 			case MessageType::CLAIM_QUEST: {
 				ClaimQuestPayload p;
 				p.questId = j.value("questId", 0);
+				return p;
+			}
+			case MessageType::TRADE_BANK: {
+				TradeBankPayload p;
+				p.give = types::stringToTileType(j.value("give", ""));
+				p.receive = types::stringToTileType(j.value("receive", ""));
 				return p;
 			}
 			case MessageType::PING: {

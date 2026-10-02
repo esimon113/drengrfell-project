@@ -1,18 +1,22 @@
 #pragma once
 
+#include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "player.h"
 #include "renderNotification.h"
+#include "types.h"
 
 namespace df {
 
 	class TradingSystem {
 	  public:
+		using TradeCallback = std::function<void(types::TileType give, types::TileType receive)>;
+
 		TradingSystem() = default;
 
-		void init(RenderNotificationSystem* notif, Player* player);
+		void init(RenderNotificationSystem* notif, TradeCallback onTrade);
 		bool getIsTradingActive() const { return isTradingActive; }
 
 		void startTrading();
@@ -20,14 +24,12 @@ namespace df {
 		void showPayResourcePopup();
 
 		void handleOptionClicked(const std::string& resource);
-		void executeTrade(const std::string& payResource);
 
 	  private:
-		RenderNotificationSystem* notificationSystem;
-		Player* currentPlayer;
+		static std::optional<types::TileType> resourceType(const std::string& resource);
 
-		const int payAmount = 5;
-		const int gainAmount = 3;
+		RenderNotificationSystem* notificationSystem = nullptr;
+		TradeCallback onTrade;
 
 		bool isTradingActive = false;
 		std::string selectedResource;

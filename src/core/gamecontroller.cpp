@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <unordered_set>
 
+#include "constructionCosts.h"
 #include "gamecontroller.h"
 #include "hazards.h"
 #include "hero.h"
@@ -168,6 +169,23 @@ namespace df {
 		}
 		player->removeResources(hazardDefinition.skipRessource, cost);
 		player->clearActiveHazard();
+	}
+
+	bool GameController::tradeWithBank(size_t playerId, types::TileType give, types::TileType receive) {
+		const auto isResource = [](types::TileType type) {
+			return type == types::TileType::FOREST || type == types::TileType::GRASS || type == types::TileType::MOUNTAIN ||
+				type == types::TileType::FIELD || type == types::TileType::CLAY;
+		};
+		Player* player = this->getPlayerbyId(playerId);
+		if (!player || give == receive || !isResource(give) || !isResource(receive)) {
+			return false;
+		}
+		if (player->getResources(give) < BANK_TRADE_GIVE) {
+			return false;
+		}
+		player->removeResources(give, BANK_TRADE_GIVE);
+		player->addResources(receive, BANK_TRADE_RECEIVE);
+		return true;
 	}
 
 

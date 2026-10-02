@@ -508,6 +508,14 @@ SessionManager::MessageResult SessionManager::processMessage(int socket, const M
 			break;
 		}
 
+		case MessageType::TRADE_BANK: {
+			const auto& payload = std::get<TradeBankPayload>(msg.payload);
+			auto [success, error] = tradeWithBank(socket, payload.give, payload.receive);
+			result.response = createActionResult(msg.seq, success, error);
+			result.broadcastGameState = success;
+			break;
+		}
+
 		case MessageType::PING: {
 			const auto& payload = std::get<PingPayload>(msg.payload);
 			result.response = createPongMessage(msg.seq, payload.timestamp);
@@ -927,6 +935,36 @@ std::pair<bool, std::optional<ErrorInfo>> SessionManager::claimQuest(int socket,
 }
 
 
+std::pair<bool, std::optional<ErrorInfo>> SessionManager::tradeWithBank(int socket, types::TileType give, types::TileType receive) {
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	if (state_ != SessionState::PLAYING) {
+		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "Game not in progress"}};
+	}
+
+	auto playerIdOpt = getPlayerIdBySocket(socket);
+	if (!playerIdOpt) {
+		return {false, ErrorInfo{ErrorCode::PLAYER_NOT_FOUND, "Player not found"}};
+	}
+
+	if (gameState_->getCurrentPlayerId() != *playerIdOpt) {
+		return {false, ErrorInfo{ErrorCode::NOT_YOUR_TURN, "You can trade on your turn"}};
+	}
+
+	const Player* player = gameState_->getPlayer(*playerIdOpt);
+	if (player && player->getResources(give) < BANK_TRADE_GIVE) {
+		return {false, ErrorInfo{ErrorCode::INSUFFICIENT_RESOURCES,
+			fmt::format("You need {} {} to trade", BANK_TRADE_GIVE, types::resourceName(give))}};
+	}
+
+	if (!gameController_ || !gameController_->tradeWithBank(*playerIdOpt, give, receive)) {
+		return {false, ErrorInfo{ErrorCode::INVALID_ACTION, "Choose two different resources to trade"}};
+	}
+
+	return {true, std::nullopt};
+}
+
+
 nlohmann::json SessionManager::getSerializedGameState() const {
 	std::lock_guard<std::mutex> lock(mutex_);
 	if (gameState_) {
@@ -1205,6 +1243,7 @@ std::optional<ErrorInfo> SessionManager::validateAction(int socket, MessageType 
 		case MessageType::PAY_HAZARD:
 		case MessageType::TUTORIAL_EVENT:
 		case MessageType::CLAIM_QUEST:
+		case MessageType::TRADE_BANK:
 			if (state_ == SessionState::LOBBY) {
 				return ErrorInfo{ErrorCode::INVALID_ACTION, "Game not started"};
 			}

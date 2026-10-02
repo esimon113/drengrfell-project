@@ -94,6 +94,7 @@ All messages must contain these fields in the json payload.
 | PayHazard                  | Pay to clear the current hazard                  | `{ }`                                                |
 | TutorialEvent              | Report a tutorial step the server cannot see     | `{ "stepId": 0 }`                                    |
 | ClaimQuest                 | Claim a completed quest reward                   | `{ "questId": 0 }`                                   |
+| TradeBank                  | Pay 4 of one resource for 1 of another, own turn | `{ "give": "FOREST", "receive": "CLAY" }`            |
 
 #### 3.2.3 Connection management
 

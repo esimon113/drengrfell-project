@@ -284,6 +284,96 @@ int main() {
 			std::cerr << "TutorialEvent roundtrip payload failed\n";
 			return EXIT_FAILURE;
 		}
+
+		df::bifrost::Message trade;
+		trade.type = df::bifrost::MessageType::TRADE_BANK;
+		trade.seq = 5;
+		trade.payload = df::bifrost::TradeBankPayload{df::types::TileType::FOREST, df::types::TileType::CLAY};
+		const auto decodedTrade = df::bifrost::Message::deserialize(trade.serialize());
+		if (decodedTrade.type != df::bifrost::MessageType::TRADE_BANK) {
+			std::cerr << "TradeBank roundtrip type failed\n";
+			return EXIT_FAILURE;
+		}
+		const auto& tradePayload = std::get<df::bifrost::TradeBankPayload>(decodedTrade.payload);
+		if (tradePayload.give != df::types::TileType::FOREST || tradePayload.receive != df::types::TileType::CLAY) {
+			std::cerr << "TradeBank roundtrip payload failed\n";
+			return EXIT_FAILURE;
+		}
+	}
+
+	{
+		using df::types::TileType;
+		df::bifrost::SessionManager bank;
+		if (!bank.addClient(80, "TraderA") || !bank.addClient(81, "TraderB")) {
+			std::cerr << "bank session addClient failed\n";
+			return EXIT_FAILURE;
+		}
+		bank.setPlayerReady(80, true);
+		bank.setPlayerReady(81, true);
+		if (!bank.startGame(80)) {
+			std::cerr << "bank session startGame failed\n";
+			return EXIT_FAILURE;
+		}
+		const auto before = bank.getSerializedGameState();
+		if (before.value("currentPlayerId", static_cast<size_t>(99)) != 0) {
+			std::cerr << "bank session did not start with player 0\n";
+			return EXIT_FAILURE;
+		}
+		const int forestBefore = resourceAmount(before, 0, TileType::FOREST);
+		const int clayBefore = resourceAmount(before, 0, TileType::CLAY);
+		if (forestBefore < df::BANK_TRADE_GIVE) {
+			std::cerr << "bank test needs at least 4 starting forest\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto offTurn = bank.tradeWithBank(81, TileType::FOREST, TileType::CLAY);
+		if (offTurn.first || !offTurn.second || offTurn.second->code != df::bifrost::ErrorCode::NOT_YOUR_TURN) {
+			std::cerr << "trade on another player's turn was not rejected with NOT_YOUR_TURN\n";
+			return EXIT_FAILURE;
+		}
+		if (!resourcesUnchanged(before, bank.getSerializedGameState(), 1)) {
+			std::cerr << "rejected off-turn trade changed resources\n";
+			return EXIT_FAILURE;
+		}
+
+		const auto sameType = bank.tradeWithBank(80, TileType::FOREST, TileType::FOREST);
+		if (sameType.first) {
+			std::cerr << "trade of a resource for itself was accepted\n";
+			return EXIT_FAILURE;
+		}
+		if (!resourcesUnchanged(before, bank.getSerializedGameState(), 0)) {
+			std::cerr << "rejected same-type trade changed resources\n";
+			return EXIT_FAILURE;
+		}
+
+		if (!bank.tradeWithBank(80, TileType::FOREST, TileType::CLAY).first) {
+			std::cerr << "own-turn bank trade failed\n";
+			return EXIT_FAILURE;
+		}
+		auto traded = bank.getSerializedGameState();
+		if (resourceAmount(traded, 0, TileType::FOREST) != forestBefore - df::BANK_TRADE_GIVE ||
+			resourceAmount(traded, 0, TileType::CLAY) != clayBefore + df::BANK_TRADE_RECEIVE) {
+			std::cerr << "bank trade did not pay 4 forest for 1 clay\n";
+			return EXIT_FAILURE;
+		}
+
+		while (resourceAmount(traded, 0, TileType::FOREST) >= df::BANK_TRADE_GIVE) {
+			if (!bank.tradeWithBank(80, TileType::FOREST, TileType::CLAY).first) {
+				std::cerr << "bank trade with enough forest failed\n";
+				return EXIT_FAILURE;
+			}
+			traded = bank.getSerializedGameState();
+		}
+
+		const auto tooFew = bank.tradeWithBank(80, TileType::FOREST, TileType::CLAY);
+		if (tooFew.first || !tooFew.second || tooFew.second->code != df::bifrost::ErrorCode::INSUFFICIENT_RESOURCES) {
+			std::cerr << "trade with fewer than 4 was not rejected with INSUFFICIENT_RESOURCES\n";
+			return EXIT_FAILURE;
+		}
+		if (!resourcesUnchanged(traded, bank.getSerializedGameState(), 0)) {
+			std::cerr << "rejected short trade changed resources\n";
+			return EXIT_FAILURE;
+		}
 	}
 
 	{

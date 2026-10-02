@@ -37,6 +37,9 @@ namespace df {
 		return cost;
 	}
 
+	inline constexpr int BANK_TRADE_GIVE = 4;
+	inline constexpr int BANK_TRADE_RECEIVE = 1;
+
 	inline std::vector<int> productivityBuildingCost(types::TileType type) {
 		switch (type) {
 		case types::TileType::FOREST:

@@ -31,6 +31,7 @@ namespace df {
 		void updateHazards();
 		void showHazards();
 		void payForHazard(size_t playerId);
+		bool tradeWithBank(size_t playerId, types::TileType give, types::TileType receive);
 
 		void giveResourcesTo(Player& player);
 

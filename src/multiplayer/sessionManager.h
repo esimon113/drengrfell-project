@@ -236,6 +236,11 @@ namespace df::bifrost {
 		[[nodiscard]] std::pair<bool, std::optional<ErrorInfo>> claimQuest(int socket, int questId);
 
 		/**
+		 * Trade with the bank on the player's own turn (see BANK_TRADE_GIVE / BANK_TRADE_RECEIVE).
+		 */
+		[[nodiscard]] std::pair<bool, std::optional<ErrorInfo>> tradeWithBank(int socket, types::TileType give, types::TileType receive);
+
+		/**
 		 * Get serialized game state.
 		 */
 		[[nodiscard]] nlohmann::json getSerializedGameState() const;
