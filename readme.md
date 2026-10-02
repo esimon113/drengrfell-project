@@ -76,7 +76,15 @@ cmake ..
 cmake --build .
 ```
 
-That build produces two programs: `drengrfell_server` and `drengrfell`. Every match, including a game with one player, is a server plus one window per player. The window does not start a server of its own.
+That build produces two programs: `drengrfell_server` and `drengrfell`. Every match is a server plus one window per player.
+
+To play alone, start only the window:
+
+```bash
+./build/drengrfell --solo
+```
+
+With `--solo` and the default address, the window runs its own server on `127.0.0.1`, port 7777, and only this machine can reach it. On Linux, if a `drengrfell_server` already listens on that port, the window joins that server instead.
 
 ### Playing on one network
 
@@ -104,7 +112,7 @@ The first player to join is the host. Without `--solo`, the lobby stays open unt
 | `--host <address>` | Server address. Default `127.0.0.1`. |
 | `--port <port>` | Server port. Default `7777`. |
 | `--name <name>` | Player name. Default `Player`. |
-| `--solo` | Allow the host to start alone. |
+| `--solo` | Allow the host to start alone. With the default address, the window also runs its own server. |
 
 If a firewall is enabled on the server machine, allow inbound TCP **7777**. A player who disconnects during a match pauses the game. This build does not reconnect them.
 

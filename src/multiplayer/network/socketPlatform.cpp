@@ -146,7 +146,13 @@ namespace df::mp::net {
 	}
 
 	int send(SocketHandle socket, const void* data, size_t size) {
-		return ::send(socket, static_cast<const char*>(data), toSocketLen(size), 0);
+		// A peer that already closed must not raise SIGPIPE, which would end the whole process.
+#ifdef MSG_NOSIGNAL
+		constexpr int flags = MSG_NOSIGNAL;
+#else
+		constexpr int flags = 0;
+#endif
+		return ::send(socket, static_cast<const char*>(data), toSocketLen(size), flags);
 	}
 
 	int recv(SocketHandle socket, void* data, size_t size) {

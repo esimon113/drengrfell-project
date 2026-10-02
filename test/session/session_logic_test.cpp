@@ -305,6 +305,7 @@ int main() {
 		}
 
 		const auto before = costs.getSerializedGameState();
+		const unsigned entityBefore = Entity();
 		bool built = false;
 		for (size_t vertexId = 576; vertexId < 2500; ++vertexId) {
 			if (costs.buildSettlement(30, vertexId).first) {
@@ -314,6 +315,10 @@ int main() {
 		}
 		if (!built) {
 			std::cerr << "could not place a settlement to check costs\n";
+			return EXIT_FAILURE;
+		}
+		if (Entity() != entityBefore + 1) {
+			std::cerr << "server created ECS entities, which races with a window in the same process\n";
 			return EXIT_FAILURE;
 		}
 

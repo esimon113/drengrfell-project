@@ -51,8 +51,11 @@ namespace df::mp {
 		bool isRateLimited(uint32_t clientIp);
 
 		struct ClientConnection {
-			std::jthread thread;
+			std::mutex socketMutex;
+			net::SocketHandle socket{net::INVALID_SOCKET_HANDLE};
 			std::atomic<bool> finished{false};
+			// Last member: destroyed (joined) first, while the fields above are still alive.
+			std::jthread thread;
 		};
 
 		uint16_t port{0};

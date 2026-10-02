@@ -95,9 +95,8 @@ void SessionManager::reset() {
 	config_ = LobbyConfig{};
 	buildingCosts_ = BuildingCosts{};
 
-	// Reset game objects
-	registry_ = std::make_unique<Registry>();
-	gameState_ = std::make_unique<GameState>(registry_.get());
+	// Reset game objects; no Registry, so the server never creates ECS entities
+	gameState_ = std::make_unique<GameState>(nullptr);
 	gameController_.reset();
 
 	// Re-seed RNG
@@ -1087,9 +1086,8 @@ void SessionManager::initializeGame() {
 	config_.seed = seed;
 	rng_.seed(seed);
 
-	// Create fresh registry and game state
-	registry_ = std::make_unique<Registry>();
-	gameState_ = std::make_unique<GameState>(registry_.get());
+	// Create fresh game state
+	gameState_ = std::make_unique<GameState>(nullptr);
 
 	// Generate the world using Graph::regenerate
 	WorldGeneratorConfig worldConfig = config_.toWorldGeneratorConfig();

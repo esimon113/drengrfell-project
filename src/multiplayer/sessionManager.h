@@ -21,7 +21,6 @@
 
 #include "../core/gamecontroller.h"
 #include "../core/gamestate.h"
-#include "../registry.h"
 #include "bifrost.h"
 
 
@@ -301,7 +300,6 @@ namespace df::bifrost {
 		BuildingCosts buildingCosts_;
 
 		// Game state (owned by session)
-		std::unique_ptr<Registry> registry_;
 		std::unique_ptr<GameState> gameState_;
 		std::unique_ptr<GameController> gameController_;
 

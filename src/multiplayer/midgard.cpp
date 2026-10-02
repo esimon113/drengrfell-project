@@ -77,6 +77,7 @@ namespace df::bifrost {
 		// Stop receive thread
 		if (receiveThread_) {
 			receiveThread_->request_stop();
+			tcpClient_.shutdown();
 			receiveThread_->join();
 			receiveThread_.reset();
 		}

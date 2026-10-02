@@ -18,6 +18,8 @@ namespace df::mp {
 
 		void tryConnect(const std::string& serverAddressInput, uint16_t serverPortInput);
 		void disconnect() noexcept;
+		// Wakes a thread blocked in receive; the socket stays open until disconnect().
+		void shutdown() noexcept;
 		[[nodiscard]] bool isConnected() const noexcept;
 
 		void trySend(const std::string& data);

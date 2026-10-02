@@ -7,6 +7,8 @@
 
 #include "asgard.h"
 
+#include <cstdio>
+#include <exception>
 #include <fmt/base.h>
 
 
@@ -70,32 +72,41 @@ namespace df::bifrost {
 	// SERVER LIFECYCLE
 	// ═══════════════════════════════════════════════════════════════════════════════
 
-	void Asgard::start() {
+	bool Asgard::start() {
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
 
 			if (running_) {
 				fmt::println("[Asgard] Server already running");
-				return;
+				return true;
 			}
 
 			running_ = true;
 		}
 
-		// Configure and start TCP server
+		// Configure and start TCP server; a failed bind must not escape a background thread
 		auto& server = mp::TcpServer::instance();
-		server.configure(port_, bindAddress_);
-		server.setMaxConnections(maxConnections_);
-		server.onClientCallback([this](mp::net::SocketHandle socket, std::stop_token stopToken) {
-			handleClient(socket, stopToken);
-		});
-
-		// Start in background thread
-		serverThread_ = std::make_unique<std::jthread>([this](std::stop_token) {
-			auto& server = mp::TcpServer::instance();
+		try {
+			server.configure(port_, bindAddress_);
+			server.setMaxConnections(maxConnections_);
+			server.onClientCallback([this](mp::net::SocketHandle socket, std::stop_token stopToken) {
+				handleClient(socket, stopToken);
+			});
 			server.start();
-			fmt::println("[Asgard] Server started on port {}", port_);
-			server.run();
+		} catch (const std::exception& e) {
+			fmt::println(stderr, "[Asgard] Could not start on {}:{}: {}", bindAddress_, port_, e.what());
+			running_ = false;
+			return false;
+		}
+		fmt::println("[Asgard] Server started on port {}", port_);
+
+		// Accept clients in background thread
+		serverThread_ = std::make_unique<std::jthread>([](std::stop_token) {
+			try {
+				mp::TcpServer::instance().run();
+			} catch (const std::exception& e) {
+				fmt::println(stderr, "[Asgard] Server loop ended: {}", e.what());
+			}
 		});
 
 		// Start timeout checker thread
@@ -103,7 +114,7 @@ namespace df::bifrost {
 			timeoutLoop(st);
 		});
 
-		fmt::println("[Asgard] Server starting...");
+		return true;
 	}
 
 

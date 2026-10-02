@@ -124,6 +124,13 @@ namespace df::mp {
 	}
 
 
+	void TcpClient::shutdown() noexcept {
+		if (net::isValid(this->tcpSocket)) {
+			net::shutdownBoth(this->tcpSocket);
+		}
+	}
+
+
 	bool TcpClient::isConnected() const noexcept {
 		return this->connected;
 	}

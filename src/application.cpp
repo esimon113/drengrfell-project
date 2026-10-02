@@ -118,6 +118,10 @@ namespace df {
 	}
 
 	void Application::deinit() noexcept {
+		if (midgard) {
+			midgard->disconnect();
+		}
+		localServer.reset();
 		audioEngine.reset();
 		movementSystem.reset();
 		aiSystem.reset();
@@ -423,8 +427,18 @@ namespace df {
 			});
 		});
 
+		if (soloRequested && serverHost == "127.0.0.1" && !localServer && !midgard->isConnected()) {
+			auto server = std::make_unique<df::bifrost::Asgard>();
+			server->configure(serverPort, "127.0.0.1");
+			if (server->start()) {
+				localServer = std::move(server);
+			} else {
+				fmt::println(stderr, "Could not start a local server on port {}. Joining the server already running there.", serverPort);
+			}
+		}
+
 		if (!midgard->isConnected() && !midgard->connect(serverHost, serverPort)) {
-			const std::string message = "Cannot reach " + serverHost + ":" + std::to_string(serverPort) + ". No TCP answer from that machine.";
+			const std::string message = "Cannot connect to " + serverHost + ":" + std::to_string(serverPort) + ". Start drengrfell_server there and allow TCP port " + std::to_string(serverPort) + ".";
 			fmt::println(stderr, "{}", message);
 			configMenu.setStatus(message);
 			return;

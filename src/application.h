@@ -30,6 +30,7 @@
 #include <string>
 #include <vector>
 
+#include "multiplayer/asgard.h"
 #include "multiplayer/midgard.h"
 
 
@@ -94,6 +95,8 @@ namespace df {
 		bool victoryScreenShown = false;
 		size_t selectedSettlementId = SIZE_MAX;
 
+		// Declared before midgard so the client disconnects before this server stops.
+		std::unique_ptr<df::bifrost::Asgard> localServer;
 		std::unique_ptr<df::bifrost::Midgard> midgard;
 		std::unique_ptr<std::mutex> netMutex;
 		std::vector<std::function<void()>> netQueue;

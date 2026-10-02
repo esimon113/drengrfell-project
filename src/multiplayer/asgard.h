@@ -83,9 +83,10 @@ namespace df::bifrost {
 
 		/**
 		 * Start the server.
-		 * This call returns immediately; the server runs in the background.
+		 * Binds and listens on the calling thread, then accepts clients in the background.
+		 * @return false if the port could not be bound; nothing keeps running then.
 		 */
-		void start();
+		[[nodiscard]] bool start();
 
 		/**
 		 * Start the server and block until stopped.

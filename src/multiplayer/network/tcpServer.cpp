@@ -143,10 +143,15 @@ namespace df::mp {
 
 			auto conn = std::make_unique<ClientConnection>();
 			ClientConnection* connPtr = conn.get();
+			connPtr->socket = clientSocket;
 
 			conn->thread = std::jthread([this, clientSocket, connPtr](std::stop_token stopToken) {
 				this->handleClient(clientSocket, stopToken);
-				net::close(clientSocket);
+				{
+					std::lock_guard socketLock(connPtr->socketMutex);
+					net::close(clientSocket);
+					connPtr->socket = net::INVALID_SOCKET_HANDLE;
+				}
 				connPtr->finished.store(true);
 			});
 
@@ -230,8 +235,14 @@ namespace df::mp {
 			this->serverSocket = net::INVALID_SOCKET_HANDLE;
 		}
 
-		// wait for all client threads to finish
+		// wake client threads blocked in recv, then wait for them to finish
 		std::lock_guard lock(this->connectionsMutex);
+		for (const auto& conn : this->connections) {
+			std::lock_guard socketLock(conn->socketMutex);
+			if (net::isValid(conn->socket)) {
+				net::shutdownBoth(conn->socket);
+			}
+		}
 		this->connections.clear();
 	}
 
