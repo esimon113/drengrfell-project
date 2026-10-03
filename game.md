@@ -1,10 +1,10 @@
 # Drengrfell
 
-A drengr crosses a cold land of fells, forest, and ice. The ground is unmapped. Raise settlements and roads, take what the land yields, and keep moving while weather and the wild try to hold you still. The first hero to earn 20 points, or to raise 3 castles, wins.
+A drengr *(hero)* crosses a cold land of mountains *(fells)*, forest, and ice. The ground is unmapped. Raise settlements and roads, take what the land yields, and keep moving while weather and the wild try to hold you still. The first hero to earn 20 points, or to raise 3 castles, wins.
 
 ## Turns
 
-Play passes from one hero to the next. On your turn you may move, build, upgrade, place a works building, and trade with the bank. Enter or the End Turn button ends the turn.
+Play passes from one player to the next. On your turn you may move, build, upgrade, place a productivity building, and trade with the bank. Pressing Enter or the End Turn button ends the turn.
 
 On any turn you may move the camera, open the menus, claim a finished quest, and pay off a hazard.
 
@@ -21,7 +21,7 @@ At the start of your turn, each of your settlements may draw from the tiles arou
 | Clay | Clay |
 | Water, ice | Nothing |
 
-A resource tile pays by chance. Richer ground pays more often. When it pays, you receive 1. A works building you own on that tile raises its richness one step and pays 2 instead.
+A resource tile pays by chance. Richer ground pays more often. When it pays, you receive 1. A productivity building you own on that tile raises its richness one step and pays 2 instead.
 
 Weather changes when a turn ends.
 
@@ -39,7 +39,7 @@ Walking reveals the tiles along the path. Another hero is shown only on ground y
 
 ## Build
 
-Building, upgrading, and works all happen on your turn, and only if you can pay.
+Building and upgrading all happen on your turn, and only if you can pay.
 
 **Settlement** (N). A corner where tiles meet, beside your hero or beside a road. Not in open water, and not next to another settlement. Cost: 5 wood, 3 wool, 3 grain, 5 clay.
 
@@ -54,15 +54,15 @@ Building, upgrading, and works all happen on your turn, and only if you can pay.
 
 A settlement raised all the way is worth 5 points. Three castles win the match.
 
-**Works.** From the same settlement menu, on a neighbouring tile of the matching ground. One building per tile.
+**Productivity Building.** From the same settlement menu, on a neighbouring tile of the matching ground. One building per tile.
 
 | Building | Ground | Cost |
 |----------|--------|------|
-| Lumber camp | Forest | 10 wood, 30 stone, 20 clay |
+| Lumber Camp | Forest | 10 wood, 30 stone, 20 clay |
 | Stable | Grass | 30 wood, 10 grain, 20 clay |
 | Quarry | Mountain | 30 wood, 10 stone, 20 clay |
 | Mill | Field | 20 wood, 20 stone, 20 clay |
-| Kiln | Clay | 20 wood, 10 wool, 30 stone |
+| Brick Kiln | Clay | 20 wood, 10 wool, 30 stone |
 
 Press C to see settlement and road costs in the game.
 
