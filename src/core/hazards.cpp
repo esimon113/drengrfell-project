@@ -17,7 +17,7 @@ namespace df {
 		{types::HazardType::MUD, {types::HazardType::MUD, "Sticky mud pit", 2, types::TileType::FOREST, "Wood", 1}},
 		{types::HazardType::ROCKSLIDE, {types::HazardType::ROCKSLIDE, "Rockslide", 3, types::TileType::FOREST, "Wood", 2}},
 		{types::HazardType::BLIZZARD, {types::HazardType::BLIZZARD, "Blizzard", 2, types::TileType::FIELD, "Grain", 3}},
-		{types::HazardType::BEAR, {types::HazardType::BEAR, "Bear", 1, types::TileType::FIELD, "Grain", 1}},
+		{types::HazardType::BEAR, {types::HazardType::BEAR, "Bear", 2, types::TileType::FIELD, "Grain", 1}},
 	};
 
 	const HazardDefinition& HazardDB::getDefinition(types::HazardType type) {
@@ -33,12 +33,12 @@ namespace df {
 	*/
 	std::unordered_map<types::TileType, TileHazardProfile> HazardDB::tileHazardProfiles = {
 		{types::TileType::WATER, {types::HazardType::NONE, 0.0f, false}},
-		{types::TileType::FOREST, {types::HazardType::BEAR, 0.25f, false}},
+		{types::TileType::FOREST, {types::HazardType::BEAR, 0.15f, false}},
 		{types::TileType::GRASS, {types::HazardType::NONE, 0.0f, false}},
-		{types::TileType::MOUNTAIN, {types::HazardType::ROCKSLIDE, 0.4f, false}},
+		{types::TileType::MOUNTAIN, {types::HazardType::ROCKSLIDE, 0.2f, false}},
 		{types::TileType::FIELD, {types::HazardType::NONE, 0.0f, false}},
-		{types::TileType::CLAY, {types::HazardType::MUD, 0.3f, false}},
-		{types::TileType::ICE, {types::HazardType::BLIZZARD, 0.5f, false}},
+		{types::TileType::CLAY, {types::HazardType::MUD, 0.2f, false}},
+		{types::TileType::ICE, {types::HazardType::BLIZZARD, 0.4f, false}},
 	};
 
 	std::optional<TileHazardProfile> HazardDB::getTileHazardProfile(types::TileType tileType) {
