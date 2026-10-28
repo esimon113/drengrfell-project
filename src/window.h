@@ -15,7 +15,7 @@ namespace df {
 
 
 		Window() : handle(nullptr) {}
-		~Window();
+		~Window() noexcept;
 
 		static std::unique_ptr<Window> init(const size_t width, const size_t height, const char* title) noexcept;
 		void deinit() noexcept;

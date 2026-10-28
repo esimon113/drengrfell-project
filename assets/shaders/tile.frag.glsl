@@ -26,7 +26,7 @@ void main() {
 	// Pulses intensity for highlighted path between 0.5 and 1
 	float pulse = 0.75 + 0.25 * sin(time * 3.1415);
 
-	if (vertOnPath == 1 && vertTileIndex != selectedTile) {
+	if (vertOnPath == 1 && vertTileIndex != uint(selectedTile)) {
 		baseColor.a *= pulse;
 	}
 

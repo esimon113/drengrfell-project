@@ -117,6 +117,12 @@ else()
 	target_compile_options(compiler_flags INTERFACE -Wall -Wextra -Wpedantic)
 endif()
 
+# Apple marks the system OpenGL headers deprecated. Those warnings are not our bugs,
+# and warnings-as-errors would fail the build on every GL call.
+if (APPLE)
+	target_compile_options(compiler_flags INTERFACE -Wno-deprecated-declarations)
+endif()
+
 # Configure header containing project metadata
 configure_file(${PROJECT_SOURCE_DIR}/src/project_config.h.in project_config.h)
 

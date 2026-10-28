@@ -16,9 +16,9 @@ uniform mat4 projection;
 
 vec3 integerToColor(uint i) {
     return vec3(
-        float((i & 0x000000FF) >> 0),
-        float((i & 0x0000FF00) >> 8),
-        float((i & 0x00FF0000) >> 16)
+        float((i & 0x000000FFu) >> 0),
+        float((i & 0x0000FF00u) >> 8),
+        float((i & 0x00FF0000u) >> 16)
     ) / 255.0;
 }
 

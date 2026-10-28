@@ -72,9 +72,6 @@ namespace df {
 	}
 
 
-	static constexpr float GAME_ASPECT_RATIO = 1.f / 2;
-
-
 	static std::pair<glm::uvec2, glm::uvec2> computeViewportConfig(const glm::uvec2 resolution) noexcept {
 		// Use the full window
 		// float window_aspect_ratio = static_cast<float>(resolution.x) / resolution.y;
