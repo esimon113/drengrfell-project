@@ -209,7 +209,7 @@ namespace df {
 				.setMat4("model", model)
 				.setMat4("view", view)
 				.setMat4("projection", projection)
-				.setVec3("fcolor", glm::vec3(1.0f));
+				.setVec3("fcolor", ownershipTint(animComp.playerId, gameState->getViewerPlayerId()));
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		}
 	}

@@ -347,7 +347,7 @@ namespace df {
 				.setMat4("model[0]", model)
 				.setMat4("projection", projection)
 				.setSampler("sprite", 0)
-				.setVec3("fcolor", glm::vec3(1.0f));
+				.setVec3("fcolor", ownershipTint(settlement.getPlayerId(), gamestate->getViewerPlayerId()));
 
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 		}
@@ -521,7 +521,7 @@ namespace df {
 				.setMat4("view", view)
 				.setMat4("projection", projection)
 				.setSampler("sprite", 0)
-				.setVec3("fcolor", glm::vec3(1.0f));
+				.setVec3("fcolor", ownershipTint(road.getPlayerId(), gamestate->getViewerPlayerId()));
 
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
