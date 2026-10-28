@@ -35,7 +35,10 @@ With `--solo` and the default address, the window runs a server on `127.0.0.1`, 
 On a network, start the server on the host machine. It listens on every interface, port 7777. Then start one window per player, each with that machine's address and its own name:
 
 ```bash
+# start server on host machine:
 ./build/drengrfell_server
+
+# start client for each player and connect with server:
 ./build/drengrfell --host 192.168.1.20 --name Alice
 ```
 
