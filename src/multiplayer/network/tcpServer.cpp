@@ -81,13 +81,13 @@ namespace df::mp {
 		socket = net::INVALID_SOCKET_HANDLE;
 
 		const uint16_t port = ntohs(address.addr.sin_port);
-		const bool wildcard = net::getIpv4Address(address) == 0;
-		const std::string probeHost = wildcard ? std::string("127.0.0.1") : net::ipv4ToString(net::getIpv4Address(address));
-		const net::SocketHandle probe = net::createTcpSocket();
+		const bool doesBindAllInterfaces = net::getIpv4Address(address) == 0; // 0.0.0.0
+		const std::string addressToCheck = doesBindAllInterfaces ? std::string("127.0.0.1") : net::ipv4ToString(net::getIpv4Address(address));
+		const net::SocketHandle checkAddress = net::createTcpSocket();
 		bool accepting = false;
-		if (net::isValid(probe)) {
-			accepting = net::connect(probe, net::makeIpv4Address(probeHost, port));
-			net::close(probe);
+		if (net::isValid(checkAddress)) {
+			accepting = net::connect(checkAddress, net::makeIpv4Address(addressToCheck, port));
+			net::close(checkAddress);
 		}
 		if (accepting) {
 			throw std::runtime_error("[TcpServer] bind() failed");
@@ -232,9 +232,9 @@ namespace df::mp {
 	size_t TcpServer::getActiveConnectionCount() {
 		std::lock_guard lock(this->connectionsMutex);
 		return std::count_if(this->connections.begin(), this->connections.end(),
-			[](const std::unique_ptr<ClientConnection>& conn) {
-				return !conn->finished.load();
-			});
+							 [](const std::unique_ptr<ClientConnection>& conn) {
+								 return !conn->finished.load();
+							 });
 	}
 
 
