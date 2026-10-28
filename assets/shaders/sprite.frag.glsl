@@ -8,5 +8,6 @@ uniform vec3 fcolor;
 layout (location = 0) out vec4 color;
 
 void main() {
-	color = vec4(fcolor, 1) * texture(sprite, frag_uv);
+	vec4 tex = texture(sprite, frag_uv);
+	color = vec4(mix(tex.rgb, tex.rgb * fcolor, 0.85), tex.a);
 }

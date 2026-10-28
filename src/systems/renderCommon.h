@@ -1,6 +1,7 @@
 #pragma once
 #include "gamestate.h"
 #include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
 #include "resultError.h"
 
 /*
@@ -17,6 +18,15 @@ namespace df {
 
 	glm::vec2 screenToWorldCoordinates(const glm::vec2& screenPos, Viewport viewport, glm::vec2 worldDimensions) noexcept;
 	glm::vec2 calculateWorldDimensions(int columns, int rows) noexcept;
+
+	// Other owners get a light tint. The local viewer's pieces stay uncolored.
+	// This is used to enable a player to visually differentiate between his own and other player's buildings/hero
+	inline glm::vec3 ownershipTint(size_t ownerId, size_t viewerPlayerId) noexcept {
+		if (ownerId == viewerPlayerId) {
+			return glm::vec3(1.0f);
+		}
+		return glm::vec3(0.45f, 0.75f, 1.0f);
+	}
 
 	namespace RenderCommon {
 
