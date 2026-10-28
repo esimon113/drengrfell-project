@@ -49,7 +49,6 @@ namespace df {
 		Texture roadPreviewTexture;
 
 		GLuint m_quad_vao;
-		GLuint m_quad_ebo;
 
 		Viewport viewport;
 

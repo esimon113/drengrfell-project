@@ -65,6 +65,52 @@ namespace df::mp {
 	}
 
 
+#ifdef __APPLE__
+	// SO_REUSEADDR on Darwin allows 127.0.0.1 to bind beside an existing 0.0.0.0 listener.
+	// Bind exclusively first so a taken port stays taken. Retry with reuse only when the
+	// port is in TIME_WAIT and nothing is accepting connections there.
+	void bindListeningSocket(net::SocketHandle& socket, const net::SocketAddress& address) {
+		if (net::bind(socket, address)) {
+			return;
+		}
+		if (net::lastError() != EADDRINUSE) {
+			throw std::runtime_error("[TcpServer] bind() failed");
+		}
+
+		net::close(socket);
+		socket = net::INVALID_SOCKET_HANDLE;
+
+		const uint16_t port = ntohs(address.addr.sin_port);
+		const bool wildcard = net::getIpv4Address(address) == 0;
+		const std::string probeHost = wildcard ? std::string("127.0.0.1") : net::ipv4ToString(net::getIpv4Address(address));
+		const net::SocketHandle probe = net::createTcpSocket();
+		bool accepting = false;
+		if (net::isValid(probe)) {
+			accepting = net::connect(probe, net::makeIpv4Address(probeHost, port));
+			net::close(probe);
+		}
+		if (accepting) {
+			throw std::runtime_error("[TcpServer] bind() failed");
+		}
+
+		socket = net::createTcpSocket();
+		if (!net::isValid(socket)) {
+			throw std::runtime_error("[TcpServer] Creating a socket failed!");
+		}
+		if (!net::setReuseAddr(socket, true)) {
+			net::close(socket);
+			socket = net::INVALID_SOCKET_HANDLE;
+			throw std::runtime_error("[TcpServer] setsockopt(SO_REUSEADDR) failed");
+		}
+		if (!net::bind(socket, address)) {
+			net::close(socket);
+			socket = net::INVALID_SOCKET_HANDLE;
+			throw std::runtime_error("[TcpServer] bind() failed");
+		}
+	}
+#endif
+
+
 	void TcpServer::start() {
 		if (this->isRunning.load()) {
 			return;
@@ -79,6 +125,17 @@ namespace df::mp {
 			throw std::runtime_error("[TcpServer] Creating a socket failed!");
 		}
 
+#ifdef __APPLE__
+		try {
+			bindListeningSocket(this->serverSocket, this->serverAddress);
+		} catch (...) {
+			if (net::isValid(this->serverSocket)) {
+				net::close(this->serverSocket);
+				this->serverSocket = net::INVALID_SOCKET_HANDLE;
+			}
+			throw;
+		}
+#else
 		if (!net::setReuseAddr(this->serverSocket, true)) {
 			net::close(this->serverSocket);
 			this->serverSocket = net::INVALID_SOCKET_HANDLE;
@@ -90,6 +147,7 @@ namespace df::mp {
 			this->serverSocket = net::INVALID_SOCKET_HANDLE;
 			throw std::runtime_error("[TcpServer] bind() failed");
 		}
+#endif
 
 		if (!net::listen(this->serverSocket, SOMAXCONN)) {
 			net::close(this->serverSocket);

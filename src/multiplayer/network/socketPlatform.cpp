@@ -39,7 +39,19 @@ namespace df::mp::net {
 	}
 
 	SocketHandle createTcpSocket() {
-		return socket(AF_INET, SOCK_STREAM, 0);
+		const SocketHandle handle = ::socket(AF_INET, SOCK_STREAM, 0);
+#ifdef __APPLE__
+		// macOS has no MSG_NOSIGNAL. Without this, writing to a closed socket raises SIGPIPE.
+		if (!isValid(handle)) {
+			return handle;
+		}
+		const int noSigPipe = 1;
+		if (::setsockopt(handle, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, sizeof(noSigPipe)) != 0) {
+			close(handle);
+			return INVALID_SOCKET_HANDLE;
+		}
+#endif
+		return handle;
 	}
 
 	bool isValid(SocketHandle socket) noexcept {

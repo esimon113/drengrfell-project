@@ -57,7 +57,6 @@ namespace df {
 		GLuint quad_vbo;
 		GLuint quad_ebo;
 		float dimProgress = 0.0f;
-		float dimAlpha = 0.9f;
 		float dimTime = 1.5f;	// how long the dimming of the screen takes
 		Texture imgTexture;
 		glm::vec2 imgPosRight{};

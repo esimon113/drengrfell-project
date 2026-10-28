@@ -2,7 +2,7 @@
 
 The name is Old Norse: *drengr* (hero) and *fell* (mountain).
 
-Turn-based strategy game: explore a generated hexagonal map, place settlements and roads, and deal with hazards. Inspired by *Settlers of Catan*. The Techstack consists of C++20, OpenGL 4.5, GLFW, CMake 3.24. Linux and Windows are supported, most testing happened on Linux.
+Turn-based strategy game: explore a generated hexagonal map, place settlements and roads, and deal with hazards. Inspired by *Settlers of Catan*. The Techstack consists of C++20, OpenGL 4.5 (OpenGL 4.1 on macOS), GLFW, CMake 3.24. Linux, Windows, and macOS source builds are supported with the CMake commands below. Most testing happened on Linux.
 
 Every game window is a client of a server. The server owns turns, building, movement, hazards, quests, and bank trades. Win with 20 points or 3 castles. What a player can do is in [game.md](game.md).
 

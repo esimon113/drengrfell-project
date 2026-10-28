@@ -116,7 +116,6 @@ namespace df {
 		Texture productivityPlaceholderTexture;
 
 		GLuint m_quad_vao;
-		GLuint m_quad_ebo;
 
 		Viewport viewport;
 
